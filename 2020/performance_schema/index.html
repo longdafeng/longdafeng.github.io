@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Abstract转载：performance_schema performance schema 是一个存储引擎, 可以提供对mysql 所有指标的监控， 是一套非常详细而复杂的监控系统， 不同的指标，使用了不同的接口， 另外有几个特点：  它是运行时态， 因此是全内存存储， 重启后会丢失之前的数据 为了减少对运行时态的影响， 绝大部分资源都是提前申请好， 在performance_schema">
+<meta property="og:type" content="article">
+<meta property="og:title" content="performance schema 源码走读">
+<meta property="og:url" content="http://ilongda.com/2020/performance_schema/index.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="Abstract转载：performance_schema performance schema 是一个存储引擎, 可以提供对mysql 所有指标的监控， 是一套非常详细而复杂的监控系统， 不同的指标，使用了不同的接口， 另外有几个特点：  它是运行时态， 因此是全内存存储， 重启后会丢失之前的数据 为了减少对运行时态的影响， 绝大部分资源都是提前申请好， 在performance_schema">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-09T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.956Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/2020/performance_schema/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/performance_schema/","path":"2020/performance_schema/","title":"performance schema 源码走读"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>performance schema 源码走读 | Longda share space</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">1.1.</span> <span class="nav-text">初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pre-initialize-performance-schema"><span class="nav-number">1.1.1.</span> <span class="nav-text">pre_initialize_performance_schema</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#init-pfs-instrument-array"><span class="nav-number">1.1.2.</span> <span class="nav-text">init_pfs_instrument_array</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#initialize-performance-schema"><span class="nav-number">1.1.3.</span> <span class="nav-text">initialize_performance_schema</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AEPFS-service"><span class="nav-number">1.1.4.</span> <span class="nav-text">设置PFS service</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%89%80%E6%9C%89%E7%9A%84key"><span class="nav-number">1.1.5.</span> <span class="nav-text">初始化所有的key</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E7%BB%93%E6%9E%84"><span class="nav-number">1.2.</span> <span class="nav-text">基本结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8"><span class="nav-number">1.3.</span> <span class="nav-text">使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.3.1.</span> <span class="nav-text">使用接口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.3.2.</span> <span class="nav-text">关键的数据结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">1.3.3.</span> <span class="nav-text">使用流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2performance"><span class="nav-number">1.3.4.</span> <span class="nav-text">查询performance</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/performance_schema/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda share space">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda share space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          performance schema 源码走读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-11-09 19:42:57" itemprop="dateCreated datePublished" datetime="2020-11-09T19:42:57+08:00">2020-11-09</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2024-01-29 17:18:27" itemprop="dateModified" datetime="2024-01-29T17:18:27+08:00">2024-01-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>转载：<a href="/knowledge/mysql/source_code_reading/storage/performance_schema">performance_schema</a></p>
+<p>performance schema 是一个存储引擎, 可以提供对mysql 所有指标的监控， 是一套非常详细而复杂的监控系统， 不同的指标，使用了不同的接口， 另外有几个特点：</p>
+<ol>
+<li>它是运行时态， 因此是全内存存储， 重启后会丢失之前的数据</li>
+<li>为了减少对运行时态的影响， 绝大部分资源都是提前申请好， 在performance_schema 初始化的时候，已经申请好了。涉及到2块内存， 一个是class 配置信息， 一个pfs state </li>
+<li>不能增加sql 种类和语法</li>
+</ol>
+<p>本文主要分 3块：</p>
+<ol>
+<li>初始化</li>
+<li>基本数据结构</li>
+<li>使用过程</li>
+</ol>
+<h2 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h2><p>分为几个步骤</p>
+<ol>
+<li>准备pfs 内部系统的内存监控的类</li>
+<li>准备好pfs 配置的内存, pfs 配置主要用于设置pfs_xx_class</li>
+<li>初始化pfs – 初始化的核心操作， 最主要的核心操作是准备好PFS需要的资源，尤其是内存申请， class， pfs 监控项的container， 以mutex 为例： 申请param-&gt;m_mutex_class_sizing 个PFS_mutex_class， 存储到PFS_mutex_class的mutex_class_array中， 另外会申请监控項的container 如global_mutex_container</li>
+<li>设置好所有的service, </li>
+<li>把所有的pfs 的key 注册到pfs 中， 方便后续使用</li>
+</ol>
+<span id="more"></span>
+
+<h3 id="pre-initialize-performance-schema"><a href="#pre-initialize-performance-schema" class="headerlink" title="pre_initialize_performance_schema"></a>pre_initialize_performance_schema</h3><p>第一步， 初始化PFS_builtin_memory_class的一些类， 和一些全局状态跟踪</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">void pre_initialize_performance_schema() &#123;</span><br><span class="line">  pfs_initialized = false;</span><br><span class="line"></span><br><span class="line">  init_all_builtin_memory_class();</span><br><span class="line">  // 初始化类似 builtin_memory_mutex/builtin_memory_rwlock/builtin_memory_mdl 等等</span><br><span class="line">  // 这些变量可以跟踪每种指标对应的内存消耗</span><br><span class="line">  // builtin_memory_mutex 类型为 PFS_builtin_memory_class</span><br><span class="line"></span><br><span class="line">  PFS_table_stat::g_reset_template.reset();</span><br><span class="line">  // 对PFS_table_stat 类的静态变量g_reset_template 进行重设</span><br><span class="line">  // PFS_table_stat 主要成员是</span><br><span class="line">  //    PFS_table_io_stat m_index_stat[MAX_INDEXES + 1], 跟进这个index 的fetch/insert/update/delete</span><br><span class="line">  //    PFS_table_lock_stat m_lock_stat; table 有9种锁, 每种锁的状态</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  global_idle_stat.reset();  // idle 的状态跟踪 </span><br><span class="line">  global_table_io_stat.reset();  // table io 的状态跟踪, </span><br><span class="line">  global_table_lock_stat.reset();  // table 锁的状态跟踪</span><br><span class="line">  g_histogram_pico_timers.init();   // PFS_histogram_timers 的状态跟踪</span><br><span class="line">  global_statements_histogram.reset(); //PFS_histogram </span><br><span class="line"></span><br><span class="line">  /*</span><br><span class="line">    There is no automatic cleanup. Please either use:</span><br><span class="line">    - my_thread_end()</span><br><span class="line">    - or PSI_server-&gt;delete_current_thread()</span><br><span class="line">    in the instrumented code, to explicitly cleanup the instrumentation.</span><br><span class="line">  */</span><br><span class="line">  THR_PFS = nullptr;           // PFS_thread</span><br><span class="line">  for (int i = 0; i &lt; THR_PFS_NUM_KEYS; ++i) &#123;</span><br><span class="line">    THR_PFS_contexts[i] = nullptr;  //PFS_table_context</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="init-pfs-instrument-array"><a href="#init-pfs-instrument-array" class="headerlink" title="init_pfs_instrument_array"></a>init_pfs_instrument_array</h3><p>   申请内存存放， PFS_instr_config, 每個pfs 的监控项的开关放在这里， 后面每个pfs 监控项在register class时， 会从这个配置项中获取是否打开， 是否要进行timer</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">  Initialize the dynamic array used to hold PFS_INSTRUMENT configuration</span><br><span class="line">  options.</span><br><span class="line">*/****</span><br><span class="line">void init_pfs_instrument_array() &#123;</span><br><span class="line">  pfs_instr_config_array = new Pfs_instr_config_array(PSI_NOT_INSTRUMENTED);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">typedef Prealloced_array&lt;PFS_instr_config *, 10&gt; Pfs_instr_config_array;</span><br></pre></td></tr></table></figure>
+
+<h3 id="initialize-performance-schema"><a href="#initialize-performance-schema" class="headerlink" title="initialize_performance_schema"></a>initialize_performance_schema</h3><p>初始化 performance_schema storage</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">pfs_rc = initialize_performance_schema(</span><br><span class="line">          &amp;pfs_param, &amp;psi_thread_hook, &amp;psi_mutex_hook, &amp;psi_rwlock_hook,</span><br><span class="line">          &amp;psi_cond_hook, &amp;psi_file_hook, &amp;psi_socket_hook, &amp;psi_table_hook,</span><br><span class="line">          &amp;psi_mdl_hook, &amp;psi_idle_hook, &amp;psi_stage_hook, &amp;psi_statement_hook,</span><br><span class="line">          &amp;psi_transaction_hook, &amp;psi_memory_hook, &amp;psi_error_hook,</span><br><span class="line">          &amp;psi_parallel_query_hook, &amp;psi_parallel_operator_hook,</span><br><span class="line">          &amp;psi_data_lock_hook, &amp;psi_system_hook);</span><br><span class="line">      if ((pfs_rc != 0) &amp;&amp; pfs_param.m_enabled) &#123;</span><br><span class="line">        pfs_param.m_enabled = false;</span><br><span class="line">        LogErr(WARNING_LEVEL, ER_PERFSCHEMA_INIT_FAILED);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">initialize_performance_schema （） &#123;</span><br><span class="line">  pfs_automated_sizing(param);  //把PFS_sizing_data large_data 设置到param 中， 主要是类似p-&gt;m_events_waits_history_long_sizing</span><br><span class="line">  pfs_minimal_setting(param);  如果设置了performance_schema_minimal 为true， 则很多设置全部关掉</span><br><span class="line">  init_timers();  //初始化timer 一些偏硬件/操作系统底层函数， 方便获取一些时间</span><br><span class="line">  init_event_name_sizing(param); //设置 mutex_class_start/rwlock_class_start， </span><br><span class="line">  //在register psi（register_mutex_class）时， 得到PSI_mutex_info-&gt;m_event_name_index=mutex_class_start + index</span><br><span class="line"></span><br><span class="line">  register_global_classes(); // 注冊global 的class in pre_initialize_performance_schema</span><br><span class="line"></span><br><span class="line">  minimal_global_classes(param); // 当注册performance_schema_minimal 为true， 修改global class的一些enable和m_timed</span><br><span class="line"></span><br><span class="line">  //</span><br><span class="line">  init_sync_class  </span><br><span class="line">  // 以mutex 为例： 申请param-&gt;m_mutex_class_sizing 个PFS_mutex_class， </span><br><span class="line">  //存储到mutex_class_array 后， 后面register 会进行设置， 在init 会查找， 申请的内存变化会更新到builtin_memory_mutex_class</span><br><span class="line">  init_thread_class</span><br><span class="line">  init_table_share  // 初始化global_table_share_container， 但没有真正申请内存  </span><br><span class="line">  //typedef PFS_buffer_scalable_container&lt;PFS_table_share, 4 * 1024, 4 * 1024&gt; PFS_table_share_container;</span><br><span class="line">  init_table_share_lock_stat</span><br><span class="line">  // 很多数据结构使用无锁hash 来存储</span><br><span class="line"></span><br><span class="line">  // 设置一大堆consumer的flag</span><br><span class="line">  flag_events_stages_current =</span><br><span class="line">        param-&gt;m_consumer_events_stages_current_enabled;</span><br><span class="line"></span><br><span class="line">  init_pfs_plugin_table</span><br><span class="line">  // PFS_dynamic_table_shares::init_mutex</span><br><span class="line">  //</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置PFS-service"><a href="#设置PFS-service" class="headerlink" title="设置PFS service"></a>设置PFS service</h3><p>设置各种service, 类似这样</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">。。。</span><br><span class="line">if (psi_memory_hook != NULL) &#123;</span><br><span class="line">  service = psi_memory_hook-&gt;get_interface(PSI_CURRENT_MEMORY_VERSION);</span><br><span class="line">  if (service != NULL) &#123;</span><br><span class="line">    set_psi_memory_service(service);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">。。。</span><br></pre></td></tr></table></figure>
+
+<p>这个地方就是把这个地方设置一下<br>typedef struct PSI_mutex_service_v1 PSI_mutex_service_t;<br>PSI_mutex_service_t     psi_mutex_service  &#x3D;   pfs_mutex_service_v1   &#x2F;   psi_mutex_noop<br>psi_mutex_service 定义在psi_noop.cc 文件中， pfs_mutex_service_v1 定义在storage&#x2F;perfschema&#x2F;pfs.cc中</p>
+<p>如果是pfs 插件编译， 就会使用这个， 但目前是直接编译进内核， 因此不需要插件化加载<br>mysql_service_psi_mutex_v1_t               mysql_service_psi_mutex_v1  &#x3D; imp_performance_schema_psi_mutex_v1<br>mysql_service_psi_mutex_v1_t imp_performance_schema_psi_mutex_v1 定义在storage&#x2F;perfschema&#x2F;pfs.cc中</p>
+<h3 id="初始化所有的key"><a href="#初始化所有的key" class="headerlink" title="初始化所有的key"></a>初始化所有的key</h3><p>初始化所有的key, 提前把一部分 register mutext&#x2F;memory psi 等结构 注册进去</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line">    Now that we have parsed the command line arguments, and have initialized</span><br><span class="line">    the performance schema itself, the next step is to register all the</span><br><span class="line">    server instruments.</span><br><span class="line">  */</span><br><span class="line">static void init_server_psi_keys(void) &#123;.</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">  count = static_cast&lt;int&gt;(array_elements(all_server_mutexes));</span><br><span class="line">  mysql_mutex_register(category, all_server_mutexes, count);</span><br><span class="line"></span><br><span class="line">  count = static_cast&lt;int&gt;(array_elements(all_server_rwlocks));</span><br><span class="line">  mysql_rwlock_register(category, all_server_rwlocks, count);</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="基本结构"><a href="#基本结构" class="headerlink" title="基本结构"></a>基本结构</h2><p>公共数据结构, 后续会使用到, 先列在这里<br><a target="_blank" rel="external nofollow noopener noreferrer" href="https://dev.mysql.com/doc/dev/mysql-server/8.0.20/structPFS__instr.html">https://dev.mysql.com/doc/dev/mysql-server/8.0.20/structPFS__instr.html</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">struct PFS_instr &#123;</span><br><span class="line">  /** Internal lock. */</span><br><span class="line">  pfs_lock m_lock;</span><br><span class="line">  /** Enabled flag. */</span><br><span class="line">  bool m_enabled;</span><br><span class="line">  /** Timed flag. */</span><br><span class="line">  bool m_timed;</span><br><span class="line">  /** Container page. */</span><br><span class="line">  PFS_opaque_container_page *m_page; // 参考PFS_partitioned_buffer_scalable_container</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">//存儲在結構pfs_instr_config_array 中</span><br><span class="line">struct PFS_instr_config &#123;  </span><br><span class="line">  /* Instrument name. */</span><br><span class="line">  char *m_name;</span><br><span class="line">  /* Name length. */</span><br><span class="line">  uint m_name_length;</span><br><span class="line">  /** Enabled flag. */</span><br><span class="line">  bool m_enabled;</span><br><span class="line">  /** Timed flag. */</span><br><span class="line">  bool m_timed;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有這麼多種類</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">enum PFS_class_type &#123;</span><br><span class="line">  PFS_CLASS_NONE = 0,</span><br><span class="line">  PFS_CLASS_MUTEX = 1,</span><br><span class="line">  PFS_CLASS_RWLOCK = 2,</span><br><span class="line">  PFS_CLASS_COND = 3,</span><br><span class="line">  PFS_CLASS_FILE = 4,</span><br><span class="line">  PFS_CLASS_TABLE = 5,</span><br><span class="line">  PFS_CLASS_STAGE = 6,</span><br><span class="line">  PFS_CLASS_STATEMENT = 7,</span><br><span class="line">  PFS_CLASS_TRANSACTION = 8,</span><br><span class="line">  PFS_CLASS_SOCKET = 9,</span><br><span class="line">  PFS_CLASS_TABLE_IO = 10,</span><br><span class="line">  PFS_CLASS_TABLE_LOCK = 11,</span><br><span class="line">  PFS_CLASS_IDLE = 12,</span><br><span class="line">  PFS_CLASS_MEMORY = 13,</span><br><span class="line">  PFS_CLASS_METADATA = 14,</span><br><span class="line">  PFS_CLASS_ERROR = 15,</span><br><span class="line">  PFS_CLASS_THREAD = 16,</span><br><span class="line">  /* Reserve 17-29 for official mysql */</span><br><span class="line">  PFS_CLASS_PARALLEL_QUERY = 30,</span><br><span class="line"></span><br><span class="line">  PFS_CLASS_LAST = PFS_CLASS_PARALLEL_QUERY,</span><br><span class="line">  PFS_CLASS_MAX = PFS_CLASS_LAST + 1</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">// 做一些状态统计的</span><br><span class="line">struct PFS_single_stat &#123;</span><br><span class="line">  /** Count of values. */</span><br><span class="line">  ulonglong m_count;</span><br><span class="line">  /** Sum of values. */</span><br><span class="line">  ulonglong m_sum;</span><br><span class="line">  /** Minimum value. */</span><br><span class="line">  ulonglong m_min;</span><br><span class="line">  /** Maximum value. */</span><br><span class="line">  ulonglong m_max;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/** Instrumentation metadata for a mutex. */</span><br><span class="line">struct PFS_ALIGNED PFS_mutex_class : public PFS_instr_class &#123;</span><br><span class="line">  /** Mutex usage statistics. */</span><br><span class="line">  PFS_mutex_stat m_mutex_stat;</span><br><span class="line">  /** Singleton instance. */</span><br><span class="line">  PFS_mutex *m_singleton;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/** Information for all instrumentation. */</span><br><span class="line">struct PFS_instr_class &#123;</span><br><span class="line">  /** Class type */</span><br><span class="line">  PFS_class_type m_type;</span><br><span class="line">  /** True if this instrument is enabled. */</span><br><span class="line">  bool m_enabled;</span><br><span class="line">  /** True if this instrument is timed. */</span><br><span class="line">  bool m_timed;</span><br><span class="line">  /** Instrument flags. */</span><br><span class="line">  uint m_flags;</span><br><span class="line">  /** Volatility index. */</span><br><span class="line">  int m_volatility;</span><br><span class="line">  /**</span><br><span class="line">    Instrument name index.</span><br><span class="line">    Self index in:</span><br><span class="line">    - EVENTS_WAITS_SUMMARY_*_BY_EVENT_NAME for waits</span><br><span class="line">    - EVENTS_STAGES_SUMMARY_*_BY_EVENT_NAME for stages</span><br><span class="line">    - EVENTS_STATEMENTS_SUMMARY_*_BY_EVENT_NAME for statements</span><br><span class="line">    - EVENTS_TRANSACTIONS_SUMMARY_*_BY_EVENT_NAME for transactions</span><br><span class="line">  */</span><br><span class="line">  uint m_event_name_index;</span><br><span class="line">  /** Instrument name. */</span><br><span class="line">  char m_name[PFS_MAX_INFO_NAME_LENGTH];</span><br><span class="line">  /** Length in bytes of @c m_name. */</span><br><span class="line">  uint m_name_length;</span><br><span class="line">  /** Documentation. */</span><br><span class="line">  char *m_documentation;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>以mutex 为例，<br>在配置文件中，打开performance_schema， 对部分的配置进行单独设置</p>
+<p>对于performance schema 关闭的情况下, psi_mutex_service 对应的就是psi_mutex_noop<br>对于打开performance schema情况下, 对应的是 pfs_mutex_service_v1<br>每个配置项是 performance_schema_instrument &#x3D; ‘ wait&#x2F;synch&#x2F;mutex  &#x3D;  ON  ‘ 是一行， 可以多项，表示enable 多个pfs 监控项, 如果不是精确匹配的话， 就建议增加正则匹配% 来代表所有</p>
+<p>m_consumer_global_instrumentation_enabled  可以控制如锁之类（mutex&#x2F;lock&#x2F;rwlock&#x2F;cond）， 文件（file）， table 之类， 控制范围比较广， 默认为true<br>performance_schema_consumer_thread_instrumentation， thread 相关的都由他控制， 默认为true， </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">performance_schema = ON</span><br><span class="line">m_consumer_global_instrumentation_enabled = 1  </span><br><span class="line">// 对于一些配置，可以单独进行设置</span><br><span class="line">performance_schema_max_mutex_classes=1024</span><br><span class="line">performance_schema_instrument = &#x27; wait/synch/mutex/%  =  ON  &#x27;</span><br><span class="line">performance_schema_instrument = &#x27; wait/io/file/%  =  ON  &#x27;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用接口"><a href="#使用接口" class="headerlink" title="使用接口"></a>使用接口</h3><p>对mutex 的使用完全和使用pthread mutex 行为基本一致， 可以参考components&#x2F;pfs_example&#x2F;pfs_example.cc</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">mysql_mutex_register  --&gt; psi_mutex_service-&gt;register_mutex  --&gt; pfs_register_mutex_v1</span><br><span class="line">mysql_mutex_init   --&gt; psi_mutex_service-&gt;init_mutex   /my_mutex_init</span><br><span class="line">mysql_mutex_destroy</span><br><span class="line">mysql_mutex_lock</span><br><span class="line">mysql_mutex_trylock</span><br><span class="line">mysql_mutex_unlock</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">static PSI_mutex_key key_mutex_x = 0;</span><br><span class="line">static PSI_mutex_key key_mutex_y = 0;</span><br><span class="line"></span><br><span class="line">static PSI_mutex_info all_example_mutex[] = &#123;</span><br><span class="line">    &#123;&amp;key_mutex_x, &quot;X&quot;, PSI_FLAG_SINGLETON, PSI_VOLATILITY_PERMANENT,</span><br><span class="line">     &quot;Example doc, permanent mutex, singleton.&quot;&#125;,</span><br><span class="line">    &#123;&amp;key_mutex_y, &quot;Y&quot;, 0, PSI_VOLATILITY_QUERY,</span><br><span class="line">     &quot;Example doc, very volatile mutexes.&quot;&#125;&#125;;</span><br><span class="line"></span><br><span class="line">static mysql_mutex_t my_mutex_x;</span><br><span class="line">static mysql_mutex_t my_mutex_y;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">mysql_mutex_register(&quot;pfs_example&quot;, all_example_mutex, 2);</span><br><span class="line"></span><br><span class="line">mysql_mutex_init(key_mutex_x, &amp;my_mutex_x, NULL);</span><br><span class="line">mysql_mutex_init(key_mutex_y, &amp;my_mutex_y, NULL);</span><br><span class="line"></span><br><span class="line">mysql_mutex_lock(&amp;my_mutex_x);</span><br><span class="line">mysql_mutex_trylock(&amp;my_mutex_y);</span><br><span class="line"></span><br><span class="line">mysql_mutex_unlock(&amp;my_mutex_y);</span><br><span class="line">mysql_mutex_unlock(&amp;my_mutex_x);</span><br><span class="line"></span><br><span class="line">mysql_mutex_destroy(&amp;my_mutex_x);</span><br><span class="line">mysql_mutex_destroy(&amp;my_mutex_y);</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>lock 的时候， 就是mysql_mutex_lock(&amp;m_thd-&gt;LOCK_thd_data);</p>
+<h3 id="关键的数据结构"><a href="#关键的数据结构" class="headerlink" title="关键的数据结构"></a>关键的数据结构</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">struct mysql_mutex_t &#123;</span><br><span class="line">  /** The real mutex. */</span><br><span class="line">  my_mutex_t m_mutex;</span><br><span class="line">  /**</span><br><span class="line">    The instrumentation hook.</span><br><span class="line">    Note that this hook is not conditionally defined,</span><br><span class="line">    for binary compatibility of the @c mysql_mutex_t interface.</span><br><span class="line">  */</span><br><span class="line">  struct PSI_mutex *m_psi&#123;nullptr&#125;;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">struct my_mutex_t &#123;</span><br><span class="line">  union u &#123;</span><br><span class="line">    native_mutex_t m_native;          ////////pthread_mutex_t</span><br><span class="line">    safe_mutex_t *m_safe_ptr;</span><br><span class="line">  &#125; m_u;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">/** Instrumented mutex implementation. @see PSI_mutex. */</span><br><span class="line">struct PFS_ALIGNED PFS_mutex : public PFS_instr &#123;</span><br><span class="line">  /** Mutex identity, typically a @c pthread_mutex_t. */</span><br><span class="line">  const void *m_identity;</span><br><span class="line">  /** Mutex class. */</span><br><span class="line">  PFS_mutex_class *m_class;</span><br><span class="line">  /** Instrument statistics. */</span><br><span class="line">  PFS_mutex_stat m_mutex_stat;</span><br><span class="line">  /** Current owner. */</span><br><span class="line">  PFS_thread *m_owner;</span><br><span class="line">  /**</span><br><span class="line">    Time stamp of the last lock.</span><br><span class="line">    This statistic is not exposed in user visible tables yet.</span><br><span class="line">  */</span><br><span class="line">  ulonglong m_last_locked;</span><br><span class="line">&#125;;</span><br><span class="line">struct PSI_mutex_info_v1 &#123;</span><br><span class="line">  /**</span><br><span class="line">    Pointer to the key assigned to the registered mutex.</span><br><span class="line">  */</span><br><span class="line">  PSI_mutex_key *m_key;</span><br><span class="line">  /**</span><br><span class="line">    The name of the mutex to register.</span><br><span class="line">  */</span><br><span class="line">  const char *m_name;</span><br><span class="line">  /**</span><br><span class="line">    The flags of the mutex to register.</span><br><span class="line">    @sa PSI_FLAG_SINGLETON</span><br><span class="line">  */</span><br><span class="line">  unsigned int m_flags;</span><br><span class="line">  /** Volatility index. */</span><br><span class="line">  int m_volatility;</span><br><span class="line">  /** Documentation. */</span><br><span class="line">  const char *m_documentation;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">struct PFS_ALIGNED PFS_mutex_class : public PFS_instr_class &#123;</span><br><span class="line">  /** Mutex usage statistics. */</span><br><span class="line">  PFS_mutex_stat m_mutex_stat;</span><br><span class="line">  /** Singleton instance. */</span><br><span class="line">  PFS_mutex *m_singleton;</span><br><span class="line">&#125;;</span><br><span class="line">struct PFS_mutex_stat &#123;</span><br><span class="line">  /** Wait statistics. */</span><br><span class="line">  PFS_single_stat m_wait_stat;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="使用流程"><a href="#使用流程" class="headerlink" title="使用流程"></a>使用流程</h3><ol>
+<li>注册<br>使用上,需要先register psi, 类似这样</li>
+</ol>
+<p>先创建PSI_mutex_key&#x2F;PSI_mutex_info， 然后进行注册</p>
+<p>参考之前的使用方式</p>
+<p>注册函数解析</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">pfs_register_mutex_v1 &#123;</span><br><span class="line">  // 生成formatted_name  &lt;--   mutex_instrument_prefix.str + / + category + / + PSI_mutex_info_v1.m_name</span><br><span class="line">  key = register_mutex_class(formatted_name, (uint)full_length, info);   </span><br><span class="line">  *(PSI_mutex_info_v1-&gt;m_key) = key</span><br><span class="line"></span><br><span class="line">  //register_mutex_class 功能</span><br><span class="line">  // 从mutex_class_array 中找到一个空的 PFS_mutex_class, 这个index 后面存储到*(PSI_mutex_info_v1-&gt;m_key) </span><br><span class="line">  // init_instr_class， 初始化这个PFS_mutex_class， </span><br><span class="line">  // configure_instr_class  ， 从pfs_instr_config_array 中找有没有和PFS_mutex_class-&gt;m_name 正则匹配的， 则设置PFS_mutex_class</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>init 操作</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">static inline int inline_mysql_mutex_init(</span><br><span class="line">    PSI_mutex_key key MY_ATTRIBUTE((unused)), mysql_mutex_t *that,</span><br><span class="line">    const native_mutexattr_t *attr, const char *src_file MY_ATTRIBUTE((unused)),</span><br><span class="line">    uint src_line MY_ATTRIBUTE((unused))) &#123;</span><br><span class="line">  that-&gt;m_psi = PSI_MUTEX_CALL(init_mutex)(key, &amp;that-&gt;m_mutex);   </span><br><span class="line">  // 这个地方调用 psi_mutex_service-&gt;init_mutex(key, &amp;that-&gt;m_mutex); --&gt; pfs_init_mutex_v1</span><br><span class="line">     </span><br><span class="line"></span><br><span class="line">  return my_mutex_init(&amp;that-&gt;m_mutex, attr);  // 这个就是原始pthread 的init</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">//從mutex_class_array 拿到對應key的PFS_mutex_class</span><br><span class="line">// pfs = create_mutex(klass, identity);   从global_mutex_container 中拿到PFS_mutex, 然后初始化PFS_mutex</span><br><span class="line">PSI_mutex *pfs_init_mutex_v1(PSI_mutex_key key, const void *identity) &#123;</span><br><span class="line">  PFS_mutex_class *klass;</span><br><span class="line">  PFS_mutex *pfs;</span><br><span class="line">  klass = find_mutex_class(key);</span><br><span class="line">  if (unlikely(klass == NULL)) &#123;</span><br><span class="line">    return NULL;</span><br><span class="line">  &#125;</span><br><span class="line">  pfs = create_mutex(klass, identity);</span><br><span class="line">  return reinterpret_cast&lt;PSI_mutex *&gt;(pfs);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>lock&#x2F;unlock 的过程<br>当开始锁的时候， 如果enable 了time 跟踪， 会记录下申请锁 到获得锁 的时间戳， 在获得锁的时候， 会把等待时间累加进去， 并记录获得锁的时间， 如果enable 了thread， 会把时间累加到event_name_array[index]上，如果enable FLAG_EVENT, 会有一个PFS_events_waits event , 然后插入 insert_events_waits_history.<br>unlock 的时候，就直接把指针给指向空, 这个地方没有跟踪 lock的时间。 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br></pre></td><td class="code"><pre><span class="line">static inline int inline_mysql_mutex_lock(</span><br><span class="line">    mysql_mutex_t *that, const char *src_file MY_ATTRIBUTE((unused)),</span><br><span class="line">    uint src_line MY_ATTRIBUTE((unused))) &#123;</span><br><span class="line">  int result;</span><br><span class="line"></span><br><span class="line">  if (that-&gt;m_psi != NULL) &#123;</span><br><span class="line">    /* Instrumentation start */</span><br><span class="line">    PSI_mutex_locker *locker;</span><br><span class="line">    PSI_mutex_locker_state state;</span><br><span class="line">    locker = PSI_MUTEX_CALL(start_mutex_wait)(</span><br><span class="line">        &amp;state, that-&gt;m_psi, PSI_MUTEX_LOCK, src_file, src_line);  --&gt; pfs_start_mutex_wait_v1</span><br><span class="line"></span><br><span class="line">    /* Instrumented code */</span><br><span class="line">    result = my_mutex_lock(&amp;that-&gt;m_mutex);</span><br><span class="line"></span><br><span class="line">    /* Instrumentation end */</span><br><span class="line">    if (locker != NULL) &#123;</span><br><span class="line">      PSI_MUTEX_CALL(end_mutex_wait)(locker, result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return result;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  /* Non instrumented code */</span><br><span class="line">  result = my_mutex_lock(&amp;that-&gt;m_mutex);</span><br><span class="line"></span><br><span class="line">  return result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">PSI_mutex_locker *pfs_start_mutex_wait_v1(PSI_mutex_locker_state *state,</span><br><span class="line">                                          PSI_mutex *mutex,</span><br><span class="line">                                          PSI_mutex_operation op,</span><br><span class="line">                                          const char *src_file, uint src_line) &#123;</span><br><span class="line">  PFS_mutex *pfs_mutex = reinterpret_cast&lt;PFS_mutex *&gt;(mutex);</span><br><span class="line">  DBUG_ASSERT((int)op &gt;= 0);</span><br><span class="line">  DBUG_ASSERT((uint)op &lt; array_elements(mutex_operation_map));</span><br><span class="line">  DBUG_ASSERT(state != NULL);</span><br><span class="line"></span><br><span class="line">  DBUG_ASSERT(pfs_mutex != NULL);</span><br><span class="line">  DBUG_ASSERT(pfs_mutex-&gt;m_class != NULL);</span><br><span class="line"></span><br><span class="line">  if (!pfs_mutex-&gt;m_enabled) &#123;</span><br><span class="line">    return NULL;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  uint flags;</span><br><span class="line">  ulonglong timer_start = 0;</span><br><span class="line"></span><br><span class="line">  if (flag_thread_instrumentation) &#123;</span><br><span class="line">    PFS_thread *pfs_thread = my_thread_get_THR_PFS();</span><br><span class="line">    if (unlikely(pfs_thread == NULL)) &#123;</span><br><span class="line">      return NULL;</span><br><span class="line">    &#125;</span><br><span class="line">    if (!pfs_thread-&gt;m_enabled) &#123;</span><br><span class="line">      return NULL;</span><br><span class="line">    &#125;</span><br><span class="line">    state-&gt;m_thread = reinterpret_cast&lt;PSI_thread *&gt;(pfs_thread);</span><br><span class="line">    flags = STATE_FLAG_THREAD;</span><br><span class="line"></span><br><span class="line">    if (pfs_mutex-&gt;m_timed) &#123;</span><br><span class="line">      timer_start = get_wait_timer();</span><br><span class="line">      state-&gt;m_timer_start = timer_start;</span><br><span class="line">      flags |= STATE_FLAG_TIMED;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (flag_events_waits_current) &#123;</span><br><span class="line">      if (unlikely(pfs_thread-&gt;m_events_waits_current &gt;=</span><br><span class="line">                   &amp;pfs_thread-&gt;m_events_waits_stack[WAIT_STACK_SIZE])) &#123;</span><br><span class="line">        locker_lost++;</span><br><span class="line">        return NULL;</span><br><span class="line">      &#125;</span><br><span class="line">      PFS_events_waits *wait = pfs_thread-&gt;m_events_waits_current;</span><br><span class="line">      state-&gt;m_wait = wait;</span><br><span class="line">      flags |= STATE_FLAG_EVENT;</span><br><span class="line"></span><br><span class="line">      PFS_events_waits *parent_event = wait - 1;</span><br><span class="line">      wait-&gt;m_event_type = EVENT_TYPE_WAIT;</span><br><span class="line">      wait-&gt;m_nesting_event_id = parent_event-&gt;m_event_id;</span><br><span class="line">      wait-&gt;m_nesting_event_type = parent_event-&gt;m_event_type;</span><br><span class="line"></span><br><span class="line">      wait-&gt;m_thread_internal_id = pfs_thread-&gt;m_thread_internal_id;</span><br><span class="line">      wait-&gt;m_class = pfs_mutex-&gt;m_class;</span><br><span class="line">      wait-&gt;m_timer_start = timer_start;</span><br><span class="line">      wait-&gt;m_timer_end = 0;</span><br><span class="line">      wait-&gt;m_object_instance_addr = pfs_mutex-&gt;m_identity;</span><br><span class="line">      wait-&gt;m_event_id = pfs_thread-&gt;m_event_id++;</span><br><span class="line">      wait-&gt;m_end_event_id = 0;</span><br><span class="line">      wait-&gt;m_operation = mutex_operation_map[(int)op];</span><br><span class="line">      wait-&gt;m_source_file = src_file;</span><br><span class="line">      wait-&gt;m_source_line = src_line;</span><br><span class="line">      wait-&gt;m_wait_class = WAIT_CLASS_MUTEX;</span><br><span class="line"></span><br><span class="line">      pfs_thread-&gt;m_events_waits_current++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    if (pfs_mutex-&gt;m_timed) &#123;</span><br><span class="line">      timer_start = get_wait_timer();</span><br><span class="line">      state-&gt;m_timer_start = timer_start;</span><br><span class="line">      flags = STATE_FLAG_TIMED;</span><br><span class="line">      state-&gt;m_thread = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      /*</span><br><span class="line">        Complete shortcut.</span><br><span class="line">      */</span><br><span class="line">      /* Aggregate to EVENTS_WAITS_SUMMARY_BY_INSTANCE (counted) */</span><br><span class="line">      pfs_mutex-&gt;m_mutex_stat.m_wait_stat.aggregate_counted();</span><br><span class="line">      return NULL;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  state-&gt;m_flags = flags;</span><br><span class="line">  state-&gt;m_mutex = mutex;</span><br><span class="line">  return reinterpret_cast&lt;PSI_mutex_locker *&gt;(state);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void pfs_end_mutex_wait_v1(PSI_mutex_locker *locker, int rc) &#123;</span><br><span class="line">  PSI_mutex_locker_state *state =</span><br><span class="line">      reinterpret_cast&lt;PSI_mutex_locker_state *&gt;(locker);</span><br><span class="line">  DBUG_ASSERT(state != NULL);</span><br><span class="line"></span><br><span class="line">  ulonglong timer_end = 0;</span><br><span class="line">  ulonglong wait_time = 0;</span><br><span class="line"></span><br><span class="line">  PFS_mutex *mutex = reinterpret_cast&lt;PFS_mutex *&gt;(state-&gt;m_mutex);</span><br><span class="line">  DBUG_ASSERT(mutex != NULL);</span><br><span class="line">  PFS_thread *thread = reinterpret_cast&lt;PFS_thread *&gt;(state-&gt;m_thread);</span><br><span class="line"></span><br><span class="line">  uint flags = state-&gt;m_flags;</span><br><span class="line"></span><br><span class="line">  if (flags &amp; STATE_FLAG_TIMED) &#123;</span><br><span class="line">    timer_end = get_wait_timer();</span><br><span class="line">    wait_time = timer_end - state-&gt;m_timer_start;</span><br><span class="line">    /* Aggregate to EVENTS_WAITS_SUMMARY_BY_INSTANCE (timed) */</span><br><span class="line">    mutex-&gt;m_mutex_stat.m_wait_stat.aggregate_value(wait_time);</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    /* Aggregate to EVENTS_WAITS_SUMMARY_BY_INSTANCE (counted) */</span><br><span class="line">    mutex-&gt;m_mutex_stat.m_wait_stat.aggregate_counted();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  if (likely(rc == 0)) &#123;</span><br><span class="line">    mutex-&gt;m_owner = thread;</span><br><span class="line">    mutex-&gt;m_last_locked = timer_end;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  if (flags &amp; STATE_FLAG_THREAD) &#123;</span><br><span class="line">    PFS_single_stat *event_name_array;</span><br><span class="line">    event_name_array = thread-&gt;write_instr_class_waits_stats();</span><br><span class="line">    uint index = mutex-&gt;m_class-&gt;m_event_name_index;</span><br><span class="line"></span><br><span class="line">    DBUG_ASSERT(index &lt;= wait_class_max);</span><br><span class="line">    DBUG_ASSERT(sanitize_thread(thread) != NULL);</span><br><span class="line"></span><br><span class="line">    if (flags &amp; STATE_FLAG_TIMED) &#123;</span><br><span class="line">      /* Aggregate to EVENTS_WAITS_SUMMARY_BY_THREAD_BY_EVENT_NAME (timed) */</span><br><span class="line">      event_name_array[index].aggregate_value(wait_time);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      /* Aggregate to EVENTS_WAITS_SUMMARY_BY_THREAD_BY_EVENT_NAME (counted) */</span><br><span class="line">      event_name_array[index].aggregate_counted();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (flags &amp; STATE_FLAG_EVENT) &#123;</span><br><span class="line">      PFS_events_waits *wait =</span><br><span class="line">          reinterpret_cast&lt;PFS_events_waits *&gt;(state-&gt;m_wait);</span><br><span class="line">      DBUG_ASSERT(wait != NULL);</span><br><span class="line"></span><br><span class="line">      wait-&gt;m_timer_end = timer_end;</span><br><span class="line">      wait-&gt;m_end_event_id = thread-&gt;m_event_id;</span><br><span class="line">      if (thread-&gt;m_flag_events_waits_history) &#123;</span><br><span class="line">        insert_events_waits_history(thread, wait);</span><br><span class="line">      &#125;</span><br><span class="line">      if (thread-&gt;m_flag_events_waits_history_long) &#123;</span><br><span class="line">        insert_events_waits_history_long(wait);</span><br><span class="line">      &#125;</span><br><span class="line">      thread-&gt;m_events_waits_current--;</span><br><span class="line"></span><br><span class="line">      DBUG_ASSERT(wait == thread-&gt;m_events_waits_current);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// unlock 逻辑比较简单， 把对于的psi 对象指针指向空</span><br><span class="line">void pfs_unlock_mutex_v1(PSI_mutex *mutex) &#123;</span><br><span class="line">  PFS_mutex *pfs_mutex = reinterpret_cast&lt;PFS_mutex *&gt;(mutex);</span><br><span class="line"></span><br><span class="line">  DBUG_ASSERT(pfs_mutex != NULL);</span><br><span class="line"></span><br><span class="line">  /*</span><br><span class="line">    Note that this code is still protected by the instrumented mutex,</span><br><span class="line">    and therefore is thread safe. See inline_mysql_mutex_unlock().</span><br><span class="line">  */</span><br><span class="line"></span><br><span class="line">  /* Always update the instrumented state */</span><br><span class="line">  pfs_mutex-&gt;m_owner = NULL;</span><br><span class="line">  pfs_mutex-&gt;m_last_locked = 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="查询performance"><a href="#查询performance" class="headerlink" title="查询performance"></a>查询performance</h3><pre><code>&gt; show tables from performance_schema;
+&gt; show tables like &#39;events_statement%&#39;;
+&gt; show tables like &#39;events_wait%&#39;;
+&gt; select * from events_statements_history;
+</code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/fileio/" rel="prev" title="磁盘性能测试">
+                  <i class="fa fa-chevron-left"></i> 磁盘性能测试
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/query_flow/" rel="next" title="查询过程">
+                  查询过程 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/performance_schema/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

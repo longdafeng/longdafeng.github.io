@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="这篇文章介绍的非常好， 所以给大家推荐一下【转载】https:&#x2F;&#x2F;blog.csdn.net&#x2F;n88Lpo Abstract排序（filesort）作为DBA绕不开的话题，也经常有朋友讨论它，比如常见的问题如下：  排序的时候，用于排序的数据会不会如Innodb一样压缩空字符存储，比如varchar(30)，我只是存储了1个字符是否会压缩，还是按照30个字符计算？ max_length_for_s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="filesort 详细解析">
+<meta property="og:url" content="http://ilongda.com/2020/mysql-filesort/index.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="这篇文章介绍的非常好， 所以给大家推荐一下【转载】https:&#x2F;&#x2F;blog.csdn.net&#x2F;n88Lpo Abstract排序（filesort）作为DBA绕不开的话题，也经常有朋友讨论它，比如常见的问题如下：  排序的时候，用于排序的数据会不会如Innodb一样压缩空字符存储，比如varchar(30)，我只是存储了1个字符是否会压缩，还是按照30个字符计算？ max_length_for_s">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-21T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.031Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/2020/mysql-filesort/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/mysql-filesort/","path":"2020/mysql-filesort/","title":"filesort 详细解析"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>filesort 详细解析 | Longda share space</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E5%9B%9B%E3%80%81%E5%85%A8%E6%96%87%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">十四、全文总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%BB%8E%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E5%87%BA%E5%8F%91"><span class="nav-number">3.</span> <span class="nav-text">一、从一个问题出发</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%B5%8B%E8%AF%95%E6%A1%88%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">二、测试案例</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E9%98%B6%E6%AE%B51-%E7%A1%AE%E8%AE%A4%E6%8E%92%E5%BA%8F%E5%AD%97%E6%AE%B5%E5%8F%8A%E9%A1%BA%E5%BA%8F"><span class="nav-number">5.</span> <span class="nav-text">三、阶段1 确认排序字段及顺序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E9%98%B6%E6%AE%B52-%E8%AE%A1%E7%AE%97sort%E5%AD%97%E6%AE%B5%E7%9A%84%E9%95%BF%E5%BA%A6"><span class="nav-number">6.</span> <span class="nav-text">四、阶段2 计算sort字段的长度</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E9%98%B6%E6%AE%B53-%E8%AE%A1%E7%AE%97%E9%A2%9D%E5%A4%96%E5%AD%97%E6%AE%B5%E7%9A%84%E7%A9%BA%E9%97%B4"><span class="nav-number">7.</span> <span class="nav-text">五、阶段3 计算额外字段的空间</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E9%98%B6%E6%AE%B54-%E7%A1%AE%E8%AE%A4%E6%AF%8F%E8%A1%8C%E7%9A%84%E9%95%BF%E5%BA%A6"><span class="nav-number">8.</span> <span class="nav-text">六、阶段4 确认每行的长度</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E9%98%B6%E6%AE%B55-%E7%A1%AE%E8%AE%A4%E6%9C%80%E5%A4%A7%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D"><span class="nav-number">9.</span> <span class="nav-text">七、阶段5 确认最大内存分配</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E9%98%B6%E6%AE%B56-%E8%AF%BB%E5%8F%96%E6%95%B0%E6%8D%AE%EF%BC%8C%E8%BF%9B%E8%A1%8C%E5%86%85%E5%AD%98%E6%8E%92%E5%BA%8F"><span class="nav-number">10.</span> <span class="nav-text">八、阶段6 读取数据，进行内存排序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E9%98%B6%E6%AE%B57-%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F%E6%80%BB%E7%BB%93%E8%BE%93%E5%87%BA"><span class="nav-number">11.</span> <span class="nav-text">九、阶段7 排序方式总结输出</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E9%98%B6%E6%AE%B58-%E8%BF%9B%E8%A1%8C%E6%9C%80%E7%BB%88%E6%8E%92%E5%BA%8F"><span class="nav-number">12.</span> <span class="nav-text">十、阶段8 进行最终排序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E6%8E%92%E5%BA%8F%E7%9A%84%E5%85%B6%E4%BB%96%E9%97%AE%E9%A2%98"><span class="nav-number">13.</span> <span class="nav-text">十一、排序的其他问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E9%80%9A%E8%BF%87OPTIMIZER-TRACE%E6%9F%A5%E7%9C%8B%E6%8E%92%E5%BA%8F%E7%BB%93%E6%9E%9C"><span class="nav-number">14.</span> <span class="nav-text">十二、通过OPTIMIZER_TRACE查看排序结果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E4%B8%89%E3%80%81%E5%9B%9E%E5%88%B0%E9%97%AE%E9%A2%98%E6%9C%AC%E8%BA%AB"><span class="nav-number">15.</span> <span class="nav-text">十三、回到问题本身</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/mysql-filesort/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda share space">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda share space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          filesort 详细解析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-06-21 19:42:57" itemprop="dateCreated datePublished" datetime="2020-06-21T19:42:57+08:00">2020-06-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2024-01-29 17:18:27" itemprop="dateModified" datetime="2024-01-29T17:18:27+08:00">2024-01-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>这篇文章介绍的非常好， 所以给大家推荐一下<br>【转载】<a target="_blank" rel="external nofollow noopener noreferrer" href="https://blog.csdn.net/n88Lpo">https://blog.csdn.net/n88Lpo</a></p>
+<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>排序（filesort）作为DBA绕不开的话题，也经常有朋友讨论它，比如常见的问题如下：</p>
+<ul>
+<li>排序的时候，用于排序的数据会不会如Innodb一样压缩空字符存储，比如varchar(30)，我只是存储了1个字符是否会压缩，还是按照30个字符计算？</li>
+<li>max_length_for_sort_data&#x2F;max_sort_length 到底是什么含义？</li>
+<li>original filesort algorithm（回表排序） 和 modified filesort algorithm（不回表排序） 的根本区别是什么？</li>
+<li>为什么使用到排序的时候慢查询中的Rows_examined会更大，计算方式到底是什么样的？<br>在MySQL通常有如下算法来完成排序：</li>
+<li>内存排序（优先队列 order by limit 返回少量行常用，提高排序效率，但是注意order by limit n,m 如果n过大可能会涉及到排序算法的切换）</li>
+<li>内存排序（快速排序）</li>
+<li>外部排序（归并排序）<br>但是由于能力有限本文不解释这些算法，并且本文不考虑优先队列算法的分支逻辑，只以快速排序和归并排序作为基础进行流程剖析。</li>
+</ul>
+<p>我们在执行计划中如果出现filesort字样通常代表使用到了排序，但是执行计划中看不出来下面问题：</p>
+<ul>
+<li>是否使用了临时文件。</li>
+<li>是否使用了优先队列。</li>
+<li>是original filesort algorithm（回表排序）还是modified filesort algorithm（不回表排序）。<br>如何查看将在后面进行描述。本文还会给出大量的排序接口供敢兴趣的朋友使用，也给自己留下笔记。</li>
+</ul>
+<span id="more"></span>
+
+<h1 id="十四、全文总结"><a href="#十四、全文总结" class="headerlink" title="十四、全文总结"></a>十四、全文总结</h1><p>提前将总结列在这里，方便读者快速浏览， 本文写了很多，这里需要做一个详细的总结：<br>总结1 ：排序中一行记录如何组织？</p>
+<ul>
+<li><p>一行排序记录，由sort字段+addon字段 组成，其中sort字段为order by 后面的字段，而addon字段为需要访问的字段，比如‘select a1,a2,a3 from test order by a2,a3’，其中sort字段为‘a2,a3’，addon字段为‘a1,a2,a3’。sort字段中的可变长度字段不能打包（pack）压缩，比如varchar，使用的是定义的大小计算空间，注意这是排序使用空间较大的一个重要因素。</p>
+</li>
+<li><p>如果在计算sort字段空间的时候，某个字段的空间大小大于了max_sort_length大小则按照max_sort_length指定的大小计算。</p>
+</li>
+<li><p>一行排序记录，如果sort字段+addon字段 的长度大于了max_length_for_sort_data的大小，那么addon字段将不会存储，而使用sort字段+ref字段代替，ref字段为主键或者ROWID，这个时候就会使用original filesort algorithm（回表排序）的方式了。</p>
+</li>
+<li><p>如果addon字段包含可变字段比如varchar字段，则会使用打包（pack）技术进行压缩，节省空间。<br>可以参考第3、第4、第5、第6、第8节。<br>总结2：排序使用什么样的方法进行？</p>
+</li>
+<li><p>original filesort algorithm（回表排序）</p>
+</li>
+</ul>
+<p>如果使用的是sort字段+ref字段进行排序，那么必须要回表获取需要的数据，如果排序使用了临时文件（也就是说使用外部归并排序，排序量较大）则会使用批量回表，批量回表会涉及到read_rnd_buffer_size参数指定的内存大小，主要用于排序和结果返回。如果排序没有使用临时文件（内存排序就可以完成，排序量较小）则采用单行回表。</p>
+<p>*<br>modified filesort algorithm（不回表排序）</p>
+<p>如果使用的是sort字段+addon字段进行排序，那么使用不回表排序，所有需要的字段均在排序过程中进行存储，addon字段中的可变长度字段可以进行打包（pack）压缩节省空间。其次sort字段和addon字段中可能有重复的字段，比如例2中，sort字段为a2、a3，addon字段为a1、a2、a3，这是排序使用空间较大的另外一个原因。<br>在OPTIMIZER_TRACE中可以查看到使用了那种方法，参考12节。<br>总结3：每次排序一定会分配sort_buffer_size参数指定的内存大小吗？</p>
+<p>不是这样的，MySQL会做一个初步的计算，通过比较Innodb中聚集索引可能存储的行上限和sort_buffer_size参数指定大小内存可以容纳的行上限，获取它们小值进行确认最终内存分配的大小，目的在于节省内存空间。<br>在OPTIMIZER_TRACE中可以看到使用的内存大小，参考第8、第12节。<br>总结4：关于OPTIMIZER_TRACE中的examined_rows和慢查询中的Rows_examined有什么区别？</p>
+<ul>
+<li>慢查询中的Rows_examined包含了重复计数，重复的部分为where条件过滤后做了排序的部分。</li>
+<li>OPTIMIZER_TRACE中的examined_rows不包含重复计数，为实际Innodb层扫描的行数。<br>可以参考11节。<br>总结5：外部排序临时文件的使用是什么样的？</li>
+</ul>
+<p>实际上一个语句的临时文件不止一个，但是它们都以MY开头，并且都放到了tmpdir目录下，lsof可以看到这种文件。</p>
+<ul>
+<li>临时文件1：用于存储内存排序的结果，以chunk为单位，一个chunk的大小就是sort buffer的大小。</li>
+<li>临时文件2：以前面的临时文件1为基础，做归并排序。</li>
+<li>临时文件3：将最后的归并排序结果存储，去掉sort字段，只保留addon字段（需要访问的字段）或者ref字段（ROWID或者主键），因此它一般会比前面2个临时文件小。<br>但是它们不会同时存在，要么 临时文件1和临时文件2存在，要么 临时文件2和临时文件3存在。对于临时文件的使用可以查看Sort_merge_passes，本值多少会侧面反应出外部排序量的大小。<br>可以参考第10节。<br>总结6：排序使用了哪种算法？</li>
+</ul>
+<p>虽然本文不涉及算法，但是内部排序有2种算法需要知道：</p>
+<ul>
+<li>内存排序（优先队列 order by limit 返回少量行常用，提高排序效率，但是注意order by limit n,m 如果n过大可能会涉及到排序算法的切换）</li>
+<li>内存排序（快速排序）<br>在通过OPTIMIZER_TRACE可以查看是否使用使用了优先队列算法，参考12节。<br>总结7：“Creating sort index”到底是什么状态？</li>
+</ul>
+<p>我们前面讲的全部排序流程都会包含在这个状态下，包括：</p>
+<ul>
+<li>获取排序需要的数据（比如例子中全表扫描从Innodb层获取数据）</li>
+<li>根据where条件过滤数据</li>
+<li>内存排序</li>
+<li>外部排序<br>总结8：如何避免临时文件过大的情况？</li>
+</ul>
+<p>首先应该考虑是否可以使用索引来避免排序，如果不能则需要考虑下面的要点：</p>
+<ul>
+<li>order by 后面的字段满足需求即可，尽可能的少。</li>
+<li>order by 后面涉及的字段尽量为固定长度的字段类型，而不是可变字段类型如varchar。因为sort字段不能压缩。</li>
+<li>不要过大的定义可变字段长度，应该合理定义，例如varchar（10）能够满足需求不要使用varchar（50），这些空间虽然在Innodb层存储会压缩，但是MySQL层确可能使用全长度（比如sort字段）。</li>
+<li>在查询中尽量不要用（select *） 而使用需要查询的字段，这将会减少addon字段的个数，在我另外一个文章还讲述了（select *）的其他的缺点参考：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.jianshu.com/p/ce063e2024ad">https://www.jianshu.com/p/ce063e2024ad</a></li>
+</ul>
+<h1 id="一、从一个问题出发"><a href="#一、从一个问题出发" class="headerlink" title="一、从一个问题出发"></a>一、从一个问题出发</h1><p>这是最近一个朋友遇到的案例，大概意思就是说我的表在Innodb中只有30G左右，为什么使用如下语句进行排序操作后临时文件居然达到了200多G，当然语句很变态，我们可以先不问为什么会有这样的语句，我们只需要研究原理即可，在本文的第13节会进行原因解释和问题重现。<br>临时文件如下：</p>
+<p>下面是这些案例信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line">show create table  t\G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: t</span><br><span class="line">Create Table: CREATE TABLE `t` (</span><br><span class="line">  `ID` bigint(20) NOT NULL COMMENT &#x27;ID&#x27;,</span><br><span class="line">  `UNLOAD_TASK_NO` varchar(50) NOT NULL ,</span><br><span class="line">  `FORKLIFT_TICKETS_COUNT` bigint(20) DEFAULT NULL COMMENT &#x27;叉车票数&#x27;,</span><br><span class="line">  `MANAGE_STATUS` varchar(20) DEFAULT NULL COMMENT &#x27;管理状态&#x27;,</span><br><span class="line">  `TRAY_BINDING_TASK_NO` varchar(50) NOT NULL ,</span><br><span class="line">  `STATISTIC_STATUS` varchar(50) NOT NULL ,</span><br><span class="line">  `CREATE_NO` varchar(50) DEFAULT NULL ,</span><br><span class="line">  `UPDATE_NO` varchar(50) DEFAULT NULL ,</span><br><span class="line">  `CREATE_NAME` varchar(200) DEFAULT NULL COMMENT &#x27;创建人名称&#x27;,</span><br><span class="line">  `UPDATE_NAME` varchar(200) DEFAULT NULL COMMENT &#x27;更新人名称&#x27;,</span><br><span class="line">  `CREATE_ORG_CODE` varchar(200) DEFAULT NULL COMMENT &#x27;创建组织编号&#x27;,</span><br><span class="line">  `UPDATE_ORG_CODE` varchar(200) DEFAULT NULL COMMENT &#x27;更新组织编号&#x27;,</span><br><span class="line">  `CREATE_ORG_NAME` varchar(1000) DEFAULT NULL COMMENT &#x27;创建组织名称&#x27;,</span><br><span class="line">  `UPDATE_ORG_NAME` varchar(1000) DEFAULT NULL COMMENT &#x27;更新组织名称&#x27;,</span><br><span class="line">  `CREATE_TIME` datetime DEFAULT NULL COMMENT &#x27;创建时间&#x27;,</span><br><span class="line">  `UPDATE_TIME` datetime DEFAULT NULL COMMENT &#x27;更新时间&#x27;,</span><br><span class="line">  `DATA_STATUS` varchar(50) DEFAULT NULL COMMENT &#x27;数据状态&#x27;,</span><br><span class="line">  `OPERATION_DEVICE` varchar(200) DEFAULT NULL COMMENT &#x27;操作设备&#x27;,</span><br><span class="line">  `OPERATION_DEVICE_CODE` varchar(200) DEFAULT NULL COMMENT &#x27;操作设备编码&#x27;,</span><br><span class="line">  `OPERATION_CODE` varchar(50) DEFAULT NULL COMMENT &#x27;操作码&#x27;,</span><br><span class="line">  `OPERATION_ASSIST_CODE` varchar(50) DEFAULT NULL COMMENT &#x27;辅助操作码&#x27;,</span><br><span class="line">  `CONTROL_STATUS` varchar(50) DEFAULT NULL COMMENT &#x27;控制状态&#x27;,</span><br><span class="line">  `OPERATOR_NO` varchar(50) DEFAULT NULL COMMENT &#x27;操作人工号&#x27;,</span><br><span class="line">  `OPERATOR_NAME` varchar(200) DEFAULT NULL COMMENT &#x27;操作人名称&#x27;,</span><br><span class="line">  `OPERATION_ORG_CODE` varchar(50) DEFAULT NULL COMMENT &#x27;操作部门编号&#x27;,</span><br><span class="line">  `OPERATION_ORG_NAME` varchar(200) DEFAULT NULL COMMENT &#x27;操作部门名称&#x27;,</span><br><span class="line">  `OPERATION_TIME` datetime DEFAULT NULL COMMENT &#x27;操作时间&#x27;,</span><br><span class="line">  `OPERATOR_DEPT_NO` varchar(50) NOT NULL COMMENT &#x27;操作人所属部门编号&#x27;,</span><br><span class="line">  `OPERATOR_DEPT_NAME` varchar(200) NOT NULL COMMENT &#x27;操作人所属部门名称&#x27;,</span><br><span class="line">  `FORKLIFT_DRIVER_NAME` varchar(200) DEFAULT NULL ,</span><br><span class="line">  `FORKLIFT_DRIVER_NO` varchar(50) DEFAULT NULL ,</span><br><span class="line">  `FORKLIFT_DRIVER_DEPT_NAME` varchar(200) DEFAULT NULL ,</span><br><span class="line">  `FORKLIFT_DRIVER_DEPT_NO` varchar(50) DEFAULT NULL ,</span><br><span class="line">  `FORKLIFT_SCAN_TIME` datetime DEFAULT NULL ,</span><br><span class="line">  `OUT_FIELD_CODE` varchar(200) DEFAULT NULL,</span><br><span class="line">  PRIMARY KEY (`ID`),</span><br><span class="line">  KEY `IDX_TRAY_BINDING_TASK_NO` (`TRAY_BINDING_TASK_NO`),</span><br><span class="line">  KEY `IDX_OPERATION_ORG_CODE` (`OPERATION_ORG_CODE`),</span><br><span class="line">  KEY `IDX_OPERATION_TIME` (`OPERATION_TIME`)</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">desc </span><br><span class="line">SELECT </span><br><span class="line">    ID,</span><br><span class="line">    UNLOAD_TASK_NO,</span><br><span class="line">    FORKLIFT_TICKETS_COUNT,</span><br><span class="line">    MANAGE_STATUS,</span><br><span class="line">    TRAY_BINDING_TASK_NO,</span><br><span class="line">    STATISTIC_STATUS,</span><br><span class="line">    CREATE_NO,</span><br><span class="line">    UPDATE_NO,</span><br><span class="line">    CREATE_NAME,</span><br><span class="line">    UPDATE_NAME,</span><br><span class="line">    CREATE_ORG_CODE,</span><br><span class="line">    UPDATE_ORG_CODE,</span><br><span class="line">    CREATE_ORG_NAME,</span><br><span class="line">    UPDATE_ORG_NAME,</span><br><span class="line">    CREATE_TIME,</span><br><span class="line">    UPDATE_TIME,</span><br><span class="line">    DATA_STATUS,</span><br><span class="line">    OPERATION_DEVICE,</span><br><span class="line">    OPERATION_DEVICE_CODE,</span><br><span class="line">    OPERATION_CODE,</span><br><span class="line">    OPERATION_ASSIST_CODE,</span><br><span class="line">    CONTROL_STATUS,</span><br><span class="line">    OPERATOR_NO,</span><br><span class="line">    OPERATOR_NAME,</span><br><span class="line">    OPERATION_ORG_CODE,</span><br><span class="line">    OPERATION_ORG_NAME,</span><br><span class="line">    OPERATION_TIME,</span><br><span class="line">    OPERATOR_DEPT_NO,</span><br><span class="line">    OPERATOR_DEPT_NAME,</span><br><span class="line">    FORKLIFT_DRIVER_NAME,</span><br><span class="line">    FORKLIFT_DRIVER_NO,</span><br><span class="line">    FORKLIFT_DRIVER_DEPT_NAME,</span><br><span class="line">    FORKLIFT_DRIVER_DEPT_NO,</span><br><span class="line">    FORKLIFT_SCAN_TIME,</span><br><span class="line">    OUT_FIELD_CODE</span><br><span class="line">FROM</span><br><span class="line">    t</span><br><span class="line">GROUP BY id , UNLOAD_TASK_NO , FORKLIFT_TICKETS_COUNT , </span><br><span class="line">MANAGE_STATUS , TRAY_BINDING_TASK_NO , STATISTIC_STATUS , </span><br><span class="line">CREATE_NO , UPDATE_NO , CREATE_NAME , UPDATE_NAME , </span><br><span class="line">CREATE_ORG_CODE , UPDATE_ORG_CODE , CREATE_ORG_NAME , </span><br><span class="line">UPDATE_ORG_NAME , CREATE_TIME , UPDATE_TIME , DATA_STATUS , </span><br><span class="line">OPERATION_DEVICE , OPERATION_DEVICE_CODE , OPERATION_CODE , </span><br><span class="line">OPERATION_ASSIST_CODE , CONTROL_STATUS , OPERATOR_NO ,</span><br><span class="line">OPERATOR_NAME , OPERATION_ORG_CODE , OPERATION_ORG_NAME , </span><br><span class="line">OPERATION_TIME , OPERATOR_DEPT_NO , OPERATOR_DEPT_NAME , </span><br><span class="line">FORKLIFT_DRIVER_NAME , FORKLIFT_DRIVER_NO , </span><br><span class="line">FORKLIFT_DRIVER_DEPT_NAME , FORKLIFT_DRIVER_DEPT_NO ,</span><br><span class="line">FORKLIFT_SCAN_TIME , OUT_FIELD_CODE;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">+----+-------------+-------------------------+------------+------+---------------+------+---------+------+---------+----------+----------------+</span><br><span class="line">| id | select_type | table                   | partitions | type | possible_keys | key  | key_len | ref  | rows    | filtered | Extra          |</span><br><span class="line">+----+-------------+-------------------------+------------+------+---------------+------+---------+------+---------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | t | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 5381145 |   100.00 | Using filesort |</span><br><span class="line">+----+-------------+-------------------------+------------+------+---------------+------+---------+------+---------+----------+----------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>也许你会怀疑这个语句有什么用，我们先不考虑功能，我们只考虑为什么它会生成200G的临时文件这个问题。<br>接下来我将分阶段进行排序的流程解析，注意了整个排序的流程均处于状态‘Creating sort index’下面，我们以filesort函数接口为开始进行分析。</p>
+<h1 id="二、测试案例"><a href="#二、测试案例" class="headerlink" title="二、测试案例"></a>二、测试案例</h1><p>为了更好的说明后面的流程我们使用2个除了字段长度不同，其他完全一样的表来说明，但是需要注意这两个表数据量很少，不会出现外部排序，如果涉及外部排序的时候我们需要假设它们数据量很大。其次这里根据original filesort algorithm和modified filesort algorithm进行划分，但是这两种方法还没讲述，不用太多理会。</p>
+<ul>
+<li>original filesort algorithm（回表排序）</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show create table tests1 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: tests1</span><br><span class="line">Create Table: CREATE TABLE `tests1` (</span><br><span class="line">  `a1` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(300) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tests1;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| a    | a    | a    |</span><br><span class="line">| a    | b    | b    |</span><br><span class="line">| a    | c    | c    |</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">| c    | g    | g    |</span><br><span class="line">| c    | h    | h    |</span><br><span class="line">+------+------+------+</span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests1 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>modified filesort algorithm（不回表排序）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show create table tests2 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: tests2</span><br><span class="line">Create Table: CREATE TABLE `tests2` (</span><br><span class="line">  `a1` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(20) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tests2;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| a    | a    | a    |</span><br><span class="line">| a    | b    | b    |</span><br><span class="line">| a    | c    | c    |</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">| c    | g    | g    |</span><br><span class="line">| c    | h    | h    |</span><br><span class="line">+------+------+------+</span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.01 sec)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>整个流程我们从filesort 函数接口开始讨论。下面第3到第10节为排序的主要流程。</p>
+<h1 id="三、阶段1-确认排序字段及顺序"><a href="#三、阶段1-确认排序字段及顺序" class="headerlink" title="三、阶段1 确认排序字段及顺序"></a>三、阶段1 确认排序字段及顺序</h1><p>这里主要将排序顺序存入到Filesort 类的 sortorder中，比如我们例子中的order by a2,a3就是a2和a3列，主要接口为Filesort::make_sortorder，我们按照源码描述为sort字段（源码中为sort_length），显然我们在排序的时候除了sort字段以外，还应该包含额外的字段，到底包含哪些字段就与方法 original filesort algorithm（回表排序） 和 modified filesort algorithm（不回表排序）有关了，下面进行讨论。</p>
+<h1 id="四、阶段2-计算sort字段的长度"><a href="#四、阶段2-计算sort字段的长度" class="headerlink" title="四、阶段2 计算sort字段的长度"></a>四、阶段2 计算sort字段的长度</h1><p>这里主要调用使用sortlength函数，这一步将会带入max_sort_length参数的设置进行判断，默认情况下max_sort_length 为1024字节。<br>这一步大概步骤为：</p>
+<ol>
+<li><p>循环每一个sort字段</p>
+</li>
+<li><p>计算每一个sort字段的长度：公式为 ≈ 定义长度 * 2</p>
+</li>
+</ol>
+<p>比如这里例子中我定义了a1 varchar(300)，那么它的计算长度 ≈ 300 * 2（600），为什么是*2呢，这应该是和Unicode编码有关，这一步可以参考函数my_strnxfrmlen_utf8。同时需要注意这里是约等于，因为源码中还是其他的考虑，比如字符是否为空，但是占用不多不考虑了。<br>3. 带入max_sort_length参数进行计算</p>
+<p>好了有了上面一个sort字段的长度，那么这里就和max_sort_length进行比较，如果这个这个sort字段大于max_sort_length的值，那么以max_sort_length设置为准，这步代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set_if_smaller(sortorder-&gt;length, thd-&gt;variables.max_sort_length);</span><br></pre></td></tr></table></figure>
+<p>因此，如果sort字段的某个字段的超过了max_sort_length设置，那么排序可能不那么精确了。<br>到了这里每个sort字段的长度以及sort字段的总长度已经计算出来，比如前面给的两个不同列子中：</p>
+<ul>
+<li>（a2 varchar(300) a3 varchar(300) order by a2,a3）：每个sort字段约为300*2字节，两个字段的总长度约为1200字节。</li>
+<li>（a2 varchar(20) a3 varchar(20) order by a2,a3）：每个sort字段约为20*2字节，两个字段的总长度约为80字节。<br>并且值得注意的是，这里是按照定义大小，如varchar(300) ，以300个字符来计算长度的，而不是我们通常看到的Innodb中实际占用的字符数量。这是排序使用空间大于Innodb实际数据文件大小的一个原因。</li>
+</ul>
+<p>下面我们以（a2 varchar(300) a3 varchar(300) order by a2,a3）为例实际看看debug的结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p sortorder-&gt;field-&gt;field_name</span><br><span class="line">$4 = 0x7ffe7800fadf &quot;a3&quot;</span><br><span class="line">(gdb) p sortorder-&gt;length</span><br><span class="line">$5 = 600</span><br><span class="line">(gdb) p  total_length</span><br><span class="line">$6 = 1202（这里a2,a3 可以为NULL各自加了1个字节）</span><br><span class="line">(gdb) </span><br></pre></td></tr></table></figure>
+<p>可以看出没有问题。<br>4. 循环结束，计算出sort字段的总长度。</p>
+<p>后面我们会看到sort字段不能使用压缩（pack）技术。</p>
+<h1 id="五、阶段3-计算额外字段的空间"><a href="#五、阶段3-计算额外字段的空间" class="headerlink" title="五、阶段3 计算额外字段的空间"></a>五、阶段3 计算额外字段的空间</h1><p>对于排序而言，我们很清楚除了sort字段以外，通常我们需要的是实际的数据，那么无外乎两种方式如下：</p>
+<ul>
+<li>original filesort algorithm：只存储rowid或者主键做为额外的字段，然后进行回表抽取数据。我们按照源码的描述，将这种关联回表的字段叫做ref字段（源码中变量叫做ref_length）。</li>
+<li>modified filesort algorithm：将处于read_set（需要读取的字段）全部放到额外字段中，这样不需要回表读取数据了。我们按照源码的描述，将这些额外存储的字段叫做addon字段（源码中变量叫做addon_length）。<br>这里一步就是要来判断到底使用那种算法，其主要标准就是参数max_length_for_sort_data，其默认大小为1024字节，但是后面会看到这里的计算为（sort字段长度+addon字段的总和）是否超过了max_length_for_sort_data。其次如果使用了modified filesort algorithm算法，那么将会对addon字段的每个字段做一个pack（打包），主要目的在于压缩那些为空的字节，节省空间。<br>这一步的主要入口函数为Filesort::get_addon_fields下面是步骤解析。</li>
+</ul>
+<ol>
+<li><p>循环本表全部字段</p>
+</li>
+<li><p>根据read_set过滤出不需要存储的字段</p>
+</li>
+</ol>
+<p>这里如果不需要访问到的字段自然不会包含在其中，下面这段源码过滤代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">if (!bitmap_is_set(read_set, field-&gt;field_index)) //是否在read set中</span><br><span class="line">      continue;</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>获取字段的长度</li>
+</ol>
+<p>这里就是实际的长度了比如我们的a1 varchar(300)，且字符集为UTF8，那么其长度≈ 300*3 （900）。<br>4. 获取可以pack（打包）字段的长度</p>
+<p>和上面不同，对于int这些固定长度类型的字段，只有可变长度的类型的字段才需要进行打包技术。<br>5. 循环结束，获取addon字段的总长度，获取可以pack（打包）字段的总长度</p>
+<p>循环结束后可以获取addon字段的总长度，但是需要注意addon字段和sort字段可能包含重复的字段，比如例2中sort字段为a2、a3，addon字段为a1、a2、a3。<br>如果满足如下条件：<br>addon字段的总长度+sort字段的总长度 &gt; max_length_for_sort_data<br>那么将使用original filesort algorithm（回表排序）的方式，否则使用modified filesort algorithm的方式进行。下面是这一句代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">  if (total_length + sortlength &gt; max_length_for_sort_data) //如果长度大于了max_length_for_sort_data 则退出了</span><br><span class="line">  &#123;</span><br><span class="line">    DBUG_ASSERT(addon_fields == NULL);</span><br><span class="line">    return NULL;</span><br><span class="line">//返回NULL值 不打包了 使用 original filesort algorithm（回表排序）</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>我们在回到第2节例子中的第1个案例，因为我们对a1,a2,a3都是需要访问的，且他们的大小均为varchar(300) UTF8，那么addon字段长度大约为300 * 3 * 3&#x3D;2700字节 ，其次我们前面计算了sort字段大约为1202字节，因此 2700+1202 是远远大于max_length_for_sort_data的默认设置1024字节的，因此会使用original filesort algorithm方式进行排序。</p>
+<p>如果是第2节例子中的第2个案例呢，显然要小很多了（每个字段varchar（20）），大约就是20 * 3 * 3（addon字段）+82（sort字段） 它是小于1024字节的，因此会使用modified filesort algorithm的排序方式，并且这些addon字段基本都可以使用打包（pack）技术，来节省空间。但是需要注意的是无论如何（sort字段）是不能进行打包（pack）的，而固定长度类型不需要打包（pack）压缩空间。</p>
+<h1 id="六、阶段4-确认每行的长度"><a href="#六、阶段4-确认每行的长度" class="headerlink" title="六、阶段4 确认每行的长度"></a>六、阶段4 确认每行的长度</h1><p>有了上面的就计算后每一行的长度（如果可以打包是打包前的长度），下面就是这个计算过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">if (using_addon_fields()) </span><br><span class="line">//如果使用了 打包技术  检测 addon_fields 数组是否存在  使用modified filesort algorithm算法 不回表排序</span><br><span class="line">  &#123;</span><br><span class="line">    res_length= addon_length; //总的长度  3个 varchar(300) uft8 为 3*300*3</span><br><span class="line">  &#125;</span><br><span class="line">  else //使用original filesort algorithm算法</span><br><span class="line">  &#123;</span><br><span class="line">    res_length= ref_length;   //rowid(主键长度) </span><br><span class="line">    /* </span><br><span class="line">      The reference to the record is considered </span><br><span class="line">      as an additional sorted field</span><br><span class="line">    */</span><br><span class="line">    sort_length+= ref_length;  //实际上就是rowid(主键) +排序字段长度  回表排序</span><br><span class="line">  &#125;</span><br><span class="line">  /*</span><br><span class="line">    Add hash at the end of sort key to order cut values correctly.</span><br><span class="line">    Needed for GROUPing, rather than for ORDERing.</span><br><span class="line">  */</span><br><span class="line">  if (use_hash)</span><br><span class="line">    sort_length+= sizeof(ulonglong);</span><br><span class="line"></span><br><span class="line">  rec_length= sort_length + addon_length; </span><br><span class="line">//modified filesort algorithm sort_length 为排序键长度 addon_lenth 为访问字段长度，original filesort algorithm rowid(主键) +排序字段长度 ，因为addon_length为0</span><br></pre></td></tr></table></figure>
+<p>好了我们稍微总结一下：</p>
+<ul>
+<li>original filesort algorithm：每行长度为sort字段的总长度+ref字段长度（主键或者rowid）。</li>
+<li>modified filesort algorithm：每行的长度为sort字段的总长度+addon字段的长度（需要访问的字段总长度）。<br>当然到底使用那种算法参考上一节。但是要注意了对于varchar这种可变长度是以定义的大小为准了，比如UTF8 varchar（300）就是300*3&#x3D; 900 而不是实际存储的大小，而固定长度没有变化。</li>
+</ul>
+<p>好了，还是回头看看第2节的两个例子，分别计算它们的行长度：</p>
+<ul>
+<li>例子1：根据我们的计算，它将使用original filesort algorithm排序方式，最终的计算行长度应该为（sort字段长度+rowid长度）及 ≈ 1202+6 字节，下面是debug的结果：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$1 = 1208</span><br></pre></td></tr></table></figure></li>
+<li>例子2：根据我们的计算，它将使用modified filesort algorithm排序方式，最终计算行长度应该为（sort字段长度+addon字段长度）及 ≈ 82 + 20 * 3 * 3 （结果为262），注意这里是约等于没有计算非空等因素和可变长度因素，下面是debug的结果：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$2 = 266</span><br></pre></td></tr></table></figure>
+可以看出误差不大。</li>
+</ul>
+<h1 id="七、阶段5-确认最大内存分配"><a href="#七、阶段5-确认最大内存分配" class="headerlink" title="七、阶段5 确认最大内存分配"></a>七、阶段5 确认最大内存分配</h1><p>这里的分配内存就是参数sort_buffer_size大小有关了。但是是不是每次都会分配至少sort_buffer_size大小的内存的呢？其实不是，MySQL会判断是否表很小的情况，也就是做一个简单的运算，目的在于节省内存的开销，这里我们将来描述。</p>
+<ol>
+<li>大概计算出Innodb层主键叶子结点的行数</li>
+</ol>
+<p>这一步主要通过（聚集索引叶子结点的空间大小&#x2F;聚集索引每行大小 * 2）计算出一个行的上限，调入函数ha_innobase::estimate_rows_upper_bound，源码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"> num_rows= table-&gt;file-&gt;estimate_rows_upper_bound(); </span><br><span class="line">//上限来自于Innodb 叶子聚集索引叶子结点/聚集索引长度 *2</span><br></pre></td></tr></table></figure>
+<p>然后将结果存储起来，如果表很小那么这个值会非常小。<br>2.根据前面计算的每行长度计算出sort buffer可以容下的最大行数</p>
+<p>这一步将计算sort buffer可以容纳的最大行数如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ha_rows keys= memory_available / (param.rec_length + sizeof(char*));</span><br><span class="line">//可以排序的 行数 sort buffer 中最大 可以排序的行数</span><br></pre></td></tr></table></figure>
+<p>3.对比两者的最小值，作为分配内存的标准</p>
+<p>然后对比两个值以小值为准，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">param.max_keys_per_buffer= (uint) min(num_rows &gt; 0 ? num_rows : 1, keys);</span><br><span class="line">//存储行数上限 和 可以排序 行数的 小值</span><br></pre></td></tr></table></figure>
+<p>4.根据结果分配内存</p>
+<p>分配如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">table_sort.alloc_sort_buffer(param.max_keys_per_buffer, param.rec_length);</span><br></pre></td></tr></table></figure>
+<p>也就是根据总的计算出的行长度和计算出的行数进行分配。</p>
+<h1 id="八、阶段6-读取数据，进行内存排序"><a href="#八、阶段6-读取数据，进行内存排序" class="headerlink" title="八、阶段6 读取数据，进行内存排序"></a>八、阶段6 读取数据，进行内存排序</h1><p>到这里准备工作已经完成了，接下就是以行为单位读取数据了，然后对过滤掉where条件的剩下的数据进行排序。如果需要排序的数据很多，那么等排序内存写满后会进行内存排序，然后将排序的内容写入到排序临时文件中，等待下一步做外部的归并排序。作为归并排序而言，每一个归并的文件片段必须是排序好的，否则归并排序是不能完成的，因此写满排序内存后需要做内存排序。如果写不满呢，那么做一次内存排序就好了。下面我们来看看这个过程，整个过程集中在find_all_keys函数中。</p>
+<ol>
+<li>读取需要的数据</li>
+</ol>
+<p>实际上在这一步之前还会做read_set的更改，因为对于original filesort algorithm（回表排序）的算法来讲不会读取全部需要的字段，为了简单起见不做描述了。</p>
+<p>这一步就是读取一行数据了，这里会进入Innodb层读取数据，具体流程不做解释了，下面是这一行代码：<br>error&#x3D; file-&gt;ha_rnd_next(sort_form-&gt;record[0]); &#x2F;&#x2F;读取一行数据<br>2. 将Rows_examined 加1</p>
+<p>这里这个指标对应的就是慢查中的Rows_examined了，这个指标在有排序的情况下会出现重复计算的情况，但是这里还是正确的，重复的部分后面再说。<br>3. 过滤掉where条件</p>
+<p>这里将会过滤掉where条件中不满足条件的行，代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">if (!error &amp;&amp; !qep_tab-&gt;skip_record(thd, &amp;skip_record) &amp;&amp; !skip_record) </span><br><span class="line">//这里做where过滤条件 的比较 </span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>将行数据写入到sort buffer中</li>
+</ol>
+<p>这一步将会把数据写入到sort buffer中，需要注意这里不涉及排序操作，只是存储数据到内存中。其中分为了2部分：</p>
+<ul>
+<li>写入sort字段。如果是original filesort algorithm那么rowid（主键）也包含在其中了。</li>
+<li>写入addon字段，这是modified filesort algorithm才会有的，在写入之前还会调用Field::pack对可以打包（pack）的字段进行压缩操作。对于varchar字段的打包函数就是Field_varstring::pack，简单的说存储的是实际的大小，而非定义的大小。<br>整个过程位于find_all_keys-&gt;Sort_param::make_sortkey 函数中。这一步还涉及到了我们非常关心的一个问题，到底排序的数据如何存储的问题，需要仔细阅读。</li>
+</ul>
+<p>下面我们就debug一下第2节中两个例子的不同存储方式。既然要去看内存中的数据，我们只要看它最终拷贝的内存数据是什么就好了，那么真相将会大白，我们只需要将断点放到find_all_keys函数上，做完一行数据的Sort_param::make_sortkey操作后看内存就行了，如下：</p>
+<ul>
+<li>例子1（字段都是varchar（300））：它将使用original filesort algorithm（回表排序）的方式，最终应该存储的是sort字段（a2，a3）+rowid。</li>
+</ul>
+<p>排序的结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test.tests1 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br><span class="line">3 rows in set (9.06 sec)</span><br></pre></td></tr></table></figure>
+
+<p>我们以第二行为查看目标<br>由于篇幅的关系，我展示其中的一部分，因为这里大约有1200多个字节，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">(gdb) x/1300bx start_of_rec</span><br><span class="line">0x7ffe7ca79998: 0x01    0x00    0x45    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799a0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799a8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799b0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799b8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799c0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799c8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>这后面还有大量的0X20 0X00<br>我们看到了大量的0X20 0X00，这正是占位符号，实际有用的数据也就只有0x45 0x00这两个字节了，而0x45正是我们的大写字母E，也就是数据中的e，这和比较字符集有关。这里的0X20 0X00占用了大量的空间，我们最初计算sort 字段大约为1200字节，实际上只有少量的几个字节有用。<br>这里对于sort字段而言，比实际存储的数据大得多。</p>
+<ul>
+<li>例子2（字段都是varchar（20））：它将使用modified filesort algorithm，最终应该存储的是sort字段（a2，a3）+addon字段（需要的字段，这里就是a1，a2，a3）<br>排序的结果如下：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test.tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br></pre></td></tr></table></figure>
+我们以第一行为查看目标<br>这里数据不大，通过压缩后只有91个字节了，我们整体查看如下：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_sz</span><br><span class="line">$6 = 91</span><br><span class="line">(gdb) x/91x start_of_rec </span><br><span class="line">0x7ffe7c991bc0: 0x01    0x00    0x44    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bc8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be8: 0x20    0x01    0x00    0x44    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf0: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf8: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c00: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c08: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c10: 0x00    0x20    0x07    0x00    0x00    0x01    0x62    0x01</span><br><span class="line">0x7ffe7c991c18: 0x64    0x01    0x64</span><br></pre></td></tr></table></figure>
+这就是整行记录了，我们发现对于sort字段而言没有压缩，依旧是0x20 0x00占位，而对于addon字段（需要的字段，这里就是a1，a2，a3）而言，这里小了很多，因为做了打包（pack）即：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0x01 0x62：数据b</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br></pre></td></tr></table></figure>
+而0x01应该就是长度了。<br>不管怎么说，对于sort字段而言依旧比实际存储的数据大很多。</li>
+</ul>
+<ol start="5">
+<li>如果sort buffer存满，对sort buffer中的数据进行排序，然后写入到临时文件</li>
+</ol>
+<p>如果需要排序的数据量很大的话，那么sort buffer肯定是不能容下的，因此如果写满后就进行一次内存排序操作，然后将排序好的数据写入到外部排序文件中去，这叫做一个chunk。外部文件的位置由tmpdir参数指定，名字以MY开头，注意外部排序通常需要2个临时文件，这里是第1个用于存储内存排序结果的临时文件，以chunk的方式写入。如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">if (fs_info-&gt;isfull()) //如果sort buffer满了  并且sort buffer已经排序完成</span><br><span class="line">        &#123;</span><br><span class="line">          if (write_keys(param, fs_info, idx, chunk_file, tempfile)) //写入到物理文件 完成内存排序   如果内存不会满这里不会做 会在create_sort_index 中排序完成</span><br><span class="line">          &#123;</span><br><span class="line">            num_records= HA_POS_ERROR;</span><br><span class="line">            goto cleanup;</span><br><span class="line">          &#125;</span><br><span class="line">          idx= 0;</span><br><span class="line">          indexpos++;</span><br><span class="line">        &#125;    </span><br></pre></td></tr></table></figure>
+<p>最终会调入write_keys函数进行排序和写入外部排序文件，这里核心就是先排序，然后循环每条排序文件写入到外部排序文件。下面我来验证一下写入临时文件的长度，我将第2节中的例子2数据扩大了N倍后，让其使用外部文件排序，下面是验证结果，断点write_keys即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1161        if (my_b_write(tempfile, record, rec_length))</span><br><span class="line">(gdb) p rec_length</span><br><span class="line">$8 = 91</span><br></pre></td></tr></table></figure>
+<p>可以每行的长度还是91字节（打包压缩后），和前面看到的长度一致，说明这些数据会完完整整的写入到外部排序文件，这显然会比我们想象的大得多。<br>好了到这里数据已经找出来了，如果超过sort buffer的大小，外部排序需要的结果已经存储在临时文件1了，并且它是分片（chunk）存储到临时文件的，它以MY开头。</p>
+<h1 id="九、阶段7-排序方式总结输出"><a href="#九、阶段7-排序方式总结输出" class="headerlink" title="九、阶段7 排序方式总结输出"></a>九、阶段7 排序方式总结输出</h1><p>这里对上面的排序过程做了一个阶段性的总结，代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Opt_trace_object(trace, &quot;filesort_summary&quot;)</span><br><span class="line">    .add(&quot;rows&quot;, num_rows)</span><br><span class="line">    .add(&quot;examined_rows&quot;, param.examined_rows)</span><br><span class="line">    .add(&quot;number_of_tmp_files&quot;, num_chunks)</span><br><span class="line">    .add(&quot;sort_buffer_size&quot;, table_sort.sort_buffer_size())</span><br><span class="line">    .add_alnum(&quot;sort_mode&quot;,</span><br><span class="line">               param.using_packed_addons() ?</span><br><span class="line">               &quot;&lt;sort_key, packed_additional_fields&gt;&quot; :</span><br><span class="line">               param.using_addon_fields() ?</span><br><span class="line">               &quot;&lt;sort_key, additional_fields&gt;&quot; : &quot;&lt;sort_key, rowid&gt;&quot;); </span><br></pre></td></tr></table></figure>
+<p>我们解析一下：</p>
+<ul>
+<li>rows：排序的行数，也就是应用where过滤条件后剩下的行数。</li>
+<li>examined_rows：Innodb层扫描的行数，注意这不是慢查询中的Rows_examined，这里是准确的结果，没有重复计数。</li>
+<li>number_of_tmp_files：外部排序时，用于保存结果的临时文件的chunk数量，每次sort buffer满排序后写入到一个chunk，但是所有chunk共同存在于一个临时文件中。</li>
+<li>sort_buffer_size：内部排序使用的内存大小，并不一定是sort_buffer_size参数指定的大小。</li>
+<li>sort_mode：这里解释如下</li>
+</ul>
+<ol>
+<li>sort_key, packed_additional_fields：使用了modified filesort algorithm（不回表排序） ，并且有打包（pack）的字段，通常为可变字段比如varchar。</li>
+<li>sort_key, additional_fields：使用了modified filesort algorithm（不回表排序），但是没有需要打包（pack）的字段，比如都是固定长度字段。</li>
+<li>sort_key, rowid：使用了original filesort algorithm（回表排序）。</li>
+</ol>
+<h1 id="十、阶段8-进行最终排序"><a href="#十、阶段8-进行最终排序" class="headerlink" title="十、阶段8 进行最终排序"></a>十、阶段8 进行最终排序</h1><p>这里涉及2个部分如下：</p>
+<ul>
+<li>如果sort buffer不满，则这里开始进行排序，调入函数save_index。</li>
+<li>如果sort buffer满了，则进行归并排序，调入函数merge_many_buff-&gt;merge_buffers，最后调入merge_index完成归并排序。<br>对于归并排序来讲，这里可能会生成另外2个临时文件用于存储最终排序的结果，它们依然以MY开头，且依然是存储在tmpdir参数指定的位置。因此在外部排序中将可能会生成3个临时文件，总结如下：</li>
+<li>临时文件1：用于存储内存排序的结果，以chunk为单位，一个chunk的大小就是sort buffer的大小。</li>
+<li>临时文件2：以前面的临时文件1为基础，做归并排序。</li>
+<li>临时文件3：将最后的归并排序结果存储，去掉sort字段，只保留addon字段（需要访问的字段）或者ref字段（ROWID或者主键），因此它一般会比前面2个临时文件小。<br>但是它们不会同时存在，要么 临时文件1和临时文件2存在，要么 临时文件2和临时文件3存在。<br>这个很容易验证，将断点放到merge_buffers和merge_index上就可以验证了，如下：<br>临时文件1和临时文件2同时存在：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3   79167488    2249135 /mysqldata/mysql3340/tmp/MYt1QIvr (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   58327040    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
+临时文件2和临时文件3共同存在：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3     360448    2249135 /mysqldata/mysql3340/tmp/MYg109Wp (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   79167488    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
+但是由于能力有限对于归并排序的具体过程我并没有仔细学习了，这里给一个大概的接口。注意这里每次调用merge_buffers将会增加Sort_merge_passes 1次，应该是归并的次数，这个值增量的大小可以侧面反映出外部排序使用临时文件的大小。</li>
+</ul>
+<h1 id="十一、排序的其他问题"><a href="#十一、排序的其他问题" class="headerlink" title="十一、排序的其他问题"></a>十一、排序的其他问题</h1><p>这里将描述2个额外的排序问题。<br>1、original filesort algorithm（回表排序）的回表</p>
+<p>最后对于original filesort algorithm（回表排序）排序方式而言，可能还需要做一个回表获取数据的操作，这一步可能会用到参数read_rnd_buffer_size定义的内存大小。<br>比如我们第2节中第1个例子将会使用到original filesort algorithm（回表排序），但是对于回表操作有如下标准：</p>
+<ul>
+<li>如果没有使用到外部排序临时文件则说明排序量不大，则使用普通的回表方式，调入函数rr_from_pointers，也就是单行回表方式。</li>
+<li>如果使用到了使用到外部排序临时文件则说明排序量较大，需要使用到批量回表方式，这个时候大概的步骤就是读取rowid（主键）排序，然后批量回表，这将会在read_rnd_buffer_size指定的内存中完成，调入函数rr_from_cache。这也是一种优化方式，因为回表一般是散列的，代价很大。<br>2、关于排序中Rows_examined的计算</li>
+</ul>
+<p>首先这个值我说的是慢查询的中的Rows_examined，在排序中会出现重复计数的可能，前面第8节已经说明了一下，这个值在第8节还是正确的，但是最后符合where条件的数据在返回的时候还会调用函数evaluate_join_record，结果Rows_examined会增加符合where条件的行数。还是以我们第2节的两个例子为例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test.tests1 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br><span class="line">3 rows in set (5.11 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from test.tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br><span class="line">3 rows in set (5.28 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.01 sec)</span><br></pre></td></tr></table></figure>
+
+<p>慢查询如下，不要纠结时间（因为我故意debug停止了一会），我们只关注Rows_examined，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># Time: 2019-12-23T12:03:26.108529+08:00</span><br><span class="line"># User@Host: root[root] @ localhost []  Id:     4</span><br><span class="line"># Schema:   Last_errno: 0  Killed: 0</span><br><span class="line"># Query_time: 5.118098  Lock_time: 0.000716  Rows_sent: 3  Rows_examined: 11  Rows_affected: 0</span><br><span class="line"># Bytes_sent: 184</span><br><span class="line">SET timestamp=1577073806;</span><br><span class="line">select * from test.tests1 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line"># Time: 2019-12-23T12:03:36.138274+08:00</span><br><span class="line"># User@Host: root[root] @ localhost []  Id:     4</span><br><span class="line"># Schema:   Last_errno: 0  Killed: 0</span><br><span class="line"># Query_time: 5.285573  Lock_time: 0.000640  Rows_sent: 3  Rows_examined: 11  Rows_affected: 0</span><br><span class="line"># Bytes_sent: 184</span><br><span class="line">SET timestamp=1577073816;</span><br><span class="line">select * from test.tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到Rows_examined都是11，为什么是11呢？显然我们要扫描总的行数为8（这里是全表扫描，表总共8行数据），然后过滤后需要排序的结果为3条数据，这3条数据会重复计数一次。因此就是8+3&#x3D;11，也就是说有3条数据重复计数了。</p>
+<h1 id="十二、通过OPTIMIZER-TRACE查看排序结果"><a href="#十二、通过OPTIMIZER-TRACE查看排序结果" class="headerlink" title="十二、通过OPTIMIZER_TRACE查看排序结果"></a>十二、通过OPTIMIZER_TRACE查看排序结果</h1><p>要使用OPTIMIZER_TRACE只需要“SET optimizer_trace&#x3D;”enabled&#x3D;on”;”，跑完语句后查看information_schema.OPTIMIZER_TRACE即可。</p>
+<p>前面第9节我们解释了排序方式总结输出的含义，这里我们来看看具体的结果，我们还是以第2节的2个例子为例：</p>
+<ul>
+<li>例1：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 1285312,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, rowid&gt;&quot;</span><br></pre></td></tr></table></figure></li>
+<li>例2：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 322920,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, packed_additional_fields&gt;&quot;</span><br></pre></td></tr></table></figure>
+现在我们清楚了，这些总结实际上是在执行阶段生成的，需要注意几点如下：</li>
+<li>这里的examined_rows和慢查询中的Rows_examined不一样，因为这里不会有重复计数，是准确的。</li>
+<li>这里还会说明是否使用了优先队列排序即“filesort_priority_queue_optimization”部分。</li>
+<li>通过“sort_buffer_size”可以发现，这里并没有分配参数sort_buffer_size指定的大小，节约了内存，这在第7节说明了。<br>其他指标在第9节已经说明过了，不在描述。</li>
+</ul>
+<h1 id="十三、回到问题本身"><a href="#十三、回到问题本身" class="headerlink" title="十三、回到问题本身"></a>十三、回到问题本身</h1><p>好了，大概的流程我描述了一遍，这些流程都是主要流程，实际上的流程复杂很多。那么我们回到最开始的案例上来。他的max_sort_length和max_length_for_sort_data均为默认值1024。<br>案例中的group by实际就是一个排序操作，我们从执行计划可以看出来，那么先分析一下它的sort字段。很显然group by 后的都是sort字段，其中字段CREATE_ORG_NAME其定义为 varchar（1000），它的占用空间为（1000 * 2）及2000字节，但是超过了max_sort_length的大小，因此为1024字节，相同的还有UPDATE_ORG_NAME字段也是varchar（1000），也会做同样处理，其他字段不会超过max_sort_length的限制，并且在第5节说过sort 字段是不会进行压缩的。</p>
+<p>我大概算了一下sort字段的全部大小约为 （3900 * 2) 字节，可以看到一行数据的sort字段基本达到了8K的容量，而addon字段的长度（未打包压缩前）会更大，显然超过max_length_for_sort_data的设置，因此对于这样的排序显然不可能使用modified filesort algorithm（不回表排序了），使用的是original filesort algorithm（回表排序），因此一行的记录就是（sort 字段+主键）了，主键大小可以忽略，最终一行记录的大小就是8K左右，这个值通常会远远大于Innodb压缩后存储varchar字段的大小，这也是为什么本例中虽然表只有30G左右但是临时文件达到了200G以上的原因了。<br>好了，我们来重现一下问题，我们使用第2节的例1，我们将其数据增多，原理上我们的例1会使用到original filesort algorithm（回表排序）的方式，因为这里sort字段（a2，a3）的总长度+addon字段（a1，a2，a3）的长度约为300 * 2 * 2+300 * 3 * 3 这显示大于了max_length_for_sort_data的长度， 因此这个排序一行的长度就是sort字段（a2，a3）+ref字段（ROWID），大约就是300 * 2 * 2+6&#x3D;1206字节了。 下面是这个表的总数据和Innodb文件大小（我这里叫做bgtest5表）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show create table bgtest5 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: bgtest5</span><br><span class="line">Create Table: CREATE TABLE `bgtest5` (</span><br><span class="line">  `a1` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(300) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; SELECT COUNT(*) FROM bgtest5;</span><br><span class="line">+----------+</span><br><span class="line">| COUNT(*) |</span><br><span class="line">+----------+</span><br><span class="line">|    65536 |</span><br><span class="line">+----------+</span><br><span class="line">1 row in set (5.91 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from bgtest5  order by a2,a3;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+-------+----------+----------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows  | filtered | Extra          |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+-------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | bgtest5 | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 66034 |   100.00 | Using filesort |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+-------+----------+----------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>注意这里是全表排序了，没有where过滤条件了，下面是这个表ibd文件的大小：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# du -hs bgtest5.ibd</span><br><span class="line">11M     bgtest5.ibd</span><br><span class="line">[root@gp1 test]# </span><br></pre></td></tr></table></figure>
+<p>下面我们就需要将gdb的断点打在merge_many_buff，我们的目的就是观察临时文件1的大小，这个文件前面说过了是存储内存排序结果的，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   69u      REG              252,3   79101952    2249135 /mysqldata/mysql3340/tmp/MYzfek5x (deleted)</span><br></pre></td></tr></table></figure>
+<p>可以看到这个文件的大小为79101952字节，即80M左右，这和我们计算的总量1206（每行大小） * 65535（行数） 约为 80M 结果一致。这远远超过了ibd文件的大小11M，并且要知道，随后还会生成一个大小差不多的文件来存储归并排序的结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   69u      REG              252,3   79167488    2249135 /mysqldata/mysql3340/tmp/MYzfek5x (deleted)</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3   58327040    2249242 /mysqldata/mysql3340/tmp/MY8UOLKa (deleted)</span><br></pre></td></tr></table></figure>
+<p>因此得到证明，排序的临时文件远远大于ibd文件的现象是可能出现的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/mysql-cluster-index/" rel="prev" title="聚簇索引介绍">
+                  <i class="fa fa-chevron-left"></i> 聚簇索引介绍
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/TPCH/" rel="next" title="DB性能测试-常用3套件-手把手一步一步跑TPCH">
+                  DB性能测试-常用3套件-手把手一步一步跑TPCH <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/mysql-filesort/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

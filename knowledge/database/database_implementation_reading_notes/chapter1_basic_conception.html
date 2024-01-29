@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="第一章 – 数据库基本概念 数据库语言 DML(data manipulation language)对数据进行增删改查 DDL (data definition language)数据模式有一些定义来说明， 这些定义由DDL 来表达。ddl 以一些指令为输入， 输出放在数据字典中。 一致性约束 域约束（domain constraint）：一个所有取值构成的约束。 是完整性约束的基本形式。 整数">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter1_basic_conception.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="第一章 – 数据库基本概念 数据库语言 DML(data manipulation language)对数据进行增删改查 DDL (data definition language)数据模式有一些定义来说明， 这些定义由DDL 来表达。ddl 以一些指令为输入， 输出放在数据字典中。 一致性约束 域约束（domain constraint）：一个所有取值构成的约束。 是完整性约束的基本形式。 整数">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2018/png/106206/1535874942262-365cd74a-1598-4c9a-a30b-1dca35e3bf98.png#align=left&display=inline&height=301&originHeight=696&originWidth=1728&status=done&width=747">
+<meta property="article:published_time" content="2024-01-29T09:18:27.922Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.922Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2018/png/106206/1535874942262-365cd74a-1598-4c9a-a30b-1dca35e3bf98.png#align=left&display=inline&height=301&originHeight=696&originWidth=1728&status=done&width=747">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter1_basic_conception">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter1_basic_conception.html","path":"knowledge/database/database_implementation_reading_notes/chapter1_basic_conception.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E2%80%93-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">第一章 – 数据库基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%AD%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">数据库语言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DML-data-manipulation-language"><span class="nav-number">1.1.1.</span> <span class="nav-text">DML(data manipulation language)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DDL-data-definition-language"><span class="nav-number">1.1.2.</span> <span class="nav-text">DDL (data definition language)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E7%BA%A6%E6%9D%9F"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">一致性约束</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">1.2.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E8%AE%BE%E8%AE%A1"><span class="nav-number">1.3.</span> <span class="nav-text">模型设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#E-R-%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.3.1.</span> <span class="nav-text">E-R 模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BD%93-%E8%81%94%E7%B3%BB%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.3.2.</span> <span class="nav-text">实体-联系模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.4.</span> <span class="nav-text">关系模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8C%83%E5%BC%8F"><span class="nav-number">1.4.1.</span> <span class="nav-text">范式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#-1"><span class="nav-number">1.5.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">1.6.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84"><span class="nav-number">1.6.1.</span> <span class="nav-text">结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%AE"><span class="nav-number">1.6.2.</span> <span class="nav-text">键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95"><span class="nav-number">1.6.3.</span> <span class="nav-text">索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%A7%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.6.4.</span> <span class="nav-text">大对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.6.5.</span> <span class="nav-text">自定义类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#distinct-type"><span class="nav-number">1.6.5.1.</span> <span class="nav-text">distinct type</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E7%B3%BB%E8%BF%90%E7%AE%97"><span class="nav-number">1.6.6.</span> <span class="nav-text">关系运算</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E7%B3%BB%E4%BB%A3%E6%95%B0"><span class="nav-number">1.6.7.</span> <span class="nav-text">关系代数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL"><span class="nav-number">1.7.</span> <span class="nav-text">SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E8%BF%9E%E6%8E%A5"><span class="nav-number">1.7.1.</span> <span class="nav-text">外连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE"><span class="nav-number">1.7.2.</span> <span class="nav-text">视图</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE%E6%9B%B4%E6%96%B0"><span class="nav-number">1.7.2.1.</span> <span class="nav-text">视图更新</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%A9%E5%8C%96%E8%A7%86%E5%9B%BE"><span class="nav-number">1.7.2.2.</span> <span class="nav-text">物化视图</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E6%80%A7%E7%BA%A6%E6%9D%9F"><span class="nav-number">1.7.3.</span> <span class="nav-text">完整性约束</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%95%E4%B8%AA%E5%85%B3%E7%B3%BB%E4%B8%8A%E7%9A%84%E7%BA%A6%E6%9D%9F"><span class="nav-number">1.7.3.1.</span> <span class="nav-text">单个关系上的约束</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E7%85%A7%E5%AE%8C%E6%95%B4%E6%80%A7"><span class="nav-number">1.7.3.2.</span> <span class="nav-text">参照完整性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%AD%E8%A8%80"><span class="nav-number">1.7.3.3.</span> <span class="nav-text">断言</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.8.</span> <span class="nav-text">事务</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+                
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-数据库实现"><a href="/knowledge/database/database_implementation_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>数据库实现</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER1_BASIC_CONCEPTION</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="第一章-–-数据库基本概念"><a href="#第一章-–-数据库基本概念" class="headerlink" title="第一章 – 数据库基本概念"></a>第一章 – 数据库基本概念</h1><p><a name="020mxm"></a></p>
+<h2 id="数据库语言"><a href="#数据库语言" class="headerlink" title="数据库语言"></a>数据库语言</h2><p><a name="pg69eh"></a></p>
+<h3 id="DML-data-manipulation-language"><a href="#DML-data-manipulation-language" class="headerlink" title="DML(data manipulation language)"></a>DML(data manipulation language)</h3><p>对数据进行增删改查<br><a name="f4moes"></a></p>
+<h3 id="DDL-data-definition-language"><a href="#DDL-data-definition-language" class="headerlink" title="DDL (data definition language)"></a>DDL (data definition language)</h3><p>数据模式有一些定义来说明， 这些定义由DDL 来表达。ddl 以一些指令为输入， 输出放在数据字典中。<br><a name="ug64ib"></a></p>
+<h4 id="一致性约束"><a href="#一致性约束" class="headerlink" title="一致性约束"></a>一致性约束</h4><ul>
+<li>域约束（domain constraint）：一个所有取值构成的约束。 是完整性约束的基本形式。 整数型就表示只能取值整数。<br></li>
+<li>参照完整性（referential integrity）： 一个关系中某个属性的值必须在另外一个关系某个属性中出现。其实就是满足相关性。<br></li>
+<li>断言（assertion）：数据库某个时刻必须满足的某个条件。 域约束和参照完整性是断言的子集。<br></li>
+<li>授权（authorization）： 读权限， 插入权限，更新权限，删除权限<br><br><a name="0ZpKt"></a></li>
+</ul>
+<h2 id><a href="#" class="headerlink" title></a></h2><p><a name="Awr53"></a></p>
+<h2 id="模型设计"><a href="#模型设计" class="headerlink" title="模型设计"></a>模型设计</h2><p><a name="4LYW3"></a></p>
+<h3 id="E-R-模型"><a href="#E-R-模型" class="headerlink" title="E-R 模型"></a>E-R 模型</h3><p>模型设计避免2个问题：</p>
+<ol>
+<li>冗余， 这个理念类似 范式概念；比如， 一个课程中， 有老师列， 在老师列中，可以只要老师id或老师姓名， 而不需要把老师的所有信息，比如系，性别 等信息带进去。<br></li>
+<li>不完整， 不要漏掉一些信息，导致无法建模； 比如整个设计只为 带课程的老师进行设计，但实际上还有未带课程的老师；<br></li>
+</ol>
+<p><a name="hgqegc"></a></p>
+<h3 id="实体-联系模型"><a href="#实体-联系模型" class="headerlink" title="实体-联系模型"></a>实体-联系模型</h3><ul>
+<li>实体&#x2F;实体集<br></li>
+<li>联系&#x2F;联系集 : {(e1, e2, e3, … en)| e1∈E1, e2∈E2, ….}<br></li>
+<li>属性<br><ul>
+<li>简单&#x2F;复合， 复合表示属性可以拆解或细化更细粒度， 在不同场景下，会对细度有不同的要求<br></li>
+<li>单值&#x2F;多值， 当多值时，需要{}, 比如一个老师有多个电话号码{phone_number}<br></li>
+<li>派生， 派生属性不存储，当需要时再计算， 比如一个老师记录了出生日期， 这个时候，可以直接计算出他的生日。<br></li>
+</ul>
+</li>
+<li>映射基数： mapping cardinality, 基数比率， 一个实体通过一个联系集关联实体的个数<br><ul>
+<li>1v1： one-to-one<br></li>
+<li>1vn: one-to-many<br></li>
+<li>nv1: many-to-one<br></li>
+<li>nvn: many-to-many<br></li>
+</ul>
+</li>
+<li>参与约束， 有可能一个实体集全部参与联系集中，也可能部分。<br></li>
+</ul>
+<p><a name="c232db"></a></p>
+<h2 id="关系模型"><a href="#关系模型" class="headerlink" title="关系模型"></a>关系模型</h2><p><a name="r2qqce"></a></p>
+<h3 id="范式"><a href="#范式" class="headerlink" title="范式"></a>范式</h3><ul>
+<li>第一范式， 属性是原子不能细分的<br></li>
+<li>BCNF Boyce-Codd Normal Form: 消除利用函数依赖发现的冗余，<br><ul>
+<li>函数依赖， 对于所有元组t1和t2， 如果t1[a] &#x3D; t2[a], 则t1[b] &#x3D; t2[b]<br><br><a name="AsRGy"></a></li>
+</ul>
+</li>
+</ul>
+<h2 id="-1"><a href="#-1" class="headerlink" title></a></h2><p><a name="b7fvz"></a></p>
+<h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><p><a name="5y9nlp"></a></p>
+<h3 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h3><p>关系relation用表table来指代， 元组（tuple）指代行， 属性attribute指代列。对于每个属性，都存在一个取值范围， 它被称为该属性的域domain。 如果域中元素不可再分， 则域是原子的atomic。</p>
+<p><a name="a9slyr"></a></p>
+<h3 id="键"><a href="#键" class="headerlink" title="键"></a>键</h3><ul>
+<li><p>超键(superkey)： 一个或多个属性的集合， 这个集合的组合可以唯一标识一个元组。</p>
+</li>
+<li><p>候选键(candidate key)：最小的超键。 如果id 能唯一表示一个tuple， 那么含id的超集都可以是超键，但候选键表示满足唯一表示的最小子集（即id）。</p>
+</li>
+<li><p>主键(primary key)： 被设计者选中的候选键。 主键很少改动</p>
+</li>
+<li><p>外键（foreign key）：一个关系（r1）中属性集（a1）为另外一个关系（r2）的主键，a1 被称为r2的外键； r1 称为外键依赖的referencing relation， r2 称为外键的referenced relation。</p>
+</li>
+</ul>
+<p><a name="gvl8xn"></a></p>
+<h3 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h3><p>为了高效找到索引属性上给定值的元组，而不是扫描所有的元组，可以对某属性简历索引。 默认主键会创建索引。<br><code>create index studentid_index on student(ID)</code></p>
+<p><a name="gumpgk"></a></p>
+<h3 id="大对象"><a href="#大对象" class="headerlink" title="大对象"></a>大对象</h3><p>大对象数据类型clob， 二进制大对象 blob。 通常查询语言不会直接获取大对象， 而是获取大对象定位器， 然后利用大对象定位器来一点点读取数据（有点类似文件系统read）</p>
+<p><a name="azu3fn"></a></p>
+<h3 id="自定义类型"><a href="#自定义类型" class="headerlink" title="自定义类型"></a>自定义类型</h3><ul>
+<li><p>distinct type， 本节介绍</p>
+</li>
+<li><p>structured data type</p>
+</li>
+</ul>
+<p><a name="7377xv"></a></p>
+<h4 id="distinct-type"><a href="#distinct-type" class="headerlink" title="distinct type"></a>distinct type</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">create type dollars as numeric(12, 2) final;</span><br><span class="line">create type pounds as numeric(12, 2) final;</span><br><span class="line"></span><br><span class="line">drop type</span><br><span class="line">alert type</span><br><span class="line"></span><br><span class="line">create table department (budget dollars);</span><br></pre></td></tr></table></figure>
+
+<p>因此不能直接对dollars和pounds 进行加减直接操作，尽管他们都是numeric(12, 2)， 也不可用 dollars + 20， 这个适合需要cast 转到另外一个域<br>cast (department.budget to numeric(12,  2))</p>
+<p>另外域和自定义类型相似但有区别<br>create domain ddollars as numeric(12, 2) constraint dollar_test check (value &gt; 29000.00);</p>
+<ol>
+<li><p>域可以加声明约束， 比如not null 或default 或 constraint， 而自定义类型不可以</p>
+</li>
+<li><p>域不是强类型， 可以一个类型转另外一个类型， 只要它们基本类型相同。</p>
+</li>
+</ol>
+<p><a name="ol8fpq"></a></p>
+<h3 id="关系运算"><a href="#关系运算" class="headerlink" title="关系运算"></a>关系运算</h3><ul>
+<li><p>自然连接， 其实就是inner join</p>
+</li>
+<li><p>笛卡尔积， 2个关系的所有对，不关注属性值匹配</p>
+</li>
+</ul>
+<p><a name="w65gco"></a></p>
+<h3 id="关系代数"><a href="#关系代数" class="headerlink" title="关系代数"></a>关系代数</h3><table>
+<thead>
+<tr>
+<th>符号</th>
+<th>使用例子</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>select: σ</td>
+<td></td>
+<td>选择，类似于SQL中的where。注意，和SQL中的select不一样。</td>
+</tr>
+<tr>
+<td>project: Π</td>
+<td></td>
+<td>投影，类似于SQL中的select</td>
+</tr>
+<tr>
+<td>rename: ρ</td>
+<td></td>
+<td>重命名，类似于SQL中的as</td>
+</tr>
+<tr>
+<td>assignment：←</td>
+<td></td>
+<td>赋值。</td>
+</tr>
+<tr>
+<td>union: ∪</td>
+<td></td>
+<td>集合并，类似于SQL中的union</td>
+</tr>
+<tr>
+<td>set difference: –</td>
+<td></td>
+<td>集合差，sql中except</td>
+</tr>
+<tr>
+<td>intersection: ∩</td>
+<td></td>
+<td>集合交，SQL 中intersect&#x2F;intersect all</td>
+</tr>
+<tr>
+<td>Cartesian product: x</td>
+<td></td>
+<td>笛卡尔积，类似于SQL中不带on条件的inner join</td>
+</tr>
+<tr>
+<td>natural join: ⋈</td>
+<td></td>
+<td>自然连接，类似于SQL中的inner join， join… on..,  join … using…, natural join</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p><a name="zquikc"></a></p>
+<h2 id="SQL"><a href="#SQL" class="headerlink" title="SQL"></a>SQL</h2><ul>
+<li><p>类型：</p>
+<ul>
+<li><p>DDL Data definition languation</p>
+<ul>
+<li>视图定义 view definition : 定义视图的命令</li>
+</ul>
+</li>
+<li><p>DML data manipulation languation</p>
+</li>
+</ul>
+</li>
+<li><p>属性：</p>
+<ul>
+<li><p>完整性（integrity）： 完整性约束</p>
+</li>
+<li><p>嵌入式SQL&#x2F;动态sql embeded sql&#x2F;dynamic sql： 如何潜入到其他编程语言中</p>
+</li>
+<li><p>授权</p>
+</li>
+<li></li>
+</ul>
+</li>
+</ul>
+<p><a name="w4q5nt"></a></p>
+<h3 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h3><ul>
+<li><p>左外连接 left outer join</p>
+</li>
+<li><p>右外连接 right outer join</p>
+</li>
+<li><p>全外连接 full outer join</p>
+</li>
+</ul>
+<p>外连接中 on 和where 是不一样的， on 不会过滤器元组， 但where 会过滤</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from student left outer join takes on true</span><br><span class="line">where student.id = takes.id;</span><br></pre></td></tr></table></figure>
+
+<p><a name="o49krv"></a></p>
+<h3 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h3><p>为什么需要视图</p>
+<ol>
+<li>处于安全考虑， 不让某些用户看到所有的字段。</li>
+</ol>
+<p><a name="uvtmgo"></a></p>
+<h4 id="视图更新"><a href="#视图更新" class="headerlink" title="视图更新"></a>视图更新</h4><p>一般不允许对视图进行更新操作， 但如果定义视图的ddl 满足：</p>
+<ul>
+<li><p>只从一个table进行from</p>
+</li>
+<li><p>select 只包含属性名，没有额外的表达式，如聚集或distinct</p>
+</li>
+<li><p>任何没有出现在select子句中的属性可以取空值</p>
+</li>
+<li><p>不包含group by 或having</p>
+</li>
+</ul>
+<p><a name="uu80xk"></a></p>
+<h4 id="物化视图"><a href="#物化视图" class="headerlink" title="物化视图"></a>物化视图</h4><p>数据库允许存储视图关系， 如果用于定义视图的实际关系改变， 视图也跟着改变。</p>
+<p><a name="t5dmig"></a></p>
+<h3 id="完整性约束"><a href="#完整性约束" class="headerlink" title="完整性约束"></a>完整性约束</h3><p>alert table xxx add tttt<br>ttt 即为限制 constraint</p>
+<p><a name="q19zci"></a></p>
+<h4 id="单个关系上的约束"><a href="#单个关系上的约束" class="headerlink" title="单个关系上的约束"></a>单个关系上的约束</h4><ul>
+<li><p>not null</p>
+</li>
+<li><p>unique： unique(a1, a2, a3, ….), 只能从属性集中取值， 也可以为null， 除非限制了not null</p>
+</li>
+<li><p>check : check （semester in (‘fall’, “winter”, “spring”, “summer”)）， check (time_slot_id in select time_slot_id from time_slot),  后一个开销可能有点大， 因为更新time_slot 或section 时都需要做检查。</p>
+</li>
+</ul>
+<p><a name="uwvavu"></a></p>
+<h4 id="参照完整性"><a href="#参照完整性" class="headerlink" title="参照完整性"></a>参照完整性</h4><p>一个关系中某个属性的取值必须在另外一个关系的某个属性的取值集内. referential-intergrity constraint&#x2F;subset dependency.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">create table department</span><br><span class="line">(dept_name varchar(20),</span><br><span class="line">building varchar(15),</span><br><span class="line">budget   numveric(12,2),</span><br><span class="line">primary key (dept_name)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">create table course</span><br><span class="line">(</span><br><span class="line">course_id varchar(7),</span><br><span class="line">title varchar(50),</span><br><span class="line">dept_name varchar(20),</span><br><span class="line">credits numeric(2, 0)m</span><br><span class="line">primary key (course_id),</span><br><span class="line">foreign key (dep_name) references department.</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>foreign key (dept_name) references department.</p>
+<p>还有一种简单方式  </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table course</span><br><span class="line">(</span><br><span class="line">course_id varchar(7),</span><br><span class="line">title varchar(50),</span><br><span class="line">dept_name varchar(20) references department.</span><br><span class="line">credits numeric(2, 0)m</span><br><span class="line">primary key (course_id)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>course 中dept_name 为参照关系department中dept_name的外键。<br>参照性约束不要求dept_name为主键， 但sql中，如果使用references , 则属性列必须是被参照关系（department）的候选键， 要么是primary key， 要么使用unique 约束。<br>违法完整性约束时， 通常会拒绝导致完整性被破坏的操作（更新操作的事务会被回滚）<br>foreign key 则可以高级操作， 如果被参照关系上（department）上进行删除或修改时， 破坏了约束， 可以采取一些措施来修改参照关系（course）中元组来恢复完整性约束， 而不是简单拒绝操作。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">create table course</span><br><span class="line">(</span><br><span class="line">course_id varchar(7),</span><br><span class="line">title varchar(50),</span><br><span class="line">dept_name varchar(20),</span><br><span class="line">credits numeric(2, 0)m</span><br><span class="line">primary key (course_id),</span><br><span class="line">foreign key (dep_name) references department.</span><br><span class="line">        on delete cascade</span><br><span class="line">        on update cascade,</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>延迟约束检查<br>比如 一张表内， name 为主键， spouse（配偶） 是person的一个外键（依赖name）， 加速mary和john 是夫妻， 无论是第一次插入john还是mary， 都会违反完整性约束， 直到2个人都插入时， 才能满足完整性约束。</p>
+<p>通过增加<code>initially deferred</code>加入到约束语句中或者’set constraints xxxx deferred’做为事务的一部分， 在一个事务中， 约束性检查会延迟到事务提交时再进行。</p>
+<p><a name="n4gqkk"></a></p>
+<h4 id="断言"><a href="#断言" class="headerlink" title="断言"></a>断言</h4><p>断言就是一个谓词， 域约束和参照完整性都是断言的子集。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">create assertion credit_earned_constraint check</span><br><span class="line">(</span><br><span class="line">    not exists (</span><br><span class="line">        select id from student</span><br><span class="line">        where tot_cred &lt;&gt; (</span><br><span class="line">                            select sum(credits) from takes natural join course</span><br><span class="line">                            where students.id = takes.id and grade is not null </span><br><span class="line">                            )</span><br><span class="line">    ) </span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+
+<p><a name="7o40zr"></a></p>
+<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>acd：</p>
+<ul>
+<li>atomicity : 事务要么成功， 要么失败， 没有中间状态， 成功了就提交了所有修改， 失败了就没有任何修改<br></li>
+<li>consistency：所有操作符合预期<br></li>
+<li>isolation： 隔离性， 事务的隔离级别<br></li>
+<li>durability： 一旦事务提交成功后， 修改的数据就持久化存储下去， 不可逆的修改<br></li>
+</ul>
+<p>事务将隔离性分为几个级别：</p>
+<ol>
+<li>read uncommitted, 一个事物可以读到另外一个事物还未提交的数据， 隔离级别最低<br></li>
+<li>read committed， 只有在数据被提交后，他的更新结果才能被别人读取<br></li>
+<li>repeatable committed， 在一个事物中， 对该数据始终读取都是相同的数据， 无论在这个事物执行的过程中， 其他并行事物是否已经提交或未提交<br></li>
+<li>serializable， 隔离级别最高，就是串行处理所有事物。<br></li>
+</ol>
+<p>因为不同的隔离级别，会带来不同的数据读取问题：</p>
+<ol>
+<li>dirty read<br></li>
+<li>nonrepeatable read<br></li>
+<li>phantom read<br></li>
+</ol>
+<p>dirty read：事务1 修改了数据， 但还没有提交， 事务2 读取了事务1 修改的结果， 但随后 事务1 进行了回滚， 因此， 事务2的读取行为，就被称为 脏读。</p>
+<p>nonrepeatable read： 事务1 读取了数据a， 但随后 事务2 修改了数据a 并进行了提交， 随后， 事务1 再次读取数据a ，发现2次数据读取不一致， 这种称为nonrepeatable read。</p>
+<p>phantom read， 事务1 读取了一批数据， 事务2 插入了一条新数据并提交了事务， 事务1 再次进行读取，发现多了这条新数据， 这条新数据就像 幻象一样存在 phantom<br><img data-src="https://cdn.nlark.com/yuque/0/2018/png/106206/1535874942262-365cd74a-1598-4c9a-a30b-1dca35e3bf98.png#align=left&display=inline&height=301&originHeight=696&originWidth=1728&status=done&width=747"></p>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER1_BASIC_CONCEPTION</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter1_basic_conception.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

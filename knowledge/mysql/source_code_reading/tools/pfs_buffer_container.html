@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="pfs buffer container很3个核心的类,   template &lt;class T, int PFS_PAGE_SIZE, int PFS_PAGE_COUNT,   class U &#x3D; PFS_buffer_default_array,   class V &#x3D; PFS_buffer_default_allocator&gt; class PFS_buffe">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/tools/pfs_buffer_container.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="pfs buffer container很3个核心的类,   template &lt;class T, int PFS_PAGE_SIZE, int PFS_PAGE_COUNT,   class U &#x3D; PFS_buffer_default_array,   class V &#x3D; PFS_buffer_default_allocator&gt; class PFS_buffe">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-29T09:18:27.962Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.962Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/mysql/source_code_reading/tools/pfs_buffer_container">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/tools/pfs_buffer_container.html","path":"knowledge/mysql/source_code_reading/tools/pfs_buffer_container.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#pfs-buffer-container"><span class="nav-number">1.</span> <span class="nav-text">pfs buffer container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PFS-buffer-scalable-container"><span class="nav-number">2.</span> <span class="nav-text">PFS_buffer_scalable_container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PFS-buffer-default-array"><span class="nav-number">3.</span> <span class="nav-text">PFS_buffer_default_array</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PFS-buffer-default-array-1"><span class="nav-number">4.</span> <span class="nav-text">PFS_buffer_default_array</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-mysql源码分析"><a href="/knowledge/mysql/source_code_reading/" rel="section"><i class="fa fa-archive fa-fw"></i>MySQL源码分析</a></li>
+
+
+                        
+  <li class="menu-item menu-item-深入迁出mysql"><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>深入迁出MySQL</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/tools/">TOOLS</a></li>
+            <li>PFS_BUFFER_CONTAINER</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h2 id="pfs-buffer-container"><a href="#pfs-buffer-container" class="headerlink" title="pfs buffer container"></a>pfs buffer container</h2><p>很3个核心的类, </p>
+<ol>
+<li>template &lt;class T, int PFS_PAGE_SIZE, int PFS_PAGE_COUNT,<br>   class U &#x3D; PFS_buffer_default_array<t>,<br>   class V &#x3D; PFS_buffer_default_allocator<t>&gt;<br> class PFS_buffer_scalable_container</t></t></li>
+<li>template <class t><br>class PFS_buffer_default_allocator</class></li>
+<li>template <class t><br>class PFS_buffer_default_array</class></li>
+</ol>
+<p>PFS_buffer_scalable_container 数据结构<br>是一个类似buffer pool的算法, 其中存在n 个page, 每个page 有m 个row<br>一个page 就是由PFS_buffer_default_array 来管理<br>一个page 申请内存时, 就是调用PFS_buffer_default_allocator 来申请内存<br>一个row 就一个T </p>
+<h2 id="PFS-buffer-scalable-container"><a href="#PFS-buffer-scalable-container" class="headerlink" title="PFS_buffer_scalable_container"></a>PFS_buffer_scalable_container</h2><p>類似的拓展類, PFS_buffer_container, PFS_partitioned_buffer_scalable_container</p>
+<p>以mutex 为例, 进行解释</p>
+<p>typedef PFS_buffer_scalable_container&lt;PFS_mutex, 1024, 1024&gt;<br>    PFS_mutex_basic_container;<br>typedef PFS_partitioned_buffer_scalable_container&lt;PFS_mutex_basic_container,<br>                                                  PFS_MUTEX_PARTITIONS&gt;<br>    PFS_mutex_container;<br>#define PFS_MUTEX_PARTITIONS 2</p>
+<p>PFS_buffer_default_allocator<pfs_mutex> default_mutex_allocator(<br>    &amp;builtin_memory_mutex);<br>PFS_mutex_container global_mutex_container(&amp;default_mutex_allocator);</pfs_mutex></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">template &lt;class B, int PFS_PARTITION_COUNT&gt;</span><br><span class="line">class PFS_partitioned_buffer_scalable_container &#123;</span><br><span class="line">    // 设计非常简单, </span><br><span class="line">    B *m_partitions[PFS_PARTITION_COUNT];</span><br><span class="line"></span><br><span class="line">    所有操作都根据partition index 来找到对应的PFS_buffer_scalable_container 进行操作</span><br><span class="line">    如果需要求总值, 就将每个partition的对应值进行累加</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PFS_buffer_scalable_container 数据结构<br>是一个类似buffer pool的算法, 其中存在n 个page, 每个page 1024 个row, 一个row就是一个B</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">template &lt;class T, int PFS_PAGE_SIZE, int PFS_PAGE_COUNT,</span><br><span class="line">          class U = PFS_buffer_default_array&lt;T&gt;,</span><br><span class="line">          class V = PFS_buffer_default_allocator&lt;T&gt;&gt;</span><br><span class="line">class PFS_buffer_scalable_container &#123;</span><br><span class="line">  bool m_initialized;</span><br><span class="line">  bool m_full;</span><br><span class="line">  size_t m_max;</span><br><span class="line">  PFS_cacheline_atomic_size_t m_monotonic;   // 当前申请row的那个page index</span><br><span class="line">  PFS_cacheline_atomic_size_t m_max_page_index; // 已经申请了多少page</span><br><span class="line">  size_t m_max_page_count;   // 可以申请最大页数</span><br><span class="line">  size_t m_last_page_size;   // 最后一页的page size</span><br><span class="line">  std::atomic&lt;array_type *&gt; m_pages[PFS_PAGE_COUNT];</span><br><span class="line">  allocator_type *m_allocator;</span><br><span class="line">  native_mutex_t m_critical_section;</span><br><span class="line"></span><br><span class="line">  /* dynamic shrink related */</span><br><span class="line">  /* now only PFS_thread_container allowed dynamic shrink */</span><br><span class="line">  bool m_dynamic_shrink;</span><br><span class="line">  /* each slot&#x27;s page refcount */</span><br><span class="line">  std::atomic&lt;size_t&gt; m_page_refcounts[PFS_PAGE_COUNT];</span><br><span class="line">  /* each slot&#x27;s page version snapshot */</span><br><span class="line">  size_t m_page_versions[PFS_PAGE_COUNT];</span><br><span class="line">  uint m_current_reclaim_begin;</span><br><span class="line">  uint m_current_reclaim_end;</span><br><span class="line"> public:</span><br><span class="line">  /* statistics of dynamic shrink */</span><br><span class="line">  std::atomic&lt;size_t&gt; page_spin_waits;</span><br><span class="line">  std::atomic&lt;size_t&gt; rc_spin_waits;</span><br><span class="line">  std::atomic&lt;size_t&gt; allocate_retry_count;</span><br><span class="line">  std::atomic&lt;size_t&gt; reclaim_fail_count;</span><br><span class="line">  std::atomic&lt;size_t&gt; reclaim_success_count;</span><br><span class="line"></span><br><span class="line">  int init(long max_size, bool dyn_shrink=false) &#123;</span><br><span class="line">    // 只是把对应的设置成员变量设置好, 但内存还没有申请, m_pages[PFS_PAGE_COUNT] 指向都为空</span><br><span class="line">    // 调用方式类似这样, param-&gt;m_mutex_sizing 由配置参数performance_schema_max_mutex_classes进行设置</span><br><span class="line">    //if (global_mutex_container.init(param-&gt;m_mutex_sizing)) &#123;</span><br><span class="line">    //    return 1;</span><br><span class="line">    //&#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  value_type *allocate(pfs_dirty_state *dirty_state) &#123;</span><br><span class="line">    // 第一步</span><br><span class="line">    // 根据m_monotonic 和m_max_page_index , 从已有的page中申请一个row 满足,</span><br><span class="line">    // pfs = safe_allocate_value(index, dirty_state);</span><br><span class="line">    // 如果可以申请,则返回, 否则 执行下一步</span><br><span class="line"></span><br><span class="line">    // 第二步</span><br><span class="line">    //array = load_page_no_pending(current_page_count);</span><br><span class="line">    // 其实就是m_pages[index].load();但如果对应的page 处在pending状态会等待</span><br><span class="line">    // 如果array 为空, 则array = allocate_one_array(current_page_count, true);</span><br><span class="line">    // 在allocate_one_array 函数中</span><br><span class="line">    // 如果设置了shrink, 则等待m_page_refcounts[index] 降为0</span><br><span class="line">    // 申请一个PFS_buffer_default_array, 并设置这个PFS_buffer_default_array</span><br><span class="line">    // 然后调用PFS_buffer_default_allocator&gt;alloc_array(PFS_buffer_default_array) 申请rows 的内存</span><br><span class="line">    // 申请一个page size个row</span><br><span class="line">    // </span><br><span class="line"></span><br><span class="line">    // 第三步</span><br><span class="line">    调用safe_allocate_value , 如果失败,从第二步再试</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="PFS-buffer-default-array"><a href="#PFS-buffer-default-array" class="headerlink" title="PFS_buffer_default_array"></a>PFS_buffer_default_array</h2><p>这个类核心提供一个allocate 和deallocate 接口<br>类成员变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">template &lt;class T&gt;</span><br><span class="line">class PFS_buffer_default_array &#123;</span><br><span class="line">  bool m_full;</span><br><span class="line">  PFS_cacheline_atomic_size_t m_monotonic;</span><br><span class="line">  T *m_ptr;</span><br><span class="line">  size_t m_max;</span><br><span class="line">  /** Container. */</span><br><span class="line">  PFS_opaque_container *m_container;</span><br><span class="line">  /*</span><br><span class="line">    version number for dynamic reclaim, each time array is used,</span><br><span class="line">    version increase.</span><br><span class="line">  */</span><br><span class="line">  PFS_cacheline_atomic_size_t m_version;</span><br><span class="line">  /*</span><br><span class="line">    indicating whether page is used, this is to avoid new</span><br><span class="line">    allocated page been freed without ever being used.</span><br><span class="line">  */</span><br><span class="line">  std::atomic&lt;bool&gt; m_used&#123;false&#125;;</span><br><span class="line">  /** page index */</span><br><span class="line">  uint m_page_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="PFS-buffer-default-array-1"><a href="#PFS-buffer-default-array-1" class="headerlink" title="PFS_buffer_default_array"></a>PFS_buffer_default_array</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">template &lt;class T&gt;</span><br><span class="line">class PFS_buffer_default_array &#123;</span><br><span class="line">  bool m_full;</span><br><span class="line">  PFS_cacheline_atomic_size_t m_monotonic;</span><br><span class="line">  T *m_ptr;</span><br><span class="line">  size_t m_max;</span><br><span class="line">  /** Container. */</span><br><span class="line">  PFS_opaque_container *m_container;</span><br><span class="line">  /*</span><br><span class="line">    version number for dynamic reclaim, each time array is used,</span><br><span class="line">    version increase.</span><br><span class="line">  */</span><br><span class="line">  PFS_cacheline_atomic_size_t m_version;</span><br><span class="line">  /*</span><br><span class="line">    indicating whether page is used, this is to avoid new</span><br><span class="line">    allocated page been freed without ever being used.</span><br><span class="line">  */</span><br><span class="line">  std::atomic&lt;bool&gt; m_used&#123;false&#125;;</span><br><span class="line">  /** page index */</span><br><span class="line">  uint m_page_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>唯一一个额外的地方,是alloc 函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">value_type *allocate(pfs_dirty_state *dirty_state) &#123;</span><br><span class="line">    根据monotonic, 拿到对应位置的内存, 然后标记这个地方被申请</span><br><span class="line">    if (pfs-&gt;m_lock.free_to_dirty(dirty_state)) &#123;</span><br><span class="line">        /* increase version */</span><br><span class="line">        size_t version = m_version.m_size_t++;</span><br><span class="line">        if (unlikely(version == SIZE_MAX)) &#123;</span><br><span class="line">          m_version.m_size_t.store(1);</span><br><span class="line">        &#125;</span><br><span class="line">        m_used = true;</span><br><span class="line">        return pfs;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    以PFS_mutex 为例, </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/tools/">TOOLS</a></li>
+            <li>PFS_BUFFER_CONTAINER</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/mysql/source_code_reading/tools/pfs_buffer_container.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Abstract把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。本文手把手 一步一步 run sysbench 整个过程， 分为  介绍 准备工作 编译 测试 疑难杂症">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DB性能测试-常用3套件-手把手一步一步跑sysbench">
+<meta property="og:url" content="http://ilongda.com/2020/sysbench/index.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="Abstract把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。本文手把手 一步一步 run sysbench 整个过程， 分为  介绍 准备工作 编译 测试 疑难杂症">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-28T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.039Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/2020/sysbench/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/sysbench/","path":"2020/sysbench/","title":"DB性能测试-常用3套件-手把手一步一步跑sysbench"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DB性能测试-常用3套件-手把手一步一步跑sysbench | Longda share space</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">准备工作</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%96%E8%AF%91"><span class="nav-number">4.</span> <span class="nav-text">编译</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-number">5.</span> <span class="nav-text">测试</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%96%91%E9%9A%BE%E6%9D%82%E7%97%87"><span class="nav-number">6.</span> <span class="nav-text">疑难杂症</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%B7%AE"><span class="nav-number">6.1.</span> <span class="nav-text">性能差</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#no-such-built-in-test-file-or-module"><span class="nav-number">6.2.</span> <span class="nav-text">no such built-in test, file or module</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%9CCan-not-connect-to-MySQL-server-Too-many-connections%E2%80%9D"><span class="nav-number">6.3.</span> <span class="nav-text">“Can not connect to MySQL server. Too many connections”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sysbench-%E6%97%A0%E6%B3%95%E8%BF%90%E8%A1%8C"><span class="nav-number">6.4.</span> <span class="nav-text">sysbench 无法运行</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/sysbench/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda share space">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda share space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DB性能测试-常用3套件-手把手一步一步跑sysbench
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-06-28 19:42:57" itemprop="dateCreated datePublished" datetime="2020-06-28T19:42:57+08:00">2020-06-28</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2024-01-29 17:18:27" itemprop="dateModified" datetime="2024-01-29T17:18:27+08:00">2024-01-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。<br>本文手把手 一步一步 run sysbench</p>
+<p>整个过程， 分为</p>
+<ul>
+<li>介绍</li>
+<li>准备工作</li>
+<li>编译</li>
+<li>测试</li>
+<li>疑难杂症<span id="more"></span></li>
+</ul>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>下面引用老外的一段话来介绍一下sysbench</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sysbench is a scriptable multi-threaded benchmark tool based on LuaJIT. It is most frequently used for database benchmarks, but can also be used to create arbitrarily complex workloads that do not involve a database server.</span><br><span class="line"></span><br><span class="line">sysbench comes with the following bundled benchmarks:</span><br><span class="line"></span><br><span class="line">    * oltp_*.lua: a collection of OLTP-like database benchmarks</span><br><span class="line">    * fileio: a filesystem-level benchmark</span><br><span class="line">    * cpu: a simple CPU benchmark</span><br><span class="line">    * memory: a memory access benchmark</span><br><span class="line">    * threads: a thread-based scheduler benchmark</span><br><span class="line">    * mutex: a POSIX mutex benchmark</span><br></pre></td></tr></table></figure>
+<p>今天我们最主要使用的oltp 系列测试</p>
+<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>安装相应的包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc gcc-c++ autoconf automake make libtool bzr mysql-devel git mysql</span><br><span class="line">yum -y install make automake libtool pkgconfig libaio-devel</span><br><span class="line">yum -y install openssl-devel</span><br></pre></td></tr></table></figure>
+
+<p>执行如下命令配置Sysbench client，使内核可以使用所有的CPU核处理数据包（默认设置为使用2个核），同时减少CPU核之间的上下文切换。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo sh -c &#x27;for x in /sys/class/net/eth0/queues/rx-*; do echo ffffffff&gt;$x/rps_cpus; done&#x27;</span><br><span class="line">sudo sh -c &quot;echo 32768 &gt; /proc/sys/net/core/rps_sock_flow_entries&quot;</span><br><span class="line">sudo sh -c &quot;echo 4096 &gt; /sys/class/net/eth0/queues/rx-0/rps_flow_cnt&quot;</span><br><span class="line">sudo sh -c &quot;echo 4096 &gt; /sys/class/net/eth0/queues/rx-1/rps_flow_cnt&quot;</span><br></pre></td></tr></table></figure>
+<p>备注： 说明 ffffffff表示使用32个核。请根据实际配置修改，例如ECS为8核，则输入ff。</p>
+<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/akopytov/sysbench.git</span><br><span class="line">##从Git中下载sysbench</span><br><span class="line"></span><br><span class="line">cd sysbench</span><br><span class="line">##打开sysbench目录</span><br><span class="line"></span><br><span class="line">git checkout 1.0.18</span><br><span class="line">##切换到sysbench 1.0.18版本， 也可以不用切换到1.0.18 版本上，直接使用master</span><br><span class="line"></span><br><span class="line">./autogen.sh</span><br><span class="line">##运行autogen.sh</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --mandir=/usr/share/man</span><br><span class="line"></span><br><span class="line">make</span><br><span class="line">##编译</span><br><span class="line"></span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><p>sysbench 的测试 通常类似这样,  分为3个阶段， 一个prepare， 一个run， 一个cleanup</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sysbench --db-driver=mysql --mysql-host=XXX --mysql-port=XXX --mysql-user=XXX --mysql-password=XXX --mysql-db=sbtest --table_size=25000 --tables=250 --events=0 --time=600  oltp_write_only prepare</span><br><span class="line">##准备数据</span><br><span class="line"></span><br><span class="line">sysbench --db-driver=mysql --mysql-host=XXX --mysql-port=XXX --mysql-user=XXX --mysql-password=XXX --mysql-db=sbtest --table_size=25000 --tables=250 --events=0 --time=600   --threads=XXX --percentile=95 --report-interval=1 oltp_write_only run</span><br><span class="line">##运行workload</span><br><span class="line"></span><br><span class="line">sysbench --db-driver=mysql --mysql-host=XXX --mysql-port=XXX --mysql-user=XXX --mysql-password=XXX --mysql-db=sbtest --table_size=25000 --tables=250 --events=0 --time=600   --threads=XXX --percentile=95  oltp_write_only cleanup</span><br><span class="line">##清理</span><br></pre></td></tr></table></figure>
+<p>命令解释</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">--mysql-host       IP</span><br><span class="line">--mysql-port       端口号</span><br><span class="line">--mysql-db         希望链接的数据库</span><br><span class="line">--mysql-user       用户名</span><br><span class="line">--mysql-password   密码</span><br><span class="line">--table_size       每张表初始化的数据数量</span><br><span class="line">--tables           初始化表的数量</span><br><span class="line">--threads          启动的线程</span><br><span class="line">--time             运行时间设为0表示不限制时间</span><br><span class="line">--report-interval  运行期间日志，单位为秒</span><br><span class="line">--events           最大请求数量，定义数量后可以不需要--time选项</span><br><span class="line">--rand-type        访问数据时使用的随机生成函数 可以选择&quot;special&quot;， &quot;uniform&quot;， &quot;gaussian&quot;， &quot;pareto&quot;， 默认special， 早期时uniform</span><br><span class="line">--skip_trx=on      在只读测试中可以选择打开或关闭事务， 默认是打开</span><br></pre></td></tr></table></figure>
+
+
+<p>作者写了一个自动测试的脚本， 读者可以从<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/longdafeng/test/tree/master/shell/sysbench">https://github.com/longdafeng/test/tree/master/shell/sysbench</a>  将脚本下载下来<br>记得将 脚本放到 sysbench 源码目录下src&#x2F;lua 下面</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd sysbench</span><br><span class="line">cd src/lua</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/sysbench/start-sysbench.sh </span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/sysbench/start.sh</span><br><span class="line">nohup ./start.sh hostxxx portxxx userxxx passwordxxx dbxxx &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f run.log</span><br></pre></td></tr></table></figure>
+<p>其中hostxxx, portxxx, userxxx, passwordxxx, dbxxx 修改为真实mysql的参数<br>这个脚本， 是设置不同大表大小， 设置不同随机参数， 设置不同的线程数， 设置是否打开或关闭事务， 依次运行oltp_read_only, oltp_write_only, oltp_read_write 3个集成测试，<br>在src&#x2F;lua 目录下， 还有很多单项测试, 比如insert, point_select, update_index, update_non_index, select_random_points, select_random_ranges 分别是针对不同的场景的测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@kudu lua]# ls *.lua</span><br><span class="line">bulk_insert.lua  oltp_common.lua  oltp_insert.lua        oltp_read_only.lua   oltp_update_index.lua      oltp_write_only.lua  select_random_points.lua</span><br><span class="line">empty-test.lua   oltp_delete.lua  oltp_point_select.lua  oltp_read_write.lua  oltp_update_non_index.lua  prime-test.lua       select_random_ranges.lua</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h1 id="疑难杂症"><a href="#疑难杂症" class="headerlink" title="疑难杂症"></a>疑难杂症</h1><h2 id="性能差"><a href="#性能差" class="headerlink" title="性能差"></a>性能差</h2><p>sysbench 是对cpu&#x2F;memory&#x2F;网络非常敏感的测试， 经常遇到 很多客户在测试的过程中，发现性能和预期的差距比较大， 深究后，发现， sysbench的肉机（客户端） 和目标测试数据不在同一个局域网或者一个vpc 内（云上客户）， 对于很多云数据库， 肉机和目标mysql 必须在同一个region， 并且是在同一个vpc， 并且在链接字符串的时候，必须使用私有的链接地址，不能使用公网的链接地址， 公网的链接地址会经过很多跳。</p>
+<p>假设语句是：<br>sysbench oltp_read_write.lua –mysql-host&#x3D;127.0.0.1 –mysql-port&#x3D;3306 –mysql-db&#x3D;sbtest –mysql-user&#x3D;root –mysql-password&#x3D;123456 –table_size&#x3D;200000000 –tables&#x3D;1 –threads&#x3D;500 –events&#x3D;500000 –report-interval&#x3D;10 –time&#x3D;0</p>
+<h2 id="no-such-built-in-test-file-or-module"><a href="#no-such-built-in-test-file-or-module" class="headerlink" title="no such built-in test, file or module"></a>no such built-in test, file or module</h2><p>如果执行的时候提示FATAL: Cannot find benchmark ‘oltp_read_write.lua’: no such built-in test, file or module</p>
+<p>切换到sysbench的源码目录（sysbench.tar.gz解压路径）<br>find .&#x2F; -name oltp_read_write.lua<br>.&#x2F;src&#x2F;lua&#x2F;oltp_read_write.lua<br>接着切换到src&#x2F;lua 目录再执行语句</p>
+<h2 id="“Can-not-connect-to-MySQL-server-Too-many-connections”"><a href="#“Can-not-connect-to-MySQL-server-Too-many-connections”" class="headerlink" title="“Can not connect to MySQL server. Too many connections”"></a>“Can not connect to MySQL server. Too many connections”</h2><p>#如果执行的时候命令行提示“Can not connect to MySQL server. Too many connections”-mysql 1040错误：<br>shell&gt;mysql -uroot -p****<br>mysql&gt;show variables like ‘max_connections’;(查看当前的最大连接数)<br>mysql&gt;set global max_connections&#x3D;1000;(设置最大连接数为1000，可以再次查看是否设置成功)<br>mysql&gt;show variables like ‘max_connections’;(查看当前的最大连接数)<br>mysql&gt;exit</p>
+<h2 id="sysbench-无法运行"><a href="#sysbench-无法运行" class="headerlink" title="sysbench 无法运行"></a>sysbench 无法运行</h2> <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ldd /usr/bin/sysbench</span><br></pre></td></tr></table></figure>
+<p>正常情况下， sysbench 依赖的所有library 应该都可以resolve 掉， 如果有的时候，没有找到依赖的library， 最常见的是没有找到mysql的library<br>需要安装</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum -y install mysql-devel mysql</span><br></pre></td></tr></table></figure>
+<p>然后再重新编译sysben的源码</p>
+<p>如果问题依旧存在<br>可以尝试， 手动创建连接</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">去根目录找一下：</span><br><span class="line">find / -name &quot;*mysqlclient_r*&quot;</span><br><span class="line">/usr/lib64/mysql/libmysqlclient_r.so.18</span><br><span class="line">/usr/lib64/mysql/libmysqlclient_r.so.18.1.0</span><br><span class="line">库文件是有的，不过带个数字后缀，给库文件建立软链接：</span><br><span class="line">ln -s /usr/lib64/mysql/libmysqlclient_r.so.18 /usr/lib64/mysql/libmysqlclient_r.so</span><br></pre></td></tr></table></figure>
+
+<p>如果问题还是不能解决， 最后的办法就是从github 上下载mysql的源码， 先对mysql 源码进行编译，安装，然后再重新编译sysbench</p>
+<pre><code># --with-mysql-includes选项指定mysql的include文件夹，里面是一些.h的头文件，比如mysql.h，未安装mysql-community-devel-version是没有include文件夹的
+# with-mysql-libs选项指定mysql的一些lib，里面是一些.a文件和.so文件，比如libmysqlclient.a，libmysqlclient.so
+# 比如./configure --prefix=/usr   --with-mysql-includes=/usr/include/mysql --with-mysql-libs=/usr/lib64/mysql
+</code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/TPCH/" rel="prev" title="DB性能测试-常用3套件-手把手一步一步跑TPCH">
+                  <i class="fa fa-chevron-left"></i> DB性能测试-常用3套件-手把手一步一步跑TPCH
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/tpcc/" rel="next" title="DB性能测试-常用3套件-手把手一步一步跑tpcc">
+                  DB性能测试-常用3套件-手把手一步一步跑tpcc <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/sysbench/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Abstract把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。本文手把手 一步一步 run tpcc 整个过程， 分为  介绍 准备工作 编译 测试 疑难杂症">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DB性能测试-常用3套件-手把手一步一步跑tpcc">
+<meta property="og:url" content="http://ilongda.com/2020/tpcc/index.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="Abstract把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。本文手把手 一步一步 run tpcc 整个过程， 分为  介绍 准备工作 编译 测试 疑难杂症">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ilongda.com/img/tpcc.png">
+<meta property="og:image" content="https://intranetproxy.alipay.com/skylark/lark/0/2019/png/105349/1573401426816-e09d8730-610a-48a9-b18e-d8fff1fba88b.png#align=left&display=inline&height=383&name=image.png&originHeight=766&originWidth=1520&size=201206&status=done&style=none&width=760">
+<meta property="article:published_time" content="2020-07-05T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.042Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ilongda.com/img/tpcc.png">
+
+
+<link rel="canonical" href="http://ilongda.com/2020/tpcc/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/tpcc/","path":"2020/tpcc/","title":"DB性能测试-常用3套件-手把手一步一步跑tpcc"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DB性能测试-常用3套件-手把手一步一步跑tpcc | Longda share space</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E7%AE%80%E4%BB%8B"><span class="nav-number">2.1.</span> <span class="nav-text">模型简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Metrics"><span class="nav-number">2.2.</span> <span class="nav-text">Metrics</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.3.</span> <span class="nav-text">事务类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A6%81%E6%B1%82"><span class="nav-number">2.4.</span> <span class="nav-text">要求</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7%E8%B0%83%E7%A0%94"><span class="nav-number">3.</span> <span class="nav-text">测试工具调研</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#tpcc-mysql%E7%AE%80%E4%BB%8B"><span class="nav-number">3.1.</span> <span class="nav-text">tpcc-mysql简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#benchmark-sql%E7%AE%80%E4%BB%8B"><span class="nav-number">3.2.</span> <span class="nav-text">benchmark-sql简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HammerDB%E7%AE%80%E4%BB%8B"><span class="nav-number">3.3.</span> <span class="nav-text">HammerDB简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DBT2%E7%AE%80%E4%BB%8B"><span class="nav-number">3.4.</span> <span class="nav-text">DBT2简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sqlbench%E7%AE%80%E4%BB%8B"><span class="nav-number">3.5.</span> <span class="nav-text">sqlbench简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%94%AF%E6%8C%81"><span class="nav-number">3.6.</span> <span class="nav-text">数据库支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9sql%E6%89%A7%E8%A1%8C%E6%96%B9%E5%BC%8F%E7%9A%84%E6%94%AF%E6%8C%81"><span class="nav-number">3.7.</span> <span class="nav-text">对sql执行方式的支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9key-in-time%E5%92%8Cthink-time%E7%9A%84%E6%94%AF%E6%8C%81"><span class="nav-number">3.8.</span> <span class="nav-text">对key-in time和think time的支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9terminal%E5%92%8Cdatabase-connection%E7%9A%84%E8%A7%A3%E8%80%A6"><span class="nav-number">3.9.</span> <span class="nav-text">对terminal和database connection的解耦</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TPC-C%E6%A0%87%E5%87%86%E4%B8%ADHome-Warehouse%E6%94%AF%E6%8C%81"><span class="nav-number">3.10.</span> <span class="nav-text">TPC-C标准中Home Warehouse支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Terminal%E4%B8%8A%E7%9A%84%E5%8F%AF%E8%A7%86%E4%BF%A1%E6%81%AF%E4%BA%A4%E4%BA%92"><span class="nav-number">3.11.</span> <span class="nav-text">Terminal上的可视信息交互</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#sqlbench"><span class="nav-number">4.</span> <span class="nav-text">sqlbench</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#prepare"><span class="nav-number">4.1.</span> <span class="nav-text">prepare</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#compile"><span class="nav-number">4.2.</span> <span class="nav-text">compile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#load-%E6%95%B0%E6%8D%AE"><span class="nav-number">4.3.</span> <span class="nav-text">load 数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="nav-number">4.4.</span> <span class="nav-text">运行测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E6%B5%8B%E8%AF%95%E6%8A%A5%E5%91%8A"><span class="nav-number">4.5.</span> <span class="nav-text">生成测试报告</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/tpcc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda share space">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda share space">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DB性能测试-常用3套件-手把手一步一步跑tpcc
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-07-05 19:42:57" itemprop="dateCreated datePublished" datetime="2020-07-05T19:42:57+08:00">2020-07-05</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2024-01-29 17:18:27" itemprop="dateModified" datetime="2024-01-29T17:18:27+08:00">2024-01-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。<br>本文手把手 一步一步 run tpcc</p>
+<p>整个过程， 分为</p>
+<ul>
+<li>介绍</li>
+<li>准备工作</li>
+<li>编译</li>
+<li>测试</li>
+<li>疑难杂症<span id="more"></span></li>
+</ul>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.tpc.org/tpcc/">http://www.tpc.org/tpcc/</a><br>TPCC有不同的运行方式，用来测试数据库的压力工具，模拟一个电商的业务，主要的业务有新增订单，库存查询，发货，支付等模块的测试。 详情可以参考 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/domino-succ/tpcc-hbase/wiki/%E4%B8%AD%E6%96%87-TPC-C%E7%AE%80%E4%BB%8B">https://github.com/domino-succ/tpcc-hbase/wiki/中文-TPC-C简介</a></p>
+<h2 id="模型简介"><a href="#模型简介" class="headerlink" title="模型简介"></a>模型简介</h2><p>在测试开始前，TPC-C Benchmark规定了数据库的初始状态，也就是数据库中数据生成的规则，其中ITEM表中固定包含10万种商品，仓库的数量可进行调整，假设WAREHOUSE表中有W条记录，那么：</p>
+<ul>
+<li>STOCK表中应有W×10万条记录(每个仓库对应10万种商品的库存数据)；</li>
+<li>DISTRICT表中应有W×10条记录(每个仓库为10个地区提供服务)；</li>
+<li>CUSTOMER表中应有W×10×3000条记录(每个地区有3000个客户)；</li>
+<li>HISTORY表中应有W×10×3000条记录(每个客户一条交易历史)；</li>
+<li>ORDER表中应有W×10×3000条记录(每个地区3000个订单)，并且最后生成的900个订单被添加到NEW-ORDER表中，每个订单随机生成5~15条ORDER-LINE记录。</li>
+</ul>
+<p>在测试过程中，每一个地区（DISTRICT）都有一个对应的终端（Terminal），模拟为用户提供服务。在每个终端的生命周期内，要循环往复地执行各类事务，每个事务的流程如图所示，当终端执行完一个事务的周期后，就进入下一个事务的周期，如下图所示。<br><img data-src="/img/tpcc.png"></p>
+<p>客户下单后，包含若干个订单明细（ORDER-LINE）的订单（ORDER）被生成，并被加入新订单（NEW-ORDER）列表。<br>客户对订单支付还会产生交易历史（HISTORY）。<br>每个订单(ORDER) 平均包含10条订单项(ORDER-LINE), 其中1% 需要从远程仓库中获取.<br>这些就是TPC-C模型中的9个数据表。其中，仓库的数量W可以根据系统的实际情况进行调整，以使系统性能测试结果达到最佳。</p>
+<h2 id="Metrics"><a href="#Metrics" class="headerlink" title="Metrics"></a>Metrics</h2><p>TPCC用tpmC值（Transactions per Minute）来衡量系统最大有效吞吐量. 其中Transactions以NewOrder Transaction为准，即最终衡量单位为每分钟处理的订单数。</p>
+<h2 id="事务类型"><a href="#事务类型" class="headerlink" title="事务类型"></a>事务类型</h2><p>该benchmark包含5类事务</p>
+<ul>
+<li>NewOrder: 新订单的生成从某一仓库随机选取5-15件商品, 创建新订单. 其中1%的事务需要回滚(即err).  一般来说新订单请求不可能超出全部事务请求的45% |</li>
+<li>Payment : 订单付款更新客户账户余额, 反映其支付情况. 占比 43% </li>
+<li>OrderStatus : 最近订单查询 随机显示一个用户显示其最有益条订单, 显示该订单内的每个商品状态. 占比4% </li>
+<li>Delivery  : 配送, 模拟批处理交易更新该订单用户的余额, 把发货单从neworder中删除. 占比4% </li>
+<li>StockLevel  : 库存缺货状态分析 , 占比4%</li>
+</ul>
+<h2 id="要求"><a href="#要求" class="headerlink" title="要求"></a>要求</h2><p>然后，终端模拟用户输入事务所需的参数，并等待一个输入时间（Keying Time）；等待结束后，事务执行正式开始，执行结束后记录事务的实际执行时间（txnRT），TPC-C对每类事务的执行时间都有一个最低要求，分别是：</p>
+<ul>
+<li>至少90%的NewOrder事务执行时间要低于5秒，</li>
+<li>至少90%的Payment事务执行时间要低于5秒，</li>
+<li>至少90%的OrderStatus事务执行时间要低于5秒，</li>
+<li>至少90%的Payment事务执行时间要低于5秒，</li>
+<li>至少90%的StockLevel事务执行时间要低于20秒；</li>
+</ul>
+<p>最后，终端模拟用户对结果的查看以及思考，等待一个思考时间（Thinking Time）；在思考时间结束后，进入下一个事务周期。 在整个测试过程结束后，用处理过的新订单事务总数量除以整个测试运行的分钟数并取整，就得到了tpmC的值。</p>
+<h1 id="测试工具调研"><a href="#测试工具调研" class="headerlink" title="测试工具调研"></a>测试工具调研</h1><p>TPC-C测试常用的测试工具包括tpcc-mysql，benchmark-sql，Hammer DB，DBT2，sqlbench。这些工具对TPC-C标准的支持程度不尽相同。经过调研发现从DBT2改进来的开源的sqlbench工具是最接近标准要求的测试工具。因此我们首先对比不同工具对标准的支持情况，然后介绍使用sqlbench进行TPC-C测试的步骤。</p>
+<h2 id="tpcc-mysql简介"><a href="#tpcc-mysql简介" class="headerlink" title="tpcc-mysql简介"></a>tpcc-mysql简介</h2><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/Percona-Lab/tpcc-mysql">TPCC-MYSQL</a> 是percona基于TPC-C(下面简写成TPCC)衍生出来的产品，专用于MySQL基准测试。用来测试数据库的压力工具，模拟一个电商的业务，主要的业务有新增订单，库存查询，发货，支付等模块的测试。使用说明明文档（<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.percona.com/blog/2013/07/01/tpcc-mysql-simple-usage-steps-and-how-to-build-graphs-with-gnuplot/%EF%BC%89%E3%80%82">https://www.percona.com/blog/2013/07/01/tpcc-mysql-simple-usage-steps-and-how-to-build-graphs-with-gnuplot/）。</a></p>
+<h2 id="benchmark-sql简介"><a href="#benchmark-sql简介" class="headerlink" title="benchmark-sql简介"></a>benchmark-sql简介</h2><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://sourceforge.net/projects/benchmarksql/">benchmark-sql</a>是java语言实现TPCC工具，使用JDBC接口，支持Oracle、PostgreSQL、firebird和MySQL。</p>
+<h2 id="HammerDB简介"><a href="#HammerDB简介" class="headerlink" title="HammerDB简介"></a>HammerDB简介</h2><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.hammerdb.com/document.html">HammerDB</a>是Tcl语言实现TPCC&#x2F;TPCH工具，使用存储过程和Tcl包，支持Oracle、SQL Server、DB2、MySQL、PostgreSQL、Redis、Trafodion。支持Windows图形界面以及Tcl脚本脚本，功能比较完善。</p>
+<h2 id="DBT2简介"><a href="#DBT2简介" class="headerlink" title="DBT2简介"></a>DBT2简介</h2><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://osdldbt.sourceforge.net/">Databases Test 2</a>是由Open Source Development Lab开发的用于测试数据库性能的测试工具，虽然没有完全实现TPCC但是基本上也是模拟了OLTP的应用场景的，测试结果包括每秒处理的事务数、CPU使用率、IO以及内存的使用情况</p>
+<h2 id="sqlbench简介"><a href="#sqlbench简介" class="headerlink" title="sqlbench简介"></a>sqlbench简介</h2><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/swida/sqlbench">sqlbench</a>源自DBT2，作者阿里巴巴 荣生(diancheng.wdc)。原来的DBT2把整个测试过程分成client和 driver 两个应用程序，每个terminal需要 2个线程。如果测试的warehouse较多需要占用机器大量资源。而sqlbench对这方面做了优化，合并了这两个应用程序，同时优 化了线程的使用，使用1个线程处理多个terminal，大大减少了机器资源的使用。使一台机器可以运行更多的warehouse。另外 DBT2外部依赖较多，如对R环境的依赖，sqlbench去掉了不必要的外部依赖，目前sqlbench只依赖测试数据库的客户端库。</p>
+<h2 id="数据库支持"><a href="#数据库支持" class="headerlink" title="数据库支持"></a>数据库支持</h2><table>
+<thead>
+<tr>
+<th>sqlbench</th>
+<th>MySQL, PostgreSQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tpcc-mysql</td>
+<td>MySQL</td>
+</tr>
+<tr>
+<td>benchmark-sql</td>
+<td>PostgreSQL, EnterpriseDB and Oracle, MySQL</td>
+</tr>
+<tr>
+<td>HammerDB</td>
+<td>Oracle Database, SQL Server, IBM Db2, MySQL, MariaDB, PostgreSQL and Redis</td>
+</tr>
+<tr>
+<td>DBT2</td>
+<td>MySQL, PostgreSQL</td>
+</tr>
+</tbody></table>
+<h2 id="对sql执行方式的支持"><a href="#对sql执行方式的支持" class="headerlink" title="对sql执行方式的支持"></a>对sql执行方式的支持</h2><table>
+<thead>
+<tr>
+<th>sqlbench</th>
+<th>plain SQL，prepared statement，stored procedure</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tpcc-mysql</td>
+<td>Prepared statement</td>
+</tr>
+<tr>
+<td>benchmarksql</td>
+<td>Prepared statement</td>
+</tr>
+<tr>
+<td>HammerDB</td>
+<td>Stored Procedure</td>
+</tr>
+<tr>
+<td>DBT2</td>
+<td>Plain SQL，prepared statement，stored procedure</td>
+</tr>
+</tbody></table>
+<h2 id="对key-in-time和think-time的支持"><a href="#对key-in-time和think-time的支持" class="headerlink" title="对key-in time和think time的支持"></a>对key-in time和think time的支持</h2><p>TPC-C标准规定了每一中交易中的模拟用户输入和对输出结果的思考时间，这使得同一个terminal发起的SQL事务是非常低频率的操作。TPC-C标准通过这两个延迟时间限制了同一个terminal在给定的时间内能完成的交易数量，与此同时标准规定用一时间最多只有10个terminals访问同一个warehouse。经过计算1个warehouse能提供的最多TpmC为12.86。</p>
+<table>
+<thead>
+<tr>
+<th>sqlbench</th>
+<th>YES</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tpcc-mysql</td>
+<td>NO</td>
+</tr>
+<tr>
+<td>benchmark-sql</td>
+<td>NO</td>
+</tr>
+<tr>
+<td>HammerDB</td>
+<td>NO</td>
+</tr>
+<tr>
+<td>DBT2</td>
+<td>YES</td>
+</tr>
+</tbody></table>
+<h2 id="对terminal和database-connection的解耦"><a href="#对terminal和database-connection的解耦" class="headerlink" title="对terminal和database connection的解耦"></a>对terminal和database connection的解耦</h2><p>TPC-C规定了terminal到事务处理引擎中间必须通过网络连接，但是这里所列出的所有工具都不支持这种架构。DBT2和sqlbench虽然不支持这种三层结构，但是支持terminal处理和DB连接用不同的线程分开，其他几个工具没有terminal的概念，直接通过db connection thread完成交易。</p>
+<p><img data-src="https://intranetproxy.alipay.com/skylark/lark/0/2019/png/105349/1573401426816-e09d8730-610a-48a9-b18e-d8fff1fba88b.png#align=left&display=inline&height=383&name=image.png&originHeight=766&originWidth=1520&size=201206&status=done&style=none&width=760" alt="image.png"></p>
+<table>
+<thead>
+<tr>
+<th>sqlbench</th>
+<th>Terminal和DB conneciton解耦，可以单独配置数量。Termial处理线程支持复用，缺省配置每个线程支持50个terminal。</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tpcc-mysql</td>
+<td>没有terminal，只能配置db connection数量</td>
+</tr>
+<tr>
+<td>benchmark-sql</td>
+<td>没有terminal，只能配置db connection数量</td>
+</tr>
+<tr>
+<td>HammerDB</td>
+<td>没有terminal，只能配置db connection数量</td>
+</tr>
+<tr>
+<td>DBT2</td>
+<td>Terminal和DB conneciton解耦，可以单独配置数量</td>
+</tr>
+</tbody></table>
+<h2 id="TPC-C标准中Home-Warehouse支持"><a href="#TPC-C标准中Home-Warehouse支持" class="headerlink" title="TPC-C标准中Home Warehouse支持"></a>TPC-C标准中Home Warehouse支持</h2><p>标准要求每一个terminal在整个测试运行周期内保持warehouse ID不变，即home warehouse不变。</p>
+<table>
+<thead>
+<tr>
+<th>sqlbench</th>
+<th>支持terminal home warehouse</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tpcc-mysql</td>
+<td>不支持，warehouse每个交易随机生成</td>
+</tr>
+<tr>
+<td>benchmark-sql</td>
+<td>不支持，warehouse每个交易随机生成</td>
+</tr>
+<tr>
+<td>HammerDB</td>
+<td>支持terminal home warehouse</td>
+</tr>
+<tr>
+<td>DBT2</td>
+<td>支持terminal home warehouse</td>
+</tr>
+</tbody></table>
+<h2 id="Terminal上的可视信息交互"><a href="#Terminal上的可视信息交互" class="headerlink" title="Terminal上的可视信息交互"></a>Terminal上的可视信息交互</h2><p>标准定义了用户从terminal输入数据，然后交易结果的细节数据需要返回给terminal用户用于展示，这会带来额外的时延。所有工具都没有对terminal信息交互的支持。</p>
+<h1 id="sqlbench"><a href="#sqlbench" class="headerlink" title="sqlbench"></a>sqlbench</h1><h2 id="prepare"><a href="#prepare" class="headerlink" title="prepare"></a>prepare</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y autoconf automake mysql mysql-devel postgresql-devel</span><br></pre></td></tr></table></figure>
+
+<h2 id="compile"><a href="#compile" class="headerlink" title="compile"></a>compile</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/swida/sqlbench.git</span><br><span class="line">cd sqlbench</span><br><span class="line">aclocal</span><br><span class="line">autoconf</span><br><span class="line">autoheader</span><br><span class="line">automake --add-missing</span><br><span class="line">./configure --with-postgresql=yes --with-mysql=yes </span><br><span class="line">make &amp;&amp; make install</span><br></pre></td></tr></table></figure>
+
+<h2 id="load-数据"><a href="#load-数据" class="headerlink" title="load 数据"></a>load 数据</h2><p>从 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/longdafeng/test/tree/master/shell/tpcc/sqlbench">https://github.com/longdafeng/test/tree/master/shell/tpcc/sqlbench</a> 上把load.sh 脚本下载下来</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd sqlbench</span><br><span class="line">cd src/scripts</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/tpcc/sqlbench/load.sh</span><br><span class="line">nohup ./load.sh ipxxxx portxxx userxxx passwordxxx dbnamexxx warehousexxx &gt; load.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f load.log </span><br></pre></td></tr></table></figure>
+<ol>
+<li>必须使用ip， 建议不要使用域名， 因为使用域名，经常建立不了到数据库的链接</li>
+<li>脚本是放到${sqlbench_source_dir}&#x2F;src&#x2F;scripts 下</li>
+</ol>
+<ul>
+<li>ipxxxx     数据库的ip</li>
+<li>portxxx    数据库的端口号</li>
+<li>userxxx    数据库的用户名</li>
+<li>password   数据库的密码</li>
+<li>dbnamexxx  数据库的库名字</li>
+<li>warehousexxx warehouse 的个数 ， 比如100</li>
+</ul>
+<h2 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cd sqlbench</span><br><span class="line"># MySQL:</span><br><span class="line">nohup ./src/core/sqlbench -t mysql --dbname=tpcc --user=user --password=password --host=127.0.0.1 --port=3306 -w100 -c32 -l7200 -r1200 --sqlapi=storeproc &gt;run.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f run.log</span><br></pre></td></tr></table></figure>
+
+<p>这里:</p>
+<p>• -t 指定PostgreSQL数据库 –dbname和–host为数据库的连接参数，其他没指定的使用默认参数<br>• -w 指定测试数据为100个warehouse<br>• -l 共运行测试时间为7200秒<br>• -r 其中ramp up的时间为1200秒<br>• -c 共使用32个数据库连接<br>sqlbench其他的常用参数包括：<br>• –no-thinktime 默认的TPC-C测试是有keying time和thinking time的，模拟真正的用户场景，可通过指定这个参数将相应 的时间设置成0，不控制时间间隔，产生最大压力<br>• –sqlapi 选择SQL执行的方式，可选：<br>• simple 为普通SQL方式<br>• extended 使用prepare&#x2F;bind&#x2F;execute方式，该方式先生成查询计划缓存起来，后面直接执行，效率更高<br>• storeproc 使用存储过程，这种方式与比extended相比还节省了与数据库服务器通信的开销<br>• -s与-e指定开始和结束的warehouse数，在更多warehouse时，可以使用这2个选项分配warehouse，分成多个sqlbench压测同 一个数据库<br>• –altered默认情况sqlbench下根据TPC-C标准生成terminal数（每个terminal代表一个user，每个warehouse 10个terminal， 也可以使用–tpw改变），这个参数直接指定了terminal个数，被这些warehouse平均分。<br>• –sleep指定每创建一个线程后sleep的时间，默认为1s<br>• -o 用来指定output目录，用来存储错误日志及测试结果文件<br>sqlbench的其他参数是用来定制TPC-C标准的各个部分的，包括keying time、thinking time的时间，各个事务所占比率，各个 表的数据量等，默认值都是遵从TPC-C标准的。</p>
+<p>比如常用</p>
+<ol>
+<li><p>没有think time控制</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./src/core/sqlbench -t mysql --dbname=tpcc --user=user --password=password --host=$HOST --port=$PORT -w$WH -c$CONN -l7200 -r1200 --sqlapi=storeproc --no-thinktime --sleep=10</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>有think time控制</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./src/core/sqlbench -t mysql --dbname=tpcc --user=user --password=password --host=$HOST --port=$PORT -w$WH -c$CONN -l7200 -r1200 --sqlapi=storeproc --sleep=10</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="生成测试报告"><a href="#生成测试报告" class="headerlink" title="生成测试报告"></a>生成测试报告</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">src/utils/post_process -l mix.log</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/sysbench/" rel="prev" title="DB性能测试-常用3套件-手把手一步一步跑sysbench">
+                  <i class="fa fa-chevron-left"></i> DB性能测试-常用3套件-手把手一步一步跑sysbench
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/fileio/" rel="next" title="磁盘性能测试">
+                  磁盘性能测试 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/tpcc/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

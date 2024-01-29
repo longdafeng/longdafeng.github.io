@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="第四章 查询执行每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多   操作符介绍 操作符   符号 使用例子 解释    select: σ  选择，类似于SQL中的where。注意，和SQL中的select不一样。   project: Π  投影，类似于SQL中的select   rename: ρ  重命名，类似于SQL中的as   assignment：←  赋值。   uni">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter4_query_execution.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="第四章 查询执行每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多   操作符介绍 操作符   符号 使用例子 解释    select: σ  选择，类似于SQL中的where。注意，和SQL中的select不一样。   project: Π  投影，类似于SQL中的select   rename: ρ  重命名，类似于SQL中的as   assignment：←  赋值。   uni">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490057713-bd65faa1-92a5-4ee8-b9f7-56d120181a8d.png#align=left&display=inline&height=506&name=image.png&originHeight=506&originWidth=747&size=267181&status=done&width=747">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572831969739-3602b8bc-66d5-4b44-b985-374d47254383.png#align=left&display=inline&height=454&name=image.png&originHeight=454&originWidth=330&size=23303&status=done&width=330">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572832081120-cff7ccec-5996-4c18-80fe-935788009f21.png#align=left&display=inline&height=543&name=image.png&originHeight=543&originWidth=662&size=35518&status=done&width=662">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572850512403-6d577b48-b248-4a90-ad28-9ebedc2f4672.png#align=left&display=inline&height=573&name=image.png&originHeight=573&originWidth=485&size=31972&status=done&width=485">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572851288514-7f1b7af5-d471-4847-95b3-a01a05424e62.png#align=left&display=inline&height=305&name=image.png&originHeight=305&originWidth=489&size=25554&status=done&width=489">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572857322053-fd7c54e4-1824-4384-9a42-a732f2c53294.png#align=left&display=inline&height=384&name=image.png&originHeight=384&originWidth=358&size=20388&status=done&width=358">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572858804011-921a66a2-17f9-423d-b044-e0f6a2db5f26.png#align=left&display=inline&height=404&name=image.png&originHeight=404&originWidth=376&size=29842&status=done&width=376">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572864890270-b0ff9ccc-79a3-49cd-a13f-f97924a7aed4.png#align=left&display=inline&height=287&name=image.png&originHeight=287&originWidth=241&size=10927&status=done&width=241">
+<meta property="article:published_time" content="2024-01-29T09:18:27.924Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.924Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter4_query_execution">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter4_query_execution.html","path":"knowledge/database/database_implementation_reading_notes/chapter4_query_execution.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E7%AB%A0-%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C"><span class="nav-number">1.</span> <span class="nav-text">第四章 查询执行</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%AC%A6%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">操作符介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%AC%A6"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">操作符</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%AB%E6%8F%8F"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">扫描</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A1%A1%E9%87%8F%E4%BB%A3%E4%BB%B7%E7%9A%84%E5%8F%82%E6%95%B0"><span class="nav-number">1.1.0.3.</span> <span class="nav-text">衡量代价的参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%AD%E4%BB%A3%E5%99%A8"><span class="nav-number">1.1.0.4.</span> <span class="nav-text">迭代器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%AC%A6%E7%AE%97%E6%B3%95"><span class="nav-number">1.1.0.5.</span> <span class="nav-text">操作符算法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B5%8C%E5%A5%97%E5%BE%AA%E7%8E%AF%E8%BF%9E%E6%8E%A5"><span class="nav-number">1.1.1.</span> <span class="nav-text">嵌套循环连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%92%E5%BA%8F"><span class="nav-number">1.1.2.</span> <span class="nav-text">排序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%A4%E9%98%B6%E6%AE%B5%E5%A4%9A%E8%B7%AF%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">两阶段多路归并排序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E6%8E%92%E5%BA%8F%E7%9A%84%E7%AE%80%E5%8D%95merge-sort-join"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">基于排序的简单merge-sort join</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Ehash%E7%9A%842%E8%B6%9F%E7%AE%97%E6%B3%95"><span class="nav-number">1.1.3.</span> <span class="nav-text">基于hash的2趟算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Ehash%E7%9A%84distinct%E7%AE%97%E6%B3%95"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">基于hash的distinct算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Ehash%E7%9A%84group-by%E6%88%96aggregate"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">基于hash的group by或aggregate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%93%E5%86%B2%E5%8C%BA%E7%AE%A1%E7%90%86"><span class="nav-number">1.1.4.</span> <span class="nav-text">缓冲区管理</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+                
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-数据库实现"><a href="/knowledge/database/database_implementation_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>数据库实现</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER4_QUERY_EXECUTION</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="第四章-查询执行"><a href="#第四章-查询执行" class="headerlink" title="第四章 查询执行"></a>第四章 查询执行</h1><p>每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661" alt="image.png"></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490057713-bd65faa1-92a5-4ee8-b9f7-56d120181a8d.png#align=left&display=inline&height=506&name=image.png&originHeight=506&originWidth=747&size=267181&status=done&width=747" alt="image.png"></p>
+<p><a name="63eMQ"></a></p>
+<h2 id="操作符介绍"><a href="#操作符介绍" class="headerlink" title="操作符介绍"></a>操作符介绍</h2><p><a name="8BAGP"></a></p>
+<h4 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h4><table>
+<thead>
+<tr>
+<th>符号</th>
+<th>使用例子</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>select: σ</td>
+<td></td>
+<td>选择，类似于SQL中的where。注意，和SQL中的select不一样。</td>
+</tr>
+<tr>
+<td>project: Π</td>
+<td></td>
+<td>投影，类似于SQL中的select</td>
+</tr>
+<tr>
+<td>rename: ρ</td>
+<td></td>
+<td>重命名，类似于SQL中的as</td>
+</tr>
+<tr>
+<td>assignment：←</td>
+<td></td>
+<td>赋值。</td>
+</tr>
+<tr>
+<td>union: ∪</td>
+<td></td>
+<td>集合并，类似于SQL中的union</td>
+</tr>
+<tr>
+<td>set difference: –</td>
+<td></td>
+<td>集合差，sql中except</td>
+</tr>
+<tr>
+<td>intersection: ∩</td>
+<td></td>
+<td>集合交，SQL 中intersect&#x2F;intersect all</td>
+</tr>
+<tr>
+<td>Cartesian product: x</td>
+<td></td>
+<td>笛卡尔积，类似于SQL中不带on条件的inner join</td>
+</tr>
+<tr>
+<td>natural join: ⋈</td>
+<td></td>
+<td>自然连接，类似于SQL中的inner join， join… on..,  join … using…, natural join</td>
+</tr>
+<tr>
+<td>distinct: δ</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>group by 分组γ</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>sort Γ</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p><a name="di3nZ"></a></p>
+<h4 id="扫描"><a href="#扫描" class="headerlink" title="扫描"></a>扫描</h4><ul>
+<li>全表扫描</li>
+<li>索引扫描</li>
+</ul>
+<p><a name="PeO11"></a></p>
+<h4 id="衡量代价的参数"><a href="#衡量代价的参数" class="headerlink" title="衡量代价的参数"></a>衡量代价的参数</h4><ol>
+<li>需要一个参数来表达操作符使用内存的大小。 </li>
+<li>磁盘io代价<ol>
+<li>用B&#x2F;T&#x2F;V 来参数化一次io， B 表示读取块的数目(顺序扫描)， T表示记录数（随机扫描）， V 表示cardinality</li>
+</ol>
+</li>
+</ol>
+<p><a name="QwyXD"></a></p>
+<h4 id="迭代器"><a href="#迭代器" class="headerlink" title="迭代器"></a>迭代器</h4><p>迭代器</p>
+<ol>
+<li>open</li>
+<li>getnext</li>
+<li>close</li>
+</ol>
+<p>举例： tablescan的迭代器<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572831969739-3602b8bc-66d5-4b44-b985-374d47254383.png#align=left&display=inline&height=454&name=image.png&originHeight=454&originWidth=330&size=23303&status=done&width=330" alt="image.png"><br>举例 r U s <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572832081120-cff7ccec-5996-4c18-80fe-935788009f21.png#align=left&display=inline&height=543&name=image.png&originHeight=543&originWidth=662&size=35518&status=done&width=662" alt="image.png"></p>
+<p><a name="86GAx"></a></p>
+<h4 id="操作符算法"><a href="#操作符算法" class="headerlink" title="操作符算法"></a>操作符算法</h4><p>算法目的是 将逻辑计划转变维物理计划。<br>算法难度</p>
+<ol>
+<li>1次性全部load 到内存</li>
+<li>2次读取磁盘， 第一次读取出来，做某种操作，写回磁盘， 下一次可以一部分一部分的读取到内存</li>
+<li>多次读取</li>
+</ol>
+<p>操作对象</p>
+<ol>
+<li>一元操作， 一次一个record</li>
+<li>整个关系，  但是一元操作</li>
+<li>整个关系， 2元操作， 比如并&#x2F;交&#x2F;差&#x2F;连接&#x2F;积</li>
+</ol>
+<p>操作代价</p>
+<ol>
+<li>对于像select&#x2F;project 这种都是一元操作， 只要满足cache 能完整容纳一行即可， 操作的代价，如果数据是聚集的就是B， 如果是离散的，就是T。 </li>
+<li>对于像distinct、group by 操作，都是在一个关系上的一元操作。<ol>
+<li>可以使用hash table或b 树来存储key， 当数据量超过内存时， 会出现overload， 容易颠簸</li>
+</ol>
+</li>
+<li>分组， 分组常常伴随聚集计算。 可以每个组用一个record来计算， 但必须扫描全部分组后，才能完整输出。 </li>
+<li>二元操作，比如像并、交、差、积和连接。 常常将较小的放到内存中， 较大的逐行扫描。</li>
+</ol>
+<p><a name="FbURF"></a></p>
+<h3 id="嵌套循环连接"><a href="#嵌套循环连接" class="headerlink" title="嵌套循环连接"></a>嵌套循环连接</h3><p>2个关系中， 一个关系只需读取一次， 而另外一个关系需要循环读取多次。 <br>关系r 自然连接 关系s时， 有2种改进</p>
+<ol>
+<li>查找r上匹配的record时，可以使用r上索引， 前提是连接键含有索引</li>
+<li>执行内层循环时， 可以用缓存减少io。 （memory hash join和 grace hash join和hybrid hash join）</li>
+</ol>
+<p>nestloop join的算法<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572850512403-6d577b48-b248-4a90-ad28-9ebedc2f4672.png#align=left&display=inline&height=573&name=image.png&originHeight=573&originWidth=485&size=31972&status=done&width=485" alt="image.png"><br>r 通常是大表， 带索引， s是小表， s是驱动表， 又称外表。 r是被驱动表又称内表。 </p>
+<p>做缓存改进， 一次将一个block 读进内存， 然后再对这个block数据进行遍历<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572851288514-7f1b7af5-d471-4847-95b3-a01a05424e62.png#align=left&display=inline&height=305&name=image.png&originHeight=305&originWidth=489&size=25554&status=done&width=489" alt="image.png"></p>
+<p><a name="eA7ju"></a></p>
+<h3 id="排序"><a href="#排序" class="headerlink" title="排序"></a>排序</h3><p>排序常常需要2趟循环。 <br><a name="gFc5h"></a></p>
+<h4 id="两阶段多路归并排序"><a href="#两阶段多路归并排序" class="headerlink" title="两阶段多路归并排序"></a>两阶段多路归并排序</h4><p>假设现在是1千万个record， 一个record 100个字节， 可进行merge sort 的内存为10MB<br>第一阶段， 从文件中一次读取10MB， 然后在内存中，对他进行排序， 将这次排序结果存到文件中， 依次完成遍历1千万个record， 这样大概100个文件。 <br>第二阶段， </p>
+<ol>
+<li>从每个文件读取 [（10MB）&#x2F;（(100＋1)* 100）] （真正在操作中是10M &#x3D; 100 * 100 * x + 100 * y, x 为预读记录数， y为输出记录数， x不一定等于y， 不过100 * x 和100 * y 都应该是页大小的整数倍）， 大概每个文件读取90个record， 其中100个为input block， 1个为output block</li>
+<li>从这100个cache block 中挑选最小的90 个record 存到 一个output block中</li>
+<li>当output block 满了， 刷到磁盘，然后清空output</li>
+<li>当某个排序子文件的input block 的记录被使用完， 读取下一个block， 直到本文件全部读取结束。</li>
+</ol>
+<p> </p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572857322053-fd7c54e4-1824-4384-9a42-a732f2c53294.png#align=left&display=inline&height=384&name=image.png&originHeight=384&originWidth=358&size=20388&status=done&width=358" alt="image.png"><br>磁盘io 代价，基本为3次文将读写</p>
+<p>归并排序算法上，还可以进行</p>
+<ol>
+<li>distinct</li>
+<li>aggregate， 排序算法可以被用到group by的操作中。 </li>
+<li>表的二元操作， 并</li>
+<li>表的二元操作， 交、 差</li>
+</ol>
+<p><a name="OdcBT"></a></p>
+<h4 id="基于排序的简单merge-sort-join"><a href="#基于排序的简单merge-sort-join" class="headerlink" title="基于排序的简单merge-sort join"></a>基于排序的简单merge-sort join</h4><p>R(X, Y) 和S(Y, Z)</p>
+<ol>
+<li>用y作为关键字， 进行R 排序</li>
+<li>用y做关键字， 对s 进行排序</li>
+<li>各用一个block， 给r或s 做当前块<ol>
+<li>做join操作， 如果join</li>
+</ol>
+</li>
+<li>输出结果</li>
+</ol>
+<p>整个io次数差不多5 * (r + s)</p>
+<p>基于排序的merge-sort join 增强版本。 可以做一些优化， 排序-归并-连接</p>
+<ol>
+<li>以y 为关键字，分别对r和s 进行一个block 一个block的排序， 则会有很多排序的子表</li>
+<li>将每一个子表的第一块调入缓冲区， </li>
+<li>直接进行join</li>
+<li>将join结果输出</li>
+</ol>
+<p>整个io次数差不多 3 * (r +s)</p>
+<p><a name="qMwUt"></a></p>
+<h3 id="基于hash的2趟算法"><a href="#基于hash的2趟算法" class="headerlink" title="基于hash的2趟算法"></a>基于hash的2趟算法</h3><ol>
+<li>在内存中分了M块， 其中M-1 块用于 hash table的桶， 剩下一块为读取的cache。</li>
+</ol>
+<p> </p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572858804011-921a66a2-17f9-423d-b044-e0f6a2db5f26.png#align=left&display=inline&height=404&name=image.png&originHeight=404&originWidth=376&size=29842&status=done&width=376" alt="image.png"></p>
+<p><a name="2ovvF"></a></p>
+<h4 id="基于hash的distinct算法"><a href="#基于hash的distinct算法" class="headerlink" title="基于hash的distinct算法"></a>基于hash的distinct算法</h4><p>将每个数据hash到每个桶中， 差不多每个桶的大小为B(R)&#x2F;M-1, 如果 这个桶的大小可以被load到内存， 可以用2次hash 进行去重。 <br>磁盘io 大概是3B(R)</p>
+<p><a name="fOi6z"></a></p>
+<h4 id="基于hash的group-by或aggregate"><a href="#基于hash的group-by或aggregate" class="headerlink" title="基于hash的group by或aggregate"></a>基于hash的group by或aggregate</h4><p>hash 分桶后，还是需要依次处理</p>
+<p><a name="pMsJY"></a></p>
+<h3 id="缓冲区管理"><a href="#缓冲区管理" class="headerlink" title="缓冲区管理"></a>缓冲区管理</h3><p>LRU 算法<br>FIFO 算法<br>时钟算法<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572864890270-b0ff9ccc-79a3-49cd-a13f-f97924a7aed4.png#align=left&display=inline&height=287&name=image.png&originHeight=287&originWidth=241&size=10927&status=done&width=241" alt="image.png"></p>
+<ol>
+<li>每个block 都有一个标志0或1</li>
+<li>当一个块被load到缓冲时，标志改为1， 当一个块被访问过，也被设为1</li>
+<li>当指针旋转一圈后， 会把没有改变的缓冲设为0</li>
+<li>当块要load到缓冲时，选择为0的缓冲区</li>
+</ol>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER4_QUERY_EXECUTION</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter4_query_execution.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

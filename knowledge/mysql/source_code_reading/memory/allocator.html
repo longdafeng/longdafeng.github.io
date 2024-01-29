@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="内存分配器 MySQL 内存分配器mysql 用过2钟内存分配器， ptmalloc&#x2F;jemalloc， 但尝试过非常多的版本， 目前来看， jemalloc 5.2.1 对内存更加友好， 不容易内存泄漏。 我们进行内存压力测试： 测试环境PolarDB 8.0, buffer pool 2Gptmalloc 2.17(glibc 2.17)tcmalloc 2.7jemalloc 5.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="内存分配器 MySQL 内存分配器mysql 用过2钟内存分配器， ptmalloc&#x2F;jemalloc， 但尝试过非常多的版本， 目前来看， jemalloc 5.2.1 对内存更加友好， 不容易内存泄漏。 我们进行内存压力测试： 测试环境PolarDB 8.0, buffer pool 2Gptmalloc 2.17(glibc 2.17)tcmalloc 2.7jemalloc 5.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665473046-5448830f-1093-47da-bed4-f1188d116346.png#align=left&display=inline&height=190&name=image.png&originHeight=190&originWidth=459&size=18302&status=done&width=459">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665505208-f326ff96-5cef-4268-b9b4-a1b38b4871ff.png#align=left&display=inline&height=217&name=image.png&originHeight=217&originWidth=540&size=15954&status=done&width=540">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773341-b63ba801-a545-43cb-80f8-2c9bd52aac97.jpeg#align=left&display=inline&height=397&originHeight=397&originWidth=552&size=0&status=done&width=552">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666042195-afc64ef3-a78a-4ab6-ae7e-ad9804652660.png#align=left&display=inline&height=341&name=image.png&originHeight=341&originWidth=502&size=27857&status=done&width=502">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773366-56c610b7-772e-4e63-b14e-2e0d3123d815.jpeg#align=left&display=inline&height=283&originHeight=283&originWidth=556&size=0&status=done&width=556">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666728919-b069c729-b20c-4a23-a6d6-ff708d592a28.png#align=left&display=inline&height=282&name=image.png&originHeight=282&originWidth=512&size=56305&status=done&width=512">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666142989-e96ec686-f8ba-4b28-962a-717a81d37cae.png#align=left&display=inline&height=366&name=image.png&originHeight=366&originWidth=405&size=29217&status=done&width=405">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773375-540945f6-01c8-4b42-b149-1c726e1a2d28.jpeg#align=left&display=inline&height=834&originHeight=834&originWidth=550&size=0&status=done&width=550">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773357-3ec1b788-a18f-4446-9acf-c9ed0a2f221d.jpeg#align=left&display=inline&height=212&originHeight=212&originWidth=310&size=0&status=done&width=310">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773371-efe6a41c-2c8e-421e-b7a2-c183bbdd75c1.jpeg#align=left&display=inline&height=308&originHeight=308&originWidth=449&size=0&status=done&width=449">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773374-8deadcd2-cd1c-4e44-bdee-72d8bf6bbd38.jpeg#align=left&display=inline&height=435&originHeight=435&originWidth=554&size=0&status=done&width=554">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773331-86821b81-28fe-4c81-b58b-7c471e821e5e.jpeg#align=left&display=inline&height=427&originHeight=427&originWidth=565&size=0&status=done&width=565">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567667034582-01f5d226-dc85-4a07-889c-4db2c566d417.png#align=left&display=inline&height=184&name=image.png&originHeight=184&originWidth=306&size=19315&status=done&width=306">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567667093024-e7a8de66-29d0-4ed5-883a-8c43d3358540.png#align=left&display=inline&height=220&name=image.png&originHeight=220&originWidth=492&size=24141&status=done&width=492">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773364-586e08b6-fbc9-4f7c-91d4-9a3861269d33.jpeg#align=left&display=inline&height=438&originHeight=438&originWidth=385&size=0&status=done&width=385">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773340-a19544d0-dde6-4b76-8407-46544edc453b.jpeg#align=left&display=inline&height=506&originHeight=506&originWidth=555&size=0&status=done&width=555">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773148-66459623-f15b-4314-8834-d710ef7b9b36.jpeg#align=left&display=inline&height=525&originHeight=525&originWidth=704&size=0&status=done&width=704">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773338-fb25a731-a3c6-46ae-a996-f74dca690213.jpeg#align=left&display=inline&height=370&originHeight=370&originWidth=561&size=0&status=done&width=561">
+<meta property="article:published_time" content="2024-01-29T09:18:27.939Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.939Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html","path":"knowledge/mysql/source_code_reading/memory/allocator.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">内存分配器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#MySQL-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%99%A8"><span class="nav-number">1.1.</span> <span class="nav-text">MySQL 内存分配器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83"><span class="nav-number">1.1.1.</span> <span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E4%B8%8D%E5%90%8C%E7%9A%84allocator"><span class="nav-number">1.1.2.</span> <span class="nav-text">运行不同的allocator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8%E5%AF%B9%E6%AF%94"><span class="nav-number">1.1.3.</span> <span class="nav-text">物理内存占用对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jemalloc-5-1-vs-5-2-%E6%B5%8B%E8%AF%95"><span class="nav-number">1.1.4.</span> <span class="nav-text">jemalloc 5.1 vs 5.2 测试</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">原理解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87"><span class="nav-number">2.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%B0%E7%8A%B6"><span class="nav-number">2.2.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#glibc-ptmalloc"><span class="nav-number">2.3.</span> <span class="nav-text">glibc ptmalloc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ptmalloc%E5%8E%9F%E7%90%86"><span class="nav-number">2.3.1.</span> <span class="nav-text">ptmalloc原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8E%A5%E5%8F%A3"><span class="nav-number">2.3.1.1.</span> <span class="nav-text">系统调用接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%94%AF%E6%8C%81"><span class="nav-number">2.3.1.2.</span> <span class="nav-text">多线程支持</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ptmalloc%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="nav-number">2.3.1.3.</span> <span class="nav-text">ptmalloc内存管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ptmalloc%E5%88%86%E9%85%8D%E6%B5%81%E7%A8%8B"><span class="nav-number">2.3.1.4.</span> <span class="nav-text">ptmalloc分配流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ptmalloc%E7%9A%84%E7%BC%BA%E9%99%B7"><span class="nav-number">2.3.2.</span> <span class="nav-text">ptmalloc的缺陷</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tcmalloc"><span class="nav-number">2.4.</span> <span class="nav-text">tcmalloc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8F%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D"><span class="nav-number">2.4.1.</span> <span class="nav-text">小对象分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CentralCache%E5%88%86%E9%85%8D%E7%AE%A1%E7%90%86"><span class="nav-number">2.4.2.</span> <span class="nav-text">CentralCache分配管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9E%E6%94%B6"><span class="nav-number">2.4.3.</span> <span class="nav-text">回收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tcmalloc%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="nav-number">2.4.4.</span> <span class="nav-text">tcmalloc的改进</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94"><span class="nav-number">2.4.5.</span> <span class="nav-text">性能对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#github-mysql%E4%BC%98%E5%8C%96"><span class="nav-number">2.4.6.</span> <span class="nav-text">github mysql优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Jemalloc"><span class="nav-number">2.5.</span> <span class="nav-text">Jemalloc</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jemalloc%E5%8E%9F%E7%90%86"><span class="nav-number">2.5.1.</span> <span class="nav-text">jemalloc原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-number">2.5.2.</span> <span class="nav-text">多线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E9%85%8D"><span class="nav-number">2.5.2.1.</span> <span class="nav-text">分配</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%87%8A%E6%94%BE"><span class="nav-number">2.5.2.2.</span> <span class="nav-text">释放</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jemalloc%E7%9A%84%E4%BC%98%E5%8C%96"><span class="nav-number">2.5.3.</span> <span class="nav-text">jemalloc的优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98"><span class="nav-number">2.5.4.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94-1"><span class="nav-number">2.5.5.</span> <span class="nav-text">性能对比</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">3.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-mysql源码分析"><a href="/knowledge/mysql/source_code_reading/" rel="section"><i class="fa fa-archive fa-fw"></i>MySQL源码分析</a></li>
+
+
+                        
+  <li class="menu-item menu-item-深入迁出mysql"><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>深入迁出MySQL</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/memory/">MEMORY</a></li>
+            <li>ALLOCATOR</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="内存分配器"><a href="#内存分配器" class="headerlink" title="内存分配器"></a>内存分配器</h1><p><a name="rHnCN"></a></p>
+<h2 id="MySQL-内存分配器"><a href="#MySQL-内存分配器" class="headerlink" title="MySQL 内存分配器"></a>MySQL 内存分配器</h2><p>mysql 用过2钟内存分配器， ptmalloc&#x2F;jemalloc， 但尝试过非常多的版本， 目前来看， jemalloc 5.2.1 对内存更加友好， 不容易内存泄漏。</p>
+<p>我们进行内存压力测试：<br><a name="AkKXg"></a></p>
+<h3 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h3><p>PolarDB 8.0, buffer pool 2G<br>ptmalloc 2.17(glibc 2.17)<br>tcmalloc 2.7<br>jemalloc 5.2.0</p>
+<p>测试脚本：<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;<br>PORT&#x3D;8888<br>THREADS&#x3D;1000<br>TABLES&#x3D;$THREADS</p>
+<p>for i in <code>seq 10</code> ; do<br>       echo “drop database aws;” | mysql -uroot -h127.0.0.1 –port&#x3D;$PORT<br>       echo “create database aws;” | mysql -uroot -h127.0.0.1 –port&#x3D;$PORT</p>
+<p>       sysbench –db-driver&#x3D;mysql –mysql-user&#x3D;myadmin –mysql-password&#x3D;Passw0rd –mysql-db&#x3D;aws &lt;br &#x2F;&gt;–table_size&#x3D;25000 –tables&#x3D;$TABLES –events&#x3D;0 –time&#x3D;5 –report_interval&#x3D;1 &lt;br &#x2F;&gt;–rand-type&#x3D;uniform oltp_point_select –mysql-host&#x3D;127.0.0.1 –mysql-port&#x3D;$PORT &lt;br &#x2F;&gt;               –threads&#x3D;$THREADS –percentile&#x3D;95 –db-ps-mode&#x3D;disable prepare<br>done<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</p>
+<p><a name="NDVwU"></a></p>
+<h3 id="运行不同的allocator"><a href="#运行不同的allocator" class="headerlink" title="运行不同的allocator"></a>运行不同的allocator</h3><p>ptmalloc(glibc)，系统默认<br>&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;PolarDB_80&#x2F;bin&#x2F;mysqld –defaults-file&#x3D;&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;my.cnf</p>
+<p>tcmalloc(<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/gperftools/gperftools.git">https://github.com/gperftools/gperftools.git</a>)<br>LD_PRELOAD&#x3D;&#x2F;home&#x2F;ming.lin&#x2F;install&#x2F;gperftools&#x2F;lib&#x2F;libtcmalloc.so.4.5.3 &lt;br &#x2F;&gt;&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;PolarDB_80&#x2F;bin&#x2F;mysqld –defaults-file&#x3D;&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;my.cnf</p>
+<p>jemalloc(<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/jemalloc/jemalloc.git">https://github.com/jemalloc/jemalloc.git</a>)<br>LD_PRELOAD&#x3D;&#x2F;home&#x2F;ming.lin&#x2F;install&#x2F;jemalloc&#x2F;lib&#x2F;libjemalloc.so.2 &lt;br &#x2F;&gt;&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;PolarDB_80&#x2F;bin&#x2F;mysqld –defaults-file&#x3D;&#x2F;home&#x2F;ming.lin&#x2F;polardb&#x2F;my.cnf</p>
+<p><a name="NboBM"></a></p>
+<h3 id="物理内存占用对比"><a href="#物理内存占用对比" class="headerlink" title="物理内存占用对比"></a>物理内存占用对比</h3><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335" alt="image.png"></p>
+<p>ptmalloc(蓝色线): 物理内存占用持续在约12G，测试停止后没有降下来<br>tcmalloc(橙色线): 物理内存占用持续在约9G，测试停止后没有降下来<br>jemalloc(灰色线): 最理想，平均物理内存占用约6.5G，且每轮sysbench停止后物理内存降回到约4G，最符合预期。</p>
+<p>注：物理内存占用每秒采集一次: grep VmRSS &#x2F;proc&#x2F;<code>pidof mysqld</code>&#x2F;status</p>
+<p><a name="tT54O"></a></p>
+<h3 id="jemalloc-5-1-vs-5-2-测试"><a href="#jemalloc-5-1-vs-5-2-测试" class="headerlink" title="jemalloc 5.1 vs 5.2 测试"></a>jemalloc 5.1 vs 5.2 测试</h3><p>我们在实际使用过程中， 发现5.1 还是有内存不释放问题， 我们升级到最新版本，就发现情况改善了很多。<br>在5.2 中， 调整 extent 垃圾回收周期，调整为0， 保障了应用释放的内存及时释放给os， 避免内存泄漏。<br>下图所示是5.1， 急剧下降是oom了 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665473046-5448830f-1093-47da-bed4-f1188d116346.png#align=left&display=inline&height=190&name=image.png&originHeight=190&originWidth=459&size=18302&status=done&width=459" alt="image.png"><br>dirty_decay_ms &#x3D; 10000,<br>muzzy_decay_ms &#x3D; 10000,<br>narenas &#x3D; CPU 核心数 * 4</p>
+<p>下图所示是5.2， 保持在一定水位，基本未oom <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665505208-f326ff96-5cef-4268-b9b4-a1b38b4871ff.png#align=left&display=inline&height=217&name=image.png&originHeight=217&originWidth=540&size=15954&status=done&width=540" alt="image.png"><br>dirty_decay_ms &#x3D; 5000,<br>muzzy_decay_ms &#x3D; 5000,<br>narenas &#x3D; 32</p>
+<p><a name="5cIGq"></a></p>
+<h1 id="原理解析"><a href="#原理解析" class="headerlink" title="原理解析"></a>原理解析</h1><p>转载这篇文章<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/2016/06/13/memory-optimize/">http://www.cnhalo.net/2016/06/13/memory-optimize/</a><br>对部分内容进行了二次修改<br><a name="73e82552"></a></p>
+<h2 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h2><p>内存管理可以分为三个层次，自底向上分别是：</p>
+<ul>
+<li>操作系统内核的内存管理</li>
+<li>glibc层使用系统调用维护的内存管理算法</li>
+<li>应用程序从glibc动态分配内存后，根据应用程序本身的程序特性进行优化， 比如使用引用计数std::shared_ptr，apache的内存池方式等等。<br>当然应用程序也可以直接使用系统调用从内核分配内存，自己根据程序特性来维护内存，但是会大大增加开发成本。</li>
+</ul>
+<p><strong>本文主要介绍了glibc malloc的实现，及其替代品</strong><br>一个优秀的通用内存分配器应具有以下特性:</p>
+<ul>
+<li>额外的空间损耗尽量少</li>
+<li>分配速度尽可能快</li>
+<li>尽量避免内存碎片</li>
+<li>缓存本地化友好</li>
+<li>通用性，兼容性，可移植性，易调试<br><a name="84fba1b6"></a></li>
+</ul>
+<h2 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h2><p>目前大部分服务端程序使用glibc提供的malloc&#x2F;free系列函数，而glibc使用的ptmalloc2在性能上远远弱后于google的tcmalloc和facebook的jemalloc。 而且后两者只需要使用LD_PRELOAD环境变量启动程序即可，甚至并不需要重新编译。<br><a name="ug1su"></a></p>
+<h2 id="glibc-ptmalloc"><a href="#glibc-ptmalloc" class="headerlink" title="glibc ptmalloc"></a>glibc ptmalloc</h2><p>ptmalloc2即是我们当前使用的glibc malloc版本。<br><a name="d3ZVs"></a></p>
+<h3 id="ptmalloc原理"><a href="#ptmalloc原理" class="headerlink" title="ptmalloc原理"></a>ptmalloc原理</h3><p><a name="tTFFf"></a></p>
+<h4 id="系统调用接口"><a href="#系统调用接口" class="headerlink" title="系统调用接口"></a>系统调用接口</h4><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/x86_process_address_space.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773341-b63ba801-a545-43cb-80f8-2c9bd52aac97.jpeg#align=left&display=inline&height=397&originHeight=397&originWidth=552&size=0&status=done&width=552"></a><br>上图是 x86_64 下 Linux 进程的默认地址空间, 对 heap 的操作, 操作系统提供了brk()系统调用，设置了Heap的上边界； 对 mmap 映射区域的操作,操作系 统 供了 mmap()和 munmap()函数。<br>因为系统调用的代价很高，不可能每次申请内存都从内核分配空间，尤其是对于小内存分配。 而且因为mmap的区域容易被munmap释放，所以一般大内存采用mmap()，小内存使用brk()。<br><a name="ywCGr"></a></p>
+<h4 id="多线程支持"><a href="#多线程支持" class="headerlink" title="多线程支持"></a>多线程支持</h4><ul>
+<li>Ptmalloc2有一个主分配区(main arena)， 有多个非主分配区。 非主分配区只能使用mmap向操作系统批发申请HEAP_MAX_SIZE（64位系统为64MB）大小的虚拟内存。 当某个线程调用malloc的时候，会先查看线程私有变量中是否已经存在一个分配区，如果存在则尝试加锁，如果加锁失败则遍历arena链表试图获取一个没加锁的arena， 如果依然获取不到则创建一个新的非主分配区。</li>
+<li>free()的时候也要获取锁。分配小块内存容易产生碎片，ptmalloc在整理合并的时候也要对arena做加锁操作。在线程多的时候，锁的开销就会增大。</li>
+</ul>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666042195-afc64ef3-a78a-4ab6-ae7e-ad9804652660.png#align=left&display=inline&height=341&name=image.png&originHeight=341&originWidth=502&size=27857&status=done&width=502" alt="image.png"><br><a name="95CLY"></a></p>
+<h4 id="ptmalloc内存管理"><a href="#ptmalloc内存管理" class="headerlink" title="ptmalloc内存管理"></a>ptmalloc内存管理</h4><ul>
+<li>用户请求分配的内存在ptmalloc中使用chunk表示， 每个chunk至少需要8个字节额外的开销。 用户free掉的内存不会马上归还操作系统，ptmalloc会统一管理heap和mmap区域的空闲chunk，避免了频繁的系统调用。</li>
+<li>ptmalloc 将相似大小的 chunk 用双向链表链接起来, 这样的一个链表被称为一个 bin。Ptmalloc 一共 维护了 128 个 bin,并使用一个数组来存储这些 bin(如下图所示)。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/ptmalloc-structure.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773366-56c610b7-772e-4e63-b14e-2e0d3123d815.jpeg#align=left&display=inline&height=283&originHeight=283&originWidth=556&size=0&status=done&width=556"></a></li>
+</ul>
+<br>
+
+<ul>
+<li><p>Unsorted bins：数组中的第一个为 unsorted bin, 不等大，不排序，回收后的内存fast<br>bins 内的 chunk 合并后进入 unsorted bins</p>
+</li>
+<li><p>Small bins：数组中从 2 开始编号的前 64 个 bin 称为 small bins， 等大 chunk，每种 size 一个 bin， </p>
+</li>
+<li><p>Large bins：small bins后面的bin被称作large bins， 不等大，按大小排序， </p>
+</li>
+<li><p>Fast bins：不等大，不排序，回收后的内存</p>
+</li>
+<li><p>当free一个chunk并放入bin的时候， ptmalloc 还会检查它前后的 chunk 是否也是空闲的, 如果是的话,ptmalloc会首先把它们合并为一个大的 chunk, 然后将合并后的 chunk 放到 unstored bin 中。 另外ptmalloc 为了提高分配的速度,会把一些小的(不大于64B) chunk先放到一个叫做 fast bins 的容器内。</p>
+</li>
+</ul>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666728919-b069c729-b20c-4a23-a6d6-ff708d592a28.png#align=left&display=inline&height=282&name=image.png&originHeight=282&originWidth=512&size=56305&status=done&width=512" alt="image.png"></p>
+<ul>
+<li>在fast bins和bins都不能满足需求后，ptmalloc会设法在一个叫做top chunk的空间分配内存。 对于非主分配区会预先通过mmap分配一大块内存作为top chunk， 当bins和fast bins都不能满足分配需要的时候, ptmalloc会设法在top chunk中分出一块内存给用户, 如果top chunk本身不够大, 分配程序会重新mmap分配一块内存chunk, 并将 top chunk 迁移到新的chunk上，并用单链表链接起来。如果free()的chunk恰好 与 top chunk 相邻,那么这两个 chunk 就会合并成新的 top chunk，如果top chunk大小大于某个阈值才还给操作系统。主分配区类似，不过通过sbrk()分配和调整top chunk的大小，只有heap顶部连续内存空闲超过阈值的时候才能回收内存。</li>
+</ul>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666142989-e96ec686-f8ba-4b28-962a-717a81d37cae.png#align=left&display=inline&height=366&name=image.png&originHeight=366&originWidth=405&size=29217&status=done&width=405" alt="image.png"></p>
+<ul>
+<li>需要分配的 chunk 足够大,而且 fast bins 和 bins 都不能满足要求,甚至 top chunk 本身也不能满足分配需求时,ptmalloc 会使用 mmap 来直接使用内存映射来将页映射到进程空间。<br><a name="pREQp"></a></li>
+</ul>
+<h4 id="ptmalloc分配流程"><a href="#ptmalloc分配流程" class="headerlink" title="ptmalloc分配流程"></a>ptmalloc分配流程</h4><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/ptmalloc-alloc-flow.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773375-540945f6-01c8-4b42-b149-1c726e1a2d28.jpeg#align=left&display=inline&height=834&originHeight=834&originWidth=550&size=0&status=done&width=550"></a><br><a name="jwQJl"></a></p>
+<h3 id="ptmalloc的缺陷"><a href="#ptmalloc的缺陷" class="headerlink" title="ptmalloc的缺陷"></a>ptmalloc的缺陷</h3><ul>
+<li>后分配的内存先释放,因为 ptmalloc 收缩内存是从 top chunk 开始,如果与 top chunk 相邻的 chunk 不能释放, top chunk 以下的 chunk 都无法释放。</li>
+<li>多线程锁开销大， 需要避免多线程频繁分配释放。</li>
+<li>内存从thread的areana中分配， 内存不能从一个arena移动到另一个arena， 就是说如果多线程使用内存不均衡，容易导致内存的浪费。 比如说线程1使用了300M内存，完成任务后glibc没有释放给操作系统，线程2开始创建了一个新的arena， 但是线程1的300M却不能用了。</li>
+<li>每个chunk至少8字节的开销很大</li>
+<li>不定期分配长生命周期的内存容易造成内存碎片，不利于回收。 64位系统最好分配32M以上内存，这是使用mmap的阈值。</li>
+</ul>
+<p><a name="WKRFX"></a></p>
+<h2 id="tcmalloc"><a href="#tcmalloc" class="headerlink" title="tcmalloc"></a>tcmalloc</h2><p>tcmalloc是Google开源的一个内存管理库， 作为glibc malloc的替代品。目前已经在chrome、safari等知名软件中运用。<br>根据官方测试报告，ptmalloc在一台2.8GHz的P4机器上（对于小对象）执行一次malloc及free大约需要300纳秒。而TCMalloc的版本同样的操作大约只需要50纳秒。<br><a name="zJPBO"></a></p>
+<h3 id="小对象分配"><a href="#小对象分配" class="headerlink" title="小对象分配"></a>小对象分配</h3><ul>
+<li>tcmalloc为每个线程分配了一个线程本地ThreadCache，小内存从ThreadCache分配，此外还有个中央堆（CentralCache），ThreadCache不够用的时候，会从CentralCache中获取空间放到ThreadCache中。</li>
+<li>小对象（&lt;&#x3D;32K）从ThreadCache分配，大对象从CentralCache分配。大对象分配的空间都是4k页面对齐的，多个pages也能切割成多个小对象划分到ThreadCache中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-smallsize-class.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773357-3ec1b788-a18f-4446-9acf-c9ed0a2f221d.jpeg#align=left&display=inline&height=212&originHeight=212&originWidth=310&size=0&status=done&width=310"></a><br>小对象有将近170个不同的大小分类(class)，每个class有个该大小内存块的FreeList单链表，分配的时候先找到best fit的class，然后无锁的获取该链表首元素返回。如果链表中无空间了，则到CentralCache中划分几个页面并切割成该class的大小，放入链表中。<br><a name="pt1RF"></a></li>
+</ul>
+<h3 id="CentralCache分配管理"><a href="#CentralCache分配管理" class="headerlink" title="CentralCache分配管理"></a>CentralCache分配管理</h3><ul>
+<li>大对象(&gt;32K)先4k对齐后，从CentralCache中分配。 CentralCache维护的PageHeap如下图所示， 数组中第256个元素是所有大于255个页面都挂到该链表中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-pageheap.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773371-efe6a41c-2c8e-421e-b7a2-c183bbdd75c1.jpeg#align=left&display=inline&height=308&originHeight=308&originWidth=449&size=0&status=done&width=449"></a></li>
+<li>当best fit的页面链表中没有空闲空间时，则一直往更大的页面空间则，如果所有256个链表遍历后依然没有成功分配。 则使用sbrk, mmap, &#x2F;dev&#x2F;mem从系统中分配。</li>
+<li>tcmalloc PageHeap管理的连续的页面被称为span.<br>如果span未分配， 则span是PageHeap中的一个链表元素<br>如果span已经分配，它可能是返回给应用程序的大对象， 或者已经被切割成多小对象，该小对象的size-class会被记录在span中</li>
+<li>在32位系统中，使用一个中央数组(central array)映射了页面和span对应关系， 数组索引号是页面号，数组元素是页面所在的span。 在64位系统中，使用一个3-level radix tree记录了该映射关系。<br><a name="e4QMq"></a></li>
+</ul>
+<h3 id="回收"><a href="#回收" class="headerlink" title="回收"></a>回收</h3><ul>
+<li>当一个object free的时候，会根据地址对齐计算所在的页面号，然后通过central array找到对应的span。</li>
+<li>如果是小对象，span会告诉我们他的size class，然后把该对象插入当前线程的ThreadCache中。如果此时ThreadCache超过一个预算的值（默认2MB），则会使用垃圾回收机制把未使用的object从ThreadCache移动到CentralCache的central free lists中。</li>
+<li>如果是大对象，span会告诉我们对象锁在的页面号范围。 假设这个范围是[p,q]， 先查找页面p-1和q+1所在的span，如果这些临近的span也是free的，则合并到[p,q]所在的span， 然后把这个span回收到PageHeap中。</li>
+<li>CentralCache的central free lists类似ThreadCache的FreeList，不过它增加了一级结构，先根据size-class关联到spans的集合， 然后是对应span的object链表。如果span的链表中所有object已经free， 则span回收到PageHeap中。<br><a name="7Z3gz"></a></li>
+</ul>
+<h3 id="tcmalloc的改进"><a href="#tcmalloc的改进" class="headerlink" title="tcmalloc的改进"></a>tcmalloc的改进</h3><ul>
+<li>ThreadCache会阶段性的回收内存到CentralCache里。 解决了ptmalloc2中arena之间不能迁移的问题。</li>
+<li>Tcmalloc占用更少的额外空间。例如，分配N个8字节对象可能要使用大约8N * 1.01字节的空间。即，多用百分之一的空间。Ptmalloc2使用最少8字节描述一个chunk。</li>
+<li>更快。小对象几乎无锁， &gt;32KB的对象从CentralCache中分配使用自旋锁。 并且&gt;32KB对象都是页面对齐分配，多线程的时候应尽量避免频繁分配，否则也会造成自旋锁的竞争和页面对齐造成的浪费。<br><a name="0xir0"></a></li>
+</ul>
+<h3 id="性能对比"><a href="#性能对比" class="headerlink" title="性能对比"></a>性能对比</h3><p>测试环境是2.4GHz dual Xeon，开启超线程，redhat9，glibc-2.3.2, 每个线程测试100万个操作。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-perf1.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773374-8deadcd2-cd1c-4e44-bdee-72d8bf6bbd38.jpeg#align=left&display=inline&height=435&originHeight=435&originWidth=554&size=0&status=done&width=554"></a><br>上图中可以看到尤其是对于小内存的分配， tcmalloc有非常明显性能优势。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-perf2.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773331-86821b81-28fe-4c81-b58b-7c471e821e5e.jpeg#align=left&display=inline&height=427&originHeight=427&originWidth=565&size=0&status=done&width=565"></a><br>上图可以看到随着线程数的增加，tcmalloc性能上也有明显的优势，并且相对平稳。<br><a name="dd20f91b"></a></p>
+<h3 id="github-mysql优化"><a href="#github-mysql优化" class="headerlink" title="github mysql优化"></a>github mysql优化</h3><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/blog/1422-tcmalloc-and-mysql">github使用tcmalloc后，mysql性能提升30%</a><br></p>
+<p><a name="dxUvl"></a></p>
+<h2 id="Jemalloc"><a href="#Jemalloc" class="headerlink" title="Jemalloc"></a>Jemalloc</h2><p>jemalloc是facebook推出的， 最早的时候是freebsd的libc malloc实现。 目前在firefox、facebook服务器各种组件中大量使用。<br><a name="CbDhh"></a></p>
+<h3 id="jemalloc原理"><a href="#jemalloc原理" class="headerlink" title="jemalloc原理"></a>jemalloc原理</h3><p><a name="JmNub"></a></p>
+<h3 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h3><p>•线程与 arena 绑定<br>•以少量锁等待时间为代价，免去 arena<br>遍历</p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567667034582-01f5d226-dc85-4a07-889c-4db2c566d417.png#align=left&display=inline&height=184&name=image.png&originHeight=184&originWidth=306&size=19315&status=done&width=306" alt="image.png"><br></p>
+<p><a name="3Vnrj"></a></p>
+<h4 id="分配"><a href="#分配" class="headerlink" title="分配"></a>分配</h4><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567667093024-e7a8de66-29d0-4ed5-883a-8c43d3358540.png#align=left&display=inline&height=220&name=image.png&originHeight=220&originWidth=492&size=24141&status=done&width=492" alt="image.png"></p>
+<ul>
+<li>与tcmalloc类似，每个线程同样在&lt;32KB的时候无锁使用线程本地cache。</li>
+<li>Jemalloc在64bits系统上使用下面的size-class分类：<br>Small: [8], [16, 32, 48, …, 128], [192, 256, 320, …, 512], [768, 1024, 1280, …, 3840]<br>Large: [4 KiB, 8 KiB, 12 KiB, …, 4072 KiB]<br>Huge: [4 MiB, 8 MiB, 12 MiB, …]</li>
+<li>small&#x2F;large对象查找metadata需要常量时间， huge对象通过全局红黑树在对数时间内查找。</li>
+<li>虚拟内存被逻辑上分割成chunks（默认是4MB，1024个4k页），应用线程通过round-robin算法在第一次malloc的时候分配arena， 每个arena都是相互独立的，维护自己的chunks， chunk切割pages到small&#x2F;large对象。free()的内存总是返回到所属的arena中，而不管是哪个线程调用free()。</li>
+</ul>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-arena-chunk.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773364-586e08b6-fbc9-4f7c-91d4-9a3861269d33.jpeg#align=left&display=inline&height=438&originHeight=438&originWidth=385&size=0&status=done&width=385"></a><br>上图可以看到每个arena管理的arena chunk结构， 开始的header主要是维护了一个page map（1024个页面关联的对象状态）， header下方就是它的页面空间。 Small对象被分到一起， metadata信息存放在起始位置。 large chunk相互独立，它的metadata信息存放在chunk header map中。</p>
+<ul>
+<li>通过arena分配的时候需要对arena bin（每个small size-class一个，细粒度）加锁，或arena本身加锁。<br>并且线程cache对象也会通过垃圾回收指数退让算法返回到arena中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-arena-thread-cache.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773340-a19544d0-dde6-4b76-8407-46544edc453b.jpeg#align=left&display=inline&height=506&originHeight=506&originWidth=555&size=0&status=done&width=555"></a><br><a name="tj32c"></a></li>
+</ul>
+<h4 id="释放"><a href="#释放" class="headerlink" title="释放"></a>释放</h4><p>•Thread cache -&gt; Extent<br>•每进行一定次数（默认 228 次）的 malloc&#x2F;free，就对一个<br>cache_bin 进行 flush<br>•释放一定数量的 region 并调整单次获取的<br>region 数量<br>•Extent -&gt; Arena<br>•Extent 有四种状态：clean,<br>dirty, muzzy, retained<br>•达到一定的时间和 malloc&#x2F;free<br>次数后，进行垃圾回收<br>•相邻 extent_dirty 合并 à 加入 extend_muzzy à 相邻 extent_muzzy 合并<br>•相邻 extend_muzzy 合并 à 加入 extend_retained à mmap + PORT_NONE à 相邻 extend_muzzy 合并<br>•5.2 版本中， extend_muzzy 回收的默认时间间隔由<br>10s 改为 0</p>
+<p><a name="Qqhnb"></a></p>
+<h3 id="jemalloc的优化"><a href="#jemalloc的优化" class="headerlink" title="jemalloc的优化"></a>jemalloc的优化</h3><ul>
+<li>Jmalloc小对象也根据size-class，但是它使用了低地址优先的策略，来降低内存碎片化。</li>
+<li>Jemalloc大概需要2%的额外开销。（tcmalloc 1%， ptmalloc最少8B）</li>
+<li>Jemalloc和tcmalloc类似的线程本地缓存，避免锁的竞争</li>
+<li>相对未使用的页面，优先使用dirty page，提升缓存命中。</li>
+</ul>
+<p><a name="2uZsX"></a></p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
+<li>高并发下的内存碎片依然没有完全解决</li>
+<li>•只有时间间隔和 malloc&#x2F;free<br>都达到触发条件后，才有可能触发垃圾收集， <ul>
+<li>eg. gc触发时间为10秒，malloc&#x2F;free 次数为 1000 次。 9 秒内进行了 100,000 次 malloc&#x2F;free，所以 gc 不会被触发，此<br>arena 缓存占用大量内存。复杂 query 产生的低次数，长周期内存占用可能引起此问题。</li>
+<li>在5.2 版本中， 调整 extent 垃圾回收周期，调整为0， 保障了应用释放的内存彻底释放出去。</li>
+</ul>
+</li>
+<li>•arena 之间内存无法共享，不同 arena<br>中的线程频繁进行内存申请与释放后，释放大量地址连续却不属于同一 arena （因此无法合并）的内存块。<ul>
+<li>通过 ASAN 等内存检测工具无法发现此类情况<br><a name="Ot1d0"></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="性能对比-1"><a href="#性能对比-1" class="headerlink" title="性能对比"></a>性能对比</h3><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-throughput.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773148-66459623-f15b-4314-8834-d710ef7b9b36.jpeg#align=left&display=inline&height=525&originHeight=525&originWidth=704&size=0&status=done&width=704"></a><br>上图是服务器吞吐量分别用6个malloc实现的对比数据，可以看到tcmalloc和jemalloc最好(facebook在2011年的测试结果，tcmalloc这里版本较旧)。<br>4.3.2 mysql优化<br>测试环境：2x Intel E5&#x2F;2.2Ghz with 8 real cores per socket，16 real cores， 开启hyper-threading， 总共32个vcpu。 16个table，每个5M row。<br>OLTP_RO测试包含5个select查询：select_ranges, select_order_ranges, select_distinct_ranges, select_sum_ranges,<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-mysql-perf.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773338-fb25a731-a3c6-46ae-a996-f74dca690213.jpeg#align=left&display=inline&height=370&originHeight=370&originWidth=561&size=0&status=done&width=561"></a><br>可以看到在多核心或者多线程的场景下， jemalloc和tcmalloc带来的tps增加非常明显。<br><a name="d41d8cd9"></a></p>
+<h1 id><a href="#" class="headerlink" title></a></h1><p><a name="ukL1y"></a></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.valleytalk.org/wp-content/uploads/2015/02/glibc%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86ptmalloc%E6%BA%90%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%901.pdf">glibc内存管理ptmalloc源代码分析</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnblogs.com/vector03/p/5182730.html">Inside jemalloc</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="https://yq.aliyun.com/articles/6045">tcmalloc浅析</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://goog-perftools.sourceforge.net/doc/tcmalloc.html">tcmalloc官方文档</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.facebook.com/notes/facebook-engineering/scalable-memory-allocation-using-jemalloc/480222803919">Scalable memory allocation using jemalloc</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.percona.com/blog/2013/03/08/mysql-performance-impact-of-memory-allocators-part-2/">mysql-performance-impact-of-memory-allocators-part-2</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.360doc.com/content/13/0915/09/8363527_314549128.shtml">ptmalloc,tcmalloc和jemalloc内存分配策略研究</a><br><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.youtube.com/watch?v=RcWp5vwGlYU">Tick Tock, malloc Needs a Clock</a><br><a name="25f9c7fa"></a></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>在多线程环境使用tcmalloc和jemalloc效果非常明显。<br>当线程数量固定，不会频繁创建退出的时候， 可以使用jemalloc；反之使用tcmalloc可能是更好的选择。</p>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/memory/">MEMORY</a></li>
+            <li>ALLOCATOR</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

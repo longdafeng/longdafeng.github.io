@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="第五章 查询编译器每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多    语法分析将sql 的string 转换为语法分析树， 树的节点必须  原子， 它是词法成分， 如果关键字select， 关系或属性的名字 语法类。 用一个&lt;&gt;表示语法类， 比如 表示select-from-where， 表示条件，常常where之后的表达式。  查询 ::&#x3D; SELECT">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="第五章 查询编译器每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多    语法分析将sql 的string 转换为语法分析树， 树的节点必须  原子， 它是词法成分， 如果关键字select， 关系或属性的名字 语法类。 用一个&lt;&gt;表示语法类， 比如 表示select-from-where， 表示条件，常常where之后的表达式。  查询 ::&#x3D; SELECT">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490057713-bd65faa1-92a5-4ee8-b9f7-56d120181a8d.png#align=left&display=inline&height=506&name=image.png&originHeight=506&originWidth=747&size=267181&status=done&width=747">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572867866718-abd8130e-d166-4439-b160-7f76a684203c.png#align=left&display=inline&height=351&name=image.png&originHeight=351&originWidth=242&size=16273&status=done&width=242">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869151644-2cd4a648-4810-436f-89a9-bf0c5db7b5fe.png#align=left&display=inline&height=142&name=image.png&originHeight=142&originWidth=269&size=10515&status=done&width=269">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869172997-da869772-b267-4e19-b46f-d28be1837e74.png#align=left&display=inline&height=385&name=image.png&originHeight=385&originWidth=506&size=28167&status=done&width=506">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869709913-61ac7b7d-614b-42c9-bb0b-e6990e213c78.png#align=left&display=inline&height=92&name=image.png&originHeight=92&originWidth=311&size=6083&status=done&width=311">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869719506-5f5617d6-f50d-4a8c-b1a6-245e974e2b52.png#align=left&display=inline&height=69&name=image.png&originHeight=69&originWidth=211&size=3578&status=done&width=211">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869735112-3aaf6251-241e-42f1-ac3a-eef68255bd27.png#align=left&display=inline&height=194&name=image.png&originHeight=194&originWidth=580&size=12282&status=done&width=580">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869759192-daf17fb5-af1e-4e72-847e-68d7eaee5d90.png#align=left&display=inline&height=349&name=image.png&originHeight=349&originWidth=704&size=18294&status=done&width=704">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869923451-59e310db-d8a7-4979-9ba0-ac26dd2e8b0e.png#align=left&display=inline&height=112&name=image.png&originHeight=112&originWidth=438&size=10634&status=done&width=438">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870183922-147b91f3-ef59-4a90-af8d-4115120d0276.png#align=left&display=inline&height=76&name=image.png&originHeight=76&originWidth=353&size=5563&status=done&width=353">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870191848-4d5be75e-417f-407e-bdce-9acbb52f22c2.png#align=left&display=inline&height=40&name=image.png&originHeight=40&originWidth=286&size=2559&status=done&width=286">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870307429-abbc80f0-6658-4183-a9de-c7b44fb8fe49.png#align=left&display=inline&height=19&name=image.png&originHeight=19&originWidth=309&size=2243&status=done&width=309">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870316561-1f74fb64-2779-4980-8c14-b900df5a3fec.png#align=left&display=inline&height=24&name=image.png&originHeight=24&originWidth=251&size=1884&status=done&width=251">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870332616-1bb28e5c-3e3d-4b61-9e86-d4d4afd11dbf.png#align=left&display=inline&height=23&name=image.png&originHeight=23&originWidth=284&size=2155&status=done&width=284">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870363114-d9de44d1-d83e-4af6-9c05-969d4c0f7f12.png#align=left&display=inline&height=136&name=image.png&originHeight=136&originWidth=273&size=8248&status=done&width=273">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881772333-1524e417-7bf3-486b-abe0-dacee7b4ef8c.png#align=left&display=inline&height=31&name=image.png&originHeight=62&originWidth=838&size=7748&status=done&width=419">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881782926-f5f64306-2a5d-4186-80bb-8ee235aa01a4.png#align=left&display=inline&height=62&name=image.png&originHeight=124&originWidth=378&size=6527&status=done&width=189">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881793028-6c824e6a-44b4-42ee-81d8-210c5f4be49a.png#align=left&display=inline&height=30&name=image.png&originHeight=60&originWidth=536&size=5941&status=done&width=268">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881834816-f295c1a6-5464-4e58-a390-8673a67ca167.png#align=left&display=inline&height=198&name=image.png&originHeight=396&originWidth=568&size=17085&status=done&width=284">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881883299-83155b17-3d0c-4dcd-a9ef-83429e741a23.png#align=left&display=inline&height=208&name=image.png&originHeight=416&originWidth=496&size=17669&status=done&width=248">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917739185-237f3caf-179a-4764-bb48-02475bcf75d7.png#align=left&display=inline&height=34&name=image.png&originHeight=34&originWidth=306&size=2559&status=done&width=306">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917750339-20f86d7e-25a1-41dd-9b0f-3ec2cb0696bb.png#align=left&display=inline&height=29&name=image.png&originHeight=29&originWidth=336&size=2828&status=done&width=336">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917791454-97e33efb-f98f-4f90-be25-b7012b0d4370.png#align=left&display=inline&height=22&name=image.png&originHeight=22&originWidth=189&size=1604&status=done&width=189">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917818000-e44f2648-c524-4632-9069-48f0a94056bf.png#align=left&display=inline&height=100&name=image.png&originHeight=100&originWidth=519&size=11716&status=done&width=519">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572918182188-5ab57ff8-a4f8-4d99-b376-47d9221de40e.png#align=left&display=inline&height=52&name=image.png&originHeight=52&originWidth=778&size=10698&status=done&width=778">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572918486405-69311027-78ea-415b-97b4-3255ccaacb40.png#align=left&display=inline&height=117&name=image.png&originHeight=117&originWidth=783&size=18500&status=done&width=783">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572932915558-e7f71a15-d07d-45ee-a39e-2367bef10e76.png#align=left&display=inline&height=55&name=image.png&originHeight=55&originWidth=221&size=3417&status=done&width=221">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933157582-efffb35f-6449-4ebe-87a3-15ba7058a7e0.png#align=left&display=inline&height=140&name=image.png&originHeight=140&originWidth=263&size=8622&status=done&width=263">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933186592-b7997e1c-e054-4505-a80f-92d16e725de5.png#align=left&display=inline&height=35&name=image.png&originHeight=35&originWidth=474&size=3986&status=done&width=474">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933329825-096803cb-f10f-4175-b787-6bc247edf24e.png#align=left&display=inline&height=70&name=image.png&originHeight=70&originWidth=770&size=13794&status=done&width=770">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572934419976-e281c7db-4445-450c-9999-c3d84a28e8c2.png#align=left&display=inline&height=29&name=image.png&originHeight=29&originWidth=201&size=1758&status=done&width=201">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937141192-fd0caa21-34e0-4729-87f1-d458b4fc60c5.png#align=left&display=inline&height=125&name=image.png&originHeight=125&originWidth=576&size=14187&status=done&width=576">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937163406-a8187143-0a2d-41d7-b0ef-bf3015ca6f23.png#align=left&display=inline&height=143&name=image.png&originHeight=143&originWidth=221&size=5687&status=done&width=221">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937301171-3ca64445-b8c5-4510-b7ad-d89ed9474dea.png#align=left&display=inline&height=226&name=image.png&originHeight=226&originWidth=514&size=14503&status=done&width=514">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940119010-9d01a510-6e98-4b54-8b08-475c375121c0.png#align=left&display=inline&height=251&name=image.png&originHeight=251&originWidth=250&size=10413&status=done&width=250">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940144071-b879d79b-8734-48e7-bfb5-32acb8d4ecfd.png#align=left&display=inline&height=180&name=image.png&originHeight=180&originWidth=182&size=5583&status=done&width=182">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940192824-0c430d0b-60e7-4d12-bdba-9df076dba525.png#align=left&display=inline&height=125&name=image.png&originHeight=125&originWidth=268&size=10314&status=done&width=268">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940340105-65ad3bfe-7e9a-4b53-9d66-a1597bdbf823.png#align=left&display=inline&height=276&name=image.png&originHeight=276&originWidth=402&size=12130&status=done&width=402">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940882703-b2e11ee4-311b-42f2-997b-62cf568d9c43.png#align=left&display=inline&height=280&name=image.png&originHeight=280&originWidth=418&size=14748&status=done&width=418">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572941117385-43fda858-b0d4-4c43-85b1-c2531fb96b6d.png#align=left&display=inline&height=271&name=image.png&originHeight=271&originWidth=273&size=10007&status=done&width=273">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572943601575-146564a1-5c5e-4ee7-9564-c2af8ed8ea61.png#align=left&display=inline&height=220&name=image.png&originHeight=220&originWidth=443&size=11942&status=done&width=443">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573023184638-293be006-8f3e-4165-a2d7-14e8536ea72f.png#align=left&display=inline&height=98&name=image.png&originHeight=98&originWidth=458&size=9883&status=done&width=458">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573111793411-d3100094-4f44-459a-a3ff-3bd34e67c72e.png#align=left&display=inline&height=245&name=image.png&originHeight=245&originWidth=217&size=12528&status=done&width=217">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573111801553-56de75cc-3192-4413-9e7f-fe0291d019c4.png#align=left&display=inline&height=135&name=image.png&originHeight=135&originWidth=244&size=7255&status=done&width=244">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573112514816-afa73a48-ba5d-42f8-b145-698d3fbebca2.png#align=left&display=inline&height=205&name=image.png&originHeight=205&originWidth=256&size=6231&status=done&width=256">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573112551623-e47379df-438f-474b-9ed8-1a53eef80723.png#align=left&display=inline&height=269&name=image.png&originHeight=269&originWidth=616&size=16044&status=done&width=616">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119410046-85122155-119a-416a-9bb3-3b4c9cfb342a.png#align=left&display=inline&height=77&name=image.png&originHeight=77&originWidth=269&size=3422&status=done&width=269">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119417457-0bcfb551-c874-429b-8a59-475780e49736.png#align=left&display=inline&height=73&name=image.png&originHeight=73&originWidth=312&size=4129&status=done&width=312">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573441593414-53a6e3a1-ab26-493c-972d-e1951e8c3e5a.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=324&size=10307&status=done&width=324">
+<meta property="article:published_time" content="2024-01-29T09:18:27.924Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.924Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","path":"knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E7%AB%A0-%E6%9F%A5%E8%AF%A2%E7%BC%96%E8%AF%91%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">第五章 查询编译器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">1.1.</span> <span class="nav-text">语法分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">1.1.1.</span> <span class="nav-text">预处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="nav-number">1.2.</span> <span class="nav-text">查询优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E4%BB%A3%E6%95%B0%E5%AE%9A%E5%BE%8B%E7%9A%84%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="nav-number">1.2.1.</span> <span class="nav-text">基于代数定律的查询优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%A4%E6%8D%A2%E5%BE%8B%E5%92%8C%E7%BB%93%E5%90%88%E5%BE%8B"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">交换律和结合律</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%89%E6%8B%A9%E4%B8%8B%E6%8E%A8"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">选择下推</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E4%B8%8B%E6%8E%A8"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">条件下推</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#project-%E4%B8%8B%E6%8E%A8"><span class="nav-number">1.2.1.4.</span> <span class="nav-text">project 下推</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5%E5%92%8C%E7%A7%AF"><span class="nav-number">1.2.1.5.</span> <span class="nav-text">连接和积</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#distinct-%E4%BC%98%E5%8C%96"><span class="nav-number">1.2.1.6.</span> <span class="nav-text">distinct 优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#group-by-%E5%92%8Caggregate"><span class="nav-number">1.2.1.7.</span> <span class="nav-text">group by 和aggregate</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90%E6%A0%91%E5%88%B0%E9%80%BB%E8%BE%91%E6%9F%A5%E8%AF%A2%E8%AE%A1%E5%88%92"><span class="nav-number">1.3.</span> <span class="nav-text">语法分析树到逻辑查询计划</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#subquery"><span class="nav-number">1.3.1.</span> <span class="nav-text">subquery</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E4%BC%98%E5%8C%96"><span class="nav-number">1.3.2.</span> <span class="nav-text">逻辑优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cost-%E8%AE%A1%E7%AE%97"><span class="nav-number">1.4.</span> <span class="nav-text">cost 计算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E9%97%B4%E8%A1%A8%E5%A4%A7%E5%B0%8F%E7%9A%84%E4%BC%B0%E8%AE%A1"><span class="nav-number">1.4.1.</span> <span class="nav-text">中间表大小的估计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#project-cost"><span class="nav-number">1.4.2.</span> <span class="nav-text">project cost</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E6%8B%A9-cost"><span class="nav-number">1.4.3.</span> <span class="nav-text">选择 cost</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5cost"><span class="nav-number">1.4.4.</span> <span class="nav-text">连接cost</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E8%BF%90%E7%AE%97%E7%AC%A6%E7%9A%84cost"><span class="nav-number">1.4.5.</span> <span class="nav-text">其他运算符的cost</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8Cplan-%E9%80%89%E6%8B%A9"><span class="nav-number">1.5.</span> <span class="nav-text">执行plan 选择</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#histogram"><span class="nav-number">1.5.0.1.</span> <span class="nav-text">histogram</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%8F%E5%B0%91%E5%90%AF%E5%8F%91%E5%BC%8F%E9%80%BB%E8%BE%91%E8%AE%A1%E5%88%92%E4%BC%98%E5%8C%96%E7%9A%84%E4%BB%A3%E4%BB%B7%E4%BC%B0%E8%AE%A1"><span class="nav-number">1.5.1.</span> <span class="nav-text">减少启发式逻辑计划优化的代价估计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%9A%E4%B8%BE%E7%89%A9%E7%90%86%E8%AE%A1%E5%88%92"><span class="nav-number">1.5.2.</span> <span class="nav-text">枚举物理计划</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#join-reorder"><span class="nav-number">1.5.3.</span> <span class="nav-text">join reorder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B7%A6%E6%B7%B1%E6%A0%91%E3%80%81%E5%8F%B3%E6%B7%B1%E6%A0%91"><span class="nav-number">1.5.4.</span> <span class="nav-text">左深树、右深树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E6%9D%A5%E9%80%89%E6%8B%A9%E8%BF%9E%E6%8E%A5%E9%A1%BA%E5%BA%8F%E5%92%8C%E5%88%86%E7%BB%84"><span class="nav-number">1.5.5.</span> <span class="nav-text">通过动态规划来选择连接顺序和分组</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E8%AE%A1%E5%88%92"><span class="nav-number">1.6.</span> <span class="nav-text">物理计划</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E6%8B%A9%E7%AE%97%E5%AD%90"><span class="nav-number">1.6.1.</span> <span class="nav-text">选择算子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#join"><span class="nav-number">1.6.2.</span> <span class="nav-text">join</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pipeline-%E5%92%8Cmaterize"><span class="nav-number">1.6.3.</span> <span class="nav-text">pipeline 和materize</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E7%AE%97%E5%AD%90"><span class="nav-number">1.7.</span> <span class="nav-text">物理算子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E7%AE%97%E5%AD%90%E7%9A%84%E6%8E%92%E5%BA%8F"><span class="nav-number">1.7.1.</span> <span class="nav-text">物理算子的排序</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+                
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-数据库实现"><a href="/knowledge/database/database_implementation_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>数据库实现</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER5_QUERY_OPTIMIZE</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="第五章-查询编译器"><a href="#第五章-查询编译器" class="headerlink" title="第五章 查询编译器"></a>第五章 查询编译器</h1><p>每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661" alt="image.png"></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490057713-bd65faa1-92a5-4ee8-b9f7-56d120181a8d.png#align=left&display=inline&height=506&name=image.png&originHeight=506&originWidth=747&size=267181&status=done&width=747" alt="image.png"></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572867866718-abd8130e-d166-4439-b160-7f76a684203c.png#align=left&display=inline&height=351&name=image.png&originHeight=351&originWidth=242&size=16273&status=done&width=242" alt="image.png"></p>
+<p><a name="SVSDu"></a></p>
+<h2 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h2><p>将sql 的string 转换为语法分析树， 树的节点必须</p>
+<ol>
+<li>原子， 它是词法成分， 如果关键字select， 关系或属性的名字</li>
+<li>语法类。 用一个&lt;&gt;表示语法类， 比如 <query>表示select-from-where， <conddition>表示条件，常常where之后的表达式。</conddition></query></li>
+</ol>
+<p>查询<br><query> ::&#x3D; SELECT <sellist> FROM <fromlist> WHERE <condition><br>省略group by， having， order by， distinct， union ， join等操作</condition></fromlist></sellist></query></p>
+<p><sellist> ::&#x3D; <attribute>, <sellist><br><selistl> ::&#x3D; <attribute></attribute></selistl></sellist></attribute></sellist></p>
+<p><fromlist> ::&#x3D; <relation>, <fromlist><br><fromlist> ::&#x3D; <relation></relation></fromlist></fromlist></relation></fromlist></p>
+<p><condition> ::&#x3D; <condition> and <condition> <br><condition> ::&#x3D; <attribute> IN <query>  <br><condition> ::&#x3D; <attribute>&#x3D; <attribute>  <br><condition> ::&#x3D; <attribute>LIKE <pattern>  <br>省略 or、not、exist</pattern></attribute></condition></attribute></attribute></condition></query></attribute></condition></condition></condition></condition></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869151644-2cd4a648-4810-436f-89a9-bf0c5db7b5fe.png#align=left&display=inline&height=142&name=image.png&originHeight=142&originWidth=269&size=10515&status=done&width=269" alt="image.png"></p>
+<p>语法树为<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869172997-da869772-b267-4e19-b46f-d28be1837e74.png#align=left&display=inline&height=385&name=image.png&originHeight=385&originWidth=506&size=28167&status=done&width=506" alt="image.png"></p>
+<p><a name="DJGAb"></a></p>
+<h3 id="预处理"><a href="#预处理" class="headerlink" title="预处理"></a>预处理</h3><p>预处理要很多事情</p>
+<ol>
+<li>语义检查<ol>
+<li>检查关系的使用。 from 子句出现的关系是当前关系中的关系或视图</li>
+<li>视图替换为原查询树</li>
+<li>检查与解析属性的使用。 select 子句或where 子句中每个属性必须是当前范围中某个关系的属性。resolve属性到关系中。 也检查二义性，如果某个属性属于2个或多个关系， 则报错</li>
+<li>检查类型。 </li>
+<li><br></li>
+<li><br></li>
+</ol>
+</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869709913-61ac7b7d-614b-42c9-bb0b-e6990e213c78.png#align=left&display=inline&height=92&name=image.png&originHeight=92&originWidth=311&size=6083&status=done&width=311" alt="image.png"> <img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869719506-5f5617d6-f50d-4a8c-b1a6-245e974e2b52.png#align=left&display=inline&height=69&name=image.png&originHeight=69&originWidth=211&size=3578&status=done&width=211" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869735112-3aaf6251-241e-42f1-ac3a-eef68255bd27.png#align=left&display=inline&height=194&name=image.png&originHeight=194&originWidth=580&size=12282&status=done&width=580" alt="image.png"></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869759192-daf17fb5-af1e-4e72-847e-68d7eaee5d90.png#align=left&display=inline&height=349&name=image.png&originHeight=349&originWidth=704&size=18294&status=done&width=704" alt="image.png"></p>
+<p><a name="hwU0P"></a></p>
+<h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><p><a name="Nq5Lp"></a></p>
+<h3 id="基于代数定律的查询优化"><a href="#基于代数定律的查询优化" class="headerlink" title="基于代数定律的查询优化"></a>基于代数定律的查询优化</h3><p><a name="L1lzD"></a></p>
+<h4 id="交换律和结合律"><a href="#交换律和结合律" class="headerlink" title="交换律和结合律"></a>交换律和结合律</h4><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572869923451-59e310db-d8a7-4979-9ba0-ac26dd2e8b0e.png#align=left&display=inline&height=112&name=image.png&originHeight=112&originWidth=438&size=10634&status=done&width=438" alt="image.png"><br><a name="owNLR"></a></p>
+<h4 id="选择下推"><a href="#选择下推" class="headerlink" title="选择下推"></a>选择下推</h4><p>逻辑优化里面常常进行“下推选择” 这种优化<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870183922-147b91f3-ef59-4a90-af8d-4115120d0276.png#align=left&display=inline&height=76&name=image.png&originHeight=76&originWidth=353&size=5563&status=done&width=353" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870191848-4d5be75e-417f-407e-bdce-9acbb52f22c2.png#align=left&display=inline&height=40&name=image.png&originHeight=40&originWidth=286&size=2559&status=done&width=286" alt="image.png"></p>
+<ol>
+<li>对于并， 下推选择到2个参数， <img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870307429-abbc80f0-6658-4183-a9de-c7b44fb8fe49.png#align=left&display=inline&height=19&name=image.png&originHeight=19&originWidth=309&size=2243&status=done&width=309" alt="image.png"></li>
+<li>对于差， 下推到第一个， 第二个可选 <img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870316561-1f74fb64-2779-4980-8c14-b900df5a3fec.png#align=left&display=inline&height=24&name=image.png&originHeight=24&originWidth=251&size=1884&status=done&width=251" alt="image.png">或者<img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870332616-1bb28e5c-3e3d-4b61-9e86-d4d4afd11dbf.png#align=left&display=inline&height=23&name=image.png&originHeight=23&originWidth=284&size=2155&status=done&width=284" alt="image.png"></li>
+<li>对于其他， 下推到其中一个</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572870363114-d9de44d1-d83e-4af6-9c05-969d4c0f7f12.png#align=left&display=inline&height=136&name=image.png&originHeight=136&originWidth=273&size=8248&status=done&width=273" alt="image.png"><br>对于积或连接来说， 下推时，主要条件下推到含有属性的关系上，不要下推错了。 </p>
+<p><a name="oE2Ml"></a></p>
+<h4 id="条件下推"><a href="#条件下推" class="headerlink" title="条件下推"></a>条件下推</h4><p>有时需要将选择先上推，然后再下推到所有可能的分支。<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881772333-1524e417-7bf3-486b-abe0-dacee7b4ef8c.png#align=left&display=inline&height=31&name=image.png&originHeight=62&originWidth=838&size=7748&status=done&width=419" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881782926-f5f64306-2a5d-4186-80bb-8ee235aa01a4.png#align=left&display=inline&height=62&name=image.png&originHeight=124&originWidth=378&size=6527&status=done&width=189" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881793028-6c824e6a-44b4-42ee-81d8-210c5f4be49a.png#align=left&display=inline&height=30&name=image.png&originHeight=60&originWidth=536&size=5941&status=done&width=268" alt="image.png"></p>
+<p>执行计划如下<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881834816-f295c1a6-5464-4e58-a390-8673a67ca167.png#align=left&display=inline&height=198&name=image.png&originHeight=396&originWidth=568&size=17085&status=done&width=284" alt="image.png"></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572881883299-83155b17-3d0c-4dcd-a9ef-83429e741a23.png#align=left&display=inline&height=208&name=image.png&originHeight=416&originWidth=496&size=17669&status=done&width=248" alt="image.png"><br><a name="YGDn2"></a></p>
+<h4 id="project-下推"><a href="#project-下推" class="headerlink" title="project 下推"></a>project 下推</h4><p>下推project 和下推选择不一样， 保留project 在原处经常发生。 <br>因为， 下推project 一般不改变元组数量，只是减少元组的长度。 </p>
+<p>如果project的属性，即使输入又是输出， 则成为简单的， 比如πa,b,c 这种就是简单的， 如果是π a+b-&gt;c 就是复杂的</p>
+<p>投影优化：<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917739185-237f3caf-179a-4764-bb48-02475bcf75d7.png#align=left&display=inline&height=34&name=image.png&originHeight=34&originWidth=306&size=2559&status=done&width=306" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917750339-20f86d7e-25a1-41dd-9b0f-3ec2cb0696bb.png#align=left&display=inline&height=29&name=image.png&originHeight=29&originWidth=336&size=2828&status=done&width=336" alt="image.png"><br>可以优化为：<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917791454-97e33efb-f98f-4f90-be25-b7012b0d4370.png#align=left&display=inline&height=22&name=image.png&originHeight=22&originWidth=189&size=1604&status=done&width=189" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572917818000-e44f2648-c524-4632-9069-48f0a94056bf.png#align=left&display=inline&height=100&name=image.png&originHeight=100&originWidth=519&size=11716&status=done&width=519" alt="image.png"><br>比如， <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572918182188-5ab57ff8-a4f8-4d99-b376-47d9221de40e.png#align=left&display=inline&height=52&name=image.png&originHeight=52&originWidth=778&size=10698&status=done&width=778" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572918486405-69311027-78ea-415b-97b4-3255ccaacb40.png#align=left&display=inline&height=117&name=image.png&originHeight=117&originWidth=783&size=18500&status=done&width=783" alt="image.png"><br><a name="YV3nR"></a></p>
+<h4 id="连接和积"><a href="#连接和积" class="headerlink" title="连接和积"></a>连接和积</h4><ol>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572932915558-e7f71a15-d07d-45ee-a39e-2367bef10e76.png#align=left&display=inline&height=55&name=image.png&originHeight=55&originWidth=221&size=3417&status=done&width=221" alt="image.png">第一个表示基于C的自然连接</li>
+</ol>
+<p><a name="1uMyR"></a></p>
+<h4 id="distinct-优化"><a href="#distinct-优化" class="headerlink" title="distinct 优化"></a>distinct 优化</h4><ol>
+<li>通常下推distinct 会有一些优化效果， 会下推到一些算子中，而不是全部算子</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933157582-efffb35f-6449-4ebe-87a3-15ba7058a7e0.png#align=left&display=inline&height=140&name=image.png&originHeight=140&originWidth=263&size=8622&status=done&width=263" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933186592-b7997e1c-e054-4505-a80f-92d16e725de5.png#align=left&display=inline&height=35&name=image.png&originHeight=35&originWidth=474&size=3986&status=done&width=474" alt="image.png"></p>
+<ol start="2">
+<li>但一般而言， distinct 不能移入Ub， -b 或project 等运算符</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572933329825-096803cb-f10f-4175-b787-6bc247edf24e.png#align=left&display=inline&height=70&name=image.png&originHeight=70&originWidth=770&size=13794&status=done&width=770" alt="image.png"></p>
+<ol start="5">
+<li>有时把distinct 移到一个可以完全消除的位置，因为它作用到一个不含重复的关系上。<ol>
+<li>比如主键</li>
+<li>比如对group by的结果</li>
+<li>集合的一个并&#x2F;交&#x2F;差的结果</li>
+</ol>
+</li>
+</ol>
+<p><a name="yOkoh"></a></p>
+<h4 id="group-by-和aggregate"><a href="#group-by-和aggregate" class="headerlink" title="group by 和aggregate"></a>group by 和aggregate</h4><ol>
+<li>大部分时候取决于aggregate 运算符的细节</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572934419976-e281c7db-4445-450c-9999-c3d84a28e8c2.png#align=left&display=inline&height=29&name=image.png&originHeight=29&originWidth=201&size=1758&status=done&width=201" alt="image.png"><br>比如像distinct， min&#x2F;max 不受影响， 但sum&#x2F;count&#x2F;avg 就会受影响</p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937141192-fd0caa21-34e0-4729-87f1-d458b4fc60c5.png#align=left&display=inline&height=125&name=image.png&originHeight=125&originWidth=576&size=14187&status=done&width=576" alt="image.png"><br>原始的plan tree 类似<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937163406-a8187143-0a2d-41d7-b0ef-bf3015ca6f23.png#align=left&display=inline&height=143&name=image.png&originHeight=143&originWidth=221&size=5687&status=done&width=221" alt="image.png"></p>
+<p>这个里面可以做几个优化</p>
+<ol>
+<li>因为是等值join， 可以转为自然连接</li>
+<li>因为最上层是做group by， 因此，可以引入distinct， distinct 对group by 不影响</li>
+<li>因为最终结果只用了2个属性， 因此，可以下推projection</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572937301171-3ca64445-b8c5-4510-b7ad-d89ed9474dea.png#align=left&display=inline&height=226&name=image.png&originHeight=226&originWidth=514&size=14503&status=done&width=514" alt="image.png"></p>
+<p><a name="XFIfl"></a></p>
+<h2 id="语法分析树到逻辑查询计划"><a href="#语法分析树到逻辑查询计划" class="headerlink" title="语法分析树到逻辑查询计划"></a>语法分析树到逻辑查询计划</h2><ol>
+<li>用关系代数替换语法树上节点</li>
+<li>逻辑优化</li>
+</ol>
+<p><a name="p5uLU"></a></p>
+<h3 id="subquery"><a href="#subquery" class="headerlink" title="subquery"></a>subquery</h3><p>当condition中包含子查询时，引入运算符中间形式， 它介于语法树和关系代数之间，称为2参数选择 。</p>
+<p>当对子查询进行翻译时， 这些属性后面与外部属性相比较，</p>
+<ol>
+<li>可以将外部该属性上的条件过滤应用到子查询上</li>
+<li>不需要的属性，可以project 消除</li>
+<li>有一些属性可以做distinct</li>
+</ol>
+<p>比如<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940119010-9d01a510-6e98-4b54-8b08-475c375121c0.png#align=left&display=inline&height=251&name=image.png&originHeight=251&originWidth=250&size=10413&status=done&width=250" alt="image.png"> 可以优化为<img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940144071-b879d79b-8734-48e7-bfb5-32acb8d4ecfd.png#align=left&display=inline&height=180&name=image.png&originHeight=180&originWidth=182&size=5583&status=done&width=182" alt="image.png"></p>
+<p>复杂subquery 优化<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940192824-0c430d0b-60e7-4d12-bdba-9df076dba525.png#align=left&display=inline&height=125&name=image.png&originHeight=125&originWidth=268&size=10314&status=done&width=268" alt="image.png"><br>找出 影星平均年龄小于等于40岁的电影的名字和制作年份<br>原始语法树<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940340105-65ad3bfe-7e9a-4b53-9d66-a1597bdbf823.png#align=left&display=inline&height=276&name=image.png&originHeight=276&originWidth=402&size=12130&status=done&width=402" alt="image.png"></p>
+<p>第一步优化 延迟选择<br>延迟选择， m1.movieTitle &#x3D; m2.movieTile and m1.movieYear&#x3D;m2.movieYear</p>
+<ol>
+<li>为了 支持延迟选择， 需要对子查询的movieTitle和movieYear 进行分组， 引入group by</li>
+<li>引入别名  avg（s.birthday）-&gt;abd</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572940882703-b2e11ee4-311b-42f2-997b-62cf568d9c43.png#align=left&display=inline&height=280&name=image.png&originHeight=280&originWidth=418&size=14748&status=done&width=418" alt="image.png"><br>还可以做一些优化</p>
+<ol>
+<li>distinct 目前是最后执行</li>
+<li>starts m1 中影星名字被project 消除掉</li>
+<li>starts m1 的 title， year  与starts m2 的title， year 又是等职join</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572941117385-43fda858-b0d4-4c43-85b1-c2531fb96b6d.png#align=left&display=inline&height=271&name=image.png&originHeight=271&originWidth=273&size=10007&status=done&width=273" alt="image.png"></p>
+<p><a name="T5cXs"></a></p>
+<h3 id="逻辑优化"><a href="#逻辑优化" class="headerlink" title="逻辑优化"></a>逻辑优化</h3><ol>
+<li>条件过滤， 尽可能下推到子树， 当多个条件and时，可以把该条件分解并下推</li>
+<li>投影也可以下推， 或者添加投影。 当有选择时， 下推投影需要小心</li>
+<li>distinct 有时可以消除， 或者移动到合适的地方</li>
+<li>基于积的某些选择可以转换为等值join<ol>
+<li>将θ连接替换为自然连接， 相同名字取等值</li>
+<li>增加project 消除转θ连接为自然连接时的重复属性</li>
+<li>连接的条件必须是可结合的， 存在θ连接不能满足结合律</li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572943601575-146564a1-5c5e-4ee7-9564-c2af8ed8ea61.png#align=left&display=inline&height=220&name=image.png&originHeight=220&originWidth=443&size=11942&status=done&width=443" alt="image.png"></li>
+</ol>
+</li>
+</ol>
+<p><a name="aDJEq"></a></p>
+<h2 id="cost-计算"><a href="#cost-计算" class="headerlink" title="cost 计算"></a>cost 计算</h2><p>当把逻辑计划转为物理执行计划时，可能存在多个不同的物理计划，这个时候需要对物理计划进行cost 评估。然后选择最小代价。 这种评价，称为代价枚举。 </p>
+<ol>
+<li>满足结合律和分配律的运算， 如连接、并、交、分组</li>
+<li>每个运算符可能有多个实现， 比如join 有hash join和nestloop join</li>
+<li>一些算子，比如scan， sort 在逻辑计划中不是显示存在，但在物理计划里面必须实例化</li>
+<li>参数从一个算子传送到下一个算子的方式。 比如可以通过temp disk， 或iterator， 或内存</li>
+</ol>
+<p>第一步，需要准确估计代价。 一般是经过statics 来估计。 </p>
+<p><a name="G4Qrw"></a></p>
+<h3 id="中间表大小的估计"><a href="#中间表大小的估计" class="headerlink" title="中间表大小的估计"></a>中间表大小的估计</h3><p>中间表的大小对cost 有很大的影响。 </p>
+<ol>
+<li>准确估计中间表的cost</li>
+<li>易于计算</li>
+<li>逻辑一致， 中间表大小估计不依赖中间表的计算方式， 比如多个连接的大小不依赖连接顺序。</li>
+</ol>
+<p> </p>
+<p>很难做到3个条件同时满足， </p>
+<ol>
+<li>不能准确估计大小时， 只要误差是稳定的， 大小估计方法能达到最佳物理计划最小计划。</li>
+</ol>
+<p><a name="HE2nr"></a></p>
+<h3 id="project-cost"><a href="#project-cost" class="headerlink" title="project cost"></a>project cost</h3><ol>
+<li>通常project 减少record 大小，但扩展project能产生新成分，可能增加record， 这部分很难计算， 参考后续的例子。</li>
+</ol>
+<p> </p>
+<p><a name="x1zk1"></a></p>
+<h3 id="选择-cost"><a href="#选择-cost" class="headerlink" title="选择 cost"></a>选择 cost</h3><p>selectitity，</p>
+<ol>
+<li>通常选择一个属性等于某个值。T（s）&#x3D;T（r）&#x2F;v(r, a), a 是r的一个属性， v（r，a）类似cardinality, 假设V(r, a) &#x3D;50, 则表示大概1&#x2F;50 概率a 为某个值</li>
+<li>非等值比较， 比如s&#x3D;σa&lt;10(r), 常常约定T(s)&#x3D;T(r)&#x2F;3 , 3分之一的满足条件</li>
+<li>不等比较， 这种比较小 T（s）&#x3D;T（r）(V(r, a)-1)&#x2F;v(r, a)</li>
+<li>多条件and 比较， 则selectivity 进行相乘</li>
+</ol>
+<p>例如， 一张表r（a，b， c）， s &#x3D; σ a&#x3D;10 and b &lt; 20, 另T(r) &#x3D; 10000, v(r, a) &#x3D; 50, 则r 大概1&#x2F;50 满足a &#x3D;10， 1&#x2F;3 满足b &lt; 20, s &#x3D;  T(r)&#x2F;(50 * 3), 因此结果大概是67<br>注意， 如果选择条件是s &#x3D; σ a&#x3D;10 and a &gt; 20, 如果按照cost 计算方式应该也是67， 但实际上 应该为0， 如何防止这种错误呢， 在逻辑计划优化时候， 就应该检查条件选择， 会发现选择实际上就是false。 </p>
+<ol start="5">
+<li>当多条件or时， 比较难计算， 一般是求和，但经常selectivity 选择出来的结果集比实际结果集还要大。 真正计算公式是， 假设r 有n个record， m1 满足条件c1， m2 个满足条件c2， s &#x3D; n（1-（1- m1&#x2F;n）（1-m2&#x2F;n））， 1-m1&#x2F;n 是不满足c1的那部分， 1-m2&#x2F;n 是不满足c2 的那部分， 因此结果是如此</li>
+</ol>
+<p>假设r（a， b）有 T(r) &#x3D; 10000 个元组， s &#x3D; σ a&#x3D;10 or b &lt; 20， 继续v（r）&#x3D;50， 则s &#x3D; 10000 ( 1- (1 - 1&#x2F;50)(1 - 1&#x2F;3))  最后结果为3466</p>
+<p><a name="S323y"></a></p>
+<h3 id="连接cost"><a href="#连接cost" class="headerlink" title="连接cost"></a>连接cost</h3><p>这里只考虑自然连接， 另外增加2个条件, 这里只是算连接的selectivity， 但连接的cost涉及join order和io cost</p>
+<ol>
+<li>等值连接 会转自然连接</li>
+<li>θ连接 可以看作积之后，进行一个条件过滤</li>
+</ol>
+<p>一个初步的计算是：<br>1&#x2F;MAX(V(r, y), v(s, y)), 就是关系r或s中， 谁的y 出现某值得概率更低，就选谁<br>T（r ⋈ s）&#x3D; T（r）T（s）&#x2F;max(v(r, y), v(s, y))</p>
+<p>举例<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573023184638-293be006-8f3e-4165-a2d7-14e8536ea72f.png#align=left&display=inline&height=98&name=image.png&originHeight=98&originWidth=458&size=9883&status=done&width=458" alt="image.png"><br>先r ⋈ s， 然后再⋈ u， （1000 * 2000&#x2F;MAX(20, 50)）* 5000&#x2F;MAX(100, 500) &#x3D; 400000</p>
+<p><a name="tSbDM"></a></p>
+<h3 id="其他运算符的cost"><a href="#其他运算符的cost" class="headerlink" title="其他运算符的cost"></a>其他运算符的cost</h3><p>并<br>selectivity 为 一般为较大者 + 较小者&#x2F;2</p>
+<p>交<br>selectivity 为较小者&#x2F;2</p>
+<p>差 <br>T（r） - T（s）&#x2F;2</p>
+<p>distinct<br>selectivity &#x3D; min（T（r）&#x2F;2, T(r)&#x2F;（v(r, a1) <em>ｖ（ｒ, a2）</em> xxxx)）</p>
+<p>group by &amp; agg<br>计算和distinct 一样</p>
+<p><a name="XmheN"></a></p>
+<h2 id="执行plan-选择"><a href="#执行plan-选择" class="headerlink" title="执行plan 选择"></a>执行plan 选择</h2><p>磁盘io 受下面影响</p>
+<ol>
+<li>物理算子</li>
+<li>中间表大小</li>
+<li>相似运算的排序</li>
+<li>一个物理算子如何传递给下一个物理算子</li>
+</ol>
+<p><a name="aoqKI"></a></p>
+<h4 id="histogram"><a href="#histogram" class="headerlink" title="histogram"></a>histogram</h4><p>histogram 常见有几种</p>
+<ol>
+<li>等宽（singleton），  比如基于 v0 （当前已知最小值） &lt;&#x3D; V &lt; v0+w 一个item， 下一个item 是v0 + w 《&#x3D; v 《 v0 + 2w， 每一个item里面是计数器。 mysql 里面的等宽histogram 是存这个值的频率</li>
+<li>等高（equi-height）， 下界、上界、累积频率以及不同值的个数（Number of Distinct Value，NDV）。 每个item的下界和上届之差是相同的， 是一个等高的item。 </li>
+<li>最频值， 列出高频值和他的出现次数。</li>
+</ol>
+<p> </p>
+<p>基于join可以直接利用histogram 判断是否有重合值。 </p>
+<p>举例：<br>现有最频值的histogram， r(a, b) ⋈ s (b, c), r.b histogram is <br>1: 200, 0 : 150, 5: 100, others : 550. <br>表示有200个1， 150个0， 100个5， 非0、1、5 的有550个。 <br>s.b histogram is<br>0: 100, 1: 80, 2: 70, others : 250</p>
+<p>另外假设v(r, b) &#x3D; 14, v(s, b) &#x3D; 13. </p>
+<p>其中已经匹配了0， 则0的连接数 为 100 * 150 &#x3D; 15000<br>匹配了1， 则1 的连接数为 200 * 80 &#x3D; 16000<br>高频值2， 2的连接数 为(550&#x2F;14 ) * 70 &#x3D; 2750<br>高频值5， 5的连接数为 100 *（２５０／13）&#x3D; 1900<br>其他值 连接数为 （550 * (14 -2)&#x2F;14） * (250 * (13 -2)&#x2F;13)&#x2F;max(14, 13) &#x3D; 7123</p>
+<p>总的结果为 15000 +16000 +２７５０　＋　1900 + 7123 &#x3D; 42000 左右<br>如果按照默认算法 1000 * 500&#x2F;MAX(14, 13) &#x3D; 35174，</p>
+<p>举例： 等宽直方图<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573111793411-d3100094-4f44-459a-a3ff-3bd34e67c72e.png#align=left&display=inline&height=245&name=image.png&originHeight=245&originWidth=217&size=12528&status=done&width=217" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573111801553-56de75cc-3192-4413-9e7f-fe0291d019c4.png#align=left&display=inline&height=135&name=image.png&originHeight=135&originWidth=244&size=7255&status=done&width=244" alt="image.png"></p>
+<p>仅有2行不为0，  10 * 5&#x2F;10 + 5 * 20 &#x2F;10 &#x3D; 15</p>
+<p><a name="MokB3"></a></p>
+<h3 id="减少启发式逻辑计划优化的代价估计"><a href="#减少启发式逻辑计划优化的代价估计" class="headerlink" title="减少启发式逻辑计划优化的代价估计"></a>减少启发式逻辑计划优化的代价估计</h3><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573112514816-afa73a48-ba5d-42f8-b145-698d3fbebca2.png#align=left&display=inline&height=205&name=image.png&originHeight=205&originWidth=256&size=6231&status=done&width=256" alt="image.png"> 是否做下推，需要查看cost <br>连接v（r， a） &#x3D; 50， v（s， b） &#x3D; 200， 则连接时 T（r）* T（s）&#x2F;max（50， 200）<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573112551623-e47379df-438f-474b-9ed8-1a53eef80723.png#align=left&display=inline&height=269&name=image.png&originHeight=269&originWidth=616&size=16044&status=done&width=616" alt="image.png"><br>a 计划cost &#x3D; 5000 + 100 + 50 + 2000 + 1000  &#x3D; 8150 （把根节点排除了）<br>b 计划cost &#x3D; 5000 + 100 + 2000 + 1000  &#x3D; 8100 （把根节点排除了）<br>说明如果连接时， 连接匹配度比较低时， 延迟distinct 收益会更大</p>
+<p><a name="7j2Zh"></a></p>
+<h3 id="枚举物理计划"><a href="#枚举物理计划" class="headerlink" title="枚举物理计划"></a>枚举物理计划</h3><ol>
+<li>穷尽发<ol>
+<li>自顶向下， 对于根节点的运算的每个可能的实现，计算每种组合的代价</li>
+<li>自底向上， 对于逻辑查询树的每个子表达式，计算这个子表达式的所有可能的实现。</li>
+</ol>
+</li>
+</ol>
+<p>启发式规则：</p>
+<ol>
+<li>等值过滤时， 索引一般效率会更高</li>
+<li>join时，连接上有索引时， 则采用索引连接</li>
+<li>join时， sort-merge join 比hash join 更好。 </li>
+<li>3个或多个关系 并&#x2F;交时， 先对小的关系进行操作。</li>
+</ol>
+<p> </p>
+<p>搜索engine</p>
+<p>枚举需要有时间限制， 比如当前找到一个计划，这个计划耗时c， 则最多搜索c的时间即可。  另外很多db， 直接有一些设置搜索时间限制，在这个限制中， 选取最优计划即可。 </p>
+<p>爬山法： 通过结合律和交换律， 对现有一个算子进行小改进， 直到找到目前不能再优化为止。 </p>
+<p>动态规划， 自底向上有明显简化， 计算大的表达式时，只考虑每个子表达式的最佳计划。 不保证整体最优，但可以获得较优，并可能最优。</p>
+<p>system-r （selinger） 风格， 利用子表达式的某个特性来争取整体最优而不是局部最优。这种是在动态规划的基础上进行改进。 先记录每个子表达式的最优计划。 但同时记录 具有较高代价但产生的结果对较高层收益带来更多。比如，特别关注一些算子， sort、group by、join</p>
+<p><a name="RrQSc"></a></p>
+<h3 id="join-reorder"><a href="#join-reorder" class="headerlink" title="join reorder"></a>join reorder</h3><p>可能最重要的连接是一趟连接， 小表（左参数）读入内存，建立hash table， 这个过程称为build table， 大表（右参数）读入进行连接，称为probe table。</p>
+<ol>
+<li>因为参数导致一些不同的算法， 1. 嵌套循环连接， 左参数是外层循环； 2. 索引关系， 习惯右参数带索引。</li>
+</ol>
+<p>  </p>
+<p>连接数量， N!<br>如果4张表进行连接,  则有4！ &#x3D; 24 中表排序方式。 </p>
+<p><a name="TvkUt"></a></p>
+<h3 id="左深树、右深树"><a href="#左深树、右深树" class="headerlink" title="左深树、右深树"></a>左深树、右深树</h3><p>右子女都是叶子的称为左深树， 类似左子女都是叶子的称为右深树。  如果既不是左深树，又不是右深树， 则称为bushy tree。</p>
+<p>左深树有一些优点</p>
+<ol>
+<li>将搜索空间缩小， 只需要管join order 即可， 不需要care join的位置</li>
+<li>join 算法比较好选择，  选择一趟连接（hash join）或嵌套循环算法（nest loop join）</li>
+<li>当一个线程进行计算时（mysql），bushy tree发挥不了并行的优势</li>
+<li>比较容易结合动态规划来做。</li>
+</ol>
+<p>  </p>
+<p>如果不是左深树， 则因为join 的位置， 需要额外倍数<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119410046-85122155-119a-416a-9bb3-3b4c9cfb342a.png#align=left&display=inline&height=77&name=image.png&originHeight=77&originWidth=269&size=3422&status=done&width=269" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119417457-0bcfb551-c874-429b-8a59-475780e49736.png#align=left&display=inline&height=73&name=image.png&originHeight=73&originWidth=312&size=4129&status=done&width=312" alt="image.png"></p>
+<p>因此，如果考虑所有树的组合， 假设有6张表join， 42 *６！　＝　３０２４０　种树。 </p>
+<ol>
+<li>如果用一趟连接， 选择小表在左边， 对内存消耗容易小</li>
+<li>如果选择嵌套循环算法， 外层循环在左边，减少中间表的建立</li>
+</ol>
+<p><a name="eYAPF"></a></p>
+<h3 id="通过动态规划来选择连接顺序和分组"><a href="#通过动态规划来选择连接顺序和分组" class="headerlink" title="通过动态规划来选择连接顺序和分组"></a>通过动态规划来选择连接顺序和分组</h3><p>不断迭代从局部最优进化到全局最优</p>
+<ul>
+<li>基础， 先选取一个最优的最小集， 根据启发式规则， 选择最小的2张表， 小表为左， 其次小为右</li>
+<li>迭代， 建立大小是3张表join的所有子集，选择最优， 然后扩大候选人，做4张表的最优集，直到全部表</li>
+</ul>
+<p> </p>
+<p>Selinger 风格优化（搜索引擎）， 不仅保持一个代价， 而是利用某些特征，在动态规划的基础上保留几个代价，后面会对这些计划都做一个迭代， 然后再进行cost estimate， 再选择一些，再迭代， 最终选择最优的一个， 搜索空间会指数级增长。 </p>
+<p>贪婪算法， 贪婪算法， 容易让搜索空间指数级增长，导致搜索十分耗时，难以承受。 动态规划或者分支限制， 是一种方式加快搜索方式。 另外常用的是启发式规则， 一旦使用启发式规则，就做了一些限制， 比如使用左深树的贪婪算法。 <br>基于左深树的贪婪算法</p>
+<p><a name="cUVid"></a></p>
+<h2 id="物理计划"><a href="#物理计划" class="headerlink" title="物理计划"></a>物理计划</h2><p><a name="S7V4P"></a></p>
+<h3 id="选择算子"><a href="#选择算子" class="headerlink" title="选择算子"></a>选择算子</h3><p>选择算子需要考虑， 尤其是有多个条件时</p>
+<ol>
+<li>有一个索引</li>
+<li>与选择项之一的一个常量相比较</li>
+</ol>
+<p>当有多个条件与时， </p>
+<ol>
+<li>先选中带索引的</li>
+<li>然后进行过滤器操作</li>
+</ol>
+<p>还有一种可能是</p>
+<ol>
+<li>直接全表扫描， 直接进行过滤器操作</li>
+</ol>
+<p>不过任何时候，还是建议做cost evalutate<br>比如 σ x&#x3D;1 AND y&#x3D;2 and z &lt; 5(r), r 在x、y、z 上都有索引，但只有z是聚集的， 其中T(R) &#x3D; 5000, B(R) &#x3D;200, V(R, x) &#x3D;100， V(R, y) &#x3D; 500</p>
+<ol>
+<li>全表扫描， 代价为B(R), 200次磁盘io</li>
+<li>x 索引， T(R)&#x2F; 100 &#x3D; 50 次io， </li>
+<li>y 索引， T(R)&#x2F;V(R, y) &#x3D; 10次io</li>
+<li>z 索引， B(R)&#x2F;3 &#x3D; 67 次io</li>
+</ol>
+<p>整个计算下来，使用y 索引效率会最高。 </p>
+<p><a name="woVFB"></a></p>
+<h3 id="join"><a href="#join" class="headerlink" title="join"></a>join</h3><ol>
+<li>一趟连接 – hash join， 会期望内存足够， 二趟连接（嵌套循环 – nestloop join），如果可以分配给左参数一些缓冲区， 可以分片。 </li>
+<li>当表已经排序了， 可以考虑sort-merge join</li>
+<li>当多张表 基于一个属性进行join时， 前面的表join 后， 起结果是排序的， 可以考虑sort merge join</li>
+<li>如果左表比较小， 右表在join 属性上有索引， 可以考虑索引连接</li>
+<li>不能考虑nestloop join或sort merge join时， 可以考虑hash join。 扫描的次数取决于较小的参数。</li>
+</ol>
+<p><a name="jhohl"></a></p>
+<h3 id="pipeline-和materize"><a href="#pipeline-和materize" class="headerlink" title="pipeline 和materize"></a>pipeline 和materize</h3><p>pipeline 有更好的性能，更容易进行并行，节省磁盘io，但对内存的消耗更大， 需要共享内存。<br>materize 将结果物化到磁盘上， 消耗更多的磁盘io。 </p>
+<p>一元操作很适合流水线， 比如选择和投影， 流水线时，非常容易调用getnext 从而进行下一层的迭代。<br>二元流水线， 比如join<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573441593414-53a6e3a1-ab26-493c-972d-e1951e8c3e5a.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=324&size=10307&status=done&width=324" alt="image.png"><br>假设， </p>
+<ol>
+<li>r 5000个块， s、u 各10000个块 </li>
+<li>共有101 个缓冲块</li>
+<li>中间结果使用k个块</li>
+</ol>
+<p>这种情况采用二趟hash 连接（hybrid hash join）， </p>
+<p>因为有101 个缓冲块， 整除2 （因为有下一级流水，所以一个build hash table， 一个output hash table， 如果没有下一级流水， 则结果直接output 到网络）再向下取整， 则有50个块， 则按照 一个桶50个块来设计 hybrid hash join</p>
+<p>一个桶50块， 则表r 切分100块， 每个桶50块， 从s 进行读入需要消耗一个缓冲块， 下一级流水线从u进行读入需要消耗一个内存块， 第一层join， build hash table消耗50块， 则第一层的output 只能为49块。 当第一层join的49块缓冲块被填满时， 会驱动进行下一层的join。如果一个桶做完了join， 第一层的output hash table依旧没有满，则load 第二个桶</p>
+<ol>
+<li>当中间表 块小于等于 49时， 则第二级的join， 直接使用内存hash join，全表load。 总io 次数<ol>
+<li> （5000 + （5000 -50）） + （ 10000 + （10000 - 50）） +10000  &#x3D; 40000 -100</li>
+</ol>
+</li>
+<li>当中间表的块 》49时， 第二层join 已经不适合nestloop join， 期待hybrid hash join<ol>
+<li>（5000 + （5000 -50）） + （ 10000 + （10000 - 50））</li>
+<li>（（k -49）* 2（读写） +４９）　＋　（１００００　 +10000 -49）</li>
+<li>合计50000 + 2 *ｋ　－　２００ 左右</li>
+</ol>
+</li>
+</ol>
+<p><a name="kznNS"></a></p>
+<h2 id="物理算子"><a href="#物理算子" class="headerlink" title="物理算子"></a>物理算子</h2><p>逻辑树叶子的物理算子</p>
+<ol>
+<li>Tablescan(R)</li>
+<li>SortScan(R)</li>
+<li>IndexScan（R, C）, 一种是全索引扫描， 一种类似过滤条件快速定位（比如利用B+ 树等）</li>
+</ol>
+<p>选择的物理算子</p>
+<ol>
+<li>Filter(C)</li>
+</ol>
+<p>排序的物理算子</p>
+<ol>
+<li>SortScan（r， l）</li>
+<li>在连接或分组 运算中， 常常使用sort</li>
+<li>可以使用一个物理算子sort 对没有排序的关系进行排序</li>
+<li>order by 产生的算子， 往往在物理计划的顶端</li>
+</ol>
+<p>其他算子</p>
+<ol>
+<li>算法基于的策略， 基于排序， 散列或索引</li>
+<li>用于遍历，需要考虑是使用一趟遍历算子， 两趟遍历， 还是三趟遍历算子</li>
+<li>考虑内存消耗量</li>
+</ol>
+<p><a name="3TZPE"></a></p>
+<h3 id="物理算子的排序"><a href="#物理算子的排序" class="headerlink" title="物理算子的排序"></a>物理算子的排序</h3><p>就是执行的顺序，</p>
+<ol>
+<li>有可能是使用迭代器流水线进行操作</li>
+<li>也有可能使用不同节点交替执行 （比如bushy tree）</li>
+<li>如果涉及中间表或spill或稍微再检索 执行物化</li>
+</ol>
+<p>规则：</p>
+<ol>
+<li>在物化处拆解子树， 子树可以一次一个被执行</li>
+<li>一般逻辑， 从下至上， 从左到右</li>
+<li>在子树执行过程中， 使用迭代器pipeline 进行执行</li>
+</ol>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER5_QUERY_OPTIMIZE</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

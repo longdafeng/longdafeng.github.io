@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="视图视图是虚拟存在的表, 对客户来说是透明的.   简单, 很多复杂条件已经提前组合好了 安全, 只能访问他们被允许的结果集 数据独立, 源表的变更对视图几乎无影响, 即使修改视图涉及的列名, 视图可以修改以适配.  12345678910CREATE [OR REPLACE] [ALGORITHM &#x3D; &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]VIEW">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/view.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="视图视图是虚拟存在的表, 对客户来说是透明的.   简单, 很多复杂条件已经提前组合好了 安全, 只能访问他们被允许的结果集 数据独立, 源表的变更对视图几乎无影响, 即使修改视图涉及的列名, 视图可以修改以适配.  12345678910CREATE [OR REPLACE] [ALGORITHM &#x3D; &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]VIEW">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-29T09:18:27.967Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.967Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/view">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/view.html","path":"knowledge/mysql/深入迁出MySQL_reading_notes/view.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE"><span class="nav-number">1.</span> <span class="nav-text">视图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE-1"><span class="nav-number">2.</span> <span class="nav-text">视图</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-mysql源码分析"><a href="/knowledge/mysql/source_code_reading/" rel="section"><i class="fa fa-archive fa-fw"></i>MySQL源码分析</a></li>
+
+
+                        
+  <li class="menu-item menu-item-深入迁出mysql"><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>深入迁出MySQL</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/">深入迁出MYSQL_READING_NOTES</a></li>
+            <li>VIEW</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><p>视图是虚拟存在的表, 对客户来说是透明的. </p>
+<ol>
+<li>简单, 很多复杂条件已经提前组合好了</li>
+<li>安全, 只能访问他们被允许的结果集</li>
+<li>数据独立, 源表的变更对视图几乎无影响, 即使修改视图涉及的列名, 视图可以修改以适配.</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE [OR REPLACE] [ALGORITHM = &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]</span><br><span class="line">VIEW view_name [(column_list)]</span><br><span class="line">AS select_statement</span><br><span class="line">[WITH [CASCADED | LOCAL] CHECK OPTION]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ALTER [ALGORITHM = &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]</span><br><span class="line">VIEW view_name [(column_list)]</span><br><span class="line">AS select_statement</span><br><span class="line">[WITH [CASCADED | LOCAL] CHECK OPTION]</span><br></pre></td></tr></table></figure>
+
+
+<ol>
+<li>目前不支持视图含有subquery</li>
+<li>WITH [CASCADED | LOCAL] CHECK OPTION 决定了是否允许更新数据使记录不再满足视图的条</li>
+</ol>
+<p>件。这个选项与 Oracle 数据库中的选项是类似的，其中：<br> LOCAL 是只要满足本视图的条件就可以更新；<br> CASCADED 则是必须满足所有针对该视图的所有视图的条件才可以更新。<br>如果没有明确是 LOCAL 还是 CASCADED，则默认是 CASCADED。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create or replace view payment_view as</span><br><span class="line"> -&gt; select payment_id,amount from payment </span><br><span class="line"> -&gt; where amount &lt; 10 WITH CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; </span><br><span class="line">mysql&gt; create or replace view payment_view1 as</span><br><span class="line"> -&gt; select payment_id,amount from payment_view </span><br><span class="line"> -&gt; where amount &gt; 5 WITH LOCAL CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; </span><br><span class="line">mysql&gt; create or replace view payment_view2 as</span><br><span class="line"> -&gt; select payment_id,amount from payment_view</span><br><span class="line">  -&gt; where amount &gt; 5 WITH CASCADED CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; select * from payment_view1 limit 1;</span><br><span class="line">+------------+--------+ </span><br><span class="line"> ?| payment_id | amount |</span><br><span class="line">+------------+--------+| 3 | 5.99 |</span><br><span class="line">+------------+--------+1 row in set (0.00 sec)</span><br><span class="line">mysql&gt; update payment_view1 set amount=10 </span><br><span class="line">  -&gt; where payment_id = 3; </span><br><span class="line">Query OK, 1 row affected (0.03 sec)</span><br><span class="line">Rows matched: 1 Changed: 1 Warnings: 0</span><br><span class="line">mysql&gt; update payment_view2 set amount=10</span><br><span class="line">  -&gt; where payment_id = 3;</span><br><span class="line">ERROR 1369 (HY000): CHECK OPTION failed &#x27;sakila.paymentview2&#x27;</span><br></pre></td></tr></table></figure>
+
+<br>
+
+<ol start="3">
+<li>可选的ALGORITHM子句是对标准SQL的MySQL扩展。ALGORITHM可取三个值：MERGE、TEMPTABLE或UNDEFINED。如果没有ALGORITHM子句，默认算法是UNDEFINED（未定义的）。算法会影响MySQL处理视图的方式。</li>
+</ol>
+<p>一、 MERGE算法<br>文档解释：</p>
+<blockquote>
+<p>对于MERGE，会将引用视图的语句的文本与视图定义合并起来，使得视图定义的某一部分取代语句的对应部分</p>
+</blockquote>
+<p>通俗的说，意思就是MERGE算法是一个合并算法，每当执行的时候,先将视图的sql语句与外部查询视图的sql语句,合并在一起,最终执行；这样操作对效率基本上没有什么影响，但是使用这种算法有一定限制，以下引自文档：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">MERGE算法要求视图中的行和基表中的行具有一对一的关系。如果不具有该关系。必须使用临时表取而代之。如果视图包含下述结构中的任何一种，将失去一对一的关系：</span><br><span class="line">·         聚合函数（SUM(), MIN(), MAX(), COUNT()等）。</span><br><span class="line">·         DISTINCT</span><br><span class="line">·         GROUP BY</span><br><span class="line">·         HAVING</span><br><span class="line">·         UNION或UNION ALL</span><br><span class="line">·         仅引用文字值（在该情况下，没有基本表）。</span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br></pre></td></tr></table></figure>
+<p>举个例子</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">/** 定义两张表</span><br><span class="line">seller_sku表包括以下字段：id(主键),seller_id(门店ID),sku_id(商品sku的id,对应goods_sku的id),amount(商品的库存)</span><br><span class="line">goods_sku 表包括以下字段：id(主键),goods_name(sku的名称)</span><br><span class="line">**/</span><br><span class="line">#案例1 查询商品库存大于50的门店的商品所对应的成本</span><br><span class="line">CREATE OR REPLACE  VIEW amount_50_sku AS</span><br><span class="line">SELECT</span><br><span class="line">seller_id,</span><br><span class="line">price,</span><br><span class="line">sku_id,</span><br><span class="line">amount,</span><br><span class="line">(price*amount) AS sku_values </span><br><span class="line">FROM </span><br><span class="line">sellers_sku WHERE amount &gt; 50</span><br><span class="line">#方法A</span><br><span class="line">SELECT * FROM amount_50_sku  </span><br><span class="line">#方法B</span><br><span class="line">SELECT seller_id,price,sku_id,amount,(price*amount) AS sku_values FROM sellers_sku </span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br><span class="line">• 15</span><br><span class="line">• 16</span><br><span class="line">• 17</span><br><span class="line">• 18</span><br><span class="line">• 19</span><br><span class="line">• 20</span><br><span class="line">• 21</span><br><span class="line">• 22</span><br><span class="line">• 23</span><br></pre></td></tr></table></figure>
+<p>方法A和方法B查询出结果的时间是差不多的，MERGE算法对效率的影响很小。<br>二、TEMPTABLE算法<br>文档解释</p>
+<blockquote>
+<p>对于TEMPTABLE，视图的结果将被置于临时表中，然后使用它执行语句。</p>
+</blockquote>
+<p>TEMPTABLE算法是将结果放置到临时表中，意味这要mysql要先创建好一个临时表，然后将结果放到临时表中去，然后再使用这个临时表进行相应的查询。为什么文档中说“果使用了临时表，视图是不可更新的。”就是因为这个算法生成的视图其实就是一个结果的临时表，是无法执行update语句的，mysql会报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">“错误代码： 1288 The target table seller_sku_amount of the UPDATE is not updatable&quot;</span><br><span class="line">• 1</span><br></pre></td></tr></table></figure>
+<p>最最重要的是，TEMPTABLE算法会创建临时表，这个过程是会影响效率的，如以下案例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">seller_sku表包括以下字段：id(主键),seller_id(门店ID),sku_id(商品sku的id,对应goods_sku的id),amount(商品的库存)</span><br><span class="line">goods_sku 表包括以下字段：id(主键),goods_name(sku的名称)</span><br><span class="line">**/</span><br><span class="line">#案例2 显示每个商品各个门店库存的总和</span><br><span class="line">#创建视图</span><br><span class="line">CREATE OR REPLACE VIEW seller_sku_amount AS SELECT</span><br><span class="line">sku_id,</span><br><span class="line">SUM(amount) AS amount_total</span><br><span class="line">FROM sellers_sku</span><br><span class="line">GROUP BY sku_id</span><br><span class="line">#使用视图查询</span><br><span class="line">SELECT </span><br><span class="line">seller_sku_amount.sku_id,</span><br><span class="line">seller_sku_amount.amount_total,</span><br><span class="line">goods_sku.*</span><br><span class="line"> FROM seller_sku_amount JOIN goods_sku ON goods_sku.`id` = seller_sku_amount.`sku_id`</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">#原生SQL查询</span><br><span class="line">SELECT</span><br><span class="line">sellers_sku.sku_id,</span><br><span class="line">SUM(sellers_sku.amount) AS amount_total,</span><br><span class="line">goods_sku.*</span><br><span class="line">FROM sellers_sku</span><br><span class="line">JOIN goods_sku ON sellers_sku.`sku_id` = goods_sku.`id`</span><br><span class="line">GROUP BY sku_id</span><br><span class="line">ORDER BY amount_total DESC</span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br><span class="line">• 15</span><br><span class="line">• 16</span><br><span class="line">• 17</span><br><span class="line">• 18</span><br><span class="line">• 19</span><br><span class="line">• 20</span><br><span class="line">• 21</span><br><span class="line">• 22</span><br><span class="line">• 23</span><br><span class="line">• 24</span><br><span class="line">• 25</span><br><span class="line">• 26</span><br><span class="line">• 27</span><br><span class="line">• 28</span><br><span class="line">• 29</span><br><span class="line">• 30</span><br><span class="line">• 31</span><br><span class="line">• 32</span><br></pre></td></tr></table></figure>
+<p>以上两个查询，使用视图查询的速度为比使用原生SQL查询的效率慢50%，随着数据量的增大，这个效率还会更慢（数据量越大，需要往临时表填充更多的数据）；<br>但是TEMPTABLE算法也不是没有好处的，TEMPTABLE算法创建临时表之后、并在完成语句处理之前，能够释放基表上的锁定。与MERGE算法相比，锁定释放的速度更快，这样，使用视图的其他客户端不会被屏蔽过长时间。<br>三、UNDEFINED算法<br>UNDEFINED算法没啥好区分的，直接引用文档的：</p>
+<blockquote>
+<p>对于UNDEFINED，MySQL将选择所要使用的算法。如果可能，它倾向于MERGE而不是TEMPTABLE，这是因为MERGE通常更有效，而且如果使用了临时表，视图是不可更新的。</p>
+</blockquote>
+<h1 id="视图-1"><a href="#视图-1" class="headerlink" title="视图"></a>视图</h1><p>视图是虚拟存在的表, 对客户来说是透明的. </p>
+<ol>
+<li>简单, 很多复杂条件已经提前组合好了</li>
+<li>安全, 只能访问他们被允许的结果集</li>
+<li>数据独立, 源表的变更对视图几乎无影响, 即使修改视图涉及的列名, 视图可以修改以适配.</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE [OR REPLACE] [ALGORITHM = &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]</span><br><span class="line">VIEW view_name [(column_list)]</span><br><span class="line">AS select_statement</span><br><span class="line">[WITH [CASCADED | LOCAL] CHECK OPTION]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ALTER [ALGORITHM = &#123;UNDEFINED | MERGE | TEMPTABLE&#125;]</span><br><span class="line">VIEW view_name [(column_list)]</span><br><span class="line">AS select_statement</span><br><span class="line">[WITH [CASCADED | LOCAL] CHECK OPTION]</span><br></pre></td></tr></table></figure>
+
+
+<ol>
+<li>目前不支持视图含有subquery</li>
+<li>WITH [CASCADED | LOCAL] CHECK OPTION 决定了是否允许更新数据使记录不再满足视图的条</li>
+</ol>
+<p>件。这个选项与 Oracle 数据库中的选项是类似的，其中：<br> LOCAL 是只要满足本视图的条件就可以更新；<br> CASCADED 则是必须满足所有针对该视图的所有视图的条件才可以更新。<br>如果没有明确是 LOCAL 还是 CASCADED，则默认是 CASCADED。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create or replace view payment_view as</span><br><span class="line"> -&gt; select payment_id,amount from payment </span><br><span class="line"> -&gt; where amount &lt; 10 WITH CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; </span><br><span class="line">mysql&gt; create or replace view payment_view1 as</span><br><span class="line"> -&gt; select payment_id,amount from payment_view </span><br><span class="line"> -&gt; where amount &gt; 5 WITH LOCAL CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; </span><br><span class="line">mysql&gt; create or replace view payment_view2 as</span><br><span class="line"> -&gt; select payment_id,amount from payment_view</span><br><span class="line">  -&gt; where amount &gt; 5 WITH CASCADED CHECK OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">mysql&gt; select * from payment_view1 limit 1;</span><br><span class="line">+------------+--------+ </span><br><span class="line"> ?| payment_id | amount |</span><br><span class="line">+------------+--------+| 3 | 5.99 |</span><br><span class="line">+------------+--------+1 row in set (0.00 sec)</span><br><span class="line">mysql&gt; update payment_view1 set amount=10 </span><br><span class="line">  -&gt; where payment_id = 3; </span><br><span class="line">Query OK, 1 row affected (0.03 sec)</span><br><span class="line">Rows matched: 1 Changed: 1 Warnings: 0</span><br><span class="line">mysql&gt; update payment_view2 set amount=10</span><br><span class="line">  -&gt; where payment_id = 3;</span><br><span class="line">ERROR 1369 (HY000): CHECK OPTION failed &#x27;sakila.paymentview2&#x27;</span><br></pre></td></tr></table></figure>
+
+<br>
+
+<ol start="3">
+<li>可选的ALGORITHM子句是对标准SQL的MySQL扩展。ALGORITHM可取三个值：MERGE、TEMPTABLE或UNDEFINED。如果没有ALGORITHM子句，默认算法是UNDEFINED（未定义的）。算法会影响MySQL处理视图的方式。</li>
+</ol>
+<p>一、 MERGE算法<br>文档解释：</p>
+<blockquote>
+<p>对于MERGE，会将引用视图的语句的文本与视图定义合并起来，使得视图定义的某一部分取代语句的对应部分</p>
+</blockquote>
+<p>通俗的说，意思就是MERGE算法是一个合并算法，每当执行的时候,先将视图的sql语句与外部查询视图的sql语句,合并在一起,最终执行；这样操作对效率基本上没有什么影响，但是使用这种算法有一定限制，以下引自文档：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">MERGE算法要求视图中的行和基表中的行具有一对一的关系。如果不具有该关系。必须使用临时表取而代之。如果视图包含下述结构中的任何一种，将失去一对一的关系：</span><br><span class="line">·         聚合函数（SUM(), MIN(), MAX(), COUNT()等）。</span><br><span class="line">·         DISTINCT</span><br><span class="line">·         GROUP BY</span><br><span class="line">·         HAVING</span><br><span class="line">·         UNION或UNION ALL</span><br><span class="line">·         仅引用文字值（在该情况下，没有基本表）。</span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br></pre></td></tr></table></figure>
+<p>举个例子</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">/** 定义两张表</span><br><span class="line">seller_sku表包括以下字段：id(主键),seller_id(门店ID),sku_id(商品sku的id,对应goods_sku的id),amount(商品的库存)</span><br><span class="line">goods_sku 表包括以下字段：id(主键),goods_name(sku的名称)</span><br><span class="line">**/</span><br><span class="line">#案例1 查询商品库存大于50的门店的商品所对应的成本</span><br><span class="line">CREATE OR REPLACE  VIEW amount_50_sku AS</span><br><span class="line">SELECT</span><br><span class="line">seller_id,</span><br><span class="line">price,</span><br><span class="line">sku_id,</span><br><span class="line">amount,</span><br><span class="line">(price*amount) AS sku_values </span><br><span class="line">FROM </span><br><span class="line">sellers_sku WHERE amount &gt; 50</span><br><span class="line">#方法A</span><br><span class="line">SELECT * FROM amount_50_sku  </span><br><span class="line">#方法B</span><br><span class="line">SELECT seller_id,price,sku_id,amount,(price*amount) AS sku_values FROM sellers_sku </span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br><span class="line">• 15</span><br><span class="line">• 16</span><br><span class="line">• 17</span><br><span class="line">• 18</span><br><span class="line">• 19</span><br><span class="line">• 20</span><br><span class="line">• 21</span><br><span class="line">• 22</span><br><span class="line">• 23</span><br></pre></td></tr></table></figure>
+<p>方法A和方法B查询出结果的时间是差不多的，MERGE算法对效率的影响很小。<br>二、TEMPTABLE算法<br>文档解释</p>
+<blockquote>
+<p>对于TEMPTABLE，视图的结果将被置于临时表中，然后使用它执行语句。</p>
+</blockquote>
+<p>TEMPTABLE算法是将结果放置到临时表中，意味这要mysql要先创建好一个临时表，然后将结果放到临时表中去，然后再使用这个临时表进行相应的查询。为什么文档中说“果使用了临时表，视图是不可更新的。”就是因为这个算法生成的视图其实就是一个结果的临时表，是无法执行update语句的，mysql会报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">“错误代码： 1288 The target table seller_sku_amount of the UPDATE is not updatable&quot;</span><br><span class="line">• 1</span><br></pre></td></tr></table></figure>
+<p>最最重要的是，TEMPTABLE算法会创建临时表，这个过程是会影响效率的，如以下案例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">seller_sku表包括以下字段：id(主键),seller_id(门店ID),sku_id(商品sku的id,对应goods_sku的id),amount(商品的库存)</span><br><span class="line">goods_sku 表包括以下字段：id(主键),goods_name(sku的名称)</span><br><span class="line">**/</span><br><span class="line">#案例2 显示每个商品各个门店库存的总和</span><br><span class="line">#创建视图</span><br><span class="line">CREATE OR REPLACE VIEW seller_sku_amount AS SELECT</span><br><span class="line">sku_id,</span><br><span class="line">SUM(amount) AS amount_total</span><br><span class="line">FROM sellers_sku</span><br><span class="line">GROUP BY sku_id</span><br><span class="line">#使用视图查询</span><br><span class="line">SELECT </span><br><span class="line">seller_sku_amount.sku_id,</span><br><span class="line">seller_sku_amount.amount_total,</span><br><span class="line">goods_sku.*</span><br><span class="line"> FROM seller_sku_amount JOIN goods_sku ON goods_sku.`id` = seller_sku_amount.`sku_id`</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">#原生SQL查询</span><br><span class="line">SELECT</span><br><span class="line">sellers_sku.sku_id,</span><br><span class="line">SUM(sellers_sku.amount) AS amount_total,</span><br><span class="line">goods_sku.*</span><br><span class="line">FROM sellers_sku</span><br><span class="line">JOIN goods_sku ON sellers_sku.`sku_id` = goods_sku.`id`</span><br><span class="line">GROUP BY sku_id</span><br><span class="line">ORDER BY amount_total DESC</span><br><span class="line">• 1</span><br><span class="line">• 2</span><br><span class="line">• 3</span><br><span class="line">• 4</span><br><span class="line">• 5</span><br><span class="line">• 6</span><br><span class="line">• 7</span><br><span class="line">• 8</span><br><span class="line">• 9</span><br><span class="line">• 10</span><br><span class="line">• 11</span><br><span class="line">• 12</span><br><span class="line">• 13</span><br><span class="line">• 14</span><br><span class="line">• 15</span><br><span class="line">• 16</span><br><span class="line">• 17</span><br><span class="line">• 18</span><br><span class="line">• 19</span><br><span class="line">• 20</span><br><span class="line">• 21</span><br><span class="line">• 22</span><br><span class="line">• 23</span><br><span class="line">• 24</span><br><span class="line">• 25</span><br><span class="line">• 26</span><br><span class="line">• 27</span><br><span class="line">• 28</span><br><span class="line">• 29</span><br><span class="line">• 30</span><br><span class="line">• 31</span><br><span class="line">• 32</span><br></pre></td></tr></table></figure>
+<p>以上两个查询，使用视图查询的速度为比使用原生SQL查询的效率慢50%，随着数据量的增大，这个效率还会更慢（数据量越大，需要往临时表填充更多的数据）；<br>但是TEMPTABLE算法也不是没有好处的，TEMPTABLE算法创建临时表之后、并在完成语句处理之前，能够释放基表上的锁定。与MERGE算法相比，锁定释放的速度更快，这样，使用视图的其他客户端不会被屏蔽过长时间。<br>三、UNDEFINED算法<br>UNDEFINED算法没啥好区分的，直接引用文档的：</p>
+<blockquote>
+<p>对于UNDEFINED，MySQL将选择所要使用的算法。如果可能，它倾向于MERGE而不是TEMPTABLE，这是因为MERGE通常更有效，而且如果使用了临时表，视图是不可更新的。</p>
+</blockquote>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/mysql/">MYSQL</a></li>
+            <li><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/">深入迁出MYSQL_READING_NOTES</a></li>
+            <li>VIEW</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/view.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

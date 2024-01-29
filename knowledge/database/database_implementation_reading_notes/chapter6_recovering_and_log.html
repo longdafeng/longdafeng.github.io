@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="第六章， 故障恢复 概述故障恢复， 依赖很多组件一起协同完成，   日志管理器， 存储日志 事物管理器， 保障事物的一致性 恢复管理器， 备份和恢复的协调者    事物原语操作地址空间  物理磁盘块空间 缓冲区的内存地址 事物的局部地址空间  一种描述数据在地址空间移动的操作：  input（x），  将磁盘块含有数据库元素 x  load 到内存，  由缓冲区管理器触发 read（x）， 将数据">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Longda share space">
+<meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html">
+<meta property="og:site_name" content="Longda share space">
+<meta property="og:description" content="第六章， 故障恢复 概述故障恢复， 依赖很多组件一起协同完成，   日志管理器， 存储日志 事物管理器， 保障事物的一致性 恢复管理器， 备份和恢复的协调者    事物原语操作地址空间  物理磁盘块空间 缓冲区的内存地址 事物的局部地址空间  一种描述数据在地址空间移动的操作：  input（x），  将磁盘块含有数据库元素 x  load 到内存，  由缓冲区管理器触发 read（x）， 将数据">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573547126916-e03d892a-4638-4959-a778-21e0e653002b.png#align=left&display=inline&height=291&name=image.png&originHeight=291&originWidth=344&size=16798&status=done&width=344">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573562345712-9d430b0f-d224-43b3-8c0b-4b6c6d95363d.png#align=left&display=inline&height=46&name=image.png&originHeight=92&originWidth=260&size=2141&status=done&width=130">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573562385522-dcc1806e-e00a-4b9d-876b-1e1a328d26c5.png#align=left&display=inline&height=200&name=image.png&originHeight=400&originWidth=764&size=34548&status=done&width=382">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573563603961-70c0fdcf-4e92-4f71-af94-b42d1992a0e6.png#align=left&display=inline&height=266&name=image.png&originHeight=532&originWidth=922&size=43602&status=done&width=461">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573565905455-587cdc60-e70c-4e13-9b74-853bf7abec0a.png#align=left&display=inline&height=49&name=image.png&originHeight=98&originWidth=574&size=4639&status=done&width=287">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573567479645-29768c9d-8f8a-4c01-a4eb-c6dfa704fc97.png#align=left&display=inline&height=215&name=image.png&originHeight=430&originWidth=928&size=41149&status=done&width=464">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573568291162-ac0be8bb-641d-4cdb-9ecf-8332f037aeec.png#align=left&display=inline&height=110&name=image.png&originHeight=220&originWidth=1392&size=34988&status=done&width=696">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574078993551-3c59f7d0-7a12-4b97-b133-e15c91a7811f.png#align=left&display=inline&height=218&name=image.png&originHeight=436&originWidth=852&size=42791&status=done&width=426">
+<meta property="article:published_time" content="2024-01-29T09:18:27.925Z">
+<meta property="article:modified_time" content="2024-01-29T09:18:27.925Z">
+<meta property="article:author" content="Longda Feng">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573547126916-e03d892a-4638-4959-a778-21e0e653002b.png#align=left&display=inline&height=291&name=image.png&originHeight=291&originWidth=344&size=16798&status=done&width=344">
+
+
+<link rel="canonical" href="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","path":"knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title> | Longda share space
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda share space" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda share space</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Sharing</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%8C-%E6%95%85%E9%9A%9C%E6%81%A2%E5%A4%8D"><span class="nav-number">1.</span> <span class="nav-text">第六章， 故障恢复</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">2.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E7%89%A9%E5%8E%9F%E8%AF%AD%E6%93%8D%E4%BD%9C"><span class="nav-number">2.1.</span> <span class="nav-text">事物原语操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#undo-%E6%97%A5%E5%BF%97"><span class="nav-number">2.2.</span> <span class="nav-text">undo 日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redo-%E6%97%A5%E5%BF%97"><span class="nav-number">2.3.</span> <span class="nav-text">redo 日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#undo-redo-%E4%B8%80%E4%BD%93%E6%97%A5%E5%BF%97"><span class="nav-number">2.4.</span> <span class="nav-text">undo&#x2F;redo 一体日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MySQL-innodb-undo-%E5%92%8Credo-%E5%8D%8F%E5%90%8C%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.5.</span> <span class="nav-text">MySQL innodb undo 和redo 协同工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%92%88%E5%AF%B9%E4%BB%8B%E8%B4%A8%E7%9A%84%E9%98%B2%E6%8A%A4"><span class="nav-number">2.6.</span> <span class="nav-text">针对介质的防护</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD"><span class="nav-number">2.6.1.</span> <span class="nav-text">备份</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda share space</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@sohu.com" title="E-Mail → mailto:hustjackie@sohu.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner page posts-expand">
+  
+
+      
+
+        
+        <ul class="sub-menu menu">
+          
+            
+          
+          
+            
+                
+  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
+
+
+          
+          
+              
+  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
+
+
+          
+          
+            
+                
+  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
+
+
+          
+            
+                
+  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
+
+
+          
+              
+  <li class="menu-item menu-item-下载"><a href="/knowledge/download/" rel="section"><i class="fa fa-download fa-fw"></i>下载</a></li>
+
+
+          
+        </ul>
+        
+
+        
+
+                
+                
+
+                
+
+                    
+                    <ul class="sub-menu menu">
+                      
+                        
+  <li class="menu-item menu-item-数据库实现"><a href="/knowledge/database/database_implementation_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>数据库实现</a></li>
+
+
+                    </ul>
+                    
+                
+
+                
+                
+        
+      
+  
+
+
+    
+    
+    
+    <div class="post-block" lang="zh_CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">
+</h1>
+
+<div class="post-meta-container">
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER6_RECOVERING_AND_LOG</li>
+          
+  </ul>
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="第六章，-故障恢复"><a href="#第六章，-故障恢复" class="headerlink" title="第六章， 故障恢复"></a>第六章， 故障恢复</h1><p><a name="WccxB"></a></p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>故障恢复， 依赖很多组件一起协同完成， </p>
+<ol>
+<li>日志管理器， 存储日志</li>
+<li>事物管理器， 保障事物的一致性</li>
+<li>恢复管理器， 备份和恢复的协调者</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573547126916-e03d892a-4638-4959-a778-21e0e653002b.png#align=left&display=inline&height=291&name=image.png&originHeight=291&originWidth=344&size=16798&status=done&width=344" alt="image.png"></p>
+<p><a name="tzh8X"></a></p>
+<h2 id="事物原语操作"><a href="#事物原语操作" class="headerlink" title="事物原语操作"></a>事物原语操作</h2><p>地址空间</p>
+<ol>
+<li>物理磁盘块空间</li>
+<li>缓冲区的内存地址</li>
+<li>事物的局部地址空间</li>
+</ol>
+<p>一种描述数据在地址空间移动的操作：</p>
+<ol>
+<li>input（x），  将磁盘块含有数据库元素 x  load 到内存，  由缓冲区管理器触发</li>
+<li>read（x）， 将数据库元素x 拷贝到事物的局部变量t， （如果不在内存，则先执行input(x)， 然后赋值给事物局部变量t）。 事物管理器触发</li>
+<li>write（x）， 将事物局部变量写到内存x。 事物管理器触发。</li>
+<li>output（x）， 刷到磁盘。 缓冲区或日志管理器触发。</li>
+</ol>
+<p> </p>
+<p>因为事物的原子性， 有一些设计上的要求</p>
+<ol>
+<li>数据库元素大小不超过一个块 （无论是在内存中操作或磁盘io操作）</li>
+</ol>
+<p>例子：<br>需求<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573562345712-9d430b0f-d224-43b3-8c0b-4b6c6d95363d.png#align=left&display=inline&height=46&name=image.png&originHeight=92&originWidth=260&size=2141&status=done&width=130" alt="image.png"><br>则事务的原语是<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573562385522-dcc1806e-e00a-4b9d-876b-1e1a328d26c5.png#align=left&display=inline&height=200&name=image.png&originHeight=400&originWidth=764&size=34548&status=done&width=382" alt="image.png"><br>如果不再缓冲区， 还需要增加input 指令。 </p>
+<ol>
+<li>在output 之前，发生故障， 都能保持数据库一致性</li>
+<li>在output 之后， 发生故障，也能保持数据库一致性</li>
+<li>在output过程中，发生故障， 会破坏一致性。</li>
+</ol>
+<p> </p>
+<p><a name="vrujx"></a></p>
+<h2 id="undo-日志"><a href="#undo-日志" class="headerlink" title="undo 日志"></a>undo 日志</h2><p>undo 日志， 撤销事务在系统崩溃前还没有完成的动作来修复数据库状态。 </p>
+<p>日志通常是一个三元组&lt;T, X, V&gt;,  事务改变了数据库元素x， x原来的值是v。 </p>
+<ol>
+<li>日志是反映write 动作，不反映output动作 </li>
+<li>日志记录是原始值， 不记录新值。 </li>
+<li>如果事务t 改变了数据库元素x， 日志必须在数据刷到磁盘前，日志写入磁盘</li>
+<li>如果事务提交， commit日志必须在所有元素写到磁盘之后写到磁盘，而且要快。</li>
+</ol>
+<p> </p>
+<p>新的逻辑<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573563603961-70c0fdcf-4e92-4f71-af94-b42d1992a0e6.png#align=left&display=inline&height=266&name=image.png&originHeight=532&originWidth=922&size=43602&status=done&width=461" alt="image.png"></p>
+<p>undo 日志恢复<br>恢复管理器， </p>
+<ol>
+<li>事务分已提交和未提交日志。 <ol>
+<li>恢复时， 按顺序从尾部向头部扫描</li>
+<li>如果发现commit 日志， 则事务已经刷到磁盘，不需要额外恢复操作</li>
+<li>当发现abort 日志记录或发现start，但没有commit日志时， 这个事务必须被回滚。 <ol>
+<li>用日志内部的原始值更新到磁盘， 强制刷到原始值</li>
+<li>如果没有abort 日志， 写入abort 日志</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>恢复过程中的二次崩溃， undo的设计时幂等的，可重入的。</li>
+</ol>
+<p> </p>
+<p>checkpoint<br>定期做checkpoint， 清理老的日志， 避免恢复到一个比较过时的状态。<br>静态checkpoint</p>
+<ol>
+<li>停止新事务</li>
+<li>等待当前活跃的事务， 提交commit或abort</li>
+<li>刷日志到磁盘</li>
+<li>写入日志记录ckpt</li>
+<li>重新接收事务</li>
+</ol>
+<p>动态checkpoint<br>静态checkpoint 需要停止新事务， 这个过程对用户非常不友好。</p>
+<ol>
+<li>写入 日志记录&lt; start ckpt(t1, t2, t3, …. tk)&gt; 其中t是所有活跃的事务</li>
+<li>等待t1， t2， t3， 。。。 tk 提交或中止， 但允许其他事务进行</li>
+<li>当t1， t2， t3， 。。。。 tk 完成后， 写入<end ckpt></end></li>
+</ol>
+<p>当写入end ckpt 后，可以将上一个start ckpt 之前的记录全部清楚掉</p>
+<p>lsn<br>日志经常是使用旧的日志文件， 会循环使用旧的数据库， 这种情况下， 日志得有一个只增不减的序列号。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573565905455-587cdc60-e70c-4e13-9b74-853bf7abec0a.png#align=left&display=inline&height=49&name=image.png&originHeight=98&originWidth=574&size=4639&status=done&width=287" alt="image.png"><br>如果发现下一条记录的lsn 比当前记录的lsn还要小， 说明已经到结尾了。 </p>
+<p>日志通常是一个多层次结构， 顶层文件记录日志文件的构成， 顶层文件的最后一条， 表明可以在什么地方找到最后一条记录。 </p>
+<p>先不考虑循环文件， 如何恢复， 有了checkpoint， 恢复的速度可以大大加快， 恢复可以提交停止。 </p>
+<ol>
+<li>还是按照之前的逻辑进行恢复 </li>
+<li>如果先遇到<end ckpt>， 向前扫描， 当遇到start ckpt 就停止， start ckpt 之前的日志没有必要再恢复了</end></li>
+<li>如果先遇到start ckpt， 记录这个ckpoint 所涉及的事务列表， 向前扫描， 找到最早出现这些事务的日志的地方， 之前的事务日志就不用再扫描了。</li>
+</ol>
+<p> </p>
+<p><a name="ynbEQ"></a></p>
+<h2 id="redo-日志"><a href="#redo-日志" class="headerlink" title="redo 日志"></a>redo 日志</h2><p>redo 日志忽略未完成的事务， 重复已经提交事务所做的改变。 </p>
+<p>redo 日志是记录commit后的值<br>&lt;t, x, v&gt;, 事务t 为数据库元素x 写入新值v</p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573567479645-29768c9d-8f8a-4c01-a4eb-c6dfa704fc97.png#align=left&display=inline&height=215&name=image.png&originHeight=430&originWidth=928&size=41149&status=done&width=464" alt="image.png"></p>
+<p>整个顺序是不同</p>
+<ol>
+<li>写到内存中redo日志</li>
+<li>写commit日志</li>
+<li>在output磁盘前，刷redo log</li>
+</ol>
+<p>redo log 的恢复<br>从日志首部向下扫描</p>
+<ol>
+<li>如果t是未提交的事务， do nothing</li>
+<li>如果t是已经提交的事务， 写入v</li>
+<li>对没有完成的事务， 写入一个<abort t>到日志</abort></li>
+</ol>
+<p>redo 的checkpoint</p>
+<p>在真实环境中， 数据output 到磁盘会比较慢， 但redo 是按时刷到磁盘。 <br>写checkpoint过程<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1573568291162-ac0be8bb-641d-4cdb-9ecf-8332f037aeec.png#align=left&display=inline&height=110&name=image.png&originHeight=220&originWidth=1392&size=34988&status=done&width=696" alt="image.png"></p>
+<p>带检查点redo恢复</p>
+<ol>
+<li>只找最后一个start ckpt提到的事务即可</li>
+<li>如果是end ckpt，则记录这个ckpt 对应的事务列表，  对应start ckpt 前提交的事务已经刷到磁盘， 不需要恢复</li>
+<li>对ckpt 列表的事务 进行恢复</li>
+</ol>
+<p><a name="9Alb3"></a></p>
+<h2 id="undo-redo-一体日志"><a href="#undo-redo-一体日志" class="headerlink" title="undo&#x2F;redo 一体日志"></a>undo&#x2F;redo 一体日志</h2><p>日志格式&lt;T, X, v, w&gt;, v 为修改前的值， 新值为w<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1574078993551-3c59f7d0-7a12-4b97-b133-e15c91a7811f.png#align=left&display=inline&height=218&name=image.png&originHeight=436&originWidth=852&size=42791&status=done&width=426" alt="image.png"></p>
+<p><a name="PjHUN"></a></p>
+<h2 id="MySQL-innodb-undo-和redo-协同工作"><a href="#MySQL-innodb-undo-和redo-协同工作" class="headerlink" title="MySQL innodb undo 和redo 协同工作"></a>MySQL innodb undo 和redo 协同工作</h2><p>假设有A、B两个数据，值分别为1，2.<br>A.事务开始.<br>B.记录A&#x3D;1到undo log.<br>C.修改A&#x3D;3.<br>D.记录A&#x3D;3到redo log.<br>E.记录B&#x3D;2到undo log.<br>F.修改B&#x3D;4.<br>G.记录B&#x3D;4到redo log.<br>H.将redo log写入磁盘。</p>
+<p>I.事务提交</p>
+<p>innodb 有2个优化</p>
+<ol>
+<li>redo log 不是直接写入磁盘， 是先写入redo log buffer， 然后定期flush到磁盘， 因此，当flush到磁盘时， 会把一批commit和abort&#x2F;uncommitted的redo log 都刷到了磁盘， 后续如何处理依赖undo log<ol>
+<li>在恢复的时候， 是结合undo log 一起进行恢复， 因为在恢复的过程中，还有一些log是没有commit的，但已经刷到了磁盘， 当前还是会把他apply，但通过undo log来进行恢复</li>
+</ol>
+<p> </p>
+</li>
+<li>redo log的文件空间是预分配的，为了最优性能，操作是append only</li>
+<li>把undo log当作数据来处理， 因此undo log 也能用buffer来缓存， undo log 也是定期刷磁盘， 而不是每次commit必须刷磁盘</li>
+</ol>
+<p>记录1:&lt;trx1，Undo Loginsert&lt;undo_insert…&gt;&gt;<br>记录2:&lt;trx1，insertA…&gt;<br>记录3:&lt;trx1，Undo Loginsert&lt;undo_update…&gt;&gt;<br>记录4:&lt;trx1，updateB…&gt;<br>记录5:&lt;trx1，Undo Loginsert&lt;undo_delete…&gt;&gt;<br>记录6:&lt;trx1，deleteC…&gt;<br>记录7:&lt;trx1，insertC&gt;<br>记录8:&lt;trx1，updateBtooldvalue&gt;<br>记录9:&lt;trx1，deleteA&gt;</p>
+<p><a name="VYA7s"></a></p>
+<h2 id="针对介质的防护"><a href="#针对介质的防护" class="headerlink" title="针对介质的防护"></a>针对介质的防护</h2><p><a name="xyOa2"></a></p>
+<h3 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h3><ol>
+<li>备份可以使用日志</li>
+<li>备份分2个等级<ol>
+<li>全量转储</li>
+<li>增量转储， 第一次为0级， 而后每一级即为上一次的delta备份</li>
+</ol>
+</li>
+</ol>
+<p>日志方式倾向于redo或者undo&#x2F;redo 一体 日志， 使用undo 日志干不了</p>
+<ol>
+<li>写入<start dump></start></li>
+<li>根据采用的日志方式（如redo log）执行一个适当的检查点</li>
+<li>执行转储， 拷贝数据到远程节点</li>
+<li>至少dump 第二步中的checkpoint 和checkpoint之前的日志完成dump</li>
+<li>写入日志记录<end dump></end></li>
+</ol>
+<p>恢复</p>
+<ol>
+<li>先找全量转储</li>
+<li>再找增量转储，</li>
+</ol>
+<p> </p>
+
+      </div>
+      
+      
+      
+    </div>
+  <ul class="breadcrumb">
+            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/database/">DATABASE</a></li>
+            <li><a href="/knowledge/database/database_implementation_reading_notes/">DATABASE_IMPLEMENTATION_READING_NOTES</a></li>
+            <li>CHAPTER6_RECOVERING_AND_LOG</li>
+          
+  </ul>
+
+    
+    
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Longda-Feng/blog-comment","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>
