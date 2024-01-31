@@ -6,7 +6,7 @@
   <link href="http://ilongda.com/atom.xml" rel="self"/>
   
   <link href="http://ilongda.com/"/>
-  <updated>2024-01-29T09:18:27.040Z</updated>
+  <updated>2024-01-29T09:18:27.018Z</updated>
   <id>http://ilongda.com/</id>
   
   <author>
@@ -15,34 +15,6 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
-  
-  <entry>
-    <title></title>
-    <link href="http://ilongda.com/2024/test-no-front-mat/"/>
-    <id>http://ilongda.com/2024/test-no-front-mat/</id>
-    <published>2024-01-29T09:18:27.040Z</published>
-    <updated>2024-01-29T09:18:27.040Z</updated>
-    
-    <content type="html"><![CDATA[<p>test for long time</p><p>last</p><p>中文:<br>a:</p><ul><li>first</li><li>second</li><li>third</li></ul>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;test for long time&lt;/p&gt;
-&lt;p&gt;last&lt;/p&gt;
-&lt;p&gt;中文:&lt;br&gt;a:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;first&lt;/li&gt;
-&lt;li&gt;second&lt;/li&gt;
-&lt;li&gt;third&lt;/li&gt;
-&lt;/ul&gt;
-</summary>
-      
-    
-    
-    
-    
-  </entry>
   
   <entry>
     <title>HashCorp Reading Notes</title>
@@ -578,6 +550,30 @@
 &lt;li&gt;是否使用了优先队列。&lt;/li&gt;
 &lt;li&gt;是original filesort algorithm（回表排序）还是modified filesort algorithm（不回表排序）。&lt;br&gt;如何查看将在后面进行描述。本文还会给出大量的排序接口供敢兴趣的朋友使用，也给自己留下笔记。&lt;/li&gt;
 &lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="MySQL" scheme="http://ilongda.com/categories/MySQL/"/>
+    
+    
+    <category term="MySQL" scheme="http://ilongda.com/tags/MySQL/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>聚簇索引介绍</title>
+    <link href="http://ilongda.com/2020/mysql-cluster-index/"/>
+    <id>http://ilongda.com/2020/mysql-cluster-index/</id>
+    <published>2020-06-14T11:42:57.000Z</published>
+    <updated>2024-01-29T09:18:27.025Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>【转载】<span class="exturl" data-url="aHR0cDovL3d3dy5tYW5vbmdqYy5jb20vZGV0YWlsLzE3LXNzdXRoZXhidXpiam1sYi5odG1s">http://www.manongjc.com/detail/17-ssuthexbuzbjmlb.html<i class="fa fa-external-link-alt"></i></span><br>本文章向大家介绍Mysql聚簇索引和非聚簇索引，主要包括Mysql聚簇索引和非聚簇索引使用实例、应用技巧、基本知识点总结和需要注意事项，具有一定的参考价值，需要的朋友可以参考一下。</p><h1 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h1><p>聚簇索引并不是一种单独的索引类型，而是一种数据存储方式，具体的细节依赖于实现方式，InnoDB的聚簇索引实际上在同一个结构中保存了B+Tree索引和数据行。</p><p>当表中有聚簇索引时，它的数据实际上存储在索引的叶子页中（叶子页中包含了行的全部数据）。而没有聚簇索引时B+Tree叶子页存放的是指向数据的指针。（页是mysql存储引擎最小的存储单元，InnoDB每个页默认大小为16k）可以理解为 有聚簇索引时，数据和对应的叶子页在同一页中，没有聚簇索引时，叶子页和对应的数据不在同一页中。</p><p>InnoDB存储引擎通过主键聚集数据(聚簇索引)，如果没有定义主键，InnoDB会选择一个唯一的非空索引代替。如果没有唯一索引，InnoDB会隐式定义一个主键来作为聚簇索引。InnoDB 只聚集在同一个页面中的记录。包含相邻健值的页面可能相距甚远。</p><span id="more"></span><p>MyISAM中主键索引和其他索引 都指向物理行 (非聚簇索引)</p><p>下图展示了聚簇索引是如何存放的（图片来自《高性能MySQL(第三版)》）：</p><h2 id="聚簇索引和非举措索引的区别："><a href="#聚簇索引和非举措索引的区别：" class="headerlink" title="聚簇索引和非举措索引的区别："></a>聚簇索引和非举措索引的区别：</h2><p>聚簇索引，索引的顺序就是数据存放的顺序（物理顺序），只要索引是相邻的，那么对应的数据一定也是相邻地存放在磁盘上的。一张数据表只能有一个聚簇索引。（一个数据页中数据物理存储是有序的）</p><p>非聚簇索引通过叶子节点指针找到数据页中的数据，所以非聚簇索引是逻辑顺序。</p><h2 id="聚集索引的优点："><a href="#聚集索引的优点：" class="headerlink" title="聚集索引的优点："></a>聚集索引的优点：</h2><p>数据存放的顺序和索引顺序一致,可以把相关数据保存在一起。例如实现电子邮箱时，可以根据用户 ID 来聚集数据，这样只需要从磁盘读取少数的数据页就能获取某个用户的全部邮件。如果没有使用聚簇索引，则每封邮件都可能导致一次磁盘 I&#x2F;O。<br>数据访问更快，聚簇索引将索引和数据保存在同一个B-Tree中，因此从举措索引中获取数据通常比非聚簇索引查找更快。<br>使用覆盖索引扫描的查询可以直接使用页节点中的主键值（二级索引(非聚簇索引) 的叶子节点保存的不是指向行的物理位置的指针，而是行的主键值）。<br>（PS:覆盖索引：Mysql 可以使用索引来直接获取列的数据，这样就不需要查到索引后，然后通过叶子节点的指针回表读取数据行，如果索引的叶子节点中已经包含了或者说覆盖 所有需要查询的字段的值，那么就没有必要再回表查询了，这种称之为“覆盖索引”）</p><h2 id="聚簇索引的缺点："><a href="#聚簇索引的缺点：" class="headerlink" title="聚簇索引的缺点："></a>聚簇索引的缺点：</h2><pre><code>聚簇数据提高了IO性能，如果数据全部放在内存中，则访问的顺序就没那么重要了插入速度严重依赖插入顺序。按主键的顺序插入是速度最快的。但如果不是按照主键顺序加载数据，则需在加载完成后最好使用optimize table重新组织一下表更新聚簇索引列的代价很高。因为会强制innod将每个被更新的行移动到新的位置基于聚簇索引的表在插入新行，或主键被更新导致需要移动行的时候，可能面临页分裂的问题。页分裂会导致表占用更多的磁盘空间。聚簇索引可能导致全表扫描变慢，尤其是行比较稀疏，或由于页分裂导致数据存储不连续的时非聚集索引比想象的更大，因为二级索引的叶子节点包含了引用行的主键列非聚集索引访问需要两次索引查找(非聚集索引中叶子节点保存的行指针指向的是行的主键值)，对于innodb自适应哈希索引可以减少这样的重复工作</code></pre><p>聚簇索引尽量选择有序的列（如AUTO_INCREMENT自增列）,这样可以保证数据行是顺序写入，对于根据主键做关联操作的性能也会更好。</p><p>最好避免随机的（不连续且值的分布范围非常大）聚簇索引，特别是对于I&#x2F;O密集型的应用。</p><p>从性能角度考虑，使用UUID来做聚簇索引会很糟糕，它使得聚簇索引的插入变得完全随机，这是最坏的情况，是的数据没有任何聚集的特性。</p><p>总结下使用类似UUID这种随机的聚簇索引的缺点：<br>UUID字段长，索引占用的空间更大。<br>写入是乱序的，InnoDB不得不频繁的做页分裂操作，以便新的行分配空间，页分裂会导致移动大量数据，一次插入最少需要修改三个页而不是一个页。<br>写入的目标页可能已经刷到磁盘上并从缓存中移除，或者还没有被加载到缓存中，InnoDB在插入之前不得不先找到并从磁盘读取目标页到内存中，这将导致大量的随机IO。<br>频繁的页分裂，页会变的稀疏并被不规则的填充，会产生空间碎片。<br><span class="exturl" data-url="aHR0cHM6Ly93d3cuY25ibG9ncy5jb20vbGVhcm4tb250aGV3YXkvcC8xMjE1MDUyMS5odG1s">https://www.cnblogs.com/learn-ontheway/p/12150521.html<i class="fa fa-external-link-alt"></i></span></p><p>MySQL的InnoDB索引数据结构是B+树，主键索引叶子节点的值存储的就是MySQL的数据行，普通索引的叶子节点的值存储的是主键值，这是了解聚簇索引和非聚簇索引的前提</p><p>什么是聚簇索引？<br>很简单记住一句话：找到了索引就找到了需要的数据，那么这个索引就是聚簇索引，所以主键就是聚簇索引，修改聚簇索引其实就是修改主键。</p><p>什么是非聚簇索引？<br>索引的存储和数据的存储是分离的，也就是说找到了索引但没找到数据，需要根据索引上的值(主键)再次回表查询,非聚簇索引也叫做辅助索引。</p><p>clustered index（MySQL官方对聚簇索引的解释）<br>The InnoDB term for a primary key index. InnoDB table storage is organized based on the values of the primary key columns, to speed up queries and sorts involving the primary key columns. For best performance, choose the primary key columns carefully based on the most performance-critical queries. Because modifying the columns of the clustered index is an expensive operation, choose primary columns that are rarely or never updated.<br>注意标黑的那段话，聚簇索引就是主键的一种术语</p><p>一个例子<br>下面我们创建了一个学生表，做三种查询，来说明什么情况下是聚簇索引，什么情况下不是。</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table student (</span><br><span class="line">    id bigint,</span><br><span class="line">    no varchar(20) ,</span><br><span class="line">    name varchar(20) ,</span><br><span class="line">    address varchar(20) ,</span><br><span class="line">    PRIMARY KEY (`branch_id`) USING BTREE,</span><br><span class="line">    UNIQUE KEY `idx_no` (`no`) USING BTREE</span><br><span class="line">)ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;</span><br></pre></td></tr></table></figure><p>　　第一种，直接根据主键查询获取所有字段数据，此时主键是聚簇索引，因为主键对应的索引叶子节点存储了id&#x3D;1的所有字段的值。</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from student where id = 1</span><br></pre></td></tr></table></figure><p>　　第二种，根据编号查询编号和名称，编号本身是一个唯一索引，但查询的列包含了学生编号和学生名称，当命中编号索引时，该索引的节点的数据存储的是主键ID，需要根据主键ID重新查询一次，所以这种查询下no不是聚簇索引</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select no,name from student where no = &#x27;test&#x27;</span><br></pre></td></tr></table></figure><p>　　第三种，我们根据编号查询编号（有人会问知道编号了还要查询？要，你可能需要验证该编号在数据库中是否存在），这种查询命中编号索引时，直接返回编号，因为所需要的数据就是该索引，不需要回表查询，这种场景下no是聚簇索引</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select no from student where no = &#x27;test&#x27;</span><br></pre></td></tr></table></figure><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>主键一定是聚簇索引，MySQL的InnoDB中一定有主键，即便研发人员不手动设置，则会使用unique索引，没有unique索引，则会使用数据库内部的一个行的id来当作主键索引,其它普通索引需要区分SQL场景，当SQL查询的列就是索引本身时，我们称这种场景下该普通索引也可以叫做聚簇索引，MyisAM引擎没有聚簇索引。</p><p>原文链接：<span class="exturl" data-url="aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3hpbmdkdWFuNTE1My9hcnRpY2xlL2RldGFpbHMvMTA2MTg5MzQwLw==">https://blog.csdn.net/xingduan5153/article/details/106189340/<i class="fa fa-external-link-alt"></i></span></p><p>　　推荐：<span class="exturl" data-url="aHR0cHM6Ly93d3cuY25ibG9ncy5jb20vamlhbmdkcy9wLzgyNzY2MTMuaHRtbA==">https://www.cnblogs.com/jiangds/p/8276613.html<i class="fa fa-external-link-alt"></i></span></p><h1 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h1><p>1、缺省情况下建立的索引是非聚簇索引，但有时它并不是最佳的。在非群集索引下，数据在物理上随机存放在数据页上。合理的索引设计要建立在对各种查询的分析和预测上。一般来说：<br>　　a.有大量重复值、且经常有范围查询（ &gt; ,&lt; ，&gt; &#x3D;,&lt; &#x3D;）和order by、group by发生的列，可考<br>　　虑建立聚集索引；<br>　　b.经常同时存取多列，且每列都含有重复值可考虑建立组合索引；<br>　　c.组合索引要尽量使关键查询形成索引覆盖，其前导列一定是使用最频繁的列。索引虽有助于提高性能但不是索引越多越好，恰好相反过多的索引会导致系统低效。用户在表中每加进一个索引，维护索引集合就要做相应的更新工作。<br>2、ORDER BY和GROPU BY使用ORDER BY和GROUP BY短语，任何一种索引都有助于SELECT的性能提高。<br>3、多表操作在被实际执行前，查询优化器会根据连接条件，列出几组可能的连接方案并从中找出系统开销最小的最佳方案。连接条件要充份考虑带有索引的表、行数多的表；内外表的选择可由公式：外层表中的匹配行数*内层表中每一次查找的次数确定，乘积最小为最佳方案。<br>4、任何对列的操作都将导致表扫描，它包括数据库函数、计算表达式等等，查询时要尽可能将操作移至等号右边。<br>5、IN、OR子句常会使用工作表，使索引失效。如果不产生大量重复值，可以考虑把子句拆开。拆开的子句中应该包含索引。</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;Abstract&quot;&gt;&lt;a href=&quot;#Abstract&quot; class=&quot;headerlink&quot; title=&quot;Abstract&quot;&gt;&lt;/a&gt;Abstract&lt;/h1&gt;&lt;p&gt;【转载】&lt;span class=&quot;exturl&quot; data-url=&quot;aHR0cDovL3d3dy5tYW5vbmdqYy5jb20vZGV0YWlsLzE3LXNzdXRoZXhidXpiam1sYi5odG1s&quot;&gt;http://www.manongjc.com/detail/17-ssuthexbuzbjmlb.html&lt;i class=&quot;fa fa-external-link-alt&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;br&gt;本文章向大家介绍Mysql聚簇索引和非聚簇索引，主要包括Mysql聚簇索引和非聚簇索引使用实例、应用技巧、基本知识点总结和需要注意事项，具有一定的参考价值，需要的朋友可以参考一下。&lt;/p&gt;
+&lt;h1 id=&quot;基本介绍&quot;&gt;&lt;a href=&quot;#基本介绍&quot; class=&quot;headerlink&quot; title=&quot;基本介绍&quot;&gt;&lt;/a&gt;基本介绍&lt;/h1&gt;&lt;p&gt;聚簇索引并不是一种单独的索引类型，而是一种数据存储方式，具体的细节依赖于实现方式，InnoDB的聚簇索引实际上在同一个结构中保存了B+Tree索引和数据行。&lt;/p&gt;
+&lt;p&gt;当表中有聚簇索引时，它的数据实际上存储在索引的叶子页中（叶子页中包含了行的全部数据）。而没有聚簇索引时B+Tree叶子页存放的是指向数据的指针。（页是mysql存储引擎最小的存储单元，InnoDB每个页默认大小为16k）可以理解为 有聚簇索引时，数据和对应的叶子页在同一页中，没有聚簇索引时，叶子页和对应的数据不在同一页中。&lt;/p&gt;
+&lt;p&gt;InnoDB存储引擎通过主键聚集数据(聚簇索引)，如果没有定义主键，InnoDB会选择一个唯一的非空索引代替。如果没有唯一索引，InnoDB会隐式定义一个主键来作为聚簇索引。InnoDB 只聚集在同一个页面中的记录。包含相邻健值的页面可能相距甚远。&lt;/p&gt;</summary>
     
     
     
