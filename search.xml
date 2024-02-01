@@ -21,6 +21,106 @@
       </tags>
   </entry>
   <entry>
+    <title>新年愿望</title>
+    <url>/2020/New-Year-Wish/</url>
+    <content><![CDATA[<p>忽然之间， 发现已经到了2020年， 回首2019年立下的flag， 似乎一大半都还没有完成， 就来到了2020年。<br>2020 拥有2个20， 在中国传统习惯中， 好事成双，大家都喜欢偶数的东西， 同时20又是10的倍数，就更吉利。 看到2020年这么吉利的数字， 也祝愿自己新的一年， 顺顺利利， 开开心心。 </p>
+<p>今天，打开朋友圈， 发现一堆朋友，都跑步或健身， 似乎在这新的一年中， 大家都更积极面对生活，期待拥有一个更棒的身体。 </p>
+<p>最后立一个心愿清单吧：</p>
+<ol>
+<li>儿子身体棒棒， 个子长得高一点。</li>
+<li>每周带儿子和老婆， 做一次家庭运动。</li>
+<li>今年写完50篇博文</li>
+<li>看完12本书 （4本技术， 4本修心， 4本育儿）</li>
+<li>争取练出6块腹肌。 </li>
+<li>每天12点前睡觉</li>
+</ol>
+]]></content>
+      <categories>
+        <category>杂谈</category>
+      </categories>
+      <tags>
+        <tag>杂谈</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>DB性能测试-常用3套件-手把手一步一步跑TPCH</title>
+    <url>/2020/TPCH/</url>
+    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。<br>本文手把手 一步一步 run TPCH, 即使从来没有跑过数据库的，也可以直接上手运行TPCH, 本文以运行TPCH on MySQL,  如果读者想要运行tpch 到postgres 或者其他的数据， 可以先参考本博文，然后基于本博文，再到github上搜索相应数据库的TPCH 库 即可。</p>
+<p>整个过程， 分为</p>
+<ul>
+<li>介绍</li>
+<li>编译</li>
+<li>数据生成</li>
+<li>数据加载</li>
+<li>性能测试</li>
+<li>表结构介绍<span id="more"></span></li>
+</ul>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>TPC现有的测试标准为：TPC-E、TPC-C、TPC-H、TPC-App。根据这4个测试基准，目前TPC主要包括的4个技术小组委员会：TPC-E 技术小组委员会、TPC-C 技术小组委员会、TPC-H技术小组委员会、TPC-App技术小组委员会。前期TPC使用过但目前已经停止使用的测试标准有：TPC-A、TPC-B（数据库处理能力测试标准）、TPC-D、TPC-R（决策支持系统测试标准，类TPC-H）、TPC-W（Web处理能力测试标准）。</p>
+<p>TPC-H（商业智能计算测试） 是美国交易处理效能委员会(TPC,Transaction Processing Performance Council) 组织制定的用来模拟决策支持类应用的一个测试集.目前,在学术界和工业界普遍采用它来评价决策支持技术方面应用的性能. 这种商业测试可以全方位评测系统的整体商业计算综合能力，对厂商的要求更高，同时也具有普遍的商业实用意义，目前在银行信贷分析和信用卡分析、电信运营分析、税收分析、烟草行业决策分析中都有广泛的应用。</p>
+<p>TPC-H 基准测试是由 TPC-D(由 TPC 组织于 1994 年指定的标准,用于决策支持系统方面的测试基准)发展而来的.TPC-H 用 3NF 实现了一个数据仓库,共包含 8 个基本关系,其数据量可以设定从 1G<del>3T 不等。TPC-H 基准测试包括 22 个查询(Q1</del>Q22),其主要评价指标是各个查询的响应时间,即从提交查询到结果返回所需时间.TPC-H 基准测试的度量单位是每小时执行的查询数( QphH@size)，其中 H 表示每小时系统执行复杂查询的平均次数，size 表示数据库规模的大小,它能够反映出系统在处理查询时的能力.TPC-H 是根据真实的生产运行环境来建模的,这使得它可以评估一些其他测试所不能评估的关键性能参数.总而言之,TPC 组织颁布的TPC-H 标准满足了数据仓库领域的测试需求,并且促使各个厂商以及研究机构将该项技术推向极限。</p>
+<p>详细可以参考 <span class="exturl" data-url="aHR0cDovL3d3dy50cGMub3JnL3RwY19kb2N1bWVudHNfY3VycmVudF92ZXJzaW9ucy9wZGYvdHBjLWhfdjIuMTcuMy5wZGY=">tpch_reference<i class="fa fa-external-link-alt"></i></span></p>
+<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><p>下载源码包<span class="exturl" data-url="aHR0cDovL3d3dy50cGMub3JnL3RwY19kb2N1bWVudHNfY3VycmVudF92ZXJzaW9ucy9jdXJyZW50X3NwZWNpZmljYXRpb25zNS5hc3A=">tpch<i class="fa fa-external-link-alt"></i></span><br><img data-src="http://static-aliyun-doc.oss-cn-hangzhou.aliyuncs.com/assets/img/zh-CN/7761866951/p70167.png" alt="tpch_download"></p>
+<ol>
+<li>打开dbgen目录。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cd dbgen</span><br></pre></td></tr></table></figure></li>
+<li>复制makefile文件。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cp makefile.suite Makefile</span><br></pre></td></tr></table></figure></li>
+<li>修改Makefile文件中的CC、DATABASE、MACHINE、WORKLOAD等参数定义。<br>打开Makefile文件。<br>修改CC、DATABASE、MACHINE、WORKLOAD参数的定义。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">################</span><br><span class="line">## CHANGE NAME OF ANSI COMPILER HERE</span><br><span class="line">################</span><br><span class="line">CC      = gcc</span><br><span class="line"># Current values for DATABASE are: INFORMIX, DB2, ORACLE,</span><br><span class="line">#                                  SQLSERVER, SYBASE, TDAT (Teradata)</span><br><span class="line"># Current values for MACHINE are:  ATT, DOS, HP, IBM, ICL, MVS,</span><br><span class="line">#                                  SGI, SUN, U2200, VMS, LINUX, WIN32</span><br><span class="line"># Current values for WORKLOAD are:  TPCH</span><br><span class="line">DATABASE= MYSQL</span><br><span class="line">MACHINE = LINUX</span><br><span class="line">WORKLOAD = TPCH</span><br></pre></td></tr></table></figure>
+按ECS键，然后输入:wq退出并保存。</li>
+<li>修改tpcd.h文件，并添加新的宏定义。<br>打开tpcd.h文件。<br>vim tpcd.h<br>添加如下宏定义。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#ifdef MYSQL</span><br><span class="line">#define GEN_QUERY_PLAN &quot;&quot;</span><br><span class="line">#define START_TRAN &quot;START TRANSACTION&quot;</span><br><span class="line">#define END_TRAN &quot;COMMIT&quot;</span><br><span class="line">#define SET_OUTPUT &quot;&quot;</span><br><span class="line">#define SET_ROWCOUNT &quot;limit %d;\n&quot;</span><br><span class="line">#define SET_DBASE &quot;use %s;\n&quot;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+按ECS键，然后输入:wq退出并保存。</li>
+<li>对文件进行编译。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">make</span><br></pre></td></tr></table></figure>
+编译完成后该目录下会生成两个可执行文件：</li>
+</ol>
+<ul>
+<li>dbgen：数据生成工具。在使用InfiniDB官方测试脚本进行测试时，需要用该工具生成tpch相关表数据。</li>
+<li>qgen：SQL生成工具。生成初始化测试查询，由于不同的seed生成的查询不同，为了结果的可重复性，请使用附件提供的22个查询。</li>
+</ul>
+<h1 id="生成数据"><a href="#生成数据" class="headerlink" title="生成数据"></a>生成数据</h1><h2 id="生成测试数据"><a href="#生成测试数据" class="headerlink" title="生成测试数据"></a>生成测试数据</h2><p>可以生成tpch 10g 也可以100g， 甚至1TB, 本例以100g 为例， 100g 的记录数在6亿条左右， 和普通一家中小型公司的大表规格差不多</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">./dbgen -s 100</span><br><span class="line">mkdir tpch100</span><br><span class="line">mv *.tbl tpch100</span><br></pre></td></tr></table></figure>
+
+<h2 id="生成查询sql"><a href="#生成查询sql" class="headerlink" title="生成查询sql"></a>生成查询sql</h2><ol>
+<li>将qgen与dists.dss复制到queries目录下。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cp qgen queries</span><br><span class="line">cp dists.dss queries</span><br></pre></td></tr></table></figure></li>
+<li>使用以下脚本生成查询。<br>在queries 目录下，创建脚本gen.sh<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/bash</span><br><span class="line">for i in &#123;1..22&#125;</span><br><span class="line">do  </span><br><span class="line">  ./qgen -d $i -s 100 &gt; db&quot;$i&quot;.sql</span><br><span class="line">done</span><br></pre></td></tr></table></figure></li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">./gen.sh</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>查询sql 进行调整<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dos2unix *</span><br></pre></td></tr></table></figure>
+去掉生成文件中的”limit -1”, 去掉day 后面的(3), 以q1 为例， sql 如下</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-- using default substitutions</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus,</span><br><span class="line">        sum(l_quantity) as sum_qty,</span><br><span class="line">        sum(l_extendedprice) as sum_base_price,</span><br><span class="line">        sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,</span><br><span class="line">        sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,</span><br><span class="line">        avg(l_quantity) as avg_qty,</span><br><span class="line">        avg(l_extendedprice) as avg_price,</span><br><span class="line">        avg(l_discount) as avg_disc,</span><br><span class="line">        count(*) as count_order</span><br><span class="line">from</span><br><span class="line">        lineitem</span><br><span class="line">where</span><br><span class="line">        l_shipdate &lt;= date &#x27;1998-12-01&#x27; - interval &#x27;90&#x27; day (3)   --- 把(3) 去掉</span><br><span class="line">group by</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus</span><br><span class="line">order by</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus;</span><br><span class="line">limit -1;              ---  去掉这行</span><br></pre></td></tr></table></figure>
+
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><ol>
+<li><p>下载加载脚本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir load</span><br><span class="line">cd load</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/tpch/load.sh ./</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/tpch/polar.index.sh ./</span><br><span class="line">chmod +x *</span><br><span class="line">cp ../dss.ri  ../dss.ddl ./</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因为这个测试里面带了polardb 的创建index 脚本， 读者如果不使用polardb，则可以不用下载polar.index.sh， 并修改load.sh 文件，去掉设置index 的步骤</p>
+</li>
+<li><p>修改dss.ri 脚本<br>dss.ri 主要是设置primary key 和foreign key</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-- Sccsid:     @(#)dss.ri       2.1.8.1</span><br><span class="line">-- TPCD Benchmark Version 8.0</span><br><span class="line"></span><br><span class="line">CONNECT TO TPCD;           </span><br><span class="line"></span><br><span class="line">--ALTER TABLE TPCD.REGION DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.NATION DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.PART DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.SUPPLIER DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.PARTSUPP DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.ORDERS DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.LINEITEM DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.CUSTOMER DROP PRIMARY KEY;</span><br></pre></td></tr></table></figure>
+<p>把 其中”CONNECT TO TPCD;  “删除掉， 把所有的”TPCD.” 给去除掉</p>
+</li>
+</ol>
+<p>如果不想修改dss.ri, 可以直接下载现成的<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmcvdGVzdC90cmVlL21hc3Rlci9zaGVsbC90cGNo">dss.ri<i class="fa fa-external-link-alt"></i></span></p>
+<ol start="3">
+<li>按照mysql 客户端<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install mysql -y</span><br></pre></td></tr></table></figure></li>
+<li>开始加载<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup./load.sh hostxxx portxxx userxxx passwordxxx dbxxx &gt; load.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f load.log</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>其中hostxxx 为db 地址<br>portxxx 为db 端口<br>userxxx 为用户名   — 需要提前创建好用户名， 对于云上用户， 还需要设置白名单， 把机器ip 白名单设置进去<br>passwordxxx 为用户密码<br>dbxxx 为 要创建的数据库名字，   因为脚本会自动加载在“生成数据” 一节中创建的目录（我们例子中是tpch100），因此数据库名也必须是上一节生成数据创建的目录</p>
+<h1 id="开始测试"><a href="#开始测试" class="headerlink" title="开始测试"></a>开始测试</h1><p>下载 测试脚本  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmcvdGVzdC90cmVlL21hc3Rlci9weXRob24vdHBjaA==">https://github.com/longdafeng/test/tree/master/python/tpch<i class="fa fa-external-link-alt"></i></span> </p>
+<p>配置配置文件example.cfg</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    &quot;host&quot;:&quot;xxxx&quot;                 // 数据库机器名</span><br><span class="line">    &quot;port&quot;:&quot;3306&quot;                 // 数据库端口号</span><br><span class="line">    &quot;username&quot;:&quot;xxxxx&quot;            // 数据库用户名</span><br><span class="line">    &quot;password&quot;:&quot;xxxx&quot;             // 数据库密码</span><br><span class="line">    &quot;database&quot;:&quot;xxxxx&quot;            // 数据库 库名</span><br><span class="line">    //input dir</span><br><span class="line">    &quot;input_dir&quot;:&quot;mysql&quot;           // 查询sql 存放的目录，如果是测试mysql 系列，则这里是mysql， 如果是pg，则需要生成pg的查询sql</span><br><span class="line">    </span><br><span class="line">    //output_dir</span><br><span class="line">    &quot;output_dir&quot;:&quot;polardb80&quot;      // 打印日志的目录</span><br><span class="line">    </span><br><span class="line">    //mysql_setting, set mysql variable</span><br><span class="line">    //&quot;mysql_setting&quot;: &quot;set max_parallel_degree=32;&quot;</span><br><span class="line">    &quot;mysql_setting&quot;: &quot;&quot;</span><br><span class="line"></span><br><span class="line">    //query per sql times</span><br><span class="line">    &quot;times_per_sql&quot;:&quot;1&quot;            // 每条sql 执行的次数， 会取平均值</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行脚本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./tpch.py -f example.cfg &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f run.log</span><br></pre></td></tr></table></figure>
+
+<p>最后进入配置文件“output_dir” 目录下，查看result 文件即可</p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>《OceanBase开发者手册》之一 如何编译OceanBase源码</title>
     <url>/2021/build_ob/</url>
     <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>本文将指导用户如何编译OceanBase, 本文大部分内容来自 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vY2VhbmJhc2U=">https://github.com/oceanbase/oceanbase<i class="fa fa-external-link-alt"></i></span> .  </p>
@@ -160,106 +260,6 @@
       </tags>
   </entry>
   <entry>
-    <title>新年愿望</title>
-    <url>/2020/New-Year-Wish/</url>
-    <content><![CDATA[<p>忽然之间， 发现已经到了2020年， 回首2019年立下的flag， 似乎一大半都还没有完成， 就来到了2020年。<br>2020 拥有2个20， 在中国传统习惯中， 好事成双，大家都喜欢偶数的东西， 同时20又是10的倍数，就更吉利。 看到2020年这么吉利的数字， 也祝愿自己新的一年， 顺顺利利， 开开心心。 </p>
-<p>今天，打开朋友圈， 发现一堆朋友，都跑步或健身， 似乎在这新的一年中， 大家都更积极面对生活，期待拥有一个更棒的身体。 </p>
-<p>最后立一个心愿清单吧：</p>
-<ol>
-<li>儿子身体棒棒， 个子长得高一点。</li>
-<li>每周带儿子和老婆， 做一次家庭运动。</li>
-<li>今年写完50篇博文</li>
-<li>看完12本书 （4本技术， 4本修心， 4本育儿）</li>
-<li>争取练出6块腹肌。 </li>
-<li>每天12点前睡觉</li>
-</ol>
-]]></content>
-      <categories>
-        <category>杂谈</category>
-      </categories>
-      <tags>
-        <tag>杂谈</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>DB性能测试-常用3套件-手把手一步一步跑TPCH</title>
-    <url>/2020/TPCH/</url>
-    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>把过去的写的一篇笔记分享一下， 数据库最常用的测试三套件， sysbench – oltp 测试， tpch – olap 测试， tpcc – 事务性能测试。<br>本文手把手 一步一步 run TPCH, 即使从来没有跑过数据库的，也可以直接上手运行TPCH, 本文以运行TPCH on MySQL,  如果读者想要运行tpch 到postgres 或者其他的数据， 可以先参考本博文，然后基于本博文，再到github上搜索相应数据库的TPCH 库 即可。</p>
-<p>整个过程， 分为</p>
-<ul>
-<li>介绍</li>
-<li>编译</li>
-<li>数据生成</li>
-<li>数据加载</li>
-<li>性能测试</li>
-<li>表结构介绍<span id="more"></span></li>
-</ul>
-<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>TPC现有的测试标准为：TPC-E、TPC-C、TPC-H、TPC-App。根据这4个测试基准，目前TPC主要包括的4个技术小组委员会：TPC-E 技术小组委员会、TPC-C 技术小组委员会、TPC-H技术小组委员会、TPC-App技术小组委员会。前期TPC使用过但目前已经停止使用的测试标准有：TPC-A、TPC-B（数据库处理能力测试标准）、TPC-D、TPC-R（决策支持系统测试标准，类TPC-H）、TPC-W（Web处理能力测试标准）。</p>
-<p>TPC-H（商业智能计算测试） 是美国交易处理效能委员会(TPC,Transaction Processing Performance Council) 组织制定的用来模拟决策支持类应用的一个测试集.目前,在学术界和工业界普遍采用它来评价决策支持技术方面应用的性能. 这种商业测试可以全方位评测系统的整体商业计算综合能力，对厂商的要求更高，同时也具有普遍的商业实用意义，目前在银行信贷分析和信用卡分析、电信运营分析、税收分析、烟草行业决策分析中都有广泛的应用。</p>
-<p>TPC-H 基准测试是由 TPC-D(由 TPC 组织于 1994 年指定的标准,用于决策支持系统方面的测试基准)发展而来的.TPC-H 用 3NF 实现了一个数据仓库,共包含 8 个基本关系,其数据量可以设定从 1G<del>3T 不等。TPC-H 基准测试包括 22 个查询(Q1</del>Q22),其主要评价指标是各个查询的响应时间,即从提交查询到结果返回所需时间.TPC-H 基准测试的度量单位是每小时执行的查询数( QphH@size)，其中 H 表示每小时系统执行复杂查询的平均次数，size 表示数据库规模的大小,它能够反映出系统在处理查询时的能力.TPC-H 是根据真实的生产运行环境来建模的,这使得它可以评估一些其他测试所不能评估的关键性能参数.总而言之,TPC 组织颁布的TPC-H 标准满足了数据仓库领域的测试需求,并且促使各个厂商以及研究机构将该项技术推向极限。</p>
-<p>详细可以参考 <span class="exturl" data-url="aHR0cDovL3d3dy50cGMub3JnL3RwY19kb2N1bWVudHNfY3VycmVudF92ZXJzaW9ucy9wZGYvdHBjLWhfdjIuMTcuMy5wZGY=">tpch_reference<i class="fa fa-external-link-alt"></i></span></p>
-<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><p>下载源码包<span class="exturl" data-url="aHR0cDovL3d3dy50cGMub3JnL3RwY19kb2N1bWVudHNfY3VycmVudF92ZXJzaW9ucy9jdXJyZW50X3NwZWNpZmljYXRpb25zNS5hc3A=">tpch<i class="fa fa-external-link-alt"></i></span><br><img data-src="http://static-aliyun-doc.oss-cn-hangzhou.aliyuncs.com/assets/img/zh-CN/7761866951/p70167.png" alt="tpch_download"></p>
-<ol>
-<li>打开dbgen目录。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cd dbgen</span><br></pre></td></tr></table></figure></li>
-<li>复制makefile文件。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cp makefile.suite Makefile</span><br></pre></td></tr></table></figure></li>
-<li>修改Makefile文件中的CC、DATABASE、MACHINE、WORKLOAD等参数定义。<br>打开Makefile文件。<br>修改CC、DATABASE、MACHINE、WORKLOAD参数的定义。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">################</span><br><span class="line">## CHANGE NAME OF ANSI COMPILER HERE</span><br><span class="line">################</span><br><span class="line">CC      = gcc</span><br><span class="line"># Current values for DATABASE are: INFORMIX, DB2, ORACLE,</span><br><span class="line">#                                  SQLSERVER, SYBASE, TDAT (Teradata)</span><br><span class="line"># Current values for MACHINE are:  ATT, DOS, HP, IBM, ICL, MVS,</span><br><span class="line">#                                  SGI, SUN, U2200, VMS, LINUX, WIN32</span><br><span class="line"># Current values for WORKLOAD are:  TPCH</span><br><span class="line">DATABASE= MYSQL</span><br><span class="line">MACHINE = LINUX</span><br><span class="line">WORKLOAD = TPCH</span><br></pre></td></tr></table></figure>
-按ECS键，然后输入:wq退出并保存。</li>
-<li>修改tpcd.h文件，并添加新的宏定义。<br>打开tpcd.h文件。<br>vim tpcd.h<br>添加如下宏定义。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#ifdef MYSQL</span><br><span class="line">#define GEN_QUERY_PLAN &quot;&quot;</span><br><span class="line">#define START_TRAN &quot;START TRANSACTION&quot;</span><br><span class="line">#define END_TRAN &quot;COMMIT&quot;</span><br><span class="line">#define SET_OUTPUT &quot;&quot;</span><br><span class="line">#define SET_ROWCOUNT &quot;limit %d;\n&quot;</span><br><span class="line">#define SET_DBASE &quot;use %s;\n&quot;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
-按ECS键，然后输入:wq退出并保存。</li>
-<li>对文件进行编译。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">make</span><br></pre></td></tr></table></figure>
-编译完成后该目录下会生成两个可执行文件：</li>
-</ol>
-<ul>
-<li>dbgen：数据生成工具。在使用InfiniDB官方测试脚本进行测试时，需要用该工具生成tpch相关表数据。</li>
-<li>qgen：SQL生成工具。生成初始化测试查询，由于不同的seed生成的查询不同，为了结果的可重复性，请使用附件提供的22个查询。</li>
-</ul>
-<h1 id="生成数据"><a href="#生成数据" class="headerlink" title="生成数据"></a>生成数据</h1><h2 id="生成测试数据"><a href="#生成测试数据" class="headerlink" title="生成测试数据"></a>生成测试数据</h2><p>可以生成tpch 10g 也可以100g， 甚至1TB, 本例以100g 为例， 100g 的记录数在6亿条左右， 和普通一家中小型公司的大表规格差不多</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">./dbgen -s 100</span><br><span class="line">mkdir tpch100</span><br><span class="line">mv *.tbl tpch100</span><br></pre></td></tr></table></figure>
-
-<h2 id="生成查询sql"><a href="#生成查询sql" class="headerlink" title="生成查询sql"></a>生成查询sql</h2><ol>
-<li>将qgen与dists.dss复制到queries目录下。<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cp qgen queries</span><br><span class="line">cp dists.dss queries</span><br></pre></td></tr></table></figure></li>
-<li>使用以下脚本生成查询。<br>在queries 目录下，创建脚本gen.sh<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/bash</span><br><span class="line">for i in &#123;1..22&#125;</span><br><span class="line">do  </span><br><span class="line">  ./qgen -d $i -s 100 &gt; db&quot;$i&quot;.sql</span><br><span class="line">done</span><br></pre></td></tr></table></figure></li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">./gen.sh</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>查询sql 进行调整<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dos2unix *</span><br></pre></td></tr></table></figure>
-去掉生成文件中的”limit -1”, 去掉day 后面的(3), 以q1 为例， sql 如下</li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-- using default substitutions</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">select</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus,</span><br><span class="line">        sum(l_quantity) as sum_qty,</span><br><span class="line">        sum(l_extendedprice) as sum_base_price,</span><br><span class="line">        sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,</span><br><span class="line">        sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,</span><br><span class="line">        avg(l_quantity) as avg_qty,</span><br><span class="line">        avg(l_extendedprice) as avg_price,</span><br><span class="line">        avg(l_discount) as avg_disc,</span><br><span class="line">        count(*) as count_order</span><br><span class="line">from</span><br><span class="line">        lineitem</span><br><span class="line">where</span><br><span class="line">        l_shipdate &lt;= date &#x27;1998-12-01&#x27; - interval &#x27;90&#x27; day (3)   --- 把(3) 去掉</span><br><span class="line">group by</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus</span><br><span class="line">order by</span><br><span class="line">        l_returnflag,</span><br><span class="line">        l_linestatus;</span><br><span class="line">limit -1;              ---  去掉这行</span><br></pre></td></tr></table></figure>
-
-<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><ol>
-<li><p>下载加载脚本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir load</span><br><span class="line">cd load</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/tpch/load.sh ./</span><br><span class="line">wget https://raw.githubusercontent.com/longdafeng/test/master/shell/tpch/polar.index.sh ./</span><br><span class="line">chmod +x *</span><br><span class="line">cp ../dss.ri  ../dss.ddl ./</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>因为这个测试里面带了polardb 的创建index 脚本， 读者如果不使用polardb，则可以不用下载polar.index.sh， 并修改load.sh 文件，去掉设置index 的步骤</p>
-</li>
-<li><p>修改dss.ri 脚本<br>dss.ri 主要是设置primary key 和foreign key</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-- Sccsid:     @(#)dss.ri       2.1.8.1</span><br><span class="line">-- TPCD Benchmark Version 8.0</span><br><span class="line"></span><br><span class="line">CONNECT TO TPCD;           </span><br><span class="line"></span><br><span class="line">--ALTER TABLE TPCD.REGION DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.NATION DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.PART DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.SUPPLIER DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.PARTSUPP DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.ORDERS DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.LINEITEM DROP PRIMARY KEY;</span><br><span class="line">--ALTER TABLE TPCD.CUSTOMER DROP PRIMARY KEY;</span><br></pre></td></tr></table></figure>
-<p>把 其中”CONNECT TO TPCD;  “删除掉， 把所有的”TPCD.” 给去除掉</p>
-</li>
-</ol>
-<p>如果不想修改dss.ri, 可以直接下载现成的<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmcvdGVzdC90cmVlL21hc3Rlci9zaGVsbC90cGNo">dss.ri<i class="fa fa-external-link-alt"></i></span></p>
-<ol start="3">
-<li>按照mysql 客户端<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install mysql -y</span><br></pre></td></tr></table></figure></li>
-<li>开始加载<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup./load.sh hostxxx portxxx userxxx passwordxxx dbxxx &gt; load.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f load.log</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>其中hostxxx 为db 地址<br>portxxx 为db 端口<br>userxxx 为用户名   — 需要提前创建好用户名， 对于云上用户， 还需要设置白名单， 把机器ip 白名单设置进去<br>passwordxxx 为用户密码<br>dbxxx 为 要创建的数据库名字，   因为脚本会自动加载在“生成数据” 一节中创建的目录（我们例子中是tpch100），因此数据库名也必须是上一节生成数据创建的目录</p>
-<h1 id="开始测试"><a href="#开始测试" class="headerlink" title="开始测试"></a>开始测试</h1><p>下载 测试脚本  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmcvdGVzdC90cmVlL21hc3Rlci9weXRob24vdHBjaA==">https://github.com/longdafeng/test/tree/master/python/tpch<i class="fa fa-external-link-alt"></i></span> </p>
-<p>配置配置文件example.cfg</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    &quot;host&quot;:&quot;xxxx&quot;                 // 数据库机器名</span><br><span class="line">    &quot;port&quot;:&quot;3306&quot;                 // 数据库端口号</span><br><span class="line">    &quot;username&quot;:&quot;xxxxx&quot;            // 数据库用户名</span><br><span class="line">    &quot;password&quot;:&quot;xxxx&quot;             // 数据库密码</span><br><span class="line">    &quot;database&quot;:&quot;xxxxx&quot;            // 数据库 库名</span><br><span class="line">    //input dir</span><br><span class="line">    &quot;input_dir&quot;:&quot;mysql&quot;           // 查询sql 存放的目录，如果是测试mysql 系列，则这里是mysql， 如果是pg，则需要生成pg的查询sql</span><br><span class="line">    </span><br><span class="line">    //output_dir</span><br><span class="line">    &quot;output_dir&quot;:&quot;polardb80&quot;      // 打印日志的目录</span><br><span class="line">    </span><br><span class="line">    //mysql_setting, set mysql variable</span><br><span class="line">    //&quot;mysql_setting&quot;: &quot;set max_parallel_degree=32;&quot;</span><br><span class="line">    &quot;mysql_setting&quot;: &quot;&quot;</span><br><span class="line"></span><br><span class="line">    //query per sql times</span><br><span class="line">    &quot;times_per_sql&quot;:&quot;1&quot;            // 每条sql 执行的次数， 会取平均值</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>运行脚本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./tpch.py -f example.cfg &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line">tail -f run.log</span><br></pre></td></tr></table></figure>
-
-<p>最后进入配置文件“output_dir” 目录下，查看result 文件即可</p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>《OceanBase开发者手册》之三 如何成为OceanBase Contributor</title>
     <url>/2021/contribute_to_ob/</url>
     <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>本文将指导用户如何成为OceanBase Contributor, 即使是一个小白, 也可以成为contributor. </p>
@@ -388,123 +388,6 @@ master代表当前分支</li>
       </categories>
       <tags>
         <tag>travel</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《OceanBase开发者手册》之五 如何debug OceanBase</title>
-    <url>/2021/debug_ob/</url>
-    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>《OceanBase开发者手册》 主要指导开发者如何参与到OceanBase 的研发, 铺平参与OceanBase 开发的准备工作遇到的问题, 当前章节大概这几篇文章, 未来可能会增加部分文章, 目前OceanBase 源码参考OceanBase 开源官网的<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYXJ0aWNsZXMvODYwMDEyOQ==">《开源数据库OceanBase源码解读》 系列<i class="fa fa-external-link-alt"></i></span> :</p>
-<ol>
-<li>如何编译OceanBase源码</li>
-<li>如何设置IDE开发环境</li>
-<li>如何成为OceanBase Contributor</li>
-<li>如何修改OceanBase文档</li>
-<li>如何debug OceanBase</li>
-<li>如何运行测试</li>
-<li>如何修bug<br>​</li>
-</ol>
-<p>本文将介绍如何debug OceanBase, 如何debug OceanBase, 推荐几种方式:</p>
-<ol>
-<li>使用vscode 远程debug OceanBase</li>
-<li>使用gdb 本地debug OceanBase</li>
-<li>在linux 环境下, 使用CLion 本地debug OceanBase</li>
-</ol>
-<span id="more"></span>
-<p>​</p>
-<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p>debug OceanBase 有一个重要的步骤, 就是弄到oceanbase 的启动参数, 每台机器有每台机器的硬件配置, 也会导致启动参数是不一样的. 但做法基本类似. </p>
-<ol>
-<li>用OBD (<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveQ==">https://github.com/oceanbase/obdeploy<i class="fa fa-external-link-alt"></i></span>) 安装部署一套环境 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. 单机部署并且是联网环境, 请参考文档https://open.oceanbase.com/quickStart</span><br><span class="line">2. 分布式环境或者离线部署, 请参考文档 https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.1/deploy-the-distributed-oceanbase-cluster</span><br></pre></td></tr></table></figure></li>
-<li>成功部署环境后, 编译debug 版本OceanBase 参考之前文档 《如何编译OceanBase源码》</li>
-<li>捕获oceanbase 的启动参数 (通过‘ps -ef|grep observer’).</li>
-<li>(可选)在分布式环境下, 用编译好的binary observer 去替换 用obd 安装部署的observer</li>
-</ol>
-<p>我在我的单机测试环境下, 我用OBD安装部署OceanBase后, 我的OceanBase的启动参数是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">observer -r xxx.xxx.xxx.xxx:2882:2881 -o __min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98 -z zone1 -p 2881 -P 2882 -n obcluster -c 1 -d /home/xxxxxxx/observer/store -i em1 -l INFO</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="vscode-调试"><a href="#vscode-调试" class="headerlink" title="vscode 调试"></a>vscode 调试</h2><ol>
-<li><p>搭建remote 链接环境</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.1 建立开发机到测试机的信任登录, 参考 文档 https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.1/optional-set-password-free-ssh-logon</span><br><span class="line">1.2 搭建vscode 的remote debug 环境  “Remote-SSH: Connect to Host...”, 参考文章 https://blog.csdn.net/zbbzb/article/details/102957076/ 进行配置</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>remote ssh 连接远程机器 </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Ctril + p</span><br><span class="line">选择Remote-SSH:Connect to Host</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>打开对应的源码目录</p>
-</li>
-<li><p>参考之前文章 介绍 《如何编译OceanBase源码》</p>
-</li>
-<li><p>设置debug 启动参数, 在菜单栏  “Run” –&gt; “Add Configuration”, 如果之前已经设置过, 修改启动参数就是 菜单栏 “Run” –&gt; “Open Configurations”</p>
-</li>
-</ol>
-<p>我的 配置是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    // Use IntelliSense to learn about possible attributes.</span><br><span class="line">    // Hover to view descriptions of existing attributes.</span><br><span class="line">    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span><br><span class="line">    &quot;version&quot;: &quot;0.2.0&quot;,</span><br><span class="line">    &quot;configurations&quot;: [</span><br><span class="line">    </span><br><span class="line">        &#123;</span><br><span class="line">            &quot;name&quot;: &quot;observer&quot;,</span><br><span class="line">            &quot;type&quot;: &quot;cppdbg&quot;,</span><br><span class="line">            &quot;request&quot;: &quot;launch&quot;,</span><br><span class="line">            &quot;program&quot;: &quot;$&#123;OB_SRC_DIR&#125;/build_debug/src/observer/observer&quot;,</span><br><span class="line">            &quot;args&quot;: [&quot;-r&quot;, &quot;$&#123;IP&#125;:2882:2881&quot;, &quot;-o&quot;, &quot;__min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98&quot;, &quot;-z&quot;, &quot;zone1&quot;, &quot;-p&quot;, &quot;2881&quot;, &quot;-P&quot;, &quot;2882&quot;, &quot;-n&quot;, &quot;obcluster&quot;, &quot;-c&quot;, 1, &quot;-d&quot;, &quot;/home/XXX/observer/store&quot;, &quot;-i&quot;, &quot;em1&quot;, &quot;-l&quot;, &quot;INFO&quot;],</span><br><span class="line">            &quot;stopAtEntry&quot;: true,</span><br><span class="line">            &quot;cwd&quot;: &quot;$&#123;OB_SRC_DIR&#125;&quot;,</span><br><span class="line">            &quot;environment&quot;: [],</span><br><span class="line">            &quot;externalConsole&quot;: false,</span><br><span class="line">            &quot;MIMode&quot;: &quot;gdb&quot;,</span><br><span class="line">            &quot;setupCommands&quot;: [</span><br><span class="line">                &#123;</span><br><span class="line">                    &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,</span><br><span class="line">                    &quot;text&quot;: &quot;-enable-pretty-printing&quot;,</span><br><span class="line">                    &quot;ignoreFailures&quot;: true</span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>备注: 这个里面有arg的参数来自于第一步的准备工作中获取的启动参数, 每台机器有每台机器的配置, 笔者的参数如下, 其中:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. $&#123;OB_SRC_DIR&#125; 为源码目录, $&#123;IP&#125; 为observer 的绑定ip</span><br><span class="line">2. 需要设置“cwd”, 为$&#123;OB_SRC_DIR&#125;</span><br><span class="line">3. 建议设置“stopAtEntry” 为true</span><br><span class="line">4. 在args 参数中, 其中 -d 设置的目录 &quot;/home/xxxxx/observer/store&quot;, 需要设置为真实的参数</span><br><span class="line">5. 在args 参数中, 其中-i 设置的设备名称 &quot;em1&quot;, 为ip 对应的设备名称</span><br></pre></td></tr></table></figure>
-
-<ol start="6">
-<li>开始debug, 点击菜单 “Run” –&gt; “Start Debugging”.</li>
-</ol>
-<h2 id="直接用gdb-本地调试"><a href="#直接用gdb-本地调试" class="headerlink" title="直接用gdb 本地调试"></a>直接用gdb 本地调试</h2><ol>
-<li><p>登录remote 机器, 并进入${OB_SRC_DIR} 源码目录</p>
-</li>
-<li><p>参考之前文章 介绍 《如何编译OceanBase源码》</p>
-</li>
-<li><p>修改 用户目录下的.gdbinit, 添加下面一行, 其中${OB_SRC_DIR}需要换成OB 源码根目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">add-auto-load-safe-path $&#123;OB_SRC_DIR&#125;/.gdbinit</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>vi ${OB_SRC_DIR}&#x2F;.gdbinit</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">file build_debug/src/observer/observer</span><br><span class="line">set args &quot;-r&quot;, &quot;XXX.XXX.XXX.XXX:2882:2881&quot;, &quot;-o&quot;, &quot;__min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98&quot;, &quot;-z&quot;, &quot;zone1&quot;, &quot;-p&quot;, &quot;2881&quot;, &quot;-P&quot;, &quot;2882&quot;, &quot;-n&quot;, &quot;obcluster&quot;, &quot;-c&quot;, 1, &quot;-d&quot;, &quot;/home/longda/observer/store&quot;, &quot;-i&quot;, &quot;em1&quot;, &quot;-l&quot;, &quot;INFO&quot;</span><br><span class="line">b main</span><br><span class="line">r</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>备注: 这个里面有args的参数来自于第一步的准备工作中获取的启动参数, 每台机器有每台机器的配置, 笔者的参数如下, 其中:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. $&#123;OB_SRC_DIR&#125; 为源码目录, $&#123;IP&#125; 为observer 的绑定ip</span><br><span class="line">2. 需要设置“cwd”, 为$&#123;OB_SRC_DIR&#125;</span><br><span class="line">3. 当前的工作目录必须是$&#123;OB_SRC_DIR&#125;</span><br><span class="line">4. 在args 参数中, 其中 -d 设置的目录 &quot;/home/xxxxx/observer/store&quot;, 需要设置为真实的参数</span><br><span class="line">5. 在args 参数中, 其中-i 设置的设备名称 &quot;em1&quot;, 为ip 对应的设备名称</span><br></pre></td></tr></table></figure>
-
-<ol start="5">
-<li>推荐使用tui<br>tui是gdb自带的图形界面，比较直观，这里简单说一下切换方法和常用命令<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1、gdb -tui + (可执行程序)  直接进入tui图形界面</span><br><span class="line"></span><br><span class="line">2、gdb进入后，使用命令focus进入tui图形界面，或者使用快捷键：Ctl+x+a (注意按键顺序，记忆：x：focus，a：another)</span><br><span class="line"></span><br><span class="line">3、在tui中使用相同的快捷键Ctl+x+a返回到gdb原生界面</span><br><span class="line"></span><br><span class="line">4、在gdb中↑和↓切换上一个命令和下一个命令，但是在tui中只是控制代码视图。想达到切换命令的目的，使用Ctl+n （记忆：next）和Ctl+p（记忆：previous），这其实就是gdb的原生快捷键</span><br></pre></td></tr></table></figure></li>
-<li>在源码目录下, 敲入gdb 即可启动gdb debug</li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gdb </span><br></pre></td></tr></table></figure>
-
-
-<h2 id="clion-本地调试"><a href="#clion-本地调试" class="headerlink" title="clion 本地调试"></a>clion 本地调试</h2><p>clion 看源码非常方便， symbol 跳转非常友好， 而且天然code format 支持clang-format。 不过， 我没有试过clion 远程debug， 只试过本地clion debug， 不过如果想用clion 本地debug oceanbase， 则开发机器得运行linux。<br>clion 是debug 中最舒服的方式， 但也是最复杂的方式， 要求也非常高</p>
-<ol>
-<li>参考之前文章 介绍 《如何编译OceanBase源码》</li>
-<li>配置 clion的cmake<img data-src="/img/ob/clion_debug1.png" ></li>
-</ol>
-<p>详情步骤参考图片所示， 需要说明的是， </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&quot;Build Directory&quot; 需要设置为“build_debug”</span><br><span class="line">&quot;CMake options&quot; 需要设置为“$&#123;OB_SRC_DIR&#125; -DCMAKE_BUILD_TYPE=Debug”, 其中$&#123;OB_SRC_DIR&#125; 需要修改为真实的目录全路径</span><br></pre></td></tr></table></figure>
-
-<ol start="3">
-<li>等待几分钟生成cmake 生成结束后， 点击菜单“Run” –》 “Edit configurations”, 也可以类似下面图片， 进行选择编译目标observer</li>
-</ol>
-<img data-src="/img/ob/clion_debug2.JPG" >
-
-<ol start="4">
-<li><p>点击菜单“Build” –》 “Build observer”， 编译observer</p>
-</li>
-<li><p>修改启动参数， 点击菜单“Run” –》 “Edit configurations”， 出现界面后</p>
-</li>
-</ol>
-<img data-src="/img/ob/clion_debug3.JPG" >
-
-<p>在我的机器上”Program Arguements” 为</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-r $&#123;ip&#125;:2882:2881 -o __min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,    max_syslog_file_count=4,memory_limit=8G,system_memory=4G,cpu_count=16,datafile_size=44G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98 -z zone1 -p 2881 -P 2882 -n obcluster -c 1 -d $&#123;data_dir&#125; -i $&#123;devname&#125; -l INFO</span><br></pre></td></tr></table></figure>
-<p>${ip} : 为本机ip</p>
-<p>${data_dir}: 为数据目录</p>
-<p>${devname}： 为ip 所对应的网卡名称， 通常为eth0 或lo</p>
-<p>在“Woring Directory”必须为${OB_SRC_DIR}</p>
-<ol start="6">
-<li><p>打开文件src&#x2F;observer&#x2F;main.cpp, 在main 函数下断点</p>
-</li>
-<li><p>启动debug， 点击菜单”Run” –&gt; “Debug Observer”</p>
-</li>
-</ol>
-]]></content>
-      <categories>
-        <category>OceanBase</category>
-      </categories>
-      <tags>
-        <tag>OceanBase</tag>
       </tags>
   </entry>
   <entry>
@@ -752,6 +635,123 @@ master代表当前分支</li>
       </tags>
   </entry>
   <entry>
+    <title>《OceanBase开发者手册》之五 如何debug OceanBase</title>
+    <url>/2021/debug_ob/</url>
+    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>《OceanBase开发者手册》 主要指导开发者如何参与到OceanBase 的研发, 铺平参与OceanBase 开发的准备工作遇到的问题, 当前章节大概这几篇文章, 未来可能会增加部分文章, 目前OceanBase 源码参考OceanBase 开源官网的<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYXJ0aWNsZXMvODYwMDEyOQ==">《开源数据库OceanBase源码解读》 系列<i class="fa fa-external-link-alt"></i></span> :</p>
+<ol>
+<li>如何编译OceanBase源码</li>
+<li>如何设置IDE开发环境</li>
+<li>如何成为OceanBase Contributor</li>
+<li>如何修改OceanBase文档</li>
+<li>如何debug OceanBase</li>
+<li>如何运行测试</li>
+<li>如何修bug<br>​</li>
+</ol>
+<p>本文将介绍如何debug OceanBase, 如何debug OceanBase, 推荐几种方式:</p>
+<ol>
+<li>使用vscode 远程debug OceanBase</li>
+<li>使用gdb 本地debug OceanBase</li>
+<li>在linux 环境下, 使用CLion 本地debug OceanBase</li>
+</ol>
+<span id="more"></span>
+<p>​</p>
+<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p>debug OceanBase 有一个重要的步骤, 就是弄到oceanbase 的启动参数, 每台机器有每台机器的硬件配置, 也会导致启动参数是不一样的. 但做法基本类似. </p>
+<ol>
+<li>用OBD (<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveQ==">https://github.com/oceanbase/obdeploy<i class="fa fa-external-link-alt"></i></span>) 安装部署一套环境 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. 单机部署并且是联网环境, 请参考文档https://open.oceanbase.com/quickStart</span><br><span class="line">2. 分布式环境或者离线部署, 请参考文档 https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.1/deploy-the-distributed-oceanbase-cluster</span><br></pre></td></tr></table></figure></li>
+<li>成功部署环境后, 编译debug 版本OceanBase 参考之前文档 《如何编译OceanBase源码》</li>
+<li>捕获oceanbase 的启动参数 (通过‘ps -ef|grep observer’).</li>
+<li>(可选)在分布式环境下, 用编译好的binary observer 去替换 用obd 安装部署的observer</li>
+</ol>
+<p>我在我的单机测试环境下, 我用OBD安装部署OceanBase后, 我的OceanBase的启动参数是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">observer -r xxx.xxx.xxx.xxx:2882:2881 -o __min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98 -z zone1 -p 2881 -P 2882 -n obcluster -c 1 -d /home/xxxxxxx/observer/store -i em1 -l INFO</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="vscode-调试"><a href="#vscode-调试" class="headerlink" title="vscode 调试"></a>vscode 调试</h2><ol>
+<li><p>搭建remote 链接环境</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.1 建立开发机到测试机的信任登录, 参考 文档 https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.1/optional-set-password-free-ssh-logon</span><br><span class="line">1.2 搭建vscode 的remote debug 环境  “Remote-SSH: Connect to Host...”, 参考文章 https://blog.csdn.net/zbbzb/article/details/102957076/ 进行配置</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>remote ssh 连接远程机器 </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Ctril + p</span><br><span class="line">选择Remote-SSH:Connect to Host</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>打开对应的源码目录</p>
+</li>
+<li><p>参考之前文章 介绍 《如何编译OceanBase源码》</p>
+</li>
+<li><p>设置debug 启动参数, 在菜单栏  “Run” –&gt; “Add Configuration”, 如果之前已经设置过, 修改启动参数就是 菜单栏 “Run” –&gt; “Open Configurations”</p>
+</li>
+</ol>
+<p>我的 配置是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    // Use IntelliSense to learn about possible attributes.</span><br><span class="line">    // Hover to view descriptions of existing attributes.</span><br><span class="line">    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387</span><br><span class="line">    &quot;version&quot;: &quot;0.2.0&quot;,</span><br><span class="line">    &quot;configurations&quot;: [</span><br><span class="line">    </span><br><span class="line">        &#123;</span><br><span class="line">            &quot;name&quot;: &quot;observer&quot;,</span><br><span class="line">            &quot;type&quot;: &quot;cppdbg&quot;,</span><br><span class="line">            &quot;request&quot;: &quot;launch&quot;,</span><br><span class="line">            &quot;program&quot;: &quot;$&#123;OB_SRC_DIR&#125;/build_debug/src/observer/observer&quot;,</span><br><span class="line">            &quot;args&quot;: [&quot;-r&quot;, &quot;$&#123;IP&#125;:2882:2881&quot;, &quot;-o&quot;, &quot;__min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98&quot;, &quot;-z&quot;, &quot;zone1&quot;, &quot;-p&quot;, &quot;2881&quot;, &quot;-P&quot;, &quot;2882&quot;, &quot;-n&quot;, &quot;obcluster&quot;, &quot;-c&quot;, 1, &quot;-d&quot;, &quot;/home/XXX/observer/store&quot;, &quot;-i&quot;, &quot;em1&quot;, &quot;-l&quot;, &quot;INFO&quot;],</span><br><span class="line">            &quot;stopAtEntry&quot;: true,</span><br><span class="line">            &quot;cwd&quot;: &quot;$&#123;OB_SRC_DIR&#125;&quot;,</span><br><span class="line">            &quot;environment&quot;: [],</span><br><span class="line">            &quot;externalConsole&quot;: false,</span><br><span class="line">            &quot;MIMode&quot;: &quot;gdb&quot;,</span><br><span class="line">            &quot;setupCommands&quot;: [</span><br><span class="line">                &#123;</span><br><span class="line">                    &quot;description&quot;: &quot;Enable pretty-printing for gdb&quot;,</span><br><span class="line">                    &quot;text&quot;: &quot;-enable-pretty-printing&quot;,</span><br><span class="line">                    &quot;ignoreFailures&quot;: true</span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>备注: 这个里面有arg的参数来自于第一步的准备工作中获取的启动参数, 每台机器有每台机器的配置, 笔者的参数如下, 其中:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. $&#123;OB_SRC_DIR&#125; 为源码目录, $&#123;IP&#125; 为observer 的绑定ip</span><br><span class="line">2. 需要设置“cwd”, 为$&#123;OB_SRC_DIR&#125;</span><br><span class="line">3. 建议设置“stopAtEntry” 为true</span><br><span class="line">4. 在args 参数中, 其中 -d 设置的目录 &quot;/home/xxxxx/observer/store&quot;, 需要设置为真实的参数</span><br><span class="line">5. 在args 参数中, 其中-i 设置的设备名称 &quot;em1&quot;, 为ip 对应的设备名称</span><br></pre></td></tr></table></figure>
+
+<ol start="6">
+<li>开始debug, 点击菜单 “Run” –&gt; “Start Debugging”.</li>
+</ol>
+<h2 id="直接用gdb-本地调试"><a href="#直接用gdb-本地调试" class="headerlink" title="直接用gdb 本地调试"></a>直接用gdb 本地调试</h2><ol>
+<li><p>登录remote 机器, 并进入${OB_SRC_DIR} 源码目录</p>
+</li>
+<li><p>参考之前文章 介绍 《如何编译OceanBase源码》</p>
+</li>
+<li><p>修改 用户目录下的.gdbinit, 添加下面一行, 其中${OB_SRC_DIR}需要换成OB 源码根目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">add-auto-load-safe-path $&#123;OB_SRC_DIR&#125;/.gdbinit</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>vi ${OB_SRC_DIR}&#x2F;.gdbinit</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">file build_debug/src/observer/observer</span><br><span class="line">set args &quot;-r&quot;, &quot;XXX.XXX.XXX.XXX:2882:2881&quot;, &quot;-o&quot;, &quot;__min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,max_syslog_file_count=4,memory_limit=69G,system_memory=27G,cpu_count=19,datafile_size=1029G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98&quot;, &quot;-z&quot;, &quot;zone1&quot;, &quot;-p&quot;, &quot;2881&quot;, &quot;-P&quot;, &quot;2882&quot;, &quot;-n&quot;, &quot;obcluster&quot;, &quot;-c&quot;, 1, &quot;-d&quot;, &quot;/home/longda/observer/store&quot;, &quot;-i&quot;, &quot;em1&quot;, &quot;-l&quot;, &quot;INFO&quot;</span><br><span class="line">b main</span><br><span class="line">r</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>备注: 这个里面有args的参数来自于第一步的准备工作中获取的启动参数, 每台机器有每台机器的配置, 笔者的参数如下, 其中:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1. $&#123;OB_SRC_DIR&#125; 为源码目录, $&#123;IP&#125; 为observer 的绑定ip</span><br><span class="line">2. 需要设置“cwd”, 为$&#123;OB_SRC_DIR&#125;</span><br><span class="line">3. 当前的工作目录必须是$&#123;OB_SRC_DIR&#125;</span><br><span class="line">4. 在args 参数中, 其中 -d 设置的目录 &quot;/home/xxxxx/observer/store&quot;, 需要设置为真实的参数</span><br><span class="line">5. 在args 参数中, 其中-i 设置的设备名称 &quot;em1&quot;, 为ip 对应的设备名称</span><br></pre></td></tr></table></figure>
+
+<ol start="5">
+<li>推荐使用tui<br>tui是gdb自带的图形界面，比较直观，这里简单说一下切换方法和常用命令<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1、gdb -tui + (可执行程序)  直接进入tui图形界面</span><br><span class="line"></span><br><span class="line">2、gdb进入后，使用命令focus进入tui图形界面，或者使用快捷键：Ctl+x+a (注意按键顺序，记忆：x：focus，a：another)</span><br><span class="line"></span><br><span class="line">3、在tui中使用相同的快捷键Ctl+x+a返回到gdb原生界面</span><br><span class="line"></span><br><span class="line">4、在gdb中↑和↓切换上一个命令和下一个命令，但是在tui中只是控制代码视图。想达到切换命令的目的，使用Ctl+n （记忆：next）和Ctl+p（记忆：previous），这其实就是gdb的原生快捷键</span><br></pre></td></tr></table></figure></li>
+<li>在源码目录下, 敲入gdb 即可启动gdb debug</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gdb </span><br></pre></td></tr></table></figure>
+
+
+<h2 id="clion-本地调试"><a href="#clion-本地调试" class="headerlink" title="clion 本地调试"></a>clion 本地调试</h2><p>clion 看源码非常方便， symbol 跳转非常友好， 而且天然code format 支持clang-format。 不过， 我没有试过clion 远程debug， 只试过本地clion debug， 不过如果想用clion 本地debug oceanbase， 则开发机器得运行linux。<br>clion 是debug 中最舒服的方式， 但也是最复杂的方式， 要求也非常高</p>
+<ol>
+<li>参考之前文章 介绍 《如何编译OceanBase源码》</li>
+<li>配置 clion的cmake<img data-src="/img/ob/clion_debug1.png" ></li>
+</ol>
+<p>详情步骤参考图片所示， 需要说明的是， </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&quot;Build Directory&quot; 需要设置为“build_debug”</span><br><span class="line">&quot;CMake options&quot; 需要设置为“$&#123;OB_SRC_DIR&#125; -DCMAKE_BUILD_TYPE=Debug”, 其中$&#123;OB_SRC_DIR&#125; 需要修改为真实的目录全路径</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>等待几分钟生成cmake 生成结束后， 点击菜单“Run” –》 “Edit configurations”, 也可以类似下面图片， 进行选择编译目标observer</li>
+</ol>
+<img data-src="/img/ob/clion_debug2.JPG" >
+
+<ol start="4">
+<li><p>点击菜单“Build” –》 “Build observer”， 编译observer</p>
+</li>
+<li><p>修改启动参数， 点击菜单“Run” –》 “Edit configurations”， 出现界面后</p>
+</li>
+</ol>
+<img data-src="/img/ob/clion_debug3.JPG" >
+
+<p>在我的机器上”Program Arguements” 为</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">-r $&#123;ip&#125;:2882:2881 -o __min_full_resource_pool_memory=268435456,enable_syslog_recycle=True,enable_syslog_wf=True,    max_syslog_file_count=4,memory_limit=8G,system_memory=4G,cpu_count=16,datafile_size=44G,clog_disk_utilization_threshold=95,clog_disk_usage_limit_percentage=98 -z zone1 -p 2881 -P 2882 -n obcluster -c 1 -d $&#123;data_dir&#125; -i $&#123;devname&#125; -l INFO</span><br></pre></td></tr></table></figure>
+<p>${ip} : 为本机ip</p>
+<p>${data_dir}: 为数据目录</p>
+<p>${devname}： 为ip 所对应的网卡名称， 通常为eth0 或lo</p>
+<p>在“Woring Directory”必须为${OB_SRC_DIR}</p>
+<ol start="6">
+<li><p>打开文件src&#x2F;observer&#x2F;main.cpp, 在main 函数下断点</p>
+</li>
+<li><p>启动debug， 点击菜单”Run” –&gt; “Debug Observer”</p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>OceanBase</category>
+      </categories>
+      <tags>
+        <tag>OceanBase</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>《F1 Query -- Declarative Querying at Scale》</title>
     <url>/2018/f1/</url>
     <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>论文是很早以前看的， 后来把笔记梳理一下。<br>F1 就是一套胶水系统， 将oltp和olap 系统粘在一起提供一个统一接口层和服务层， 类似数据库里面的HTAP系统， 但数据库htap系统往往是自身提供oltp和olap 服务， 而f1 是通过不同的系统来达到htap的效果。<br>F1 有一个背景就是现有很多数据库系统，如spanner， bigquery， dremel， 如果让应用无缝的在这么多系统中切换，一套接口，一套服务完成所有的事情。<br>今天的 TiDB 有一点点f1 的味道， 上层tidb server + tikv， tispark +  tiflash，不过tidb 朝着tidb server + tikv&#x2F;tiflash的方向演进， 融合程度更高一些， 不过f1 在oltp 上主要是依赖spanner 来完成。<br>曾经的hybriddb 更类似f1 这种架构。 </p>
@@ -970,38 +970,6 @@ master代表当前分支</li>
       </categories>
       <tags>
         <tag>travel</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《华为崛起》</title>
-    <url>/2020/huawei/</url>
-    <content><![CDATA[<h1 id="题外话"><a href="#题外话" class="headerlink" title="题外话"></a>题外话</h1><p>今年年初， 买书的时候，无意中看到《华为崛起》， 介绍的挺有意思的， 于是买了一本看看， 买了很久但一直没有看， 拖了很久， 终于看完了， 忍不住写点总结吧， 免得左边耳朵进，右边耳朵出。<br>华为从一家这么小的公司，最后成长成为差不多中国最大的民营企业， 而且很多年前, 营收和研发投入就是互联网三巨头bat 的总和， 绝对值得去学习和研究一下(现在互联网叫bat， 其实叫hat 更合适)。 这本书讲了很多华为成长过程中，发生的一些事和决策，可以从中思考一下，为什么华为成功了，而巨大中华中，其他的几乎没有多少声音了。<br>另外，绝对要吐槽一下作者， 全文无处不在的拍马屁， 有的地方，简直要吐了。这本书组织管理介绍比较浅， 很多组织管理的思考充斥着对任老板和管理层的拍马屁。</p>
-<p>创业的朋友，推荐读一下这本书， 带着问题 “为什么华为能成功”？ 读下去，相信会有很多收获。 而我没有什么体感，只能站在第三者的角度去看， 所以聊的深度比较浅， 大家就当博君一笑。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>华为大概分了几个阶段， 每一次都是破茧成蝶，突破天花板</p>
-<ol>
-<li>创业之战</li>
-<li>成长之战</li>
-<li>生存之战</li>
-<li>大象狂奔</li>
-</ol>
-<span id="more"></span>
-
-<h1 id="创业之战"><a href="#创业之战" class="headerlink" title="创业之战"></a>创业之战</h1><p>创业的时候， 选择了暴利行业的电信行业， 这个是最大的关键点， 如果不是选择这个暴利行业， 否则根本没有钱去支撑后续一系列的研发和快速扩张， 包括允许了一定的战略决策失误。 今天，对于创业的朋友来说，就是一个常说的词， 蓝海和红海， 只有下海到蓝海中， 才有更多的机会，更多的容错性（反脆弱）。 而怎样找到一个蓝海， 就是需要发现问题。</p>
-<h1 id="成长之战"><a href="#成长之战" class="headerlink" title="成长之战"></a>成长之战</h1><p>最早代理交换机， 只要有路子，能拿到货， 转手一下， 就有大把钞票。 有的时候，经常有些热门的交换机，根本拿不到， 任老板于是决定自己去研发，避免自己被人卡脖子。 但凡做事的人， 都会希望自己能把握关键点，降低风险， 这个其实没有什么好吹的。 但老任比较牛b的是，就是坚持，在一系列研发失败后， 最后赌了一把大的， all in 了光纤交换机，而且一下就搞万门交换机，选择了一个非常正确的方向， 这个非常有魄力。 另外，当时第一款产品出来时， 找到第一个关键客户 – 义乌电信局时， 真的是客户第一， 研发所有人员都蹲现场， 现场有问题，现场解决问题， 第一时间解决所有问题， 和义乌电信局成了命运共同体， 一荣皆荣， 一损俱损。 这种手法，是甲方和乙方的最高境界， 也给了华为一个真正的练兵场， 帮助华为打开了局面。</p>
-<p>一家小公司成长起来，非常依赖老板的战略决策， 赌对了就飞黄腾达，赌错了，就树倒猢狲散，做大事的人，往往赌性比较重， 但当公司长大后， 却要防止这种错误的决策, 需要一种机制来防止决策失误， 类似阿里的合伙人，华为的轮值董事等。另外一种防止决策错误的思路是， 客户第一。 华为在客户第一上，做的真是贯穿到骨子里。</p>
-<h1 id="生存之战"><a href="#生存之战" class="headerlink" title="生存之战"></a>生存之战</h1><p>在2003年的时候， 任正非中间打算将华为打包价75亿美金卖掉， 想想这背后的导火索，肯定就是华为遭遇了生存危机。<br>这个生存危机， 第一 港湾之战， 第二 思科之战。<br>港湾之战， 李一男 林立山头， 最初任老板的想法是，让李一男 帮助华为补位， 做一些华为的配合工作，但在巨大利益面前， 谁能抵挡的， 哪个公司不想成为巨头， 所以不要挑战人性， 利益面前，人是会变的。 第二个就是港湾就是华为的山寨版， 做事方式和华为一模一样， 这种方式，如果不斩草除根， 不彻底干掉， 哪怕自损800 也要灭敌1000， 否则就是放虎归山。<br>同样，思科在攻击华为时， 就是害怕自己担负 垄断罪名时， 放了华为一把， 明知华为未来不可阻挡，还是舍不得肉。 这个里面， 华为策略， 小输就是赢， 站的高度还是非常高。<br>2个形成鲜明对比， 一个是宁可自损800也要1000，也要斩草除根， 另外一个舍不得孩子，套不住狼。 最终的结果，大家也看到，永远铭记，从长远思考问题。<br>在2003年时， 挡住饮鸩止渴（挡住小灵通的诱惑），从未来着手布局， 还是高人一等。</p>
-<h1 id="大象狂奔"><a href="#大象狂奔" class="headerlink" title="大象狂奔"></a>大象狂奔</h1><p>采取农村包围城市， 先从一些贫瘠的土地开始播种， 从别人不要的残羹冷炙着手， 深挖梁，缓称王。<br>在一些难啃的国家中， 组建合资公司， 这种做法还是相当smart。<br>在手机业务上， 从默默无闻到巨头， 每一步都是一步一个脚印。<br>布局海思半导体， 最初应该是无奈之举， 但海思半导体却成了华为的一个神来之笔。 </p>
-<h1 id="组织管理"><a href="#组织管理" class="headerlink" title="组织管理"></a>组织管理</h1><p>全书介绍管理上，包装了各种理论， 什么军事管理， 机械主义， 自适应平衡（有个具体的理论，但忘记了名字， 差不多就是每个组织或模块是在一个动态环境中， 需要不停的流入资源&#x2F;人，然后也不断输出资源&#x2F;人，有一点点优胜略汰）。其实背后：</p>
-<ol>
-<li>钱， 2. 权， 3. 精神统一 （客户第一， 奋斗者为本）<br>不同阶段，应用这3点用了不同的手段。</li>
-</ol>
-<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>今天的华为，俨然一个巨无霸， 不可能一家公司在所有领域都是寡头， 所以，还是需要资源重组，集中优势兵力布局未来主航道， 另外也要给合作伙伴留一条路吧。</p>
-]]></content>
-      <categories>
-        <category>杂谈</category>
-      </categories>
-      <tags>
-        <tag>杂谈</tag>
       </tags>
   </entry>
   <entry>
@@ -1226,6 +1194,38 @@ master代表当前分支</li>
         <tag>BigData</tag>
         <tag>Stream Process</tag>
         <tag>Heron</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《华为崛起》</title>
+    <url>/2020/huawei/</url>
+    <content><![CDATA[<h1 id="题外话"><a href="#题外话" class="headerlink" title="题外话"></a>题外话</h1><p>今年年初， 买书的时候，无意中看到《华为崛起》， 介绍的挺有意思的， 于是买了一本看看， 买了很久但一直没有看， 拖了很久， 终于看完了， 忍不住写点总结吧， 免得左边耳朵进，右边耳朵出。<br>华为从一家这么小的公司，最后成长成为差不多中国最大的民营企业， 而且很多年前, 营收和研发投入就是互联网三巨头bat 的总和， 绝对值得去学习和研究一下(现在互联网叫bat， 其实叫hat 更合适)。 这本书讲了很多华为成长过程中，发生的一些事和决策，可以从中思考一下，为什么华为成功了，而巨大中华中，其他的几乎没有多少声音了。<br>另外，绝对要吐槽一下作者， 全文无处不在的拍马屁， 有的地方，简直要吐了。这本书组织管理介绍比较浅， 很多组织管理的思考充斥着对任老板和管理层的拍马屁。</p>
+<p>创业的朋友，推荐读一下这本书， 带着问题 “为什么华为能成功”？ 读下去，相信会有很多收获。 而我没有什么体感，只能站在第三者的角度去看， 所以聊的深度比较浅， 大家就当博君一笑。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>华为大概分了几个阶段， 每一次都是破茧成蝶，突破天花板</p>
+<ol>
+<li>创业之战</li>
+<li>成长之战</li>
+<li>生存之战</li>
+<li>大象狂奔</li>
+</ol>
+<span id="more"></span>
+
+<h1 id="创业之战"><a href="#创业之战" class="headerlink" title="创业之战"></a>创业之战</h1><p>创业的时候， 选择了暴利行业的电信行业， 这个是最大的关键点， 如果不是选择这个暴利行业， 否则根本没有钱去支撑后续一系列的研发和快速扩张， 包括允许了一定的战略决策失误。 今天，对于创业的朋友来说，就是一个常说的词， 蓝海和红海， 只有下海到蓝海中， 才有更多的机会，更多的容错性（反脆弱）。 而怎样找到一个蓝海， 就是需要发现问题。</p>
+<h1 id="成长之战"><a href="#成长之战" class="headerlink" title="成长之战"></a>成长之战</h1><p>最早代理交换机， 只要有路子，能拿到货， 转手一下， 就有大把钞票。 有的时候，经常有些热门的交换机，根本拿不到， 任老板于是决定自己去研发，避免自己被人卡脖子。 但凡做事的人， 都会希望自己能把握关键点，降低风险， 这个其实没有什么好吹的。 但老任比较牛b的是，就是坚持，在一系列研发失败后， 最后赌了一把大的， all in 了光纤交换机，而且一下就搞万门交换机，选择了一个非常正确的方向， 这个非常有魄力。 另外，当时第一款产品出来时， 找到第一个关键客户 – 义乌电信局时， 真的是客户第一， 研发所有人员都蹲现场， 现场有问题，现场解决问题， 第一时间解决所有问题， 和义乌电信局成了命运共同体， 一荣皆荣， 一损俱损。 这种手法，是甲方和乙方的最高境界， 也给了华为一个真正的练兵场， 帮助华为打开了局面。</p>
+<p>一家小公司成长起来，非常依赖老板的战略决策， 赌对了就飞黄腾达，赌错了，就树倒猢狲散，做大事的人，往往赌性比较重， 但当公司长大后， 却要防止这种错误的决策, 需要一种机制来防止决策失误， 类似阿里的合伙人，华为的轮值董事等。另外一种防止决策错误的思路是， 客户第一。 华为在客户第一上，做的真是贯穿到骨子里。</p>
+<h1 id="生存之战"><a href="#生存之战" class="headerlink" title="生存之战"></a>生存之战</h1><p>在2003年的时候， 任正非中间打算将华为打包价75亿美金卖掉， 想想这背后的导火索，肯定就是华为遭遇了生存危机。<br>这个生存危机， 第一 港湾之战， 第二 思科之战。<br>港湾之战， 李一男 林立山头， 最初任老板的想法是，让李一男 帮助华为补位， 做一些华为的配合工作，但在巨大利益面前， 谁能抵挡的， 哪个公司不想成为巨头， 所以不要挑战人性， 利益面前，人是会变的。 第二个就是港湾就是华为的山寨版， 做事方式和华为一模一样， 这种方式，如果不斩草除根， 不彻底干掉， 哪怕自损800 也要灭敌1000， 否则就是放虎归山。<br>同样，思科在攻击华为时， 就是害怕自己担负 垄断罪名时， 放了华为一把， 明知华为未来不可阻挡，还是舍不得肉。 这个里面， 华为策略， 小输就是赢， 站的高度还是非常高。<br>2个形成鲜明对比， 一个是宁可自损800也要1000，也要斩草除根， 另外一个舍不得孩子，套不住狼。 最终的结果，大家也看到，永远铭记，从长远思考问题。<br>在2003年时， 挡住饮鸩止渴（挡住小灵通的诱惑），从未来着手布局， 还是高人一等。</p>
+<h1 id="大象狂奔"><a href="#大象狂奔" class="headerlink" title="大象狂奔"></a>大象狂奔</h1><p>采取农村包围城市， 先从一些贫瘠的土地开始播种， 从别人不要的残羹冷炙着手， 深挖梁，缓称王。<br>在一些难啃的国家中， 组建合资公司， 这种做法还是相当smart。<br>在手机业务上， 从默默无闻到巨头， 每一步都是一步一个脚印。<br>布局海思半导体， 最初应该是无奈之举， 但海思半导体却成了华为的一个神来之笔。 </p>
+<h1 id="组织管理"><a href="#组织管理" class="headerlink" title="组织管理"></a>组织管理</h1><p>全书介绍管理上，包装了各种理论， 什么军事管理， 机械主义， 自适应平衡（有个具体的理论，但忘记了名字， 差不多就是每个组织或模块是在一个动态环境中， 需要不停的流入资源&#x2F;人，然后也不断输出资源&#x2F;人，有一点点优胜略汰）。其实背后：</p>
+<ol>
+<li>钱， 2. 权， 3. 精神统一 （客户第一， 奋斗者为本）<br>不同阶段，应用这3点用了不同的手段。</li>
+</ol>
+<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>今天的华为，俨然一个巨无霸， 不可能一家公司在所有领域都是寡头， 所以，还是需要资源重组，集中优势兵力布局未来主航道， 另外也要给合作伙伴留一条路吧。</p>
+]]></content>
+      <categories>
+        <category>杂谈</category>
+      </categories>
+      <tags>
+        <tag>杂谈</tag>
       </tags>
   </entry>
   <entry>
@@ -1461,49 +1461,6 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
-    <title>《OceanBase开发者手册》之四 如何修改OceanBase文档</title>
-    <url>/2021/modify_ob_docs/</url>
-    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>《OceanBase开发者手册》 主要指导开发者如何参与到OceanBase 的研发, 铺平参与OceanBase 开发的准备工作遇到的问题, 当前章节大概这几篇文章, 未来可能会增加部分文章, 目前OceanBase 源码参考OceanBase 开源官网的<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYXJ0aWNsZXMvODYwMDEyOQ==">《开源数据库OceanBase源码解读》 系列<i class="fa fa-external-link-alt"></i></span> :</p>
-<ol>
-<li>如何编译OceanBase源码</li>
-<li>如何设置IDE开发环境</li>
-<li>如何成为OceanBase Contributor</li>
-<li>如何修改OceanBase文档</li>
-<li>如何debug OceanBase</li>
-<li>如何运行测试</li>
-<li>如何修bug<br>​</li>
-</ol>
-<p>在OceanBase 修改文档的过程, 和修改代码的过程完全一样, 可以参考《如何成为OceanBase Contributor》直接修改文档, 如果不做文档修改的预览, 比如直接修改少量的错别字, 可以直接修改, 但如果增加大段文字或新增文章, 建议做预览一下. 那在这种情况下, 需要看看, 修改的效果如何. 可以安装mkdocs, 对修改的效果进行预览. </p>
-<span id="more"></span>
-<p>​</p>
-<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><h1 id="Build-documentation-with-MkDocs"><a href="#Build-documentation-with-MkDocs" class="headerlink" title="Build documentation with MkDocs"></a>Build documentation with MkDocs</h1><p>OceanBase documentation is built with <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy8=">MkDocs<i class="fa fa-external-link-alt"></i></span>. You can check <a href="mkdocs.yml"><code>mkdocs.yml</code></a> for more information.<br>Please install MkDocs according to <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy91c2VyLWd1aWRlL2luc3RhbGxhdGlvbi8=">the installation documents of MkDocs<i class="fa fa-external-link-alt"></i></span></p>
-<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><p>Before installing dependencies, please make sure you have installed a recent version of Python 3 and pip.</p>
-<p>Then you can run the following command in your terminal at current directory:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ pip install -r requirements.txt</span><br><span class="line">$ pip install mkdocs-material</span><br></pre></td></tr></table></figure>
-<h2 id="Build-the-documentation"><a href="#Build-the-documentation" class="headerlink" title="Build the documentation"></a>Build the documentation</h2><p>You can build the documentation by running the following command:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ mkdocs build</span><br></pre></td></tr></table></figure>
-
-<p>This will create a new directory to store the output files, which is <code>site/</code> by default.</p>
-<h2 id="Start-a-server-locally"><a href="#Start-a-server-locally" class="headerlink" title="Start a server locally"></a>Start a server locally</h2><p>You can start a server locally by running the following command:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ mkdocs serve</span><br></pre></td></tr></table></figure>
-<p>Open up <span class="exturl" data-url="aHR0cDovLzEyNy4wLjAuMTo4MDAwLw==">http://127.0.0.1:8000/<i class="fa fa-external-link-alt"></i></span> in your browser, and you’ll see the default home page.</p>
-<h2 id="Modify-pages"><a href="#Modify-pages" class="headerlink" title="Modify pages"></a>Modify pages</h2><h3 id="Edit-a-page"><a href="#Edit-a-page" class="headerlink" title="Edit a page"></a>Edit a page</h3><p>If you want to modify the content of a page, you can edit the markdown file in <code>docs/</code> directory directly.</p>
-<h3 id="Modify-the-layout-of-pages"><a href="#Modify-the-layout-of-pages" class="headerlink" title="Modify the layout of pages"></a>Modify the layout of pages</h3><p>To modify the layout of pages, you need to edit <code>mkdocs.yml</code>.</p>
-<p>For configuration details, see <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy91c2VyLWd1aWRlL2NvbmZpZ3VyYXRpb24v">MkDocs User Guide<i class="fa fa-external-link-alt"></i></span>.</p>
-<p>Note the following rules when editing documents:</p>
-<ul>
-<li>All paths in <code>nav</code> must be relative to the <code>docs_dir</code>, which is <code>docs</code> by default. So here <code>./</code> is equivalent to <a href="docs">docs</a>.</li>
-<li>All internal links must be relative paths, as MkDocs only supports regular Markdown linking syntax.</li>
-</ul>
-]]></content>
-      <categories>
-        <category>OceanBase</category>
-      </categories>
-      <tags>
-        <tag>OceanBase</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Google Millwheel</title>
     <url>/2016/millwheel/</url>
     <content><![CDATA[<h1 id="插曲"><a href="#插曲" class="headerlink" title="插曲"></a>插曲</h1><p>google millwheel 《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》， 论文应该2012年就推出来了， 以前总是快速扫一遍， 每次阅读都有一些不同的收获， 这次终于仔细拜读一下， 顺便将它翻译了一遍。</p>
@@ -1680,6 +1637,49 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
         <tag>BigData</tag>
         <tag>DataFlow</tag>
         <tag>Stream Process</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《OceanBase开发者手册》之四 如何修改OceanBase文档</title>
+    <url>/2021/modify_ob_docs/</url>
+    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>《OceanBase开发者手册》 主要指导开发者如何参与到OceanBase 的研发, 铺平参与OceanBase 开发的准备工作遇到的问题, 当前章节大概这几篇文章, 未来可能会增加部分文章, 目前OceanBase 源码参考OceanBase 开源官网的<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYXJ0aWNsZXMvODYwMDEyOQ==">《开源数据库OceanBase源码解读》 系列<i class="fa fa-external-link-alt"></i></span> :</p>
+<ol>
+<li>如何编译OceanBase源码</li>
+<li>如何设置IDE开发环境</li>
+<li>如何成为OceanBase Contributor</li>
+<li>如何修改OceanBase文档</li>
+<li>如何debug OceanBase</li>
+<li>如何运行测试</li>
+<li>如何修bug<br>​</li>
+</ol>
+<p>在OceanBase 修改文档的过程, 和修改代码的过程完全一样, 可以参考《如何成为OceanBase Contributor》直接修改文档, 如果不做文档修改的预览, 比如直接修改少量的错别字, 可以直接修改, 但如果增加大段文字或新增文章, 建议做预览一下. 那在这种情况下, 需要看看, 修改的效果如何. 可以安装mkdocs, 对修改的效果进行预览. </p>
+<span id="more"></span>
+<p>​</p>
+<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><h1 id="Build-documentation-with-MkDocs"><a href="#Build-documentation-with-MkDocs" class="headerlink" title="Build documentation with MkDocs"></a>Build documentation with MkDocs</h1><p>OceanBase documentation is built with <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy8=">MkDocs<i class="fa fa-external-link-alt"></i></span>. You can check <a href="mkdocs.yml"><code>mkdocs.yml</code></a> for more information.<br>Please install MkDocs according to <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy91c2VyLWd1aWRlL2luc3RhbGxhdGlvbi8=">the installation documents of MkDocs<i class="fa fa-external-link-alt"></i></span></p>
+<h2 id="Requirements"><a href="#Requirements" class="headerlink" title="Requirements"></a>Requirements</h2><p>Before installing dependencies, please make sure you have installed a recent version of Python 3 and pip.</p>
+<p>Then you can run the following command in your terminal at current directory:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ pip install -r requirements.txt</span><br><span class="line">$ pip install mkdocs-material</span><br></pre></td></tr></table></figure>
+<h2 id="Build-the-documentation"><a href="#Build-the-documentation" class="headerlink" title="Build the documentation"></a>Build the documentation</h2><p>You can build the documentation by running the following command:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ mkdocs build</span><br></pre></td></tr></table></figure>
+
+<p>This will create a new directory to store the output files, which is <code>site/</code> by default.</p>
+<h2 id="Start-a-server-locally"><a href="#Start-a-server-locally" class="headerlink" title="Start a server locally"></a>Start a server locally</h2><p>You can start a server locally by running the following command:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ mkdocs serve</span><br></pre></td></tr></table></figure>
+<p>Open up <span class="exturl" data-url="aHR0cDovLzEyNy4wLjAuMTo4MDAwLw==">http://127.0.0.1:8000/<i class="fa fa-external-link-alt"></i></span> in your browser, and you’ll see the default home page.</p>
+<h2 id="Modify-pages"><a href="#Modify-pages" class="headerlink" title="Modify pages"></a>Modify pages</h2><h3 id="Edit-a-page"><a href="#Edit-a-page" class="headerlink" title="Edit a page"></a>Edit a page</h3><p>If you want to modify the content of a page, you can edit the markdown file in <code>docs/</code> directory directly.</p>
+<h3 id="Modify-the-layout-of-pages"><a href="#Modify-the-layout-of-pages" class="headerlink" title="Modify the layout of pages"></a>Modify the layout of pages</h3><p>To modify the layout of pages, you need to edit <code>mkdocs.yml</code>.</p>
+<p>For configuration details, see <span class="exturl" data-url="aHR0cHM6Ly93d3cubWtkb2NzLm9yZy91c2VyLWd1aWRlL2NvbmZpZ3VyYXRpb24v">MkDocs User Guide<i class="fa fa-external-link-alt"></i></span>.</p>
+<p>Note the following rules when editing documents:</p>
+<ul>
+<li>All paths in <code>nav</code> must be relative to the <code>docs_dir</code>, which is <code>docs</code> by default. So here <code>./</code> is equivalent to <a href="docs">docs</a>.</li>
+<li>All internal links must be relative paths, as MkDocs only supports regular Markdown linking syntax.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>OceanBase</category>
+      </categories>
+      <tags>
+        <tag>OceanBase</tag>
       </tags>
   </entry>
   <entry>
@@ -2183,109 +2183,6 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
-    <title>OceanBase监控对接Prometheus/Grafana</title>
-    <url>/2021/obagent/</url>
-    <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文讲介绍如何让OceanBase监控对接Prometheus和Grafana. </p>
-<p>​<img data-src="/img/ob/obagent1.jpg" ><br>​<span id="more"></span></p>
-<h1 id="安装流程"><a href="#安装流程" class="headerlink" title="安装流程"></a>安装流程</h1><p>大致过程, 分为3大步骤:</p>
-<ol>
-<li>安装oceanbase和obagent</li>
-<li>安装prometheus和grafana</li>
-<li>配置prometheus和grafana</li>
-</ol>
-<h2 id="安装OceanBase和Obagent"><a href="#安装OceanBase和Obagent" class="headerlink" title="安装OceanBase和Obagent"></a>安装OceanBase和Obagent</h2><p>如何安装OceanBase 可以参考上一篇文章<a href="http://ilongda.com/2021/ob_offline_install/">《OceanBase离线安装》</a>, 本节重点介绍如何安装obagent, 可以参考文档<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vZG9jcy9jb21tdW5pdHkvb2NlYW5iYXNlLWRhdGFiYXNlL1YzLjEuMS91c2Utb2JkLXRvLWRlcGxveS1vYmFnZW50">使用 OBD 部署 OBAgent<i class="fa fa-external-link-alt"></i></span></p>
-<p>OBAgent 是一个监控采集框架。OBAgent 支持推、拉两种数据采集模式，可以满足不同的应用场景。OBAgent 默认支持的插件包括主机数据采集、OceanBase 数据库指标的采集、监控数据标签处理和 Prometheus 协议的 HTTP 服务。要使 OBAgent 支持其他数据源的采集，或者自定义数据的处理流程，您只需要开发对应的插件即可。</p>
-<p>obagent 的配置, 在原来的配置基础上, 增加了obagent的配置, 详情可以参考<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveS9ibG9iL21hc3Rlci9leGFtcGxlL2F1dG9kZXBsb3kvZGlzdHJpYnV0ZWQtd2l0aC1vYnByb3h5LWFuZC1vYmFnZW50LWV4YW1wbGUueWFtbA==">distributed-with-obproxy-and-obagent-example<i class="fa fa-external-link-alt"></i></span>:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obagent:</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  # The list of servers to be monitored. This list is consistent with the servers in oceanbase-ce. </span><br><span class="line">  servers:</span><br><span class="line">    - name: server1</span><br><span class="line">      # Please don&#x27;t use hostname, only IP is supported.</span><br><span class="line">      ip: 172.19.33.2</span><br><span class="line">    - name: server2</span><br><span class="line">      ip: 172.19.33.3</span><br><span class="line">    - name: server3</span><br><span class="line">      ip: 172.19.33.4</span><br><span class="line">  # Set dependent components for the component.</span><br><span class="line">  # When the associated configurations are not done, OBD will automatically get the these configurations from the dependent components.</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  global:</span><br><span class="line">    # The working directory for obagent. obagent is started under this directory. This is a required field.</span><br><span class="line">    home_path: /root/observer</span><br><span class="line">    skip_proxy_sys_private_check: true</span><br></pre></td></tr></table></figure>
-
-<p>特别说明:</p>
-<ol>
-<li>depends里面的 “oceanbase-ce” 的名字必须和配置文件集群的名字一致. </li>
-<li>servers里面的配置必须与在配置文件中”oceanbase-ce”一节中servers 配置一摸一样</li>
-<li>记住home_path, 后续需要用到这个路径.</li>
-</ol>
-<p>安装完成后, 可以执行“obd cluster display ” 看到obagent 已经启动了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obd cluster display obtest</span><br><span class="line">Get local repositories and plugins ok</span><br><span class="line">Open ssh connection ok</span><br><span class="line">Cluster status check ok</span><br><span class="line">Connect to observer ok</span><br><span class="line">Wait for observer init ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     observer                    |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| ip            | version | port | zone  | status |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| 172.30.62.210 | 3.1.1   | 2881 | zone1 | active |</span><br><span class="line">| 172.30.62.211 | 3.1.1   | 2881 | zone2 | active |</span><br><span class="line">| 172.30.62.212 | 3.1.1   | 2881 | zone3 | active |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line"></span><br><span class="line">Connect to obproxy ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     obproxy                     |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| ip            | port | prometheus_port | status |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| 172.30.62.213 | 2883 | 2884            | active |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">+---------------------------------------------------+</span><br><span class="line">|                      obagent                      |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| ip            | server_port | pprof_port | status |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| 172.30.62.210 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.211 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.212 | 8088        | 8089       | active |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="安装prometheus和grafana"><a href="#安装prometheus和grafana" class="headerlink" title="安装prometheus和grafana"></a>安装prometheus和grafana</h2><p>选择一台机器上安装prometheus 和grafana, 这台机器尽量不是observer 中的一台, 本例中, prometheus 和grafana 部署在obproxy机器上. </p>
-<ol>
-<li>从<span class="exturl" data-url="aHR0cHM6Ly9wcm9tZXRoZXVzLmlvL2Rvd25sb2FkLw==">https://prometheus.io/download/<i class="fa fa-external-link-alt"></i></span> 上把prometheus 和alertmanager 下载下来, 本章将不介绍 alertmanager 怎么使用. </li>
-<li>从<span class="exturl" data-url="aHR0cHM6Ly9ncmFmYW5hLmNvbS9ncmFmYW5hL2Rvd25sb2FkP3BnPWdldCZwbGNtdD1zZWxmbWFuYWdlZC1ib3gxLWN0YTE=">https://grafana.com/grafana/download?pg=get&amp;plcmt=selfmanaged-box1-cta1<i class="fa fa-external-link-alt"></i></span> 上下载grapha</li>
-<li>讲prometheus 和grafana 压缩包拷贝到obproxy 的机器上, </li>
-<li>解压prometheus 和grafana<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -xzf prometheus-2.31.0.linux-amd64.tar.gz</span><br><span class="line"># tar -xzf grafana-enterprise-8.2.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="配置prometheus和grafana"><a href="#配置prometheus和grafana" class="headerlink" title="配置prometheus和grafana"></a>配置prometheus和grafana</h2><h3 id="配置prometheus"><a href="#配置prometheus" class="headerlink" title="配置prometheus"></a>配置prometheus</h3><ol>
-<li>讲obagent上的prometheus 的配置文件给拷贝到prometheus 的安装目录中<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd prometheus-2.31.0.linux-amd64</span><br><span class="line"># mv prometheus.yml prometheus.yml.old</span><br><span class="line"># scp -r observer001:/root/observer/conf/prometheus_config/* . </span><br></pre></td></tr></table></figure>
-备注说明: </li>
-<li>observer001 为安装obagent的一台机器</li>
-<li>&#x2F;root&#x2F;observer 为之前在配置文件中, 配置obagent中配置的home_path路径</li>
-<li>从observer001 上会copy 过来几个文件, prometheus.yaml 和rules, rules 是存储拉取规则, prometheus 是配置prometheus的文件.</li>
-</ol>
-<p>启动prometheus</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./prometheus --config.file=./prometheus.yaml &gt;&gt; run.log 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
-
-<p>检查run.log 可以查看运行日志. 正常情况下, </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl http://localhost:9090/metrics</span><br></pre></td></tr></table></figure>
-<p>可以获得大量的数据. </p>
-<h3 id="配置grafana"><a href="#配置grafana" class="headerlink" title="配置grafana"></a>配置grafana</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd grafana-8.2.3/</span><br><span class="line"># nohup bin/grafana-server &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line"># ps -ef|grep grafana</span><br></pre></td></tr></table></figure>
-<p>可以坚持run.log 或ps -ef|grep grafana 均可以查看到grafana 正常工作. </p>
-<p>打开grafana 的页面,  第一次登录, 输入admin&#x2F;admin, 然后设置管理员密码, 然后增加data source<br>​<img data-src="/img/ob/obagent2.jpg" ><br>进入增加data source后, 选择prometheus, 然后进入配置prometheus 后, 关键设置url<br>​<img data-src="/img/ob/obagent3.jpg" ></p>
-<p>import 配置项<br>​<img data-src="/img/ob/obagent4.jpg" ></p>
-<p>ob 已经提前准备好了 15215和15216 , 一个是监控oceanbase, 一个是监控host的.<br>当加载好模版后, 在dashboard 就可以看到2个预设好的dashboard, </p>
-<p>​<img data-src="/img/ob/obagent1.jpg" ></p>
-<p>恭喜你, 已经完成配置oceanbase对接prometheus 和grafana</p>
-]]></content>
-      <categories>
-        <category>OceanBase</category>
-      </categories>
-      <tags>
-        <tag>OceanBase</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>paper推荐</title>
-    <url>/2020/paper/</url>
-    <content><![CDATA[<p>因为楼主有个不好的习惯， 论文看完后， 过了一段时间就忘了讲什么，另外英语并不是很好，英文论文常常理解抓不住重点，因为习惯做一个笔记， 方便以后进行会议， 也方便理解论文。<br>后期会不定时进行更新。有一些论文是之前留下的笔记，做了一些梳理。 </p>
-<p>有一些论文，还没有读完， 读完的，会有link</p>
-<h1 id="Database"><a href="#Database" class="headerlink" title="Database"></a>Database</h1><h2 id="System"><a href="#System" class="headerlink" title="System"></a>System</h2><ul>
-<li><a href="/knowledge/paper/libr.html">《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》</a></li>
-<li><a href="/knowledge/paper/redshift.html">《Amazon Redshift and the Case for Simpler Data Warehouses》</a></li>
-<li><a href="/knowledge/paper/snowflake.html">《The Snowflake Elastic Data Warehouse》</a></li>
-<li><a href="/knowledge/paper/f1.html">《F1 Query: Declarative Querying at Scale》</a></li>
-</ul>
-<h2 id="Optimizer"><a href="#Optimizer" class="headerlink" title="Optimizer"></a>Optimizer</h2><ul>
-<li>《Access Path Selection in a Relational Database Management System》 </li>
-<li><a href="/knowledge/paper/The_Volcano_Optimizer_Generator.html">《The Volcano Optimizer Generator: Extensibility and Efficient Search》</a></li>
-<li><a href="/knowledge/paper/Volcano.html">《Volcano-An Extensible and Parallel Query Evaluation System》</a></li>
-<li><a href="/knowledge/paper/cascade.html">《The Cascades Framework for Query Optimization》</a></li>
-<li><a href="/knowledge/paper/ms-sql-server-pdw.html">《Query Optimization in Microsoft SQL Server PDW》</a></li>
-<li>《Inside The SQL Server Query Optimizer》</li>
-<li>《Incorporating Partitioning and Parallel Plans into the SCOPE Optimizer》</li>
-<li>《Orca: A Modular Query Optimizer Architecture for Big Data》</li>
-<li>《How Good Are Query Optimizers, Really?》</li>
-<li>《An overview of query optimization in relational systems.》</li>
-<li>《Query optimization through the looking glass, and what we found running the Join Order Benchmark.》</li>
-<li>《Adaptive statistics in Oracle 12c.》</li>
-<li>《Exploiting Statistics on Query Expressions for Optimization》</li>
-</ul>
-<h1 id="BigData"><a href="#BigData" class="headerlink" title="BigData"></a>BigData</h1><ul>
-<li><a href="/knowledge/paper/dataflow.html">《The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing》</a></li>
-<li><a href="/knowledge/paper/heron.html">《Hero stream process stream》 </a></li>
-<li><a href="/knowledge/paper/millwheel.html">《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》</a></li>
-<li><a href="/knowledge/paper/screamscope.html">《StreamScope: Continuous Reliable Distributed Processing of Big Data Streams》</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>Database</category>
-        <category>BigData</category>
-      </categories>
-      <tags>
-        <tag>BigData</tag>
-        <tag>Database</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>OceanBase离线安装</title>
     <url>/2021/ob_offline_install/</url>
     <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>将8月份写的离线安装文档, share 出来. 后续可能会发一系列的使用文档. </p>
@@ -2664,6 +2561,109 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </categories>
       <tags>
         <tag>OceanBase</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>OceanBase监控对接Prometheus/Grafana</title>
+    <url>/2021/obagent/</url>
+    <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文讲介绍如何让OceanBase监控对接Prometheus和Grafana. </p>
+<p>​<img data-src="/img/ob/obagent1.jpg" ><br>​<span id="more"></span></p>
+<h1 id="安装流程"><a href="#安装流程" class="headerlink" title="安装流程"></a>安装流程</h1><p>大致过程, 分为3大步骤:</p>
+<ol>
+<li>安装oceanbase和obagent</li>
+<li>安装prometheus和grafana</li>
+<li>配置prometheus和grafana</li>
+</ol>
+<h2 id="安装OceanBase和Obagent"><a href="#安装OceanBase和Obagent" class="headerlink" title="安装OceanBase和Obagent"></a>安装OceanBase和Obagent</h2><p>如何安装OceanBase 可以参考上一篇文章<a href="http://ilongda.com/2021/ob_offline_install/">《OceanBase离线安装》</a>, 本节重点介绍如何安装obagent, 可以参考文档<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vZG9jcy9jb21tdW5pdHkvb2NlYW5iYXNlLWRhdGFiYXNlL1YzLjEuMS91c2Utb2JkLXRvLWRlcGxveS1vYmFnZW50">使用 OBD 部署 OBAgent<i class="fa fa-external-link-alt"></i></span></p>
+<p>OBAgent 是一个监控采集框架。OBAgent 支持推、拉两种数据采集模式，可以满足不同的应用场景。OBAgent 默认支持的插件包括主机数据采集、OceanBase 数据库指标的采集、监控数据标签处理和 Prometheus 协议的 HTTP 服务。要使 OBAgent 支持其他数据源的采集，或者自定义数据的处理流程，您只需要开发对应的插件即可。</p>
+<p>obagent 的配置, 在原来的配置基础上, 增加了obagent的配置, 详情可以参考<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveS9ibG9iL21hc3Rlci9leGFtcGxlL2F1dG9kZXBsb3kvZGlzdHJpYnV0ZWQtd2l0aC1vYnByb3h5LWFuZC1vYmFnZW50LWV4YW1wbGUueWFtbA==">distributed-with-obproxy-and-obagent-example<i class="fa fa-external-link-alt"></i></span>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obagent:</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  # The list of servers to be monitored. This list is consistent with the servers in oceanbase-ce. </span><br><span class="line">  servers:</span><br><span class="line">    - name: server1</span><br><span class="line">      # Please don&#x27;t use hostname, only IP is supported.</span><br><span class="line">      ip: 172.19.33.2</span><br><span class="line">    - name: server2</span><br><span class="line">      ip: 172.19.33.3</span><br><span class="line">    - name: server3</span><br><span class="line">      ip: 172.19.33.4</span><br><span class="line">  # Set dependent components for the component.</span><br><span class="line">  # When the associated configurations are not done, OBD will automatically get the these configurations from the dependent components.</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  global:</span><br><span class="line">    # The working directory for obagent. obagent is started under this directory. This is a required field.</span><br><span class="line">    home_path: /root/observer</span><br><span class="line">    skip_proxy_sys_private_check: true</span><br></pre></td></tr></table></figure>
+
+<p>特别说明:</p>
+<ol>
+<li>depends里面的 “oceanbase-ce” 的名字必须和配置文件集群的名字一致. </li>
+<li>servers里面的配置必须与在配置文件中”oceanbase-ce”一节中servers 配置一摸一样</li>
+<li>记住home_path, 后续需要用到这个路径.</li>
+</ol>
+<p>安装完成后, 可以执行“obd cluster display ” 看到obagent 已经启动了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obd cluster display obtest</span><br><span class="line">Get local repositories and plugins ok</span><br><span class="line">Open ssh connection ok</span><br><span class="line">Cluster status check ok</span><br><span class="line">Connect to observer ok</span><br><span class="line">Wait for observer init ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     observer                    |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| ip            | version | port | zone  | status |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| 172.30.62.210 | 3.1.1   | 2881 | zone1 | active |</span><br><span class="line">| 172.30.62.211 | 3.1.1   | 2881 | zone2 | active |</span><br><span class="line">| 172.30.62.212 | 3.1.1   | 2881 | zone3 | active |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line"></span><br><span class="line">Connect to obproxy ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     obproxy                     |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| ip            | port | prometheus_port | status |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| 172.30.62.213 | 2883 | 2884            | active |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">+---------------------------------------------------+</span><br><span class="line">|                      obagent                      |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| ip            | server_port | pprof_port | status |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| 172.30.62.210 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.211 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.212 | 8088        | 8089       | active |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="安装prometheus和grafana"><a href="#安装prometheus和grafana" class="headerlink" title="安装prometheus和grafana"></a>安装prometheus和grafana</h2><p>选择一台机器上安装prometheus 和grafana, 这台机器尽量不是observer 中的一台, 本例中, prometheus 和grafana 部署在obproxy机器上. </p>
+<ol>
+<li>从<span class="exturl" data-url="aHR0cHM6Ly9wcm9tZXRoZXVzLmlvL2Rvd25sb2FkLw==">https://prometheus.io/download/<i class="fa fa-external-link-alt"></i></span> 上把prometheus 和alertmanager 下载下来, 本章将不介绍 alertmanager 怎么使用. </li>
+<li>从<span class="exturl" data-url="aHR0cHM6Ly9ncmFmYW5hLmNvbS9ncmFmYW5hL2Rvd25sb2FkP3BnPWdldCZwbGNtdD1zZWxmbWFuYWdlZC1ib3gxLWN0YTE=">https://grafana.com/grafana/download?pg=get&amp;plcmt=selfmanaged-box1-cta1<i class="fa fa-external-link-alt"></i></span> 上下载grapha</li>
+<li>讲prometheus 和grafana 压缩包拷贝到obproxy 的机器上, </li>
+<li>解压prometheus 和grafana<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -xzf prometheus-2.31.0.linux-amd64.tar.gz</span><br><span class="line"># tar -xzf grafana-enterprise-8.2.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="配置prometheus和grafana"><a href="#配置prometheus和grafana" class="headerlink" title="配置prometheus和grafana"></a>配置prometheus和grafana</h2><h3 id="配置prometheus"><a href="#配置prometheus" class="headerlink" title="配置prometheus"></a>配置prometheus</h3><ol>
+<li>讲obagent上的prometheus 的配置文件给拷贝到prometheus 的安装目录中<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd prometheus-2.31.0.linux-amd64</span><br><span class="line"># mv prometheus.yml prometheus.yml.old</span><br><span class="line"># scp -r observer001:/root/observer/conf/prometheus_config/* . </span><br></pre></td></tr></table></figure>
+备注说明: </li>
+<li>observer001 为安装obagent的一台机器</li>
+<li>&#x2F;root&#x2F;observer 为之前在配置文件中, 配置obagent中配置的home_path路径</li>
+<li>从observer001 上会copy 过来几个文件, prometheus.yaml 和rules, rules 是存储拉取规则, prometheus 是配置prometheus的文件.</li>
+</ol>
+<p>启动prometheus</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./prometheus --config.file=./prometheus.yaml &gt;&gt; run.log 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>检查run.log 可以查看运行日志. 正常情况下, </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl http://localhost:9090/metrics</span><br></pre></td></tr></table></figure>
+<p>可以获得大量的数据. </p>
+<h3 id="配置grafana"><a href="#配置grafana" class="headerlink" title="配置grafana"></a>配置grafana</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd grafana-8.2.3/</span><br><span class="line"># nohup bin/grafana-server &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line"># ps -ef|grep grafana</span><br></pre></td></tr></table></figure>
+<p>可以坚持run.log 或ps -ef|grep grafana 均可以查看到grafana 正常工作. </p>
+<p>打开grafana 的页面,  第一次登录, 输入admin&#x2F;admin, 然后设置管理员密码, 然后增加data source<br>​<img data-src="/img/ob/obagent2.jpg" ><br>进入增加data source后, 选择prometheus, 然后进入配置prometheus 后, 关键设置url<br>​<img data-src="/img/ob/obagent3.jpg" ></p>
+<p>import 配置项<br>​<img data-src="/img/ob/obagent4.jpg" ></p>
+<p>ob 已经提前准备好了 15215和15216 , 一个是监控oceanbase, 一个是监控host的.<br>当加载好模版后, 在dashboard 就可以看到2个预设好的dashboard, </p>
+<p>​<img data-src="/img/ob/obagent1.jpg" ></p>
+<p>恭喜你, 已经完成配置oceanbase对接prometheus 和grafana</p>
+]]></content>
+      <categories>
+        <category>OceanBase</category>
+      </categories>
+      <tags>
+        <tag>OceanBase</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>paper推荐</title>
+    <url>/2020/paper/</url>
+    <content><![CDATA[<p>因为楼主有个不好的习惯， 论文看完后， 过了一段时间就忘了讲什么，另外英语并不是很好，英文论文常常理解抓不住重点，因为习惯做一个笔记， 方便以后进行会议， 也方便理解论文。<br>后期会不定时进行更新。有一些论文是之前留下的笔记，做了一些梳理。 </p>
+<p>有一些论文，还没有读完， 读完的，会有link</p>
+<h1 id="Database"><a href="#Database" class="headerlink" title="Database"></a>Database</h1><h2 id="System"><a href="#System" class="headerlink" title="System"></a>System</h2><ul>
+<li><a href="/knowledge/paper/libr.html">《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》</a></li>
+<li><a href="/knowledge/paper/redshift.html">《Amazon Redshift and the Case for Simpler Data Warehouses》</a></li>
+<li><a href="/knowledge/paper/snowflake.html">《The Snowflake Elastic Data Warehouse》</a></li>
+<li><a href="/knowledge/paper/f1.html">《F1 Query: Declarative Querying at Scale》</a></li>
+</ul>
+<h2 id="Optimizer"><a href="#Optimizer" class="headerlink" title="Optimizer"></a>Optimizer</h2><ul>
+<li>《Access Path Selection in a Relational Database Management System》 </li>
+<li><a href="/knowledge/paper/The_Volcano_Optimizer_Generator.html">《The Volcano Optimizer Generator: Extensibility and Efficient Search》</a></li>
+<li><a href="/knowledge/paper/Volcano.html">《Volcano-An Extensible and Parallel Query Evaluation System》</a></li>
+<li><a href="/knowledge/paper/cascade.html">《The Cascades Framework for Query Optimization》</a></li>
+<li><a href="/knowledge/paper/ms-sql-server-pdw.html">《Query Optimization in Microsoft SQL Server PDW》</a></li>
+<li>《Inside The SQL Server Query Optimizer》</li>
+<li>《Incorporating Partitioning and Parallel Plans into the SCOPE Optimizer》</li>
+<li>《Orca: A Modular Query Optimizer Architecture for Big Data》</li>
+<li>《How Good Are Query Optimizers, Really?》</li>
+<li>《An overview of query optimization in relational systems.》</li>
+<li>《Query optimization through the looking glass, and what we found running the Join Order Benchmark.》</li>
+<li>《Adaptive statistics in Oracle 12c.》</li>
+<li>《Exploiting Statistics on Query Expressions for Optimization》</li>
+</ul>
+<h1 id="BigData"><a href="#BigData" class="headerlink" title="BigData"></a>BigData</h1><ul>
+<li><a href="/knowledge/paper/dataflow.html">《The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing》</a></li>
+<li><a href="/knowledge/paper/heron.html">《Hero stream process stream》 </a></li>
+<li><a href="/knowledge/paper/millwheel.html">《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》</a></li>
+<li><a href="/knowledge/paper/screamscope.html">《StreamScope: Continuous Reliable Distributed Processing of Big Data Streams》</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>Database</category>
+        <category>BigData</category>
+      </categories>
+      <tags>
+        <tag>BigData</tag>
+        <tag>Database</tag>
       </tags>
   </entry>
   <entry>
