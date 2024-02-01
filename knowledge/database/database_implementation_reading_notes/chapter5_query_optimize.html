@@ -23,12 +23,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="第五章 查询编译器每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多    语法分析将sql 的string 转换为语法分析树， 树的节点必须  原子， 它是词法成分， 如果关键字select， 关系或属性的名字 语法类。 用一个&lt;&gt;表示语法类， 比如 表示select-from-where， 表示条件，常常where之后的表达式。  查询 ::&#x3D; SELECT">
+<meta name="description" content="《数据库实现》-- 第五章 查询编译器">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="《数据库实现》-- 第五章 查询编译器">
 <meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="第五章 查询编译器每个系统在具体执行上有一些细微的出入， 不过大致的操作差不多    语法分析将sql 的string 转换为语法分析树， 树的节点必须  原子， 它是词法成分， 如果关键字select， 关系或属性的名字 语法类。 用一个&lt;&gt;表示语法类， 比如 表示select-from-where， 表示条件，常常where之后的表达式。  查询 ::&#x3D; SELECT">
+<meta property="og:description" content="《数据库实现》-- 第五章 查询编译器">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490057713-bd65faa1-92a5-4ee8-b9f7-56d120181a8d.png#align=left&display=inline&height=506&name=image.png&originHeight=506&originWidth=747&size=267181&status=done&width=747">
@@ -80,9 +80,11 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119410046-85122155-119a-416a-9bb3-3b4c9cfb342a.png#align=left&display=inline&height=77&name=image.png&originHeight=77&originWidth=269&size=3422&status=done&width=269">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573119417457-0bcfb551-c874-429b-8a59-475780e49736.png#align=left&display=inline&height=73&name=image.png&originHeight=73&originWidth=312&size=4129&status=done&width=312">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573441593414-53a6e3a1-ab26-493c-972d-e1951e8c3e5a.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=324&size=10307&status=done&width=324">
-<meta property="article:published_time" content="2024-01-29T09:18:27.924Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.924Z">
+<meta property="article:published_time" content="2018-08-09T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:26:51.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572490236735-d7c44cb1-7e66-403f-99db-d4b6eb5e19d0.png#align=left&display=inline&height=189&name=image.png&originHeight=189&originWidth=661&size=20577&status=done&width=661">
 
@@ -91,10 +93,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","path":"knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","path":"knowledge/database/database_implementation_reading_notes/chapter5_query_optimize.html","title":"《数据库实现》-- 第五章 查询编译器"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>《数据库实现》-- 第五章 查询编译器 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -363,10 +365,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">《数据库实现》-- 第五章 查询编译器
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">《数据库实现》-- 第五章 查询编译器</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/database/">DATABASE</a></li>

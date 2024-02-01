@@ -23,12 +23,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="第六章， 故障恢复 概述故障恢复， 依赖很多组件一起协同完成，   日志管理器， 存储日志 事物管理器， 保障事物的一致性 恢复管理器， 备份和恢复的协调者    事物原语操作地址空间  物理磁盘块空间 缓冲区的内存地址 事物的局部地址空间  一种描述数据在地址空间移动的操作：  input（x），  将磁盘块含有数据库元素 x  load 到内存，  由缓冲区管理器触发 read（x）， 将数据">
+<meta name="description" content="《数据库实现》-- 第六章 故障恢复">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="《数据库实现》-- 第六章 故障恢复">
 <meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="第六章， 故障恢复 概述故障恢复， 依赖很多组件一起协同完成，   日志管理器， 存储日志 事物管理器， 保障事物的一致性 恢复管理器， 备份和恢复的协调者    事物原语操作地址空间  物理磁盘块空间 缓冲区的内存地址 事物的局部地址空间  一种描述数据在地址空间移动的操作：  input（x），  将磁盘块含有数据库元素 x  load 到内存，  由缓冲区管理器触发 read（x）， 将数据">
+<meta property="og:description" content="《数据库实现》-- 第六章 故障恢复">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573547126916-e03d892a-4638-4959-a778-21e0e653002b.png#align=left&display=inline&height=291&name=image.png&originHeight=291&originWidth=344&size=16798&status=done&width=344">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573562345712-9d430b0f-d224-43b3-8c0b-4b6c6d95363d.png#align=left&display=inline&height=46&name=image.png&originHeight=92&originWidth=260&size=2141&status=done&width=130">
@@ -38,9 +38,11 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573567479645-29768c9d-8f8a-4c01-a4eb-c6dfa704fc97.png#align=left&display=inline&height=215&name=image.png&originHeight=430&originWidth=928&size=41149&status=done&width=464">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573568291162-ac0be8bb-641d-4cdb-9ecf-8332f037aeec.png#align=left&display=inline&height=110&name=image.png&originHeight=220&originWidth=1392&size=34988&status=done&width=696">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574078993551-3c59f7d0-7a12-4b97-b133-e15c91a7811f.png#align=left&display=inline&height=218&name=image.png&originHeight=436&originWidth=852&size=42791&status=done&width=426">
-<meta property="article:published_time" content="2024-01-29T09:18:27.925Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.925Z">
+<meta property="article:published_time" content="2018-08-10T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:27:34.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1573547126916-e03d892a-4638-4959-a778-21e0e653002b.png#align=left&display=inline&height=291&name=image.png&originHeight=291&originWidth=344&size=16798&status=done&width=344">
 
@@ -49,10 +51,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","path":"knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","path":"knowledge/database/database_implementation_reading_notes/chapter6_recovering_and_log.html","title":"《数据库实现》-- 第六章 故障恢复"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>《数据库实现》-- 第六章 故障恢复 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -321,10 +323,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">《数据库实现》-- 第六章 故障恢复
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">《数据库实现》-- 第六章 故障恢复</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/database/">DATABASE</a></li>

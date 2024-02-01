@@ -304,43 +304,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="插曲"><a href="#插曲" class="headerlink" title="插曲"></a>插曲</h1><p>google millwheel 《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》， 论文应该2012年就推出来了， 以前总是快速扫一遍， 每次阅读都有一些不同的收获， 这次终于仔细拜读一下， 顺便将它翻译了一遍。</p>
-<h1 id="设计目标"><a href="#设计目标" class="headerlink" title="设计目标"></a>设计目标</h1><ul>
-<li>提供一种编程模型，可以满足复杂的计算逻辑而无需使用者是分布式计算专家<ul>
-<li>framework能处理任何一条边或一个节点发生故障</li>
-<li>可以保证数据处理仅被处理一次， 采用冥等的方式</li>
-<li>用一种合适的粒度进行checkpoint， 从而可以避免外部sender 缓冲数据的buffer在多个checkpoint 之间长时间等待</li>
-</ul>
-</li>
-<li>能够同时高效满足scalability和容错性</li>
-<li>按照论文描述， 可以支持多语言</li>
-</ul>
-<h1 id="个人总结："><a href="#个人总结：" class="headerlink" title="个人总结："></a>个人总结：</h1><p>这篇论文，大篇幅介绍的如何做容错和扩展性， 扩展性很多时候是依赖容错性来做系统伸缩。 整体而言，扩展性和容错性应该非常不错， 但成本比较高，因为对持久化层需求很大， 而且比较偏好mini-batch设计，非常倾向去做window的aggregate， 另外对这个系统时延，感觉会在秒级以上。微软scope streaming 感觉和这个系统有很大的相似性， 不过scope 比较强调确定性（determinacy）。<br>整个设计里面一些亮点：</p>
-<ul>
-<li>整个dag中，组件（compuation）之间是完全解耦， 因此，可以自由对一个computation做迁移，扩容，合并。不过，这些都依赖底层的exactly-once 框架。 </li>
-<li>系统数据传输都是通过rpc， 而非消息中间件， 并且组件（computation）之间可以自由订阅， 这一点超越了samza和scope。 </li>
-<li>数据结构是(key, bytes[], timestamp)， 这个数据结构在后来的dataflow中发生了变化<ul>
-<li>key 非常重要， 目前是对key 做group by， 相同的key保证在一个进程中串行执行， 并且每个用户自己写key-extractor 函数。 并且后续的所有操作／context，都是基于对应的key， 比如checkpoint，状态更新， 发送／更新 timer／low wwatermark。</li>
-<li>bytes[], 用户自己选择序列化和反序列化</li>
-<li>timestamp 完全由用户来确定，</li>
-</ul>
-</li>
-<li>exactly-once<ul>
-<li>当timer 来到时， 会做checkpoint， 这个checkpoint， 会在一个原子操作中， 把这次checkpoint的输入数据id 和输出数据 和状态更新， timer 全部更新到bigtable 中的一行， 如果有外部状态更新，用户需要自己保证冥等</li>
-<li>后台存储更新需要一个sequencer， 拥有了sequencer token后，才能做数据库更新操作， 保证一个key，永远只有一个single-writer。</li>
-<li>接收数据后，需要ack给发送方， 这样发送方可以做 input record id的清理工作。</li>
-<li>系统会对输入消息进行去重</li>
-</ul>
-</li>
-<li>low watermark<ul>
-<li>通过一个外部全局系统injector来做lower watermark， 会订阅injector 来获取lower watermark。 </li>
-<li>每个worker 从injector处获取输入源的low watermark，然后根据自己的工作状态，计算出自己的low watermark， 然后汇报给injector</li>
-</ul>
-</li>
-</ul>
+          <p>大数据之Google Millwheel 解析</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/millwheel/#more" rel="contents">
+              <a class="btn" href="/2016/millwheel/">
                 Read more &raquo;
               </a>
             </div>
@@ -432,25 +399,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>很早之前， 朋友就推荐过台湾， 称台湾绝对值得游玩一趟的， 于是，很早就把台湾通行证给办了。 而且， 台湾说的是国语， 英文不好的朋友，大可不必担心语言沟通问题。 另外， 台湾并没有网上说的，很歧视或排斥大陆游客， 我玩的时候，发现普遍讲话非常有礼貌，开口打扰了，闭口谢谢。另外，运气特别好的是，丈母娘她们报名的跟团游， 导游特别好， 没有强制购物，也没有强制玩景点时快速结束， 全程耐心等待游客， 而且经常扛箱子。 （可能因为第一导游是刚入行， 第二，行程是淡季，非十一或春节等）</p>
-<h1 id="总攻略"><a href="#总攻略" class="headerlink" title="总攻略"></a>总攻略</h1><p>去台湾玩，选择哪些地点，怎么玩。 这里说一些我个人的小技巧， </p>
-<ul>
-<li>第一种办法，上途牛／携程／去哪儿， 挑一个时间和自己差不多跟团游， 看他玩了哪些地方， 然后，记下来。</li>
-<li>另外一个好办法，强烈推荐手机安装“梦想旅行”， 每到一个城市，它会告诉这个城市有哪些非常不错的景点， 你挑选几个，然后，他会给你安排一下行程。</li>
-</ul>
-<p><b>台北有几个地方，值得推荐一下</b></p>
-<ul>
-<li>垦丁， 漂亮的地方特别多， 也有很多小孩玩的地方，比如 海洋生物馆， 尤其是夜宿海底隧道， 至少要提前半年预定， 绝对赞。</li>
-<li>花莲， 和垦丁类似</li>
-<li>日月潭， 类似千岛湖</li>
-<li>清境农场</li>
-<li>中台禅寺， 信佛的人，一定要去</li>
-<li>台北， 台北故宫博物馆，101， 夜市， 中正纪念堂。</li>
-</ul>
-<p>台北如果玩的时间非常长的话，超过2周， 可以推荐环岛游， 如果不足2周，建议半岛游， 如果半岛游的话， 就没有必要到在一个地方往返。<br>最早安排的行程是 台北（1天）–&gt; 清境（1天） –&gt; 日月潭（1天） –&gt; 高雄（1天） –&gt; 垦丁（3天） –&gt; 台北（2天）， 但最后觉得需要在台北买不少东西， 台北需要放到最后， 最后行程安排是 台北（1天） –&gt; 垦丁（3天） –&gt; 高雄（1天） –&gt; 日月潭（1天） –&gt; 清境（1天） –&gt; 台北（2天）。 这个时候才发现机票没有订好， 没有必要在订 杭州到 台北的往返， 完全可以 去程杭州 –&gt; 高雄，返程台北–&gt; 杭州， 这样就可以节省半天 从台北到高雄的时间，也节省了一张高铁票。</p>
+          <p>旅游攻略 -- 台湾环岛自由行攻略</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/traveltaiwan/#more" rel="contents">
+              <a class="btn" href="/2016/traveltaiwan/">
                 Read more &raquo;
               </a>
             </div>
@@ -542,10 +494,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="小谈-跳槽"><a href="#小谈-跳槽" class="headerlink" title="小谈 跳槽"></a>小谈 跳槽</h1><p>最近看一个帖子《阿里70w vs IBM 40W》， 帖子里面充斥着阿里和IBM 各种出差补助的争吵， 实在无语， 忍不住，利用周末的时间，总结自己的想法， 抛砖引玉一下， 欢迎各位朋友一起探讨。<br>跳槽其实是一个非常大的话题，可以从梦想，从性格，从经历，从专业等各个维度长篇大论一番，另外每个人都有自己的经历，从而都有自己的解读， 没有哪一种是完全正确的，也没有哪一种是完全错误的，而我只能说，将我的理解表达出来，如果你有更多的想法，不妨也探讨一下。</p>
+          <p>小谈跳槽</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/jump/#more" rel="contents">
+              <a class="btn" href="/2016/jump/">
                 Read more &raquo;
               </a>
             </div>
@@ -637,12 +589,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>因为阿里经常进行机房断网演练， 如果一套zk 只能部署在一个机房时， 当发生断网时， 这套zk是无法为其他机房提供zk 服务， 因此需要将单机房zk 升级到多机房zk， 但因为zookeeper是强同步方式， 所有的请求会在内部进行同步， 如果机器之间延迟比较大时， zookeeper 问题会非常多， 因此，这套解决方案前提条件是同城多机房, 并且时延比较小。</p>
-<p>这套解决方案也适合， zookeeper 升级扩容和zookeeper 机器替换</p>
-<p>在多机房方案中， 常常是3机房， 这个时候，推荐221 的分布模式， 客户端多的机房多部署一台zookeeper</p>
+          <p>运维实战 -- zookeeper 扩容</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/zookeeper-enlarge/#more" rel="contents">
+              <a class="btn" href="/2016/zookeeper-enlarge/">
                 Read more &raquo;
               </a>
             </div>
@@ -734,10 +684,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="scala-入门初探"><a href="#scala-入门初探" class="headerlink" title="scala 入门初探"></a>scala 入门初探</h1><p>本章介绍scala 入门基本知识</p>
+          <p>scala 学习 -- scala 入门</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/scala-start/#more" rel="contents">
+              <a class="btn" href="/2016/scala-start/">
                 Read more &raquo;
               </a>
             </div>
@@ -829,10 +779,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>scala 就是 将函数式编程和面向对象编程进行融合， 并加入静态类型语言的一种编程语言<br>是一种运行在jvm上的，可以无缝和java 结合的编程语言</p>
+          <p>scala 学习 -- scala 概述</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2016/scala-general/#more" rel="contents">
+              <a class="btn" href="/2016/scala-general/">
                 Read more &raquo;
               </a>
             </div>
@@ -915,10 +865,15 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>原博客下面文章， 因为godaddy 删除了个人空间，导致5年的博文，毁于一旦，真是吐血三升， 很多美好的回忆，已付之东流。</p>
-<p>强烈谴责godaddy, 没有任何责任感， 而且多次投诉godaddy无果。</p>
-<p>如果有条件，还是建议在阿里云上购买虚拟机，自建网站</p>
-
+          <p>垃圾 godaddy</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2016/hello-world/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -1009,13 +964,10 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>2015年6月1号， Twitter 对外宣讲了他们的Heron系统， 从ppt和论文中，看起来完爆storm。昨天，抽空把论文，仔细读了一遍， 把个人笔记和心得分享一下：</p>
-<h1 id="最后总结："><a href="#最后总结：" class="headerlink" title="最后总结："></a>最后总结：</h1><p>Heron更适合超大规模的机器， 超过1000台机器以上的集群。 在稳定性上有更优异的表现， 在性能上，表现一般甚至稍弱一些，在资源使用上，可以和其他编程框架共享集群资源，但topology级别会更浪费一些资源。</p>
-<p>而从应用的角度，应用更偏向于大应用，小应用的话，会多一点点资源浪费， 对于大应用，debug-ability的重要性逐渐提升。 另外对于task的设计， task会走向更重更复杂， 而JStorm的task是向更小更轻量去走。</p>
-<p>未来JStorm可以把自动降级策略引入， 通过实现阿里妈妈的ASM， debug-ability应该远超过storm， 不会逊色于Heron， 甚至更强。</p>
+          <p>大数据流计算之Twitter Heron 解析</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2015/heron/#more" rel="contents">
+              <a class="btn" href="/2015/heron/">
                 Read more &raquo;
               </a>
             </div>

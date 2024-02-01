@@ -23,12 +23,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="第三章 索引 索引结构基础索引的数据文件， 必须建立索引和记录之间的关联， 索引的指针指向的记录必须含索引对应的值。索引如果是稠密的， 则为每个记录设一个索引。当索引是稀疏的， 则需要主索引和辅助索引。   顺序文件按照主键进行排序生成的文件。 表中的元祖按照这个次序分布在多个数据块中。 稠密索引当索引文件索引块保持键的顺序和数据文件中排序一直。  这种方式， 因为索引是排序的，可以用二分查找来加">
+<meta name="description" content="《数据库实现》-- 第三章 索引">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="《数据库实现》-- 第三章 索引">
 <meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter3_index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="第三章 索引 索引结构基础索引的数据文件， 必须建立索引和记录之间的关联， 索引的指针指向的记录必须含索引对应的值。索引如果是稠密的， 则为每个记录设一个索引。当索引是稀疏的， 则需要主索引和辅助索引。   顺序文件按照主键进行排序生成的文件。 表中的元祖按照这个次序分布在多个数据块中。 稠密索引当索引文件索引块保持键的顺序和数据文件中排序一直。  这种方式， 因为索引是排序的，可以用二分查找来加">
+<meta property="og:description" content="《数据库实现》-- 第三章 索引">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341287114-4df4c52a-23b9-4a38-9ef7-44d78f71d1ee.png#align=left&display=inline&height=297&name=image.png&originHeight=594&originWidth=788&size=32896&status=done&width=394">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341928867-ba844051-9591-4318-ae08-5f646f5890da.png#align=left&display=inline&height=280&name=image.png&originHeight=560&originWidth=520&size=55254&status=done&width=260">
@@ -55,9 +55,11 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488682854-c8442fe9-3a9d-43a6-8262-1539903aa333.png#align=left&display=inline&height=167&name=image.png&originHeight=167&originWidth=780&size=36354&status=done&width=780">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488693178-abaa6732-642a-4b96-97d1-415e62e2b7a4.png#align=left&display=inline&height=124&name=image.png&originHeight=124&originWidth=191&size=4356&status=done&width=191">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488807594-9a71c540-5ab8-4701-a24a-977e033119bc.png#align=left&display=inline&height=155&name=image.png&originHeight=155&originWidth=798&size=30348&status=done&width=798">
-<meta property="article:published_time" content="2024-01-29T09:18:27.923Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.923Z">
+<meta property="article:published_time" content="2018-08-07T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:26:10.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341287114-4df4c52a-23b9-4a38-9ef7-44d78f71d1ee.png#align=left&display=inline&height=297&name=image.png&originHeight=594&originWidth=788&size=32896&status=done&width=394">
 
@@ -66,10 +68,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter3_index.html","path":"knowledge/database/database_implementation_reading_notes/chapter3_index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter3_index.html","path":"knowledge/database/database_implementation_reading_notes/chapter3_index.html","title":"《数据库实现》-- 第三章 索引"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>《数据库实现》-- 第三章 索引 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -338,10 +340,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">《数据库实现》-- 第三章 索引
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">《数据库实现》-- 第三章 索引</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/database/">DATABASE</a></li>

@@ -23,12 +23,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="内存分配器 MySQL 内存分配器mysql 用过2钟内存分配器， ptmalloc&#x2F;jemalloc， 但尝试过非常多的版本， 目前来看， jemalloc 5.2.1 对内存更加友好， 不容易内存泄漏。 我们进行内存压力测试： 测试环境PolarDB 8.0, buffer pool 2Gptmalloc 2.17(glibc 2.17)tcmalloc 2.7jemalloc 5.">
+<meta name="description" content="MySQL 源码解读 -- 内存分配器">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="MySQL 源码解读 -- 内存分配器">
 <meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="内存分配器 MySQL 内存分配器mysql 用过2钟内存分配器， ptmalloc&#x2F;jemalloc， 但尝试过非常多的版本， 目前来看， jemalloc 5.2.1 对内存更加友好， 不容易内存泄漏。 我们进行内存压力测试： 测试环境PolarDB 8.0, buffer pool 2Gptmalloc 2.17(glibc 2.17)tcmalloc 2.7jemalloc 5.">
+<meta property="og:description" content="MySQL 源码解读 -- 内存分配器">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665473046-5448830f-1093-47da-bed4-f1188d116346.png#align=left&display=inline&height=190&name=image.png&originHeight=190&originWidth=459&size=18302&status=done&width=459">
@@ -49,9 +49,11 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773340-a19544d0-dde6-4b76-8407-46544edc453b.jpeg#align=left&display=inline&height=506&originHeight=506&originWidth=555&size=0&status=done&width=555">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773148-66459623-f15b-4314-8834-d710ef7b9b36.jpeg#align=left&display=inline&height=525&originHeight=525&originWidth=704&size=0&status=done&width=704">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773338-fb25a731-a3c6-46ae-a996-f74dca690213.jpeg#align=left&display=inline&height=370&originHeight=370&originWidth=561&size=0&status=done&width=561">
-<meta property="article:published_time" content="2024-01-29T09:18:27.939Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.939Z">
+<meta property="article:published_time" content="2019-06-20T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:47:53.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MySQL 源码解读">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335">
 
@@ -60,10 +62,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html","path":"knowledge/mysql/source_code_reading/memory/allocator.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html","path":"knowledge/mysql/source_code_reading/memory/allocator.html","title":"MySQL 源码解读 -- 内存分配器"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>MySQL 源码解读 -- 内存分配器 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -336,10 +338,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">MySQL 源码解读 -- 内存分配器
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">MySQL 源码解读 -- 内存分配器</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>

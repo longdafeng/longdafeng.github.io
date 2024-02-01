@@ -23,12 +23,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="第七章， 并发控制调度器保证并发执行事务能保持一致性， 当调度器接受到事务请求时，并不是立即执行，而是稍等一下， 有的时候是因为缓冲区的缘故， 有的时候是因为lock的缘故， 甚至有的时候会中止提交的请求。 调度器关注3样元素， 锁， 时间戳和有效性确认。   串行调度和可串行化调度 串行调度调度的粒度是完整执行一个事务， 这个事务内包含大量动作， 事务和事务之间是串行化。 串行化调度可保持数据库">
+<meta name="description" content="《数据库实现》-- 第七章 并发控制">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="《数据库实现》-- 第七章 并发控制">
 <meta property="og:url" content="http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter7_concurrency.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="第七章， 并发控制调度器保证并发执行事务能保持一致性， 当调度器接受到事务请求时，并不是立即执行，而是稍等一下， 有的时候是因为缓冲区的缘故， 有的时候是因为lock的缘故， 甚至有的时候会中止提交的请求。 调度器关注3样元素， 锁， 时间戳和有效性确认。   串行调度和可串行化调度 串行调度调度的粒度是完整执行一个事务， 这个事务内包含大量动作， 事务和事务之间是串行化。 串行化调度可保持数据库">
+<meta property="og:description" content="《数据库实现》-- 第七章 并发控制">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574233140606-3c6ae6cc-5ce3-4e56-b8fd-597aabb83d35.png#align=left&display=inline&height=32&margin=%5Bobject%20Object%5D&name=image.png&originHeight=32&originWidth=514&size=4287&status=done&style=none&width=514">
@@ -47,9 +47,11 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574389183359-a5974879-ca15-40a2-b37d-a5213678c1b5.png#align=left&display=inline&height=150&margin=%5Bobject%20Object%5D&name=image.png&originHeight=300&originWidth=532&size=17467&status=done&style=none&width=266">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574389787062-6e4d7be7-9384-46b9-9a25-f38132932ebc.png#align=left&display=inline&height=493&margin=%5Bobject%20Object%5D&name=image.png&originHeight=986&originWidth=1428&size=130834&status=done&style=none&width=714">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574391962115-8a9fb9af-6f01-45e4-ad06-04265771ecd0.png#align=left&display=inline&height=378&margin=%5Bobject%20Object%5D&name=image.png&originHeight=756&originWidth=1208&size=64554&status=done&style=none&width=604">
-<meta property="article:published_time" content="2024-01-29T09:18:27.926Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.926Z">
+<meta property="article:published_time" content="2018-08-11T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:28:02.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258">
 
@@ -58,10 +60,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter7_concurrency.html","path":"knowledge/database/database_implementation_reading_notes/chapter7_concurrency.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/database/database_implementation_reading_notes/chapter7_concurrency.html","path":"knowledge/database/database_implementation_reading_notes/chapter7_concurrency.html","title":"《数据库实现》-- 第七章 并发控制"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>《数据库实现》-- 第七章 并发控制 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -330,10 +332,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">《数据库实现》-- 第七章 并发控制
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">《数据库实现》-- 第七章 并发控制</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/database/">DATABASE</a></li>

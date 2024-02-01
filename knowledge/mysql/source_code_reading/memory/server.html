@@ -23,21 +23,23 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="server 层内存管理 数据结构 1234struct Block &#123;    Block *prev&#123;nullptr&#125;; &#x2F;** Previous block; used for freeing. *&#x2F;  &#125;;Block 是MEM_ROOT的子类 Block 的prev 指的都是历史Block, 已经分配完内存的Blockm_max_capacity 为0">
+<meta name="description" content="MySQL 源码解读 -- server层内存管理">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="MySQL 源码解读 -- server层内存管理">
 <meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/memory/server.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="server 层内存管理 数据结构 1234struct Block &#123;    Block *prev&#123;nullptr&#125;; &#x2F;** Previous block; used for freeing. *&#x2F;  &#125;;Block 是MEM_ROOT的子类 Block 的prev 指的都是历史Block, 已经分配完内存的Blockm_max_capacity 为0">
+<meta property="og:description" content="MySQL 源码解读 -- server层内存管理">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567562806268-bee91937-1c91-4c8d-a64e-18f9cba15a69.png#align=left&display=inline&height=257&name=image.png&originHeight=257&originWidth=749&size=27141&status=done&width=749">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567585176100-273cb3d8-23a7-4954-844c-24f77c9f9c52.png#align=left&display=inline&height=163&name=image.png&originHeight=163&originWidth=398&size=13932&status=done&width=398">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567697847668-9a631eb4-ab63-4526-8af5-31669f35d723.png#align=left&display=inline&height=289&name=image.png&originHeight=578&originWidth=334&size=26586&status=done&width=167">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/__flowchart/e4684dfc2293defb6b49506e3ce412c6.svg#lake_card_v2=eyJjb2RlIjoic3Q9PnN0YXJ0OiDlvIDlp4tcbmU9PmVuZDog57uT5p2fXG5cbmN1cnJlbnRJc0Vub3VnaD0-Y29uZGl0aW9uOiDlvZPliY3lhoXlrZjotrPlpJ8_XG5hc3NpZ25NZW09Pm9wZXJhdGlvbjog5YiG6YWN5YaF5a2YXG5hcHBseUJpZ01lbT0-Y29uZGl0aW9uOiDnlLPor7flhoXlrZjotoXov4dibG9ja3NpemU_XG5hbGxvY0Jsb2NrU2l6ZU1lbT0-b3BlcmF0aW9uOiDnlLPor7fmjIflrppibG9ja3NpemUg5YaF5a2YXG5hbGxvY0JpZ01lbT0-b3BlcmF0aW9uOiDnlLPor7for7fmsYLlpKflsI_lhoXlrZhcbmZpcnN0QmxvY2s9PmNvbmRpdGlvbjog56ys5LiA5qyh5YiG6YWNP1xuaW5zZXJ0QmxvY2tDaGFpbj0-b3BlcmF0aW9uOiDmj5LlhaXliLDnjrDmnIlibG9jayBjaGFpblxuaW5zZXJ0Q3VycmVudEJsb2NrQ2hhaW49Pm9wZXJhdGlvbjog6K6-572u5b2T5YmNYmxvY2tcblxuc3QtPmN1cnJlbnRJc0Vub3VnaFxuY3VycmVudElzRW5vdWdoKHllcywgcmlnaHQpLT5hc3NpZ25NZW0tPmVcbmN1cnJlbnRJc0Vub3VnaChubywgZG93biktPmFwcGx5QmlnTWVtXG5cbmFwcGx5QmlnTWVtKG5vLCByaWdodCktPmFsbG9jQmxvY2tTaXplTWVtLT5pbnNlcnRDdXJyZW50QmxvY2tDaGFpbi0-YXNzaWduTWVtLT5lXG5hcHBseUJpZ01lbSh5ZXMsIGRvd24pLT5hbGxvY0JpZ01lbS0-Zmlyc3RCbG9ja1xuXG5maXJzdEJsb2NrKHllcyktPmluc2VydEN1cnJlbnRCbG9ja0NoYWluLT5hc3NpZ25NZW0tPmVcbmZpcnN0QmxvY2sobm8pLT5pbnNlcnRCbG9ja0NoYWluLT5hc3NpZ25NZW0tPmVcblxuXG5cblxuXG5cblxuXG5cbiIsInR5cGUiOiJmbG93Y2hhcnQiLCJpZCI6IjZzajR5IiwidXJsIjoiaHR0cHM6Ly9jZG4ubmxhcmsuY29tL3l1cXVlL19fZmxvd2NoYXJ0L2U0Njg0ZGZjMjI5M2RlZmI2YjQ5NTA2ZTNjZTQxMmM2LnN2ZyIsImNhcmQiOiJkaWFncmFtIn0=">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/__flowchart/2073bb6192c9216e25ce62e2b2851f29.svg#lake_card_v2=eyJjb2RlIjoicz0-c3RhcnQ6IOeUs-ivt-WGheWtmFxuZj0-ZW5kOiDlpLHotKVcbnI9PmVuZDog6L-U5ZueXG5cbmV4Y2VlZE1heENhcGNpdHk9PmNvbmRpdGlvbjog6LaF6L-H6ZmQ6aKd77yfXG5hbGxvY01lbT0-Y29uZGl0aW9uOiDmiJDlip_nlLPor7flhoXlrZjvvJ9cbmFsbG9jTWVtU3VjY2VlZD0-b3BlcmF0aW9uOiDmiJDlip9cblxucy0-ZXhjZWVkTWF4Q2FwY2l0eVxuZXhjZWVkTWF4Q2FwY2l0eSh5ZXMsIHJpZ2h0KS0-ZlxuZXhjZWVkTWF4Q2FwY2l0eShubywgZG93biktPmFsbG9jTWVtXG5hbGxvY01lbSh5ZXMpLT5yXG5hbGxvY01lbShubyktPmZcbiIsInR5cGUiOiJmbG93Y2hhcnQiLCJpZCI6InZsMXljIiwidXJsIjoiaHR0cHM6Ly9jZG4ubmxhcmsuY29tL3l1cXVlL19fZmxvd2NoYXJ0LzIwNzNiYjYxOTJjOTIxNmUyNWNlNjJlMmIyODUxZjI5LnN2ZyIsImNhcmQiOiJkaWFncmFtIn0=">
-<meta property="article:published_time" content="2024-01-29T09:18:27.942Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.942Z">
+<meta property="article:published_time" content="2019-06-24T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:50:40.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MySQL 源码解读">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567562806268-bee91937-1c91-4c8d-a64e-18f9cba15a69.png#align=left&display=inline&height=257&name=image.png&originHeight=257&originWidth=749&size=27141&status=done&width=749">
 
@@ -46,10 +48,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/server.html","path":"knowledge/mysql/source_code_reading/memory/server.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/server.html","path":"knowledge/mysql/source_code_reading/memory/server.html","title":"MySQL 源码解读 -- server层内存管理"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>MySQL 源码解读 -- server层内存管理 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -166,7 +168,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#server-%E5%B1%82%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">server 层内存管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.0.1.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%94%B3%E8%AF%B7%E6%B5%81%E7%A8%8B"><span class="nav-number">1.0.2.</span> <span class="nav-text">内存申请流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Claim"><span class="nav-number">1.0.3.</span> <span class="nav-text">Claim</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Clear"><span class="nav-number">1.0.4.</span> <span class="nav-text">Clear</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Block-%E5%86%85%E9%83%A8"><span class="nav-number">1.0.5.</span> <span class="nav-text">Block 内部</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">1.1.</span> <span class="nav-text"></span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#server%E5%B1%82%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">server层内存管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.0.1.</span> <span class="nav-text">数据结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%94%B3%E8%AF%B7%E6%B5%81%E7%A8%8B"><span class="nav-number">1.0.2.</span> <span class="nav-text">内存申请流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Claim"><span class="nav-number">1.0.3.</span> <span class="nav-text">Claim</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Clear"><span class="nav-number">1.0.4.</span> <span class="nav-text">Clear</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Block-%E5%86%85%E9%83%A8"><span class="nav-number">1.0.5.</span> <span class="nav-text">Block 内部</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">1.1.</span> <span class="nav-text"></span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -322,10 +324,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">MySQL 源码解读 -- server层内存管理
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">MySQL 源码解读 -- server层内存管理</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>
@@ -341,7 +344,7 @@
       
       
       <div class="post-body">
-          <h1 id="server-层内存管理"><a href="#server-层内存管理" class="headerlink" title="server 层内存管理"></a>server 层内存管理</h1><p><a name="gz15o"></a></p>
+          <h1 id="server层内存管理"><a href="#server层内存管理" class="headerlink" title="server层内存管理"></a>server层内存管理</h1><p><a name="gz15o"></a></p>
 <h3 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h3><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567562806268-bee91937-1c91-4c8d-a64e-18f9cba15a69.png#align=left&display=inline&height=257&name=image.png&originHeight=257&originWidth=749&size=27141&status=done&width=749" alt="image.png"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct Block &#123;</span><br><span class="line">    Block *prev&#123;nullptr&#125;; /** Previous block; used for freeing. */</span><br><span class="line">  &#125;;</span><br><span class="line">Block 是MEM_ROOT的子类</span><br></pre></td></tr></table></figure>
 <p>Block 的prev 指的都是历史Block, 已经分配完内存的Block<br>m_max_capacity 为0，表示不限制<br>m_allocated_size表示的使用的block 合起来的size</p>

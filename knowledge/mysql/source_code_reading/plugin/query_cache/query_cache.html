@@ -23,17 +23,19 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="query result cache 层级结构query_cachequery_cache 类是直接给mysql 内核使用， 外界使用接口namespace  qc 里面提供的接口qc::send_result_to_clientsql_cachesql_cache 是一个plugin， 对外暴露的接口是Query_cache_service_t sql_cache_service， 将这个sql">
+<meta name="description" content="MySQL 源码解读 -- Query Result Cache">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Longda&#39;s Interesting World">
+<meta property="og:title" content="MySQL 源码解读 -- Query Result Cache">
 <meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/plugin/query_cache/query_cache.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="query result cache 层级结构query_cachequery_cache 类是直接给mysql 内核使用， 外界使用接口namespace  qc 里面提供的接口qc::send_result_to_clientsql_cachesql_cache 是一个plugin， 对外暴露的接口是Query_cache_service_t sql_cache_service， 将这个sql">
+<meta property="og:description" content="MySQL 源码解读 -- Query Result Cache">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1581577537536-6aeaadbf-0a3f-4b78-9339-74ff47b58243.png#align=left&display=inline&height=530&name=image.png&originHeight=1060&originWidth=1544&size=284581&status=done&style=none&width=772">
-<meta property="article:published_time" content="2024-01-29T09:18:27.947Z">
-<meta property="article:modified_time" content="2024-01-29T09:18:27.947Z">
+<meta property="article:published_time" content="2019-06-25T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-01T11:52:44.000Z">
 <meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MySQL 源码解读">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1581577537536-6aeaadbf-0a3f-4b78-9339-74ff47b58243.png#align=left&display=inline&height=530&name=image.png&originHeight=1060&originWidth=1544&size=284581&status=done&style=none&width=772">
 
@@ -42,10 +44,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/plugin/query_cache/query_cache.html","path":"knowledge/mysql/source_code_reading/plugin/query_cache/query_cache.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/plugin/query_cache/query_cache.html","path":"knowledge/mysql/source_code_reading/plugin/query_cache/query_cache.html","title":"MySQL 源码解读 -- Query Result Cache"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title> | Longda's Interesting World
+<title>MySQL 源码解读 -- Query Result Cache | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
@@ -162,7 +164,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#query-result-cache"><span class="nav-number">1.</span> <span class="nav-text">query result cache</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B1%82%E7%BA%A7%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">层级结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#sql-cache-%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.</span> <span class="nav-text">sql cache 基础类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#query-cache-service"><span class="nav-number">4.</span> <span class="nav-text">query cache service</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#query-cache-%E5%AE%9E%E7%8E%B0%E7%B1%BB"><span class="nav-number">5.</span> <span class="nav-text">query cache 实现类</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%94%81%E7%B3%BB%E7%BB%9F"><span class="nav-number">6.</span> <span class="nav-text">锁系统</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#some-point"><span class="nav-number">7.</span> <span class="nav-text">some point</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Query-Result-Cache"><span class="nav-number">1.</span> <span class="nav-text">Query Result Cache</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B1%82%E7%BA%A7%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">层级结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#sql-cache-%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.</span> <span class="nav-text">sql cache 基础类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#query-cache-service"><span class="nav-number">4.</span> <span class="nav-text">query cache service</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#query-cache-%E5%AE%9E%E7%8E%B0%E7%B1%BB"><span class="nav-number">5.</span> <span class="nav-text">query cache 实现类</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%94%81%E7%B3%BB%E7%BB%9F"><span class="nav-number">6.</span> <span class="nav-text">锁系统</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#some-point"><span class="nav-number">7.</span> <span class="nav-text">some point</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -318,10 +320,11 @@
     
     <div class="post-block" lang="zh_CN"><header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">
+<h1 class="post-title" itemprop="name headline">MySQL 源码解读 -- Query Result Cache
 </h1>
 
 <div class="post-meta-container">
+    <div class="post-description">MySQL 源码解读 -- Query Result Cache</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">KNOWLEDGE</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>
@@ -338,7 +341,7 @@
       
       
       <div class="post-body">
-          <h1 id="query-result-cache"><a href="#query-result-cache" class="headerlink" title="query result cache"></a>query result cache</h1><p><a name="XqDhz"></a></p>
+          <h1 id="Query-Result-Cache"><a href="#Query-Result-Cache" class="headerlink" title="Query Result Cache"></a>Query Result Cache</h1><p><a name="XqDhz"></a></p>
 <h1 id="层级结构"><a href="#层级结构" class="headerlink" title="层级结构"></a>层级结构</h1><p>query_cache<br>query_cache 类是直接给mysql 内核使用， 外界使用接口namespace  qc 里面提供的接口<br>qc::send_result_to_client<br><br><br><br><br>sql_cache<br>sql_cache 是一个plugin， 对外暴露的接口是Query_cache_service_t sql_cache_service， 将这个sql_cache_service 注册到query_cache 当中 （在函数sql_cache_init），在sql_cache 插件内部， 有个全局类global_query_cache 它是Query_cache<br><a name="EotCq"></a></p>
 <h1 id="sql-cache-基础类型"><a href="#sql-cache-基础类型" class="headerlink" title="sql cache 基础类型"></a>sql cache 基础类型</h1><p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1581577537536-6aeaadbf-0a3f-4b78-9339-74ff47b58243.png#align=left&display=inline&height=530&name=image.png&originHeight=1060&originWidth=1544&size=284581&status=done&style=none&width=772" alt="image.png"></p>
 <p><a name="Gq46v"></a></p>
