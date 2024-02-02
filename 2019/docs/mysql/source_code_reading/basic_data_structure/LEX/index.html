@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="MySQL 源码解读 -- 基础结构之Lex">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 源码解读 -- 基础结构之Lex">
+<meta property="og:url" content="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="MySQL 源码解读 -- 基础结构之Lex">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-06-14T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:19:08.090Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MySQL 源码解读">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/","path":"2019/docs/mysql/source_code_reading/basic_data_structure/LEX/","title":"MySQL 源码解读 -- 基础结构之Lex"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MySQL 源码解读 -- 基础结构之Lex | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#SELECT-LEX-SELECT-LEX-UNIT-%E5%85%B3%E7%B3%BB"><span class="nav-number">1.</span> <span class="nav-text">SELECT_LEX &amp; SELECT_LEX_UNIT 关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lex-select-lex-select-lex-unit-%E5%85%B3%E7%B3%BB"><span class="nav-number">2.</span> <span class="nav-text">lex &amp; select_lex &amp; select_lex_unit 关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LEX"><span class="nav-number">3.</span> <span class="nav-text">LEX</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SELECT-LEX"><span class="nav-number">4.</span> <span class="nav-text">SELECT_LEX</span></a></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#SELECT-LEX-UNIT"><span class="nav-number"></span> <span class="nav-text">SELECT_LEX_UNIT</span></a></li></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL 源码解读 -- 基础结构之Lex
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-06-14 19:42:57" itemprop="dateCreated datePublished" datetime="2019-06-14T19:42:57+08:00">2019-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">MySQL 源码解读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">MySQL 源码解读 -- 基础结构之Lex</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="SELECT-LEX-SELECT-LEX-UNIT-关系"><a href="#SELECT-LEX-SELECT-LEX-UNIT-关系" class="headerlink" title="SELECT_LEX &amp; SELECT_LEX_UNIT 关系"></a>SELECT_LEX &amp; SELECT_LEX_UNIT 关系</h2><p>select_lex_unit 表示一个expression， 在union的情况下可以包含多个select_lex<br>但在subquery的情况下， 一个新的subquery 会引入一个新的SELECT_LEX_UNIT</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM t1;</span><br><span class="line"></span><br><span class="line">  unit</span><br><span class="line">   |</span><br><span class="line">   V</span><br><span class="line"> select t1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"> SELECT * FROM t1 UNION SELECT * FROM t2;</span><br><span class="line">                unit</span><br><span class="line">                 |</span><br><span class="line">                 V         next</span><br><span class="line">               select t1 --------&gt; select t2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">SELECT * FROM t1 where c1 in (select * from t11 union select * from t12);</span><br><span class="line">                </span><br><span class="line">                unit</span><br><span class="line">                 |</span><br><span class="line">                 V</span><br><span class="line">              select t1</span><br><span class="line">                 |</span><br><span class="line">                 V</span><br><span class="line">               unit1.1</span><br><span class="line">                 |</span><br><span class="line">                 V         next</span><br><span class="line">              select t11 ---------&gt; select t12</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">SELECT * FROM t1 WHERE c1 in (SELECT * FROM t11) and c2 in (SELECT * FROM t12);</span><br><span class="line"></span><br><span class="line">               unit1</span><br><span class="line">                |</span><br><span class="line">                V</span><br><span class="line">              select t1</span><br><span class="line">                |</span><br><span class="line">                V         next</span><br><span class="line">                unit1.1  ------&gt; unit1.2</span><br><span class="line">                  |                |</span><br><span class="line">                  V                V</span><br><span class="line">               select t11       select t12</span><br><span class="line"></span><br><span class="line">At last, i give a sample in sql_lex.h.        </span><br><span class="line"></span><br><span class="line">   select *</span><br><span class="line">     from table1</span><br><span class="line">     where table1.field IN (select * from table1_1_1 union</span><br><span class="line">                            select * from table1_1_2)</span><br><span class="line">     union</span><br><span class="line">   select *</span><br><span class="line">     from table2</span><br><span class="line">     where table2.field=(select (select f1 from table2_1_1_1_1</span><br><span class="line">                                   where table2_1_1_1_1.f2=table2_1_1.f3)</span><br><span class="line">                           from table2_1_1</span><br><span class="line">                           where table2_1_1.f1=table2.f2)</span><br><span class="line">     union</span><br><span class="line">   select * from table3;</span><br><span class="line"></span><br><span class="line">                  unit</span><br><span class="line">                   |</span><br><span class="line">                   V</span><br><span class="line">                select table1------------&gt; select table2 ------------&gt;select table3</span><br><span class="line">                   |                             |</span><br><span class="line">                   V                             |__________</span><br><span class="line">                 unit1                                     |</span><br><span class="line">                   |                                       |</span><br><span class="line">                   V                                       |</span><br><span class="line">            select table 1_1_1---&gt;select table 1_1_2       V</span><br><span class="line">                                                          unit2</span><br><span class="line">                                                           |</span><br><span class="line">                                                           V</span><br><span class="line">                                                  select table2_1_1</span><br><span class="line">                                                           |</span><br><span class="line">                                                           V</span><br><span class="line">                                                         unit2.1</span><br><span class="line">                                                           |</span><br><span class="line">                                                           V</span><br><span class="line">                                                   select table2_1_1_1_1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="lex-select-lex-select-lex-unit-关系"><a href="#lex-select-lex-select-lex-unit-关系" class="headerlink" title="lex &amp; select_lex &amp; select_lex_unit 关系"></a>lex &amp; select_lex &amp; select_lex_unit 关系</h2><p>select_lex-&gt;parent_lex &#x3D; lex;<br>lex-&gt;select_lex &#x3D; select_lex;<br>lex-&gt;unit &#x3D; select_lex-&gt;master;<br>lex-&gt;m_current_select &#x3D; lex-&gt;select_lex;</p>
+<p>SELECT_LEX_UNIT-&gt;master &#x3D; outer_SELECT_LEX;<br>SELECT_LEX_UNIT-&gt;slave &#x3D; select_lex;<br>SELECT_LEX_UNIT-&gt;next &#x3D; out_SELECT_LEX-&gt;slave;  &#x2F;&#x2F; 就是将SELECT_LEX_UNIT 组成一个链表<br>SELECT_LEX_UNIT-&gt;prev &#x3D; &amp;out_SELECT_LEX-&gt;slave;</p>
+<p>SELECT_LEX-&gt;master &#x3D; out_SLECT_LEX_UNIT;<br>out_SLECT_LEX_UNIT-&gt;slave &#x3D; SELECT_LEX;<br>SELECT_LEX-&gt;next &#x3D; out_SELECT_LEX_UNIT-&gt;next;<br>SELECT_LEX-&gt;prev &#x3D; &amp;out_SELECT_LEX_UNIT-&gt;slave;<br>SELECT_LEX-&gt;link_next &#x3D; LEX-&gt;all_selects_list;      &#x2F;&#x2F;在lex 下全部串起来<br>SELECT_LEX-&gt;link_prev &#x3D; &amp;LEX-&gt;all_slects_list;<br>LEX-&gt;all_slects_list &#x3D; 指向第一个SELECT_LEX</p>
+<p>SELECT_LEX-&gt;prev_query_block &#x3D; LEX-&gt;all_query_blocks_last;  &#x2F;&#x2F;他们指向第一个SELECT_LEX<br>LEX-&gt;all_query_blocks_last &#x3D; SELECT_LEX-&gt;next_query_block;</p>
+<p>class SELECT_LEX_UNIT {<br>  &#x2F;**<br>    Intrusive double-linked list of all query expressions<br>    immediately contained within the same query block.<br>  *&#x2F;<br>  SELECT_LEX_UNIT *next;<br>  SELECT_LEX_UNIT **prev;</p>
+<p>  &#x2F;**<br>    The query block wherein this query expression is contained,<br>    NULL if the query block is the outer-most one.<br>  *&#x2F;<br>  SELECT_LEX *master;<br>  &#x2F;&#x2F;&#x2F; The first query block in this query expression.<br>  SELECT_LEX *slave;<br>  &#x2F;&#x2F;&#x2F; @return the query block this query expression belongs to as subquery<br>  SELECT_LEX *outer_select() const { return master; }<br>  &#x2F;&#x2F;&#x2F; @return the first query block inside this query expression<br>  SELECT_LEX *first_select() const { return slave; }</p>
+<p>  &#x2F;**<br>    Helper query block for query expression with UNION or multi-level<br>    ORDER BY&#x2F;LIMIT<br>  <em>&#x2F;<br>  SELECT_LEX <em>fake_select_lex;<br>  &#x2F;</em></em><br>    SELECT_LEX that stores LIMIT and OFFSET for UNION ALL when no<br>    fake_select_lex is used.<br>  <em>&#x2F;<br>  SELECT_LEX <em>saved_fake_select_lex;<br>  &#x2F;</em></em><br>     Points to last query block which has UNION DISTINCT on its left.<br>     In a list of UNIONed blocks, UNION is left-associative; so UNION DISTINCT<br>     eliminates duplicates in all blocks up to the first one on its right<br>     included. Which is why we only need to remember that query block.<br>  *&#x2F;<br>  SELECT_LEX *union_distinct;</p>
+<p>  &#x2F;**<br>     First query block (in this UNION) which references the CTE.<br>     NULL if not the query expression of a recursive CTE.<br>  *&#x2F;<br>  SELECT_LEX *first_recursive;</p>
+<p>  …<br>}</p>
+<p>SELECT_LEX{<br>  &#x2F;**<br>    Intrusive double-linked list of all query blocks within the same<br>    query expression.<br>  *&#x2F;<br>  SELECT_LEX *next;<br>  SELECT_LEX **prev;</p>
+<p>  &#x2F;&#x2F;&#x2F; The query expression containing this query block.<br>  SELECT_LEX_UNIT *master;<br>  &#x2F;&#x2F;&#x2F; The first query expression contained within this query block.<br>  SELECT_LEX_UNIT *slave;</p>
+<p>  &#x2F;&#x2F;&#x2F; Intrusive double-linked global list of query blocks.<br>  SELECT_LEX *link_next;<br>  SELECT_LEX <strong>link_prev;  &#x2F;&#x2F; 用于link LEX-&gt;all_selects_list<br>  &#x2F;</strong><br>   For plan clone, link each other between original SELECT_LEX and<br>   its clone<br>  *&#x2F;<br>  SELECT_LEX *m_clone_source;</p>
+<p>  SELECT_LEX *next_query_block{nullptr};  &#x2F;&#x2F; 链表 指向LEX-&gt;all_query_blocks_last<br>  SELECT_LEX **prev_query_block{nullptr};</p>
+<p>}</p>
+<p>LEX {<br>  SELECT_LEX_UNIT *unit;  &#x2F;&#x2F;&#x2F;&lt; Outer-most query expression<br>  &#x2F;&#x2F;&#x2F; @todo: select_lex can be replaced with unit-&gt;first-select()<br>  SELECT_LEX *select_lex;        &#x2F;&#x2F;&#x2F;&lt; First query block<br>  SELECT_LEX *all_selects_list;  &#x2F;&#x2F;&#x2F;&lt; List of all query blocks<br>}</p>
+<h2 id="LEX"><a href="#LEX" class="headerlink" title="LEX"></a>LEX</h2><p>推荐参考 <span class="exturl" data-url="aHR0cHM6Ly9kZXYubXlzcWwuY29tL2RvYy9kZXYvbXlzcWwtc2VydmVyLzguMC4yMC9zdHJ1Y3RMRVguaHRtbA==">https://dev.mysql.com/doc/dev/mysql-server/8.0.20/structLEX.html<i class="fa fa-external-link-alt"></i></span></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">struct LEX : </span><br><span class="line">public Query_tables_list, public im::Query_blocks_list &#123;</span><br><span class="line"></span><br><span class="line">  SELECT_LEX_UNIT *unit;  ///&lt; Outer-most query expression</span><br><span class="line">  /// @todo: select_lex can be replaced with unit-&gt;first-select()</span><br><span class="line">  SELECT_LEX *select_lex;        ///&lt; First query block</span><br><span class="line">  SELECT_LEX *all_selects_list;  ///&lt; List of all query blocks</span><br><span class="line"> private:</span><br><span class="line">  /* current SELECT_LEX in parsing */</span><br><span class="line">  SELECT_LEX *m_current_select;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Query_blocks_list &#123;</span><br><span class="line"> public:</span><br><span class="line">  SELECT_LEX *all_query_blocks;</span><br><span class="line">  SELECT_LEX **all_query_blocks_last;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Query_tables_list &#123;</span><br><span class="line">  /**</span><br><span class="line">    SQL command for this statement. Part of this class since the</span><br><span class="line">    process of opening and locking tables for the statement needs</span><br><span class="line">    this information to determine correct type of lock for some of</span><br><span class="line">    the tables.</span><br><span class="line">  */</span><br><span class="line">  enum_sql_command sql_command;</span><br><span class="line">  /* Global list of all tables used by this statement */</span><br><span class="line">  TABLE_LIST *query_tables;</span><br><span class="line">  /* Pointer to next_global member of last element in the previous list. */</span><br><span class="line">  TABLE_LIST **query_tables_last;</span><br><span class="line">  /*</span><br><span class="line">    If non-0 then indicates that query requires prelocking and points to</span><br><span class="line">    next_global member of last own element in query table list (i.e. last</span><br><span class="line">    table which was not added to it as part of preparation to prelocking).</span><br><span class="line">    0 - indicates that this query does not need prelocking.</span><br><span class="line">  */</span><br><span class="line">  TABLE_LIST **query_tables_own_last;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="SELECT-LEX"><a href="#SELECT-LEX" class="headerlink" title="SELECT_LEX"></a>SELECT_LEX</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">ptype select_lex-&gt;context                </span><br><span class="line">type = struct Name_resolution_context &#123;</span><br><span class="line">   Name_resolution_context *outer_context;    </span><br><span class="line">   Name_resolution_context *next_context;    </span><br><span class="line">   TABLE_LIST *table_list;                        </span><br><span class="line">   TABLE_LIST *first_name_resolution_table;</span><br><span class="line">   TABLE_LIST *last_name_resolution_table;</span><br><span class="line">   SELECT_LEX *select_lex;</span><br><span class="line">   bool view_error_handler;</span><br><span class="line">   TABLE_LIST *view_error_handler_arg;  </span><br><span class="line">   bool resolve_in_select_list;              </span><br><span class="line">   Security_context *security_ctx;</span><br><span class="line"> public:                  </span><br><span class="line">   Name_resolution_context(void);      </span><br><span class="line">   void init(void);</span><br><span class="line">   void resolve_in_table_list_only(TABLE_LIST *);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>SELECT_LEX</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line">class SELECT_LEX  :</span><br><span class="line">&#123;</span><br><span class="line">  private:</span><br><span class="line">    SELECT_LEX *next;      </span><br><span class="line">    SELECT_LEX **prev;</span><br><span class="line">    SELECT_LEX_UNIT *master;</span><br><span class="line">    SELECT_LEX_UNIT *slave;                       </span><br><span class="line">    SELECT_LEX *link_next;</span><br><span class="line">    SELECT_LEX **link_prev;                 </span><br><span class="line">    Query_result *m_query_result;     </span><br><span class="line">    ulonglong m_base_options;            </span><br><span class="line">    ulonglong m_active_options;</span><br><span class="line">  public:</span><br><span class="line">    uint8 uncacheable;   </span><br><span class="line">    bool skip_local_transforms;</span><br><span class="line">    sub_select_type linkage;</span><br><span class="line">    bool no_table_names_allowed;</span><br><span class="line">    Name_resolution_context context;</span><br><span class="line">    Name_resolution_context *first_context;             </span><br><span class="line">    SELECT_LEX::Resolve_place resolve_place;</span><br><span class="line">    TABLE_LIST *resolve_nest;</span><br><span class="line">    bool semijoin_disallowed;</span><br><span class="line">    char *db;</span><br><span class="line"> private:                   </span><br><span class="line">    Item *m_where_cond;</span><br><span class="line">    Item *m_having_cond;   </span><br><span class="line">  public:             </span><br><span class="line">    Item::cond_result cond_value;</span><br><span class="line">    Item::cond_result having_value;               </span><br><span class="line">    LEX *parent_lex;      </span><br><span class="line">    olap_type olap;                         </span><br><span class="line">    SQL_I_List&lt;TABLE_LIST&gt; table_list;</span><br><span class="line">    SQL_I_List&lt;ORDER&gt; group_list;        </span><br><span class="line">    Group_list_ptrs *group_list_ptrs;</span><br><span class="line">    List&lt;Window&gt; m_windows;</span><br><span class="line">    List&lt;Item&gt; item_list;</span><br><span class="line">    bool is_item_list_lookup;  </span><br><span class="line">    int hidden_group_field_count;</span><br><span class="line">    List&lt;Item&gt; &amp;fields_list;    </span><br><span class="line">    List&lt;Item&gt; all_fields;          </span><br><span class="line">    List&lt;Item&gt; all_inner_ref_fields;                    </span><br><span class="line">    List&lt;Item_func_match&gt; *ftfunc_list;     </span><br><span class="line">    List&lt;Item_func_match&gt; ftfunc_list_alloc;</span><br><span class="line">    JOIN *join;              </span><br><span class="line">    List&lt;TABLE_LIST&gt; top_join_list;</span><br><span class="line">    List&lt;TABLE_LIST&gt; *join_list;</span><br><span class="line">    TABLE_LIST *embedding;</span><br><span class="line">    List&lt;TABLE_LIST&gt; sj_nests;</span><br><span class="line">    TABLE_LIST *leaf_tables;</span><br><span class="line">    uint leaf_table_count;       </span><br><span class="line">    uint derived_table_count;                     </span><br><span class="line">    uint table_func_count;</span><br><span class="line">    uint materialized_derived_table_count;  </span><br><span class="line">    bool has_sj_nests;                </span><br><span class="line">    uint partitioned_table_count;        </span><br><span class="line">    SQL_I_List&lt;ORDER&gt; order_list;    </span><br><span class="line">    Group_list_ptrs *order_list_ptrs;</span><br><span class="line">    Item *select_limit;  </span><br><span class="line">    Item *offset_limit;        </span><br><span class="line">    Ref_item_array base_ref_items;</span><br><span class="line">    uint select_n_having_items; </span><br><span class="line">    uint cond_count;                </span><br><span class="line">    uint between_count;                                 </span><br><span class="line">    uint max_equal_elems;                   </span><br><span class="line">    uint select_n_where_fields;             </span><br><span class="line">    enum_parsing_context parsing_place;</span><br><span class="line">    uint in_sum_expr; </span><br><span class="line">    bool with_sum_func;                    </span><br><span class="line">    uint n_sum_items;     </span><br><span class="line">    uint n_child_sum_items;    </span><br><span class="line">    uint select_number;                </span><br><span class="line">    int nest_level;                  </span><br><span class="line">    Item_sum *inner_sum_func_list;     </span><br><span class="line">    uint with_wild;                     </span><br><span class="line">    bool braces;</span><br><span class="line">    bool having_fix_field;            </span><br><span class="line">    bool group_fix_field;              </span><br><span class="line">    List&lt;Item_outer_ref&gt; inner_refs_list; </span><br><span class="line">    bool explicit_limit;             </span><br><span class="line">    bool subquery_in_having;                                  </span><br><span class="line">    bool first_execution;              </span><br><span class="line">    bool sj_pullout_done;                         </span><br><span class="line">    bool exclude_from_table_unique_test;</span><br><span class="line">    bool allow_merge_derived;                     </span><br><span class="line">    TABLE_LIST *recursive_reference;       </span><br><span class="line">    SELECT_LEX_UNIT *recursive_dummy_unit;   </span><br><span class="line">    table_map select_list_tables;           </span><br><span class="line">    table_map outer_join;              </span><br><span class="line">    Opt_hints_qb *opt_hints_qb;  </span><br><span class="line">    </span><br><span class="line">    TABLE_LIST *end_lateral_table;         </span><br><span class="line">    bool is_parallel_unsafe;</span><br><span class="line">    StringBuffer&lt;1024&gt; printed_query_before_pqplan;</span><br><span class="line">  private:                             </span><br><span class="line">    bool m_agg_func_used;            </span><br><span class="line">    bool m_json_agg_func_used;         </span><br><span class="line">    bool m_empty_query;                 </span><br><span class="line">    static const char *type_str[8];</span><br><span class="line">    Mem_root_array&lt;Item_exists_subselect*&gt; *sj_candidates;</span><br><span class="line">  public:                              </span><br><span class="line">    int hidden_order_field_count;         </span><br><span class="line"></span><br><span class="line">    Item * where_cond(void) const;                            </span><br><span class="line">    void set_where_cond(Item *);       </span><br><span class="line">    Item * having_cond(void) const;               </span><br><span class="line">    void set_having_cond(Item *);       </span><br><span class="line">    void set_query_result(Query_result *);        </span><br><span class="line">    Query_result * query_result(void) const;</span><br><span class="line">    bool change_query_result(Query_result_interceptor *, Query_result_interceptor *);</span><br><span class="line">    void set_base_options(ulonglong);       </span><br><span class="line">    void add_base_options(ulonglong);  </span><br><span class="line">    void remove_base_options(ulonglong);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="SELECT-LEX-UNIT"><a href="#SELECT-LEX-UNIT" class="headerlink" title="SELECT_LEX_UNIT"></a>SELECT_LEX_UNIT</h1>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" rel="tag"># MySQL 源码解读</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/source_code_reading/basic_data_structure/index/" rel="prev" title="MySQL 源码解读 -- 基础结构">
+                  <i class="fa fa-chevron-left"></i> MySQL 源码解读 -- 基础结构
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/" rel="next" title="MySQL 源码解读 -- 基础结构之MDL">
+                  MySQL 源码解读 -- 基础结构之MDL <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"60519055d6059ee5c44e54a036d4f5d4"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

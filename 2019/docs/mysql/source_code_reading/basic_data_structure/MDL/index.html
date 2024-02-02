@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="MySQL 源码解读 -- 基础结构之MDL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 源码解读 -- 基础结构之MDL">
+<meta property="og:url" content="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="MySQL 源码解读 -- 基础结构之MDL">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-06-15T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:19:17.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="MySQL 源码解读">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/","path":"2019/docs/mysql/source_code_reading/basic_data_structure/MDL/","title":"MySQL 源码解读 -- 基础结构之MDL"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MySQL 源码解读 -- 基础结构之MDL | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MDL-context"><span class="nav-number">1.</span> <span class="nav-text">MDL_context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MDL-ticket-store"><span class="nav-number">2.</span> <span class="nav-text">MDL_ticket_store</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MDL-ticket"><span class="nav-number">3.</span> <span class="nav-text">MDL_ticket</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL 源码解读 -- 基础结构之MDL
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-06-15 19:42:57" itemprop="dateCreated datePublished" datetime="2019-06-15T19:42:57+08:00">2019-06-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">MySQL 源码解读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>627</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>2 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">MySQL 源码解读 -- 基础结构之MDL</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="MDL-context"><a href="#MDL-context" class="headerlink" title="MDL_context"></a>MDL_context</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">class MDL_context &#123;</span><br><span class="line"></span><br><span class="line">  /**</span><br><span class="line">    If our request for a lock is scheduled, or aborted by the deadlock</span><br><span class="line">    detector, the result is recorded in this class.</span><br><span class="line">  */</span><br><span class="line">  MDL_wait m_wait;</span><br><span class="line"></span><br><span class="line">  MDL_ticket_store m_ticket_store;</span><br><span class="line"></span><br><span class="line">  MDL_context_owner *m_owner;</span><br><span class="line"></span><br><span class="line">  /**</span><br><span class="line">    Tell the deadlock detector what metadata lock or table</span><br><span class="line">    definition cache entry this session is waiting for.</span><br><span class="line">    In principle, this is redundant, as information can be found</span><br><span class="line">    by inspecting waiting queues, but we&#x27;d very much like it to be</span><br><span class="line">    readily available to the wait-for graph iterator.</span><br><span class="line">   */</span><br><span class="line">  MDL_wait_for_subgraph *m_waiting_for;</span><br><span class="line">  /**</span><br><span class="line">    Thread&#x27;s pins (a.k.a. hazard pointers) to be used by lock-free</span><br><span class="line">    implementation of MDL_map::m_locks container. NULL if pins are</span><br><span class="line">    not yet allocated from container&#x27;s pinbox.</span><br><span class="line">  */</span><br><span class="line">  LF_PINS *m_pins;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="MDL-ticket-store"><a href="#MDL-ticket-store" class="headerlink" title="MDL_ticket_store"></a>MDL_ticket_store</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">    Lists of all MDL tickets acquired by this connection.</span><br><span class="line"></span><br><span class="line">    Lists of MDL tickets:</span><br><span class="line">    ---------------------</span><br><span class="line">    The entire set of locks acquired by a connection can be separated</span><br><span class="line">    in three subsets according to their duration: locks released at</span><br><span class="line">    the end of statement, at the end of transaction and locks are</span><br><span class="line">    released explicitly.</span><br><span class="line"></span><br><span class="line">    Statement and transactional locks are locks with automatic scope.</span><br><span class="line">    They are accumulated in the course of a transaction, and released</span><br><span class="line">    either at the end of uppermost statement (for statement locks) or</span><br><span class="line">    on COMMIT, ROLLBACK or ROLLBACK TO SAVEPOINT (for transactional</span><br><span class="line">    locks). They must not be (and never are) released manually,</span><br><span class="line">    i.e. with release_lock() call.</span><br><span class="line"></span><br><span class="line">    Tickets with explicit duration are taken for locks that span</span><br><span class="line">    multiple transactions or savepoints.</span><br><span class="line">    These are: HANDLER SQL locks (HANDLER SQL is</span><br><span class="line">    transaction-agnostic), LOCK TABLES locks (you can COMMIT/etc</span><br><span class="line">    under LOCK TABLES, and the locked tables stay locked), user level</span><br><span class="line">    locks (GET_LOCK()/RELEASE_LOCK() functions) and</span><br><span class="line">    locks implementing &quot;global read lock&quot;.</span><br><span class="line"></span><br><span class="line">    Statement/transactional locks are always prepended to the</span><br><span class="line">    beginning of the appropriate list. In other words, they are</span><br><span class="line">    stored in reverse temporal order. Thus, when we rollback to</span><br><span class="line">    a savepoint, we start popping and releasing tickets from the</span><br><span class="line">    front until we reach the last ticket acquired after the savepoint.</span><br><span class="line"></span><br><span class="line">    Locks with explicit duration are not stored in any</span><br><span class="line">    particular order, and among each other can be split into</span><br><span class="line">    four sets:</span><br><span class="line">    - LOCK TABLES locks</span><br><span class="line">    - User-level locks</span><br><span class="line">    - HANDLER locks</span><br><span class="line">    - GLOBAL READ LOCK locks</span><br><span class="line">  */</span><br><span class="line">/**</span><br><span class="line">  Keep track of MDL_ticket for different durations. Maintains a</span><br><span class="line">  hash-based secondary index into the linked lists, to speed up access</span><br><span class="line">  by MDL_key.</span><br><span class="line"> */</span><br><span class="line">class MDL_ticket_store &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="MDL-ticket"><a href="#MDL-ticket" class="headerlink" title="MDL_ticket"></a>MDL_ticket</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">class MDL_ticket : public MDL_wait_for_subgraph &#123;</span><br><span class="line">    /**</span><br><span class="line">    Pointers for participating in the list of lock requests for this context.</span><br><span class="line">    Context private.</span><br><span class="line">  */</span><br><span class="line">  MDL_ticket *next_in_context;</span><br><span class="line">  MDL_ticket **prev_in_context;</span><br><span class="line"></span><br><span class="line">  /**</span><br><span class="line">    Pointers for participating in the list of satisfied/pending requests</span><br><span class="line">    for the lock. Externally accessible.</span><br><span class="line">  */</span><br><span class="line">  MDL_ticket *next_in_lock;</span><br><span class="line">  MDL_ticket **prev_in_lock;</span><br><span class="line"></span><br><span class="line">  /** If current thread is worker thread, points to ticket of leader thread,</span><br><span class="line">   * NULL otherwise.</span><br><span class="line">   */</span><br><span class="line">  MDL_ticket *m_leader_ticket;</span><br><span class="line"></span><br><span class="line">  // 核心就这几个成员</span><br><span class="line">  /** Type of metadata lock. Externally accessible. */</span><br><span class="line">  enum enum_mdl_type m_type;</span><br><span class="line">#ifndef DBUG_OFF</span><br><span class="line">  /**</span><br><span class="line">    Duration of lock represented by this ticket.</span><br><span class="line">    Context private. Debug-only.</span><br><span class="line">  */</span><br><span class="line">  enum_mdl_duration m_duration;</span><br><span class="line">#endif</span><br><span class="line">  /**</span><br><span class="line">    Context of the owner of the metadata lock ticket. Externally accessible.</span><br><span class="line">  */</span><br><span class="line">  MDL_context *m_ctx;</span><br><span class="line"></span><br><span class="line">  /**</span><br><span class="line">    Pointer to the lock object for this lock ticket. Externally accessible.</span><br><span class="line">  */</span><br><span class="line">  MDL_lock *m_lock;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">  A pending metadata lock request.</span><br><span class="line"></span><br><span class="line">  A lock request and a granted metadata lock are represented by</span><br><span class="line">  different classes because they have different allocation</span><br><span class="line">  sites and hence different lifetimes. The allocation of lock requests is</span><br><span class="line">  controlled from outside of the MDL subsystem, while allocation of granted</span><br><span class="line">  locks (tickets) is controlled within the MDL subsystem.</span><br><span class="line">*/</span><br><span class="line"></span><br><span class="line">class MDL_request &#123;</span><br><span class="line"> /** Type of metadata lock. */</span><br><span class="line">  enum_mdl_type type&#123;MDL_INTENTION_EXCLUSIVE&#125;;</span><br><span class="line">  /** Duration for requested lock. */</span><br><span class="line">  enum_mdl_duration duration&#123;MDL_STATEMENT&#125;;</span><br><span class="line"></span><br><span class="line">  /**</span><br><span class="line">    Pointers for participating in the list of lock requests for this context.</span><br><span class="line">  */</span><br><span class="line">  MDL_request *next_in_list&#123;nullptr&#125;;</span><br><span class="line">  MDL_request **prev_in_list&#123;nullptr&#125;;</span><br><span class="line">  /**</span><br><span class="line">    Pointer to the lock ticket object for this lock request.</span><br><span class="line">    Valid only if this lock request is satisfied.</span><br><span class="line">  */</span><br><span class="line">  MDL_ticket *ticket&#123;nullptr&#125;;</span><br><span class="line"></span><br><span class="line">  /** A lock is requested based on a fully qualified name and type. */</span><br><span class="line">  MDL_key key;</span><br><span class="line"></span><br><span class="line">  bool m_is_for_delegation&#123;false&#125;; // On if this request is for PQ leader</span><br><span class="line"></span><br><span class="line">  const char *m_src_file&#123;nullptr&#125;;</span><br><span class="line">  uint m_src_line&#123;0&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" rel="tag"># MySQL 源码解读</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/source_code_reading/basic_data_structure/LEX/" rel="prev" title="MySQL 源码解读 -- 基础结构之Lex">
+                  <i class="fa fa-chevron-left"></i> MySQL 源码解读 -- 基础结构之Lex
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/source_code_reading/basic_data_structure/Schema/" rel="next" title="MySQL 源码解读 -- 基础结构之Schema">
+                  MySQL 源码解读 -- 基础结构之Schema <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/MDL/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"4d02cc0ab1b8fc8bfc2d753791e92065"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

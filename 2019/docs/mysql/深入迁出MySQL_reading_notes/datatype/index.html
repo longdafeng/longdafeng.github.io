@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="深入浅出MySQL -- 第一章 数据类型">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出MySQL -- 第一章 数据类型">
+<meta property="og:url" content="http://ilongda.com/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/datatype/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="深入浅出MySQL -- 第一章 数据类型">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919595225-891a1e9f-9fca-480a-8119-dc5482132419.png#align=left&display=inline&height=879&margin=%5Bobject%20Object%5D&name=image.png&originHeight=879&originWidth=1033&size=215131&status=done&style=none&width=1033">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919615611-ee819d7c-96c2-43d0-9e91-ee33bfd7eb28.png#align=left&display=inline&height=321&margin=%5Bobject%20Object%5D&name=image.png&originHeight=321&originWidth=714&size=27092&status=done&style=none&width=714">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919626480-57547438-374e-42cc-9fd1-cb3c43802a23.png#align=left&display=inline&height=487&margin=%5Bobject%20Object%5D&name=image.png&originHeight=487&originWidth=896&size=39853&status=done&style=none&width=896">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919702102-ea17ff97-f9e3-4fc8-a9a0-7fb13f7d1cd1.png#align=left&display=inline&height=747&margin=%5Bobject%20Object%5D&name=image.png&originHeight=747&originWidth=567&size=186009&status=done&style=none&width=567">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919957819-8047bbd5-3653-438c-95e6-5f175fc3080e.png#align=left&display=inline&height=461&margin=%5Bobject%20Object%5D&name=image.png&originHeight=461&originWidth=939&size=168782&status=done&style=none&width=939">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595920355801-8f9acc62-2606-4733-883b-94f72f1a4798.png#align=left&display=inline&height=998&margin=%5Bobject%20Object%5D&name=image.png&originHeight=998&originWidth=641&size=291157&status=done&style=none&width=641">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1596185560789-e66ae7e2-43d9-4515-b4f0-a61c1e6fab3a.png#align=left&display=inline&height=423&margin=%5Bobject%20Object%5D&name=image.png&originHeight=423&originWidth=803&size=77256&status=done&style=none&width=803">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595920675239-9f355b5e-4cd2-43dd-9c55-bd7d0865cf00.png#align=left&display=inline&height=484&margin=%5Bobject%20Object%5D&name=image.png&originHeight=484&originWidth=710&size=111232&status=done&style=none&width=710">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921433879-b29a927e-1f63-404d-a007-fb4d6b66e9bf.png#align=left&display=inline&height=902&margin=%5Bobject%20Object%5D&name=image.png&originHeight=902&originWidth=1020&size=257656&status=done&style=none&width=1020">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921681056-c95bdde2-5d38-4ddf-8754-8895cdf71a99.png#align=left&display=inline&height=207&margin=%5Bobject%20Object%5D&name=image.png&originHeight=207&originWidth=473&size=53745&status=done&style=none&width=473">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921893924-40cccd2e-8291-4702-9a79-7485f7b90b61.png#align=left&display=inline&height=439&margin=%5Bobject%20Object%5D&name=image.png&originHeight=439&originWidth=762&size=143243&status=done&style=none&width=762">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922021496-10f9610f-33e1-435b-b024-e350a467b83c.png#align=left&display=inline&height=157&margin=%5Bobject%20Object%5D&name=image.png&originHeight=157&originWidth=547&size=14891&status=done&style=none&width=547">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922036111-7c0bfd13-f1d5-4140-848c-29da034c1379.png#align=left&display=inline&height=220&margin=%5Bobject%20Object%5D&name=image.png&originHeight=220&originWidth=517&size=12582&status=done&style=none&width=517">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922050554-c5f2b5e1-aa8a-44cc-b879-12e1b9f35111.png#align=left&display=inline&height=324&margin=%5Bobject%20Object%5D&name=image.png&originHeight=324&originWidth=539&size=20975&status=done&style=none&width=539">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922133155-80a91c7b-0f92-4854-bb06-c848b40aa7ed.png#align=left&display=inline&height=167&margin=%5Bobject%20Object%5D&name=image.png&originHeight=167&originWidth=936&size=44543&status=done&style=none&width=936">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922232402-f91be9ee-0f1d-49cb-a90b-e5935f94f6a8.png#align=left&display=inline&height=700&margin=%5Bobject%20Object%5D&name=image.png&originHeight=700&originWidth=951&size=177527&status=done&style=none&width=951">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923172517-cd42bb76-618f-4fbf-8010-bf454ba9b5f8.png#align=left&display=inline&height=538&margin=%5Bobject%20Object%5D&name=image.png&originHeight=538&originWidth=902&size=141609&status=done&style=none&width=902">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923213332-5b0c9f78-42cc-4586-8ddf-e958ccd962b7.png#align=left&display=inline&height=447&margin=%5Bobject%20Object%5D&name=image.png&originHeight=447&originWidth=913&size=45723&status=done&style=none&width=913">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923520355-8e7bb3f2-73f4-4c40-8b7c-7d5ebfdbbc66.png#align=left&display=inline&height=760&margin=%5Bobject%20Object%5D&name=image.png&originHeight=760&originWidth=944&size=148153&status=done&style=none&width=944">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923972204-ad5b7de1-70e4-4d76-9d35-4e5529932533.png#align=left&display=inline&height=691&margin=%5Bobject%20Object%5D&name=image.png&originHeight=691&originWidth=909&size=125301&status=done&style=none&width=909">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595924032346-02ddb43e-2828-44b5-a79e-bde8791b2155.png#align=left&display=inline&height=231&margin=%5Bobject%20Object%5D&name=image.png&originHeight=231&originWidth=1105&size=88921&status=done&style=none&width=1105">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595924563168-2177052f-fcaa-4669-acc8-52ff766755c2.png#align=left&display=inline&height=320&margin=%5Bobject%20Object%5D&name=image.png&originHeight=320&originWidth=542&size=73284&status=done&style=none&width=542">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595925540639-a161ed69-0ba2-45b3-9e86-df21bd62d384.png#align=left&display=inline&height=920&margin=%5Bobject%20Object%5D&name=image.png&originHeight=920&originWidth=1094&size=149367&status=done&style=none&width=1094">
+<meta property="article:published_time" content="2019-03-03T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:26:53.571Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="深入浅出MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919595225-891a1e9f-9fca-480a-8119-dc5482132419.png#align=left&display=inline&height=879&margin=%5Bobject%20Object%5D&name=image.png&originHeight=879&originWidth=1033&size=215131&status=done&style=none&width=1033">
+
+
+<link rel="canonical" href="http://ilongda.com/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/datatype/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/datatype/","path":"2019/docs/mysql/深入迁出MySQL_reading_notes/datatype/","title":"深入浅出MySQL -- 第一章 数据类型"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>深入浅出MySQL -- 第一章 数据类型 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0%EF%BC%8C-%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">第一章， 数据类型</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/datatype/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入浅出MySQL -- 第一章 数据类型
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-03-03 19:42:57" itemprop="dateCreated datePublished" datetime="2019-03-03T19:42:57+08:00">2019-03-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/MySQL/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BAMySQL/" itemprop="url" rel="index"><span itemprop="name">深入浅出MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>756</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>3 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">深入浅出MySQL -- 第一章 数据类型</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="第一章，-数据类型"><a href="#第一章，-数据类型" class="headerlink" title="第一章， 数据类型"></a>第一章， 数据类型</h1><p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919595225-891a1e9f-9fca-480a-8119-dc5482132419.png#align=left&display=inline&height=879&margin=%5Bobject%20Object%5D&name=image.png&originHeight=879&originWidth=1033&size=215131&status=done&style=none&width=1033" alt="image.png"><br><br><br><br><br><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919615611-ee819d7c-96c2-43d0-9e91-ee33bfd7eb28.png#align=left&display=inline&height=321&margin=%5Bobject%20Object%5D&name=image.png&originHeight=321&originWidth=714&size=27092&status=done&style=none&width=714" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919626480-57547438-374e-42cc-9fd1-cb3c43802a23.png#align=left&display=inline&height=487&margin=%5Bobject%20Object%5D&name=image.png&originHeight=487&originWidth=896&size=39853&status=done&style=none&width=896" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919702102-ea17ff97-f9e3-4fc8-a9a0-7fb13f7d1cd1.png#align=left&display=inline&height=747&margin=%5Bobject%20Object%5D&name=image.png&originHeight=747&originWidth=567&size=186009&status=done&style=none&width=567" alt="image.png"></p>
+<ol>
+<li>存储超过定义的宽度，其实没有影响， 对插入的数据有任何影响，还是按照类型的实际精度进行保存，这是，宽度格式实际已经没有意义，左边不会再填充任何的“0”字符。</li>
+<li>如果一个列指定为zerofill，则MySQL 自动为该列添加UNSIGNED 属性。</li>
+</ol>
+<p><br>整数类型还有一个属性：AUTO_INCREMENT。在需要产生唯一标识符或顺序值时，<br><br>可利用此属性，这个属性只用于整数类型。AUTO_INCREMENT 值一般从1 开始，每行增加1。<br><br>在插入NULL 到一个AUTO_INCREMENT 列时，MySQL 插入一个比该列中当前最大值大1 的值。<br><br>一个表中最多只能有一个AUTO_INCREMENT列。对于任何想要使用AUTO_INCREMENT 的列，<br><br>应该定义为NOT NULL，并定义为PRIMARY KEY 或定义为UNIQUE 键。例如，可按下列<br>任何一种方式定义AUTO_INCREMENT 列：<br></p>
+<p>CREATE TABLE AI (ID INT AUTO_INCREMENT NOT NULL PRIMARY KEY);<br><br>CREATE TABLE AI(ID INT AUTO_INCREMENT NOT NULL ,PRIMARY KEY(ID));<br><br>CREATE TABLE AI (ID INT AUTO_INCREMENT NOT NULL ,UNIQUE(ID));<br></p>
+<br>
+
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595919957819-8047bbd5-3653-438c-95e6-5f175fc3080e.png#align=left&display=inline&height=461&margin=%5Bobject%20Object%5D&name=image.png&originHeight=461&originWidth=939&size=168782&status=done&style=none&width=939" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595920355801-8f9acc62-2606-4733-883b-94f72f1a4798.png#align=left&display=inline&height=998&margin=%5Bobject%20Object%5D&name=image.png&originHeight=998&originWidth=641&size=291157&status=done&style=none&width=641" alt="image.png"><br></p>
+<p><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1596185560789-e66ae7e2-43d9-4515-b4f0-a61c1e6fab3a.png#align=left&display=inline&height=423&margin=%5Bobject%20Object%5D&name=image.png&originHeight=423&originWidth=803&size=77256&status=done&style=none&width=803" alt="image.png"><br><br>关于bit， mysql 8.0 行为已经和mysql 5.6 行为不一致<br><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595920675239-9f355b5e-4cd2-43dd-9c55-bd7d0865cf00.png#align=left&display=inline&height=484&margin=%5Bobject%20Object%5D&name=image.png&originHeight=484&originWidth=710&size=111232&status=done&style=none&width=710" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921433879-b29a927e-1f63-404d-a007-fb4d6b66e9bf.png#align=left&display=inline&height=902&margin=%5Bobject%20Object%5D&name=image.png&originHeight=902&originWidth=1020&size=257656&status=done&style=none&width=1020" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921681056-c95bdde2-5d38-4ddf-8754-8895cdf71a99.png#align=left&display=inline&height=207&margin=%5Bobject%20Object%5D&name=image.png&originHeight=207&originWidth=473&size=53745&status=done&style=none&width=473" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595921893924-40cccd2e-8291-4702-9a79-7485f7b90b61.png#align=left&display=inline&height=439&margin=%5Bobject%20Object%5D&name=image.png&originHeight=439&originWidth=762&size=143243&status=done&style=none&width=762" alt="image.png"><br></p>
+<p>第一个timestamp 默认值是current_timestamp, 但第二个timestamp 默认为0<br>timestamp 和时区相关， 插入日期时， 先转换为本地时区后存放， 取出时，也是先取出，后转换本地时区。 TIMESTAMP的取值范围为19700101080001到2038年的某一天<br>举例<br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922021496-10f9610f-33e1-435b-b024-e350a467b83c.png#align=left&display=inline&height=157&margin=%5Bobject%20Object%5D&name=image.png&originHeight=157&originWidth=547&size=14891&status=done&style=none&width=547" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922036111-7c0bfd13-f1d5-4140-848c-29da034c1379.png#align=left&display=inline&height=220&margin=%5Bobject%20Object%5D&name=image.png&originHeight=220&originWidth=517&size=12582&status=done&style=none&width=517" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922050554-c5f2b5e1-aa8a-44cc-b879-12e1b9f35111.png#align=left&display=inline&height=324&margin=%5Bobject%20Object%5D&name=image.png&originHeight=324&originWidth=539&size=20975&status=done&style=none&width=539" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922133155-80a91c7b-0f92-4854-bb06-c848b40aa7ed.png#align=left&display=inline&height=167&margin=%5Bobject%20Object%5D&name=image.png&originHeight=167&originWidth=936&size=44543&status=done&style=none&width=936" alt="image.png"><br><br><br><br><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595922232402-f91be9ee-0f1d-49cb-a90b-e5935f94f6a8.png#align=left&display=inline&height=700&margin=%5Bobject%20Object%5D&name=image.png&originHeight=700&originWidth=951&size=177527&status=done&style=none&width=951" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923172517-cd42bb76-618f-4fbf-8010-bf454ba9b5f8.png#align=left&display=inline&height=538&margin=%5Bobject%20Object%5D&name=image.png&originHeight=538&originWidth=902&size=141609&status=done&style=none&width=902" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923213332-5b0c9f78-42cc-4586-8ddf-e958ccd962b7.png#align=left&display=inline&height=447&margin=%5Bobject%20Object%5D&name=image.png&originHeight=447&originWidth=913&size=45723&status=done&style=none&width=913" alt="image.png"><br></p>
+<p>􀁺 MyISAM 存储引擎：建议使用固定长度的数据列代替可变长度的数据列。<br><br>􀁺 MEMORY 存储引擎：目前都使用固定长度的数据行存储，因此无论使用CHAR 或<br>VARCHAR 列都没有关系。两者都是作为CHAR 类型处理。<br><br>􀁺 InnoDB 存储引擎：建议使用VARCHAR 类型。对于InnoDB 数据表，内部的行存储<br>124<br>格式没有区分固定长度和可变长度列（所有数据行都使用指向数据列值的头指针），因此在<br>本质上，使用固定长度的CHAR 列不一定比使用可变长度VARCHAR 列性能要好。因而，主<br>要的性能因素是数据行使用的存储总量。由于CHAR 平均占用的空间多于VARCHAR，因此使<br>用VARCHAR 来最小化需要处理的数据行的存储总量和磁盘I&#x2F;O 是比较好的。<br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923520355-8e7bb3f2-73f4-4c40-8b7c-7d5ebfdbbc66.png#align=left&display=inline&height=760&margin=%5Bobject%20Object%5D&name=image.png&originHeight=760&originWidth=944&size=148153&status=done&style=none&width=944" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595923972204-ad5b7de1-70e4-4d76-9d35-4e5529932533.png#align=left&display=inline&height=691&margin=%5Bobject%20Object%5D&name=image.png&originHeight=691&originWidth=909&size=125301&status=done&style=none&width=909" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595924032346-02ddb43e-2828-44b5-a79e-bde8791b2155.png#align=left&display=inline&height=231&margin=%5Bobject%20Object%5D&name=image.png&originHeight=231&originWidth=1105&size=88921&status=done&style=none&width=1105" alt="image.png"><br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595924563168-2177052f-fcaa-4669-acc8-52ff766755c2.png#align=left&display=inline&height=320&margin=%5Bobject%20Object%5D&name=image.png&originHeight=320&originWidth=542&size=73284&status=done&style=none&width=542" alt="image.png"><br></p>
+<p>从上面的例子中，可以看出ENUM 类型是忽略大小写的，对’M’、’f’在存储的时候将它们都转<br><br>成了大写，还可以看出对于插入不在ENUM 指定范围内的值时，并没有返回警告，而是插<br>入了enum(‘M’,’F’)的第一值’M’，这点用户在使用时要特别注意。<br></p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2020/png/106206/1595925540639-a161ed69-0ba2-45b3-9e86-df21bd62d384.png#align=left&display=inline&height=920&margin=%5Bobject%20Object%5D&name=image.png&originHeight=920&originWidth=1094&size=149367&status=done&style=none&width=1094" alt="image.png"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BAMySQL/" rel="tag"># 深入浅出MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/docs/paper/f1/" rel="prev" title="《F1 Query -- Declarative Querying at Scale》">
+                  <i class="fa fa-chevron-left"></i> 《F1 Query -- Declarative Querying at Scale》
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/procedure/" rel="next" title="深入浅出MySQL -- 存储过程">
+                  深入浅出MySQL -- 存储过程 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2019/docs/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/datatype/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"44a94459ea81fc5d40c78184041559ed"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

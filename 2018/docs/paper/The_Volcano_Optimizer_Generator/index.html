@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Volcano 优化器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《The Volcano Optimizer Generator Extensibility and Efficient Search》">
+<meta property="og:url" content="http://ilongda.com/2018/docs/paper/The_Volcano_Optimizer_Generator/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Volcano 优化器">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ilongda.com/assets/optimizer_generator.png">
+<meta property="og:image" content="http://ilongda.com/assets/volcano_search_engine.png">
+<meta property="article:published_time" content="2018-10-20T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:31:24.993Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="论文">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ilongda.com/assets/optimizer_generator.png">
+
+
+<link rel="canonical" href="http://ilongda.com/2018/docs/paper/The_Volcano_Optimizer_Generator/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2018/docs/paper/The_Volcano_Optimizer_Generator/","path":"2018/docs/paper/The_Volcano_Optimizer_Generator/","title":"《The Volcano Optimizer Generator Extensibility and Efficient Search》"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《The Volcano Optimizer Generator Extensibility and Efficient Search》 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E3%80%8AThe-Volcano-Optimizer-Generator-Extensibility-and-Efficient-Search%E3%80%8B"><span class="nav-number">1.</span> <span class="nav-text">《The Volcano Optimizer Generator: Extensibility and Efficient Search》</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">3.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">4.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E8%A7%86%E5%9B%BE"><span class="nav-number">5.</span> <span class="nav-text">整体视图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99"><span class="nav-number">5.1.</span> <span class="nav-text">设计原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%99%A8%E7%94%9F%E6%88%90%E5%99%A8%E7%9A%84%E8%BE%93%E5%85%A5%E5%92%8C%E4%BC%98%E5%8C%96%E6%93%8D%E4%BD%9C"><span class="nav-number">5.2.</span> <span class="nav-text">优化器生成器的输入和优化操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#search-engine"><span class="nav-number">6.</span> <span class="nav-text">search engine</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#other-related-work"><span class="nav-number">7.</span> <span class="nav-text">other related work</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2018/docs/paper/The_Volcano_Optimizer_Generator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《The Volcano Optimizer Generator Extensibility and Efficient Search》
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-10-20 19:42:57" itemprop="dateCreated datePublished" datetime="2018-10-20T19:42:57+08:00">2018-10-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>14 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Volcano 优化器</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="《The-Volcano-Optimizer-Generator-Extensibility-and-Efficient-Search》"><a href="#《The-Volcano-Optimizer-Generator-Extensibility-and-Efficient-Search》" class="headerlink" title="《The Volcano Optimizer Generator: Extensibility and Efficient Search》"></a>《The Volcano Optimizer Generator: Extensibility and Efficient Search》</h1><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这篇论文还是一篇基本性的描述， 主要介绍优化器的很多理念，如果已经看过一些基本的优化器介绍， 这篇论文可以skip。</p>
+<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>数据库除了需要满足新功能还要高性能， volcano 提供高效和易扩展的工具来满足查询请求。 优化器生成器将data model， logic algebra， physical algebra 和优化规则 转化为优化器源码。 和前一代优化器生成器exodus 相比， 查询引擎更易扩展和更powerful。 他提供对non-trivial cost model 和物理属性例如sort order的高效支持。 与此同时， 高效结合了动态编程。 和其他rule based 优化系统相比， 它提供独立完整的data model和更自然的扩展性</p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>不能因为扩展性而失去性能， 因为， 现在数据量的增速远超过数据库能力的增速， 另外一个原因，现在在跑的科学计算基于文件系统已经在运行了， 否则没有动力进行迁移。 优化和并行 是主要提供性能优势的方式。 <br>有几个要求:</p>
+<ol>
+<li>optimizer generator 必须是一个独立工具, 既可以在volcano 中使用, 又可以在其他项目中使用</li>
+<li>新系统必须更高效, 优化时间必须段, 并且内存消耗上也必须足够小</li>
+<li>易扩展, 可以高效添加类似sort order 和压缩status 的物理属性</li>
+<li>允许使用heuristics 和data model semantics 来指导搜索和对一些查询空间进行裁剪</li>
+<li>支持灵活的cost model， 允许为非完整的查询生成动态plan</li>
+</ol>
+<h1 id="整体视图"><a href="#整体视图" class="headerlink" title="整体视图"></a>整体视图</h1><p><img data-src="/assets/optimizer_generator.png" alt="image.png"><br><br>将data model 描述 生成为编译器代码, 和其他数据库模块 如查询引擎, 搜索引擎编译和链接在一起,生成数据库. </p>
+<h2 id="设计原则"><a href="#设计原则" class="headerlink" title="设计原则"></a>设计原则</h2><p>5个基本原则</p>
+<ol>
+<li>关系系统的查询是基于关系代数算子， 通過代數算子， 代數等價規則和合适的实现算法。可以使用关系代数规则,比如各种等价变化, 如交换律,结合律.  算子消费一个或多个types 并生成出下一个operator的输入。 执行引擎基于算子， 算法消费和生成bulk types。 算子集和算法集是不同的。 选择最优的算法是优化器最重要的工作之一。 优化器生成器使用2种关系代数， 一种是逻辑，一种是物理。 通过逻辑关系代数的transformation和 基于代价的关系代数到算法的关系映射, 生成的优化器可以映射逻辑代数到物理逻辑代数算子(包含算法)的expression。 </li>
+<li>通过规则来提高优化器的扩展性和模块化.  rule   用一种 精简和模块化的方式来指定pattern 的knowledge 和代数原则的knowledge（比如等价转化用patterns和rules 来表达）。 专注在独立的rule上可以提高模块化， rule 可以独立从一个rule 转化为另外一个rule， 并且和search engine combine 在一起。 </li>
+<li>volcano generator的输入的代数等价是优化器做的各种选择（映射一个query到一个优化的等价plan），search engine 用一个合适的方式来使用这些关系代数等价转化公式， 对于那些优化器实现者来说， 这些优化器想做一些特殊控制，比如确定某些搜索或做剪枝搜索等， 有一些优化工具来做这些事情。 </li>
+<li>为了获得更好的性能， 选择了对rule 进行编译来执行，没有选择解释执行，类似EXODUS 优化器生成器， 但为了提高扩展性， 使用最强参数，强参数使用解释性 pointless， 提高rule sets的扩展性， 参数化rule和他们的condition, 例如， 控制search的全面性和观察和exploit rule 应用的重复顺序。</li>
+<li>基于动态编程</li>
+</ol>
+<h2 id="优化器生成器的输入和优化操作"><a href="#优化器生成器的输入和优化操作" class="headerlink" title="优化器生成器的输入和优化操作"></a>优化器生成器的输入和优化操作</h2><p>优化器生成器的目标就是最小化 要实现的data model的假设，操作和功能的 data modle。 这章介绍优化器的组件。优化器的输入是query， 输出是优化的执行plan。</p>
+<ol>
+<li>parser 解析query 后，生成logic 算子组成的关系表达式（逻辑算子是在生成优化器时 model specification 定义和编译进去的， 算子可以0个或多个input）， 这个作为优化器的输入，优化器输出是一个执行plan， 这个plan 是带有关系代数算法。 算法集， capability和代价 代表着data format 和物理存储结构。 </li>
+<li>优化过程是 将一个逻辑关系代数表达式 映射为一个优化的，等价的，物理关系代数表达式。  对算子进行reorder， 对实现算法进行挑选。 transformation rule 包含等价转化， 交换律， 结合律。 用implementation rule 来确定映射算子到算法。 rule language 必须支持复杂的mapping， 可以join后带projection 用一个rule来表示， 可以一个rule 来表达映射多个逻辑operator到一个物理operator。 当pattern 匹配到算子和算法后，还需要确定所有rule的condition。  在一个rule pattern成功匹配后， 可以attache condition code 到rule上。 </li>
+<li>用属性来描述expression的result。 逻辑属性来自逻辑关系代数表达式， 包括schema， expected size等。 物理属性来自算法， 如sort order， parition等。 当优化一个many-sorted 代数， 逻辑属性包含中间结果的type， 可以用一个rule的condition来检查type 来保证正确的type的rule可以用到这个expression上。逻辑属性可以attach到等价类， 一组等价的逻辑express 和plan， 而物理属性只能attach 一个plan和算法。</li>
+<li>物理属性集合对每个中间结果summarized到 物理属性vector， 由优化器的实现者来定义并被volcano 优化器生成器和search engine当作一个抽象data type。 也就是物理属性的types和semantics 可以由优化器实现者来设计。</li>
+<li>有一些物理代数不存在任何逻辑代数中， 比如sorting和decompression。 这种算子不执行逻辑数据处理但对他们的输出附加物理属性， 这些属性用于随后的query 处理算法。 我们称这种算子为enforcer， 类似starburst的glue。 enforcer 可以ensure 2个属性，甚至enforce 一个属性但destory 另外一个。 有2中enforcer sort&#x2F;hash, 在并行和分布式系统中，location&#x2F;paritioning 会被enforce 网络或并行算子如exchange 算子中。 在面向对象系统中， 对复杂对象进行assembledness， 使用assembly 算子作为enforcer。</li>
+<li>每一个优化目标是一个pair（逻辑express 和物理属性vector）。 为了判断是否可以在这个logic expression的root node上执行一个算法或一个enforcer， 优化器寻找合适的implementaion rule， 执行rule上关联的condition， 最后调用 applicability function， applicability function 来决定这个算法或enforce是否可以deliver 这个logic expression带物理属性， 这个物理属性满足物理属性vector， applicability function同样决定了算法输入必须满足的物理属性vector。 举例来说， 当优化一个join expression时， 它的结果应该sorted， hybrid hash join 不满足这个要求， 但merge-join 就可以满足，  因此当输入不排序时，一个enforce就会传过去， 输入排好序后， hybrid hash join 也可以。算法不能过度限制。</li>
+<li>在优化器决定用一个算法或enforcer后， 他调用算法的cost function来估算他的代价。 cost 是优化器生成器的抽象代价类型。 优化器实现者可以选择cost to be a number（以耗时为标准）， 以record（以cpu time&#x2F;io count）或其他类型。 代价的算术计算和比较通过关联抽象类型cost的函数来执行。</li>
+<li>对于每个逻辑和物理的代数表达式， 逻辑和物理属性来自使用property functions。 每个逻辑算子， 算法和enforcer 都有一个property function。在优化前， 由关联逻辑算子的property function 来决定逻辑属性基于逻辑表达式。 例如， 决定中间结果的schema 可以独立于创建任意一个等价的代数表达式。 逻辑property function 同样封装selectivity 评估。相反， 像sort order 这样的物理属性仅仅在执行计划选择后才能决定。 因为一致性检查之一， 优化器确定 一个选择的plan的物理属性满足优化目标的物理属性vector。</li>
+</ol>
+<h1 id="search-engine"><a href="#search-engine" class="headerlink" title="search engine"></a>search engine</h1><p>优化器就是从相同的的执行计划中选自一个代价最小的执行plan， search engine和他的算法就是最核心的组件。 volocan 优化器生成器提供一个现成的sarch engine， search engine 可以自动link  匹配的pattern 和由data model 描述生成的rule application code。<br>在exodus 优化器中浪费了很多search effor， volcano 优化器生成器使用动态编程， 并且目标驱动和需求驱动。<br>动态编程在system r 和starburst 代价优化器等数据库中已经被使用过了。volcation 优化器生成器的search strategy 扩展了动态编程， 从关系join 优化 到通用代数查询和优化器请求， 自上而下， 目标驱动 的代数控制策略来处理 可能的plan 超过预计算的实际限制。那些部分query被认为是更大的subquery的部分， 这些部分query的等价expression和plan的动态编程。不是所有的等价expression和plan， 这些expression和plan 看起来可行在他们的sort order上。 因此subqueries的exploration和优化， 和他们的可选plan是非常直接和目标驱动的。exods&#x2F;system r&#x2F;starburst  关系系统都使用forward chaining， volcano 使用backward chaining， 因为，他仅仅探索那些真正在一个更大expression使用的subqueries和plan。 我们称这种算法为 directed dynamic programming. volocana 优化器的动态编程通过获得部分优化结果的大集合， 并且在后续优化决定中使用之前的优化结果。当前，当每个查询开始优化时，部分优化结果的集合会被重新初始化。 也就是 早期的部分优化结果只有在优化单查询时被使用。 </p>
+<p>代数转换系统总是包含相同表达式的各种可能。 为了减少无效的优化， 通过探测来自相同逻辑表达式和plan的多余优化， 捕获expression 和plan 在表达式和他的等价类目中的hash table。 一个等价类含2个集合， 一个等价逻辑表达式， 一个等价物理表达式（plan）。 逻辑代数表达式  搜索空间的高效和完整探索使用逻辑代数表达式， 满足物理属性要求的一个合适input plan的一个快速选择<br>使用plan。 一个等价类的已经优化的物理属性可以被combination ， 比如没有sorted， 在a上sorted， 在b上sort， 会保留最好的plan。<br><img data-src="/assets/volcano_search_engine.png" alt="SEARCH_ENGINE"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">FindBestPlan(LogExpr, PhysProp, Limit) &#123;</span><br><span class="line">    if  find LogExpr/PhyProp in HashTable &#123;</span><br><span class="line">        if  cost &lt; limit &#123;</span><br><span class="line">            return plan/cost</span><br><span class="line">        &#125;else &#123;</span><br><span class="line">            return failure</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;else  &#123;</span><br><span class="line">        //优化过程</span><br><span class="line">        创建3种 可能的move &#123;</span><br><span class="line">            applicable transformations</span><br><span class="line">            physprop 要求的算法</span><br><span class="line">            physprop 要求的enforcer， 有时可以做exclude 物理属性vector</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        根据promise 对move 进行排序</span><br><span class="line">        for 对于最可能promising的moves &#123; //使用所有的move或根据规则选择部分</span><br><span class="line">            if 如果这个move 使用transformation &#123;</span><br><span class="line">                使用这个transformation， 生成新的NewLogExpr；// 这个地方会标记已经使用的transform，防止重复transform</span><br><span class="line">                调用FindBestPlan(NewLogExpr, PhysProp, Limit)</span><br><span class="line">            &#125;else if (move 使用算法) &#123;</span><br><span class="line">                //某个算法可以deliver 这个逻辑表达带对应的物理属性</span><br><span class="line">                Totalcost ：= 算法的cost</span><br><span class="line">                for each input I while Totalcost &lt; Limit &#123;</span><br><span class="line">                    生成physical properties PP for I</span><br><span class="line">                    cost = FindBestPlan(I, PP, Limit - TotalCost)</span><br><span class="line">                    TotalCost += cost</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;else &#123; // enforcer</span><br><span class="line">                TotalCost := cost of enforcer</span><br><span class="line">                根据enforcer property 调整PhysPop</span><br><span class="line">                调用 FindBestPlan(LogExpr, NewPhysProp, Limit)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if LogExpr 不在look up table</span><br><span class="line">            insert LogExpr  Look-up-table</span><br><span class="line">        </span><br><span class="line">        insert PhyProp/BestPlan into Look-up-table</span><br><span class="line">        return BestPlan and cost</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>starburst 使用2阶段，增加了query rewrite 阶段。 而volcano 留给了优化器实现者。<br>cost 限制用于减少search 范围。 一旦一个逻辑expression的完整的plan和物理属性vector， 没有更高代价的其他plan或者部分plan ， 这个完整plan可以作为优化plan。 快速找到一个相对好的plan是非常重要，即使exhaustive 扫描。 更进一步， cost limit 可以透传到subexpression， 控制优化的上限空间。<br>对于一些binary 算子， 输入的实际的物理属性不如input之间的一致性物理属性重要。 对于intersection的sort-based 实现， 类似merge-join的算法， 只要2个input用相同方式进行sort即可。 对于一些case， search engine 允许尝试一些物理属性vector</p>
+<h1 id="other-related-work"><a href="#other-related-work" class="headerlink" title="other related work"></a>other related work</h1><ol>
+<li>这里提到在starburst 如何做优化， 将优化分为2个阶段， 第一个阶段，叫rewrite phase， 基本上是基于规则的，非cost base，执行nested sql queries， union， outer join， grouping， aggregation另外一个阶段cost base 优化， 比如merge nested subqueries， bundles selection， join predicate。 cost base 优化器会执行exhaustive的search在某些条件下， 比如限制搜索在左深树。 它同样使用了动态编程， 对于类似enforcer的操作叫glue， 执行sort order或者创建高效access plan 。 <ol>
+<li>有2个基础性问题， 1.基于类似语法的规则，step-wise expansion（逐步膨胀） 的join expression， 举例来说， 语法依赖一个中间层， 交换join&#x2F;不交换join&#x2F;规则集 都是特殊定制的。 问题是不是很清楚 现有的rule 如何与算子&#x2F;expansion rule 交互。 定义一个怎样的中间层来用于expansion grammar？当集成一个新的算子到cost based optimizer， 必须定义几个新的中间层和他们的grammar rule三。 这些新rule 可能和现有的rule 进行交互， 创建一个复杂和繁琐的task。 volocano 代数优化方式更自然和易懂。</li>
+<li>当添加新算子到cost-based optimzer时， 新算子需要集成到query rewrite level。 但在query rewrite level 是有层级， 也就是他不包含cost estimation。 比如， 优化有一些欠缺， 考虑一个union 或intersection of N set， 实际上就是join n relation， 然而join优化需要遍历tree 和join ordering， 基于selectivity 和cost 进行评估。但 union&#x2F;intersection 仅仅用rewrite 和交换率来进行启发式优化。 当启发式规则适用于一些transformation时（如rewriting subquery到semi join）， 但这个启发式规则不适用在query rewrite level的已经存在的关系算子，不适用一个扩展查询优化系统未来的代数算子和属性是未知的。</li>
+<li>我们相信一个单一层， 在这层中， 所有的代数等价式和transformation 可以用一个语言来表达并且由一个优化器组件来进行执行， 在未来探索数据库代数和优化时， 他可以有延续性。 </li>
+<li>注意， volcano 优化器生成器 通过合适的ranking和moves的选择来允许 启发式transformation， 他留给优化器实现者来进行选择何时以及如何使用启发式规则和cost-sensitive 优化， 而不是像starburst 要求先验</li>
+</ol>
+</li>
+<li>sciore&#x2F;sieg 批评早期的基于规则优化器， 并得出结论 模块化是优化器系统扩展性的基本要求，如 rule set 和应用的控制结构。优化的不同task，如rule 应用和selectivity 评估 应该封装在独立和合作的 experts。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/docs/paper/ms-sql-server-pdw/" rel="prev" title="Microsoft SQL Server PDW">
+                  <i class="fa fa-chevron-left"></i> Microsoft SQL Server PDW
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/docs/paper/cascade/" rel="next" title="《The Cascades Framework for Query Optimization》">
+                  《The Cascades Framework for Query Optimization》 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2018/docs/paper/The_Volcano_Optimizer_Generator/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"c1c6a175250d3ba5cf5f86969b6bb833"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

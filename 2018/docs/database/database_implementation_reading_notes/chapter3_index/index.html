@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="《数据库实现》-- 第三章 索引">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《数据库实现》-- 第三章 索引">
+<meta property="og:url" content="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter3_index/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="《数据库实现》-- 第三章 索引">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341287114-4df4c52a-23b9-4a38-9ef7-44d78f71d1ee.png#align=left&display=inline&height=297&name=image.png&originHeight=594&originWidth=788&size=32896&status=done&width=394">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341928867-ba844051-9591-4318-ae08-5f646f5890da.png#align=left&display=inline&height=280&name=image.png&originHeight=560&originWidth=520&size=55254&status=done&width=260">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341982473-89a4f56f-119f-4793-982a-9201c212f6e1.png#align=left&display=inline&height=285&name=image.png&originHeight=570&originWidth=798&size=37364&status=done&width=399">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342210978-ea8de8f2-f3d0-4956-8016-d3b4092ac1a1.png#align=left&display=inline&height=271&name=image.png&originHeight=542&originWidth=536&size=61091&status=done&width=268">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342694455-47491969-c72a-4ca7-985c-84e0759afc5c.png#align=left&display=inline&height=35&name=image.png&originHeight=70&originWidth=812&size=7614&status=done&width=406">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342707941-4ec35f03-74eb-4065-8aaf-31900fc19f5b.png#align=left&display=inline&height=53&name=image.png&originHeight=106&originWidth=742&size=8558&status=done&width=371">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342740601-d5a5d5cc-85ed-4a11-9c6f-4291096f99b7.png#align=left&display=inline&height=111&name=image.png&originHeight=222&originWidth=978&size=23506&status=done&width=489">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342873163-2bfbb4cc-779e-410a-a329-54c1b71dcf95.png#align=left&display=inline&height=301&name=image.png&originHeight=602&originWidth=786&size=42560&status=done&width=393">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572348354208-74224698-557e-4e06-8e29-fd6dd15f16ef.png#align=left&display=inline&height=356&name=image.png&originHeight=712&originWidth=860&size=35025&status=done&width=430">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572349592249-5a2cc5ab-3dd9-4a52-bd90-0b6760c76c77.png#align=left&display=inline&height=227&name=image.png&originHeight=454&originWidth=942&size=26866&status=done&width=471">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572360677454-84c4a778-1437-4248-9b92-173bc665af78.png#align=left&display=inline&height=325&name=image.png&originHeight=650&originWidth=956&size=36668&status=done&width=478">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572360700165-b43cd7f7-1fd5-4ad5-9e95-3ac787c1fbd0.png#align=left&display=inline&height=321&name=image.png&originHeight=642&originWidth=892&size=36762&status=done&width=446">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361328825-95084164-c9d1-48ed-967a-fa8366ec6f67.png#align=left&display=inline&height=240&name=image.png&originHeight=480&originWidth=912&size=28559&status=done&width=456">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361438683-4fb03a7f-e3f7-4cb4-a05d-7d3374a5bcab.png#align=left&display=inline&height=241&name=image.png&originHeight=482&originWidth=860&size=26593&status=done&width=430">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361643297-59e972a4-1bf6-400f-a29c-815cfcd25f65.png#align=left&display=inline&height=250&name=image.png&originHeight=500&originWidth=1010&size=28646&status=done&width=505">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572399656631-04358a29-d3c7-41a5-9899-88ae2faaa303.png#align=left&display=inline&height=214&name=image.png&originHeight=428&originWidth=482&size=39821&status=done&width=241">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572484439057-b51270f7-8e34-4d58-85cf-2754a1fdc335.png#align=left&display=inline&height=166&name=image.png&originHeight=166&originWidth=789&size=30981&status=done&width=789">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572485722654-56ebc6b5-feae-494f-8c05-e2b06841dcd4.png#align=left&display=inline&height=442&name=image.png&originHeight=442&originWidth=335&size=24091&status=done&width=335">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572485861030-b2b43d95-d006-4d25-9415-e715cbbe0572.png#align=left&display=inline&height=319&name=image.png&originHeight=319&originWidth=581&size=25169&status=done&width=581">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572486567335-34bd1870-9cf1-4e23-b3b8-9e59b23c1f98.png#align=left&display=inline&height=304&name=image.png&originHeight=304&originWidth=832&size=163035&status=done&width=832">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572487407954-8dc580f2-8cfb-4acb-a75a-ce20d567e391.png#align=left&display=inline&height=456&name=image.png&originHeight=456&originWidth=358&size=78901&status=done&width=358">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488175075-f10d13bf-d9bf-48e6-8821-6c373529d767.png#align=left&display=inline&height=144&name=image.png&originHeight=144&originWidth=467&size=53658&status=done&width=467">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488682854-c8442fe9-3a9d-43a6-8262-1539903aa333.png#align=left&display=inline&height=167&name=image.png&originHeight=167&originWidth=780&size=36354&status=done&width=780">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488693178-abaa6732-642a-4b96-97d1-415e62e2b7a4.png#align=left&display=inline&height=124&name=image.png&originHeight=124&originWidth=191&size=4356&status=done&width=191">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488807594-9a71c540-5ab8-4701-a24a-977e033119bc.png#align=left&display=inline&height=155&name=image.png&originHeight=155&originWidth=798&size=30348&status=done&width=798">
+<meta property="article:published_time" content="2018-08-07T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:15:26.086Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341287114-4df4c52a-23b9-4a38-9ef7-44d78f71d1ee.png#align=left&display=inline&height=297&name=image.png&originHeight=594&originWidth=788&size=32896&status=done&width=394">
+
+
+<link rel="canonical" href="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter3_index/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter3_index/","path":"2018/docs/database/database_implementation_reading_notes/chapter3_index/","title":"《数据库实现》-- 第三章 索引"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《数据库实现》-- 第三章 索引 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E7%AB%A0-%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">第三章 索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84%E5%9F%BA%E7%A1%80"><span class="nav-number">1.0.1.</span> <span class="nav-text">索引结构基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95"><span class="nav-number">1.0.2.</span> <span class="nav-text">倒排索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#b-%E6%A0%91"><span class="nav-number">1.0.3.</span> <span class="nav-text">b- 树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hash-%E8%A1%A8"><span class="nav-number">1.0.4.</span> <span class="nav-text">hash 表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#linear-hash-table"><span class="nav-number">1.0.5.</span> <span class="nav-text">linear hash table</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95"><span class="nav-number">1.0.6.</span> <span class="nav-text">多维索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95"><span class="nav-number">1.0.7.</span> <span class="nav-text">位图索引</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter3_index/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《数据库实现》-- 第三章 索引
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-08-07 19:42:57" itemprop="dateCreated datePublished" datetime="2018-08-07T19:42:57+08:00">2018-08-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">数据库实现</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>2.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>9 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">《数据库实现》-- 第三章 索引</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="第三章-索引"><a href="#第三章-索引" class="headerlink" title="第三章 索引"></a>第三章 索引</h1><p><a name="eZZE0"></a></p>
+<h3 id="索引结构基础"><a href="#索引结构基础" class="headerlink" title="索引结构基础"></a>索引结构基础</h3><p>索引的数据文件， 必须建立索引和记录之间的关联， 索引的指针指向的记录必须含索引对应的值。<br>索引如果是稠密的， 则为每个记录设一个索引。<br>当索引是稀疏的， 则需要主索引和辅助索引。 </p>
+<p><a name="nx2IV"></a></p>
+<h4 id="顺序文件"><a href="#顺序文件" class="headerlink" title="顺序文件"></a>顺序文件</h4><p>按照主键进行排序生成的文件。 表中的元祖按照这个次序分布在多个数据块中。<br><a name="J5VZr"></a></p>
+<h4 id="稠密索引"><a href="#稠密索引" class="headerlink" title="稠密索引"></a>稠密索引</h4><p>当索引文件索引块保持键的顺序和数据文件中排序一直。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341287114-4df4c52a-23b9-4a38-9ef7-44d78f71d1ee.png#align=left&display=inline&height=297&name=image.png&originHeight=594&originWidth=788&size=32896&status=done&width=394" alt="image.png"></p>
+<p>这种方式， 因为索引是排序的，可以用二分查找来加速查找， 另外， 因为索引的数据量小，可以完全被load到内存中。 </p>
+<p><a name="09S19"></a></p>
+<h4 id="稀疏索引"><a href="#稀疏索引" class="headerlink" title="稀疏索引"></a>稀疏索引</h4><p>这个里面有一个条件， 数据文件必须是按照查找键进行排序。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341928867-ba844051-9591-4318-ae08-5f646f5890da.png#align=left&display=inline&height=280&name=image.png&originHeight=560&originWidth=520&size=55254&status=done&width=260" alt="image.png"><br><a name="QYBzu"></a></p>
+<h4 id="多级索引"><a href="#多级索引" class="headerlink" title="多级索引"></a>多级索引</h4><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572341982473-89a4f56f-119f-4793-982a-9201c212f6e1.png#align=left&display=inline&height=285&name=image.png&originHeight=570&originWidth=798&size=37364&status=done&width=399" alt="image.png"><br>类似上图， 但多级索引效率依旧比较低，因此更常规的做法是使用b+树。</p>
+<p><a name="LIofG"></a></p>
+<h4 id="辅助索引（非主键索引）"><a href="#辅助索引（非主键索引）" class="headerlink" title="辅助索引（非主键索引）"></a>辅助索引（非主键索引）</h4><p>辅助索引表示索引键的排序和数据文件的排序是不同的， 因此必须是稠密索引， 因此稀疏索引是毫无意义。<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342210978-ea8de8f2-f3d0-4956-8016-d3b4092ac1a1.png#align=left&display=inline&height=271&name=image.png&originHeight=542&originWidth=536&size=61091&status=done&width=268" alt="image.png"><br>因为索引键非唯一性， 因此，对一个值进行查找时， 可能还是会查找多个数据文件的块。<br>辅助索引一种用途就是做聚集文件， 比如表r 和s， r 中多条记录对于s中一条记录。<br>比如<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342694455-47491969-c72a-4ca7-985c-84e0759afc5c.png#align=left&display=inline&height=35&name=image.png&originHeight=70&originWidth=812&size=7614&status=done&width=406" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342707941-4ec35f03-74eb-4065-8aaf-31900fc19f5b.png#align=left&display=inline&height=53&name=image.png&originHeight=106&originWidth=742&size=8558&status=done&width=371" alt="image.png"><br>基于studioname 和pressc# 建立一个聚集文件<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342740601-d5a5d5cc-85ed-4a11-9c6f-4291096f99b7.png#align=left&display=inline&height=111&name=image.png&originHeight=222&originWidth=978&size=23506&status=done&width=489" alt="image.png"><br><a name="plroa"></a></p>
+<h4 id="辅助索引的间接层"><a href="#辅助索引的间接层" class="headerlink" title="辅助索引的间接层"></a>辅助索引的间接层</h4><p>当辅助索引重复率非常高时， 索引文件的效率比较低，可以引入一个间接索引<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572342873163-2bfbb4cc-779e-410a-a329-54c1b71dcf95.png#align=left&display=inline&height=301&name=image.png&originHeight=602&originWidth=786&size=42560&status=done&width=393" alt="image.png"></p>
+<p><a name="OkAZc"></a></p>
+<h3 id="倒排索引"><a href="#倒排索引" class="headerlink" title="倒排索引"></a>倒排索引</h3><ul>
+<li>一个文档可以被看作是doc 的一个元组</li>
+<li>每个元组类似doc(hascat, hasdog, hascar…), 每个属性表示文档含有该关键字</li>
+<li>关系doc 上为每个属性建立一个辅助索引， 只需为出现该关键字的文档建索引</li>
+<li>不是为每个属性建一个索引，而是把所有的索引合成一个，称为倒排索引。 </li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572348354208-74224698-557e-4e06-8e29-fd6dd15f16ef.png#align=left&display=inline&height=356&name=image.png&originHeight=712&originWidth=860&size=35025&status=done&width=430" alt="image.png"><br><a name="Xh7Ji"></a></li>
+</ul>
+<h3 id="b-树"><a href="#b-树" class="headerlink" title="b- 树"></a>b- 树</h3><ul>
+<li>平衡二叉树， 每个块都处在半满和全满之间</li>
+<li>根， 至少被2个节点使用</li>
+<li>叶节点中， 最后一个指针指向下一个叶节点的存储块</li>
+<li>内层节点， 含有n+1个指针指向下一层的块， 摒弃[(n+1)&#x2F;2]  个指针被使用了。 如果含有j个指针，则含有j-1个键， 为k1, k2, k3, …, k(j-1). 第一个指针指向小于k1的块， 第二个指针指向k1《&#x3D;v 《 k2</li>
+<li>所有的键和指针，存放在数据块的头部。 </li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572349592249-5a2cc5ab-3dd9-4a52-bd90-0b6760c76c77.png#align=left&display=inline&height=227&name=image.png&originHeight=454&originWidth=942&size=26866&status=done&width=471" alt="image.png"></li>
+<li>b- 树是数据文件的主键， 索引是稠密的， 数据文件可以不按主键排序</li>
+<li>当数据文件按主键排序，且b+树是稀疏索引， 则叶节点为数据文件每一个块设一个键-指针对</li>
+<li>当数据文件按主键排序，但b+ 树属性非主键。 则索引是稠密的，叶节点为每个属性都设置键-指针对，k指向第一个记录。</li>
+<li>b-树可扩展带重复。 <br><a name="2XuCA"></a></li>
+</ul>
+<h4 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h4><ul>
+<li>在合适的节点中找空间，如果节点有空间，则放入到该节点。</li>
+<li>如果合适节点没有空间， 将合适节点分裂为2个新节点， 将键分到2个新节点， 2个新节点满足有一半或超过一半的键。</li>
+<li>对于刚才分裂的节点的上一层来说，就相当于在上一层新增节点， 重复上一层的插入操作，直到根节点。</li>
+</ul>
+<p>对图3-13 进行插入40节点操作， 第一步如下<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572360677454-84c4a778-1437-4248-9b92-173bc665af78.png#align=left&display=inline&height=325&name=image.png&originHeight=650&originWidth=956&size=36668&status=done&width=478" alt="image.png"><br>第二步<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572360700165-b43cd7f7-1fd5-4ad5-9e95-3ac787c1fbd0.png#align=left&display=inline&height=321&name=image.png&originHeight=642&originWidth=892&size=36762&status=done&width=446" alt="image.png"><br><a name="PKHMk"></a></p>
+<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><ul>
+<li>如果删除键的节点，删除后 键还是超过最小要求，则直接删除， 不做合并操作</li>
+<li> 如果删除键的节点n 的邻居节点m（是他的兄弟节点， 同一个父节点下的其他的相邻节点），可以拆一个节点过来， 则拆解一个节点过来， 并更新他们共同的父节点</li>
+<li>如果n节点的相邻节点都是最小要求， 则n节点和一个相邻节点进行合并。 然后对他们的父节点进行一个删除键操作， 重复上叙过程，直到完成删除动作。</li>
+</ul>
+<p>对图3-13 进行删除7操作<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361328825-95084164-c9d1-48ed-967a-fa8366ec6f67.png#align=left&display=inline&height=240&name=image.png&originHeight=480&originWidth=912&size=28559&status=done&width=456" alt="image.png"><br>对图3-17 进行删除11的操作<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361438683-4fb03a7f-e3f7-4cb4-a05d-7d3374a5bcab.png#align=left&display=inline&height=241&name=image.png&originHeight=482&originWidth=860&size=26593&status=done&width=430" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572361643297-59e972a4-1bf6-400f-a29c-815cfcd25f65.png#align=left&display=inline&height=250&name=image.png&originHeight=500&originWidth=1010&size=28646&status=done&width=505" alt="image.png"></p>
+<p><a name="E75Vs"></a></p>
+<h4 id="效率分析"><a href="#效率分析" class="headerlink" title="效率分析"></a>效率分析</h4><p>如果每个节点容纳的键比较多， 则分裂和合并的操作就会比较少。 <br>访问效率， i&#x2F;o效率是树的深度 + 1次（查找） &#x2F;2次（插入或删除）。 </p>
+<p>优化手段</p>
+<ol>
+<li>一些b-树，删除时，并不会立刻做平衡树调整， 它会相信马上就会添加数据让它平衡， 或者大部分树发展比较平衡，节点比较多，删除不会立刻破坏平衡性。</li>
+</ol>
+<p> </p>
+<p><a name="7DGrh"></a></p>
+<h3 id="hash-表"><a href="#hash-表" class="headerlink" title="hash 表"></a>hash 表</h3><p>通过一个hash 函数，将键 hash到一个含有b个桶的hash 表中， hash表可能每个指针，指向一个链表<br>通常算法是hash(k)%b， b 通常是一个素数， 素数更有利于hash后值平均分布。<br>适合冲突比较少的算法， 另外不适合范围查找。</p>
+<p><a name="EPdoV"></a></p>
+<h4 id="动态hash表"><a href="#动态hash表" class="headerlink" title="动态hash表"></a>动态hash表</h4><p>在静态hash表的基础上，增加</p>
+<ul>
+<li>增加一个中间层， 中间层存放指针，中间层是一个指针数组</li>
+<li>指针数组长度是2的幂， 当增长时， 数组长度就翻倍</li>
+</ul>
+<p><a name="5iPKc"></a></p>
+<h5 id="动态hash-表的插入"><a href="#动态hash-表的插入" class="headerlink" title="动态hash 表的插入"></a>动态hash 表的插入</h5><ul>
+<li>插入一个值到目标块中， 如果目标块可存放， 则ok</li>
+<li>当目标块溢出时， 对目标块进行分裂， 取hash值后的第n位做判断位，为0， 保留在老块中，为1放到新块中。将中间层的指针重新指向新块</li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572399656631-04358a29-d3c7-41a5-9899-88ae2faaa303.png#align=left&display=inline&height=214&name=image.png&originHeight=428&originWidth=482&size=39821&status=done&width=241" alt="image.png"></li>
+<li>缺点： 分裂的代价比较重</li>
+</ul>
+<p><a name="oDF60"></a></p>
+<h3 id="linear-hash-table"><a href="#linear-hash-table" class="headerlink" title="linear hash table"></a>linear hash table</h3><p><a name="BLugl"></a></p>
+<h4 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h4><ul>
+<li>p: 平均每个桶能装的元素个数， 固定值</li>
+<li>e： 取hash值的e位来有效</li>
+<li>r： 实际元素个数</li>
+<li>n： 桶个数</li>
+</ul>
+<p>原则：</p>
+<ul>
+<li>r&#x2F;n &lt;&#x3D; p， 不符合时， 增加n</li>
+<li>2^(e -1) &lt;&#x3D; n &lt; 2^e</li>
+</ul>
+<p>hash表中，每个元素为（hash， key， value）<br>hash &#x3D; hash（key） &amp; (2^e - 1)</p>
+<p>插入时：</p>
+<ol>
+<li>当hash 值&lt; n 时， 直接放入hash 对应的桶中</li>
+<li>当hash 值&gt;&#x3D; n 时， hash &#x3D; hash（key）&amp; （2^ (e -1) - 1)， 放入对应的桶中。</li>
+</ol>
+<p>当插入值后， 因为r在增加， 可以会破坏原则：</p>
+<ol>
+<li>r&#x2F;n &lt; &#x3D; p, 增加n</li>
+<li>当n增加后，如果破坏了原则 2^(e -1) &lt;&#x3D; n &lt; 2^e， 则增加e</li>
+<li>当e增加后， 找个空闲的时间，可以rehash一下， 对原来老的一些桶内的数据，从老的桶内挪到新的桶内。</li>
+</ol>
+<p><a name="sSatE"></a></p>
+<h3 id="多维索引"><a href="#多维索引" class="headerlink" title="多维索引"></a>多维索引</h3><p><a name="Jcs4M"></a></p>
+<h4 id="hash-结构"><a href="#hash-结构" class="headerlink" title="hash 结构"></a>hash 结构</h4><p>一种方式是使用网格文件（grid file）， 每一维上把空间分成条状， 按照空间2维进行组队。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572484439057-b51270f7-8e34-4d58-85cf-2754a1fdc335.png#align=left&display=inline&height=166&name=image.png&originHeight=166&originWidth=789&size=30981&status=done&width=789" alt="image.png"></p>
+<p>hash 结构的设计， 我觉得场景不多， 实现的效率不高， 不仔细研究了</p>
+<p><a name="BHCqI"></a></p>
+<h4 id="多维树结构"><a href="#多维树结构" class="headerlink" title="多维树结构"></a>多维树结构</h4><ul>
+<li>多键索引</li>
+<li>kd树</li>
+<li>四叉树</li>
+<li>r-树</li>
+</ul>
+<p><a name="rCH9q"></a></p>
+<h5 id="多键索引"><a href="#多键索引" class="headerlink" title="多键索引"></a>多键索引</h5><p>每一层是某一个索引，下一层是另外一个索引， 2个索引相互嵌套。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572485722654-56ebc6b5-feae-494f-8c05-e2b06841dcd4.png#align=left&display=inline&height=442&name=image.png&originHeight=442&originWidth=335&size=24091&status=done&width=335" alt="image.png"></p>
+<p><a name="YtJDG"></a></p>
+<h5 id="kd-树"><a href="#kd-树" class="headerlink" title="kd 树"></a>kd 树</h5><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572485861030-b2b43d95-d006-4d25-9415-e715cbbe0572.png#align=left&display=inline&height=319&name=image.png&originHeight=319&originWidth=581&size=25169&status=done&width=581" alt="image.png"><br>每一层都是一个索引， 每个节点都是一个值， 然后以这个值做搜索， 大于的往左边，小于的往右边，这样自动进行切分</p>
+<p><a name="0gqyR"></a></p>
+<h5 id="四叉树"><a href="#四叉树" class="headerlink" title="四叉树"></a>四叉树</h5><p>四叉树是2叉树的一种变种， 每个节点是一个二维的节点， 他的4个子节点代表着4个方向。 <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572486567335-34bd1870-9cf1-4e23-b3b8-9e59b23c1f98.png#align=left&display=inline&height=304&name=image.png&originHeight=304&originWidth=832&size=163035&status=done&width=832" alt="image.png"><br>如果支持3维， 则变成8叉树。 他不是一种平衡树。 </p>
+<p><a name="Jl8by"></a></p>
+<h5 id="R-树"><a href="#R-树" class="headerlink" title="R 树"></a>R 树</h5><p>r树 是一种高维空间索引， 基于B树的衍生树， 是一种平衡树。 是使用非常多的一种多维空间索引<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572487407954-8dc580f2-8cfb-4acb-a75a-ce20d567e391.png#align=left&display=inline&height=456&name=image.png&originHeight=456&originWidth=358&size=78901&status=done&width=358" alt="image.png"><br>每一个节点都是一个小小的rectangle， 他的父节点就是下面几个rectangle组成起来的一个大的rectangle， 相邻的几个小rectangle合起来组成一个大的rectangle。 一个rectangle就是一个记录<br>原则：</p>
+<ol>
+<li>除了根节点， 所有的节点至少m个rectangle， 最多M个rectangle， m&#x3D;M&#x2F;2， m&lt;&#x3D;n&lt; M。</li>
+<li>除了根节点， 他最多m&lt;&#x3D;n&lt;M个指针，指向下一层节点</li>
+<li>所有叶子位于同一层</li>
+<li>叶子节点的记录是最小rectangle， 他的父节点同样是最小rectangle</li>
+<li><br></li>
+<li>叶子节点结构</li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488175075-f10d13bf-d9bf-48e6-8821-6c373529d767.png#align=left&display=inline&height=144&name=image.png&originHeight=144&originWidth=467&size=53658&status=done&width=467" alt="image.png"></li>
+</ol>
+<p>搜索的时候， 有一点像地图搜索， 比如，搜索杭州， 找到杭州这个rectangle， 搜索西湖区， 找到西湖区这个rectangle， 一层一层往下分解， 如果跨节点，则进行拆分。  </p>
+<p><a name="jHpwr"></a></p>
+<h3 id="位图索引"><a href="#位图索引" class="headerlink" title="位图索引"></a>位图索引</h3><p>位图索引， 很多时候， 都是表示这个记录在某个位置是否出现， 尤其是在一些readonly的存储上非常有用，常常标识记录是否被删除。 </p>
+<p>举个例子<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488682854-c8442fe9-3a9d-43a6-8262-1539903aa333.png#align=left&display=inline&height=167&name=image.png&originHeight=167&originWidth=780&size=36354&status=done&width=780" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488693178-abaa6732-642a-4b96-97d1-415e62e2b7a4.png#align=left&display=inline&height=124&name=image.png&originHeight=124&originWidth=191&size=4356&status=done&width=191" alt="image.png"></p>
+<p>压缩位图<br>可以用很多算法来对位图进行压缩。 <br>一种思路是进行分段长度编码， <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572488807594-9a71c540-5ab8-4701-a24a-977e033119bc.png#align=left&display=inline&height=155&name=image.png&originHeight=155&originWidth=798&size=30348&status=done&width=798" alt="image.png"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0/" rel="tag"># 数据库实现</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/docs/database/database_implementation_reading_notes/chapter2_storage/" rel="prev" title="《数据库实现》-- 第二章 存储概述">
+                  <i class="fa fa-chevron-left"></i> 《数据库实现》-- 第二章 存储概述
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/docs/database/database_implementation_reading_notes/chapter4_query_execution/" rel="next" title="《数据库实现》-- 第四章 查询执行">
+                  《数据库实现》-- 第四章 查询执行 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter3_index/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"50f7e2d359454df0905c41e0b002cc53"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Microsoft SQL Server PDW">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Microsoft SQL Server PDW">
+<meta property="og:url" content="http://ilongda.com/2018/docs/paper/ms-sql-server-pdw/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Microsoft SQL Server PDW">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-arch.jpg">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-query.png">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-op-flow.png">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-op.png">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-dms-cost.png">
+<meta property="og:image" content="http://ilongda.com/assets/ms-pdw-dsql-gen.png">
+<meta property="article:published_time" content="2018-10-20T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:31:05.947Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="论文">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ilongda.com/assets/ms-pdw-arch.jpg">
+
+
+<link rel="canonical" href="http://ilongda.com/2018/docs/paper/ms-sql-server-pdw/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2018/docs/paper/ms-sql-server-pdw/","path":"2018/docs/paper/ms-sql-server-pdw/","title":"Microsoft SQL Server PDW"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Microsoft SQL Server PDW | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E8%8A%82%E7%82%B9"><span class="nav-number">2.1.</span> <span class="nav-text">控制节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97%E8%8A%82%E7%82%B9"><span class="nav-number">2.2.</span> <span class="nav-text">计算节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DMS"><span class="nav-number">2.3.</span> <span class="nav-text">DMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DSQL"><span class="nav-number">2.4.</span> <span class="nav-text">DSQL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#example"><span class="nav-number">2.4.1.</span> <span class="nav-text">example</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cost-based-%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="nav-number">2.5.</span> <span class="nav-text">cost-based 查询优化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#pdw-qo-%E4%BC%98%E5%8C%96%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">pdw qo 优化器实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Esql-server%E7%9A%84%E4%BF%AE%E6%94%B9"><span class="nav-number">3.1.</span> <span class="nav-text">基于sql-server的修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#plan-enumeration"><span class="nav-number">3.2.</span> <span class="nav-text">plan enumeration</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cost-model"><span class="nav-number">3.3.</span> <span class="nav-text">cost model</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cost-model-%E5%81%87%E8%AE%BE"><span class="nav-number">3.3.1.</span> <span class="nav-text">cost model 假设</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dms-%E6%93%8D%E4%BD%9C%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.3.2.</span> <span class="nav-text">dms 操作类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cost-of-dms-operator"><span class="nav-number">3.3.3.</span> <span class="nav-text">cost of dms operator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#costing-of-%E4%B8%80%E4%B8%AA%E5%8D%95%E7%8B%AC%E6%A8%A1%E5%9D%97"><span class="nav-number">3.3.4.</span> <span class="nav-text">costing of 一个单独模块</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dsql-%E7%94%9F%E6%88%90"><span class="nav-number">3.4.</span> <span class="nav-text">dsql 生成</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2018/docs/paper/ms-sql-server-pdw/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Microsoft SQL Server PDW
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-10-20 19:42:57" itemprop="dateCreated datePublished" datetime="2018-10-20T19:42:57+08:00">2018-10-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>2.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>11 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Microsoft SQL Server PDW</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>Microsoft SQL Server PDW, 是一个基于SQL-Server基础上构建的MPP 分布式数据库， 旨在提供数据仓库解决方案。 复用了很多SQL-Server的技术， 如query 简化， 空间探索， cardinality 评估。<br>整个架构share nothing，有一点类似DRDS 的架构，优化器叫PDW QO </p>
+<h1 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h1><p><img data-src="/assets/ms-pdw-arch.jpg" alt="image"><br>pwd 是一套软硬一体的硬件， 可以进行水平扩张（增加节点），或垂直扩展（升级cpu&#x2F;memory&#x2F;存储）<br>控制节点和计算节点都包含一个sql-server 节点， DMS – data movement service。<br>优化搜索空间（optimization search space） 称为memo。 搜索空间会配置数据分布的参数信息从而找一个并行执行计划。</p>
+<h2 id="控制节点"><a href="#控制节点" class="headerlink" title="控制节点"></a>控制节点</h2><ol>
+<li>一个engine service， 这个engine serice 是中央控制核心节点。</li>
+<li>用户接口 </li>
+<li>使用sql-server 栈，负责parsing， 权限验证，生成分布式执行计划（DSQL Plan）， 分发plan到计算节点， 跟踪执行进度， merge 计算节点的结果，返回结果给用户</li>
+<li>元数据&#x2F;configuration data存在控制节点的sql-server, 也存储global statics（local statics 存在计算节点的sql-server）， aggregated statics of user, 用户数据的分区信息，用户的权限信息，但不存任何用户的数据</li>
+<li>遍历搜索空间， 触发data movement， 并基于最小代价选择最终执行计划。</li>
+<li>负责管理dms</li>
+</ol>
+<h2 id="计算节点"><a href="#计算节点" class="headerlink" title="计算节点"></a>计算节点</h2><ol>
+<li>提供数据存储， 数据以分片形式或者复制形式分布在sql-server的table 上。</li>
+<li>计算的主力节点</li>
+</ol>
+<h2 id="DMS"><a href="#DMS" class="headerlink" title="DMS"></a>DMS</h2><ol>
+<li>经常需要将中间结果从一个节点传到另外一个节点。有的时候，会把计算节点的数据传到控制节点做aggregation或者传给用户前的sorting。</li>
+<li>用临时表来移动数据或存中间结果， 不过也可以， 用户sql 写成无临时表方式，这样计算节点的结果数据会以流式方式发给客户端，中间不涉及dms</li>
+</ol>
+<h2 id="DSQL"><a href="#DSQL" class="headerlink" title="DSQL"></a>DSQL</h2><ol>
+<li>sql 操作， 在计算节点上执行的sql 语句</li>
+<li>DMS 操作， 在计算节点之间进行搬迁数据</li>
+<li>临时表操作， setup staging table 用于后续操作</li>
+<li>return 操作， push result to client。</li>
+</ol>
+<p>一个步骤一个时间（应该是一种操作一个stage， 按照stage 进行流水线）。 单独一个步骤可以并行。 </p>
+<h3 id="example"><a href="#example" class="headerlink" title="example"></a>example</h3><p>以tpch 为例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select c_custkey, o_orderdate from orders, customer where o_custkey = c_custkey and o_totalprice &gt; 100;</span><br></pre></td></tr></table></figure>
+<p>customer表按照c_custkey 分区， 但oder 表不是按照o_custkey分区， 因此，可能2个步骤</p>
+<ol>
+<li><p>dms 操作： 对order 表按照o_custkey 进行repartition。</p>
+</li>
+<li><p>sql 操作， 计算节点选择tuple， 并最终返回结果给客户端</p>
+</li>
+<li><p>dms 操作，</p>
+<ol>
+<li>用sql 语句提取原始数据</li>
+<li>tuple 路由策略</li>
+<li>目标临时表</li>
+</ol>
+</li>
+</ol>
+<p>控制节点广播dms 操作到每个计算节点， 计算节点执行sql 语句</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select o_custkey, o_orderdate from orders where o_totalprice &gt; 100</span><br></pre></td></tr></table></figure>
+<p>每个dms 读取本地的数据， 路由对应的数据到对应的dms上， 对o_custkey 进行hash， 并且接受从其他dms接受或扫描出来的数据插入到目标临时表。 </p>
+<ol start="2">
+<li>sql 操作<br>engine service 执行第二步，它会建立一个链接到每个计算节点的sql Server， 然后发送一个sql 语句，最后从每个计算节点中拉出计算结果数据<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select c_custkey, tmp.o_orderdate from orders, tmp where tmp.o_custkey = c_custkey ;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="cost-based-查询优化"><a href="#cost-based-查询优化" class="headerlink" title="cost-based 查询优化"></a>cost-based 查询优化</h2><p>优化过程， 参考下图<br><img data-src="/assets/ms-pdw-query.png" alt="image"></p>
+<ol>
+<li><p>生成算子树</p>
+</li>
+<li><p>执行完算子树上logic exploration， 并且这个过程和单sql到sql-server过程一样。</p>
+</li>
+<li><p>pdw parser: 生成ast 语法树， 会做一些语法验证。 有一些query 会做一些基本的transformation。</p>
+</li>
+<li><p>sql server 优化： 转换后的query（这个地方有疑问是query还是ast？） 转发到shell database，sql-Server 输出的是一个相对优化的plan， 最优的串性计划不一定是最优的分布式计划，pwd 并不是用sql-server 来获得最优计划， 是自己来计算出来的。</p>
+<ol>
+<li>简化输入算子树为一个格式化的form， 这个作为初始计划插入到memo data structure（memo hold 所有可选计划的搜索空间）</li>
+<li>logical transformation based on relational algebra rules.</li>
+<li>评估每个执行计划的中间结果的大小， 根据base table 大小和列上statics</li>
+<li>implementation 阶段， 增加物理算子&#x2F;物理算法 到search space 中。 计算cost 并做一些搜索空间的裁减</li>
+<li>提取优化plan</li>
+</ol>
+</li>
+<li><p>xml generator，  将sql server 用memo 表达的搜索空间 用xml 来表示</p>
+</li>
+<li><p>pdw 优化： 消费xml generator的输出。 </p>
+<ol>
+<li>有个parser 解析xml ，生成memo数据结构</li>
+<li>bottom-up 优化， 基于cost base， 会在搜索空间增加data movement 策略和cost</li>
+</ol>
+</li>
+</ol>
+<p>还是以tpch 为例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from orders, customer where o_custkey = c_custkey and o_totalprice &gt; 100;</span><br></pre></td></tr></table></figure>
+<p><img data-src="/assets/ms-pdw-op-flow.png" alt="!image"></p>
+<p>mem 由2个组成， 一个叫groups， 另外一个叫groupExpressions,  group 表示一组等价的算子树，他们产生相同的输出。 为了减少内存使用量， 并不会对group 内所有的算子树进行评估。 groupExpress 是一个算子， 这个算子包含其他groups 作为孩子。如上图c 部分，逻辑算子是灰色， 物理算子是白色。 group 1， 有物理的table scan （可以通过pk或heap），sorted index scan （通过2级索引）。 group 4 包含所有的c 自然连接o 的等价表达式。 groupExpression 4.1 (join(1.3)) 表示所有的算子树， 树根是join， 第一个child 是group1， 第二个child是group3. 物理groupExpressions的孩子指向最高效的groupExpression. groupExpression 4.6 表示一个hash 算子， 他的左子树 是第3个groupExpression 在group 1 中， 右子树是第三个groupExpression 在group 2.  memo 提供算子树的去重， cost 管理和其他的底层支持。<br>sql server 生成串性的memo后， 它会并行化参数， pdw 优化器会加入data movment group和操作到memo 基于数据的分布。 例如group 5 表示group 1 的输出 data movement， 假设c 表和o 表是不兼容的， 优化器会考虑这个算子来使c表和o 表 分区兼容 来执行 C 自然连接 o. group 6 表示group 2 这边的输出。 类似关系算子， logical data movment 操作有许多物理实现， 如shuffle， replication 等。 由物理算子组成的最终执行plan 从memo中提取出来。 这个eplan 转化为可执行的dsql plan。<br>为什么最佳的串性计划不是最好的？ sql-server 优化器不清楚数据的分布， pdw 有额外的插入task 和data movement costing 来得到一个正确和高效的并行计划。 logical search space 基本上大家共同。 因此， 从sql server 导出logical search space 到pdw 基于pdw 的 目标。例如，在单机tpch中， join order 可能就是customer, order, lineitem 根据table size 来判断， 但pdw 中却是 order， lineitem， customer。 主要原因是order 和lineitem的co-location， 然后再对结果进行shuffle on custkey。</p>
+<h1 id="pdw-qo-优化器实现"><a href="#pdw-qo-优化器实现" class="headerlink" title="pdw qo 优化器实现"></a>pdw qo 优化器实现</h1><h2 id="基于sql-server的修改"><a href="#基于sql-server的修改" class="headerlink" title="基于sql-server的修改"></a>基于sql-server的修改</h2><ol>
+<li>导出优化器search space。 加了个功能 类似“showplan xml”（已经在sql-server）。 这个入口点会trigger 任何pdw特定逻辑的使用， 它会输出xml，表示memo 结构。</li>
+<li>扩展查询surface 以支持pdw。 pdw 是完全和sql-server 兼容。 这个扩展限制为 方便的query hint 以支持特定的分布式执行策略。</li>
+<li>扩展优化器搜索空间， 包括一些选择，例如尤其是join&#x2F;union的搭配的分布式执行。 transformation based 的架构让sql-server 不需要大的改动就可以支持这些扩展。</li>
+<li>对于超大规模的搜索空间， 有超时限制，不会生成所有的计划。 会用一些执行计划seed memo，  这些执行计划含有分布式信息的table和操作配置</li>
+</ol>
+<h2 id="plan-enumeration"><a href="#plan-enumeration" class="headerlink" title="plan enumeration"></a>plan enumeration</h2><p>最原始的enumeration 可能不成功但对query 很简单。  一个bottom-up 搜索策略， 一个top-down enumeration 技术<br><img data-src="/assets/ms-pdw-op.png" alt="image"></p>
+<ol>
+<li>从最小的expression 开始优化， 不断迭代到整个query</li>
+<li>特别留意 影响生成优化plan的物理属性。</li>
+<li>interesting 属性 表示 interdsting oders 的概念扩展， 来自system r。 特别的， pdw 考虑如下的colum 为interesting 在data movement： a。 join 列 ； b， group-by 列。 join 列是因为他们让local 或directed join 变的可能， group by 是因为可以在每个node 上进行本地aggregation并对结果进行union。</li>
+</ol>
+<h2 id="cost-model"><a href="#cost-model" class="headerlink" title="cost model"></a>cost model</h2><ol>
+<li>costing data movement 是一个cost 子集。 相对关系运算， data movement的研发，测试和调试要更简单一些。</li>
+<li>data movement 有可能因为 物化数据到临时表中，从而在查询时间上占大头</li>
+<li>不能依赖sql server 优化器来做这些事情， 它没有对应的操作。</li>
+</ol>
+<h3 id="cost-model-假设"><a href="#cost-model-假设" class="headerlink" title="cost model 假设"></a>cost model 假设</h3><p>从头构建cost model  太挑战了， 当前cost dms 操作根据response 时间。</p>
+<ol>
+<li>假设 dsql 步骤 的连续执行 （应该是pipeline 执行方式）</li>
+<li>不是采用生产者-消费者 模式， 而是采用物化表的方式</li>
+<li>query 和query 之间独立</li>
+<li>机器是同构的</li>
+<li>跨节点统一的数据分布。</li>
+</ol>
+<h3 id="dms-操作类型"><a href="#dms-操作类型" class="headerlink" title="dms 操作类型"></a>dms 操作类型</h3><ol>
+<li>shufle move （many-to-many）. </li>
+<li>partition move (many to one). </li>
+<li>control node move (from control to compute node, tale in control node broadcast to all compute node)</li>
+<li>broadcast move.</li>
+<li>trim move.  （初始在每个节点的复制table上， 目标是一个分布式table 在他自己的node， 对数据进行hash到目标table）</li>
+<li>replicated broadcast. tale in only one compute node  broadcast to serveral nodes.</li>
+<li>remote copy to single node。 a remote copy of a replicated table&#x2F;distributed table.</li>
+</ol>
+<h3 id="cost-of-dms-operator"><a href="#cost-of-dms-operator" class="headerlink" title="cost of dms operator"></a>cost of dms operator</h3><p><img data-src="/assets/ms-pdw-dms-cost.png" alt="image"><br>source component 是发送端， 分成2个cost 子组件。<br>creater， 从sql server 中读取tuple， 打包到buffer<br>cnetwork， 将数据从buffer 发送， 这个操作是异步<br>Csource &#x3D; max(Creater, Cnetwork).<br>target component负责接受数据， 也分2个部分<br>Cwriter: 从buffer 中解压包，并准备插入到临时表<br>CsqlBlkCpy: bulk 插入， 这个操作是异步<br>Ctarget &#x3D; max(Cwriter, CsqlBlkCpy)</p>
+<p>Cdms &#x3D; max(Csource, Ctarget)</p>
+<h3 id="costing-of-一个单独模块"><a href="#costing-of-一个单独模块" class="headerlink" title="costing of 一个单独模块"></a>costing of 一个单独模块</h3><p>理论上， 模型越复杂， 评估越准确。 但实际上， 评估模型越复杂， 在data或statics 上轻微改变会越敏感。也导致了，cost model 越来越难debug和维护。 当前版本对每个组件的cost modle 基于处理的原始数据量： Cx &#x3D; B * x, B 是原始字节数， x是每个字节的cost。<br>x 是个常量， 是通过目标性能测试计算出来。 称计算过程为cost calibration。 cost calibration 的结果显示 x 依赖row的数量， column 数量和column 类型。 观察的区别不足够明显来提高cost model 的复杂性。 因此x 考虑为常量而不管这些参数。 每个cost component 都有他自己的常量值x。 Creater 有2个常量， 一个是Xhash, 一个是Xdirect, 复杂hash 的overhead，<br>B 依赖input和output stream的分布式属性。 let Y 指示全局cardinality， w  row的宽度 （memo 中的statictis 提供这2个值）。 let n 表示计算的node 数。 （Y * W&#x2F;N） 对于分布式data stream， （Y * w） 对于复制stream</p>
+<h2 id="dsql-生成"><a href="#dsql-生成" class="headerlink" title="dsql 生成"></a>dsql 生成</h2><p>一旦pdw 优化器选择了一个查询执行计划， 它会被翻译称dsql format， 这样可以在实际节点中运行。 不像其他mpp, 如greenplum 一样发送算子树到每个计算节点。 pdw 发送一个sql 语句到每个计算节点。 这个语句在每个计算节点的dbms 上运行。 执行dsql 生成 表示将算子树翻译成sql。 我们使用QRel 编程框架， 它封装了mapping 关系树到查询语句。 如下图所示。<br><img data-src="/assets/ms-pdw-dsql-gen.png" alt="image"><br>先将物理算子树翻译为RelOp 树， 乐死sql server 输出代数算子树。 然后翻译为PIMOD ast 树通过QRel library. 最后为t-sql. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/docs/paper/Volcano/" rel="prev" title="《Volcano-An Extensible and Parallel Query Evaluation System》">
+                  <i class="fa fa-chevron-left"></i> 《Volcano-An Extensible and Parallel Query Evaluation System》
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/docs/paper/The_Volcano_Optimizer_Generator/" rel="next" title="《The Volcano Optimizer Generator Extensibility and Efficient Search》">
+                  《The Volcano Optimizer Generator Extensibility and Efficient Search》 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2018/docs/paper/ms-sql-server-pdw/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"c2dec2ad8769bc50cb022783c1bf4dbe"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

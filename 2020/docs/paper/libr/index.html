@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="数据库之华为LibrA 解读">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》解读">
+<meta property="og:url" content="http://ilongda.com/2020/docs/paper/libr/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="数据库之华为LibrA 解读">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ilongda.com/img/libr-arch.png">
+<meta property="og:image" content="http://ilongda.com/img/libr-redistribute.png">
+<meta property="og:image" content="http://ilongda.com/img/libr-spm.png">
+<meta property="og:image" content="http://ilongda.com/img/libr-sql-on-hadoop.png">
+<meta property="article:published_time" content="2020-01-11T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:30:42.097Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="论文">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ilongda.com/img/libr-arch.png">
+
+
+<link rel="canonical" href="http://ilongda.com/2020/docs/paper/libr/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/docs/paper/libr/","path":"2020/docs/paper/libr/","title":"《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》解读"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》解读 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%91%E5%B1%95%E5%8F%B2"><span class="nav-number">2.</span> <span class="nav-text">发展史</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.</span> <span class="nav-text">功能介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E6%94%AF%E6%8C%81"><span class="nav-number">4.</span> <span class="nav-text">事务支持</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%AB%98%E5%8F%AF%E7%94%A8%E5%BC%BA%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">高可用强化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5%E4%BC%98%E5%8C%96"><span class="nav-number">5.1.</span> <span class="nav-text">连接优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%BB%84%E6%A8%A1%E5%BC%8F"><span class="nav-number">5.2.</span> <span class="nav-text">分组模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86%E5%99%A8"><span class="nav-number">5.3.</span> <span class="nav-text">资源管理器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E6%89%A9%E5%AE%B9"><span class="nav-number">5.4.</span> <span class="nav-text">在线扩容</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8tuning"><span class="nav-number">6.</span> <span class="nav-text">自动tuning</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SPM"><span class="nav-number">7.</span> <span class="nav-text">SPM</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL-ON-Hadoop"><span class="nav-number">8.</span> <span class="nav-text">SQL-ON-Hadoop</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="nav-number">8.1.</span> <span class="nav-text">性能优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DML"><span class="nav-number">8.2.</span> <span class="nav-text">DML</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/docs/paper/libr/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》解读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-01-11 19:42:57" itemprop="dateCreated datePublished" datetime="2020-01-11T19:42:57+08:00">2020-01-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>2.8k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">数据库之华为LibrA 解读</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>2018年华为在vldb 上发表了论文《FusionInsight LibrA: Huawei’s Enterprise Cloud Data Analytics Platform》。 这篇论文罗列了LibrA 的架构和很多powerful的功能， 整体看下来， 特别亮瞎眼睛的功能到没有，但在工程的角度，介绍很多很接地气的做法， 比起很多列一大堆数据公式， 一大堆机器学习的算法论文，可读性更强， 也更好理解数据库的实现和优化。 </p>
+<img data-src="/img/libr-arch.png">
+
+<p>FusionInsight MPPDB, 又称Libr, 后来又改名为高斯200， 是针对olap 分析的一款mppdb 数据库。 高斯200 是高斯部门很成功的一款产品。从2012年开始研发， 2014年第一代原型研发出来， 现在已经在全球大量使用， 包括最大的金融企业工行。并且以用户为导向，实现了很多powerful的功能，如在线扩容， 自动tuning， sql on hdfs， 智能jit 编译执行（llvm code gen）， 提供行列混存， 数据压缩特性， 智能workload管理， 为提高高可用增加重试失败request， 用sctp 协议替换tcp协议以提高scalability等等。 </p>
+<span id="more"></span>
+
+<h1 id="发展史"><a href="#发展史" class="headerlink" title="发展史"></a>发展史</h1><p>最早的原型是基于postgres-xc来实现, 采用share nothing 架构， 支持ansi 2008 sql 语法标准。 2014年第一代原型，完成向量化执行， 并行线程执行， 并且主要用于分布式存储的元数据分析。 </p>
+<p>第二代推广给金融和电信领域用户， 第二代以后以用户需求为导向， 增加很多实用的功能， 如系统可用性， 自动tuning， query 异构数据（尤其云上）， 利用新硬件等。 </p>
+<p>2016年开始支持sql-on-hadoop, 可以让mpp engine跑在hadoop上， 而不用把数据从hdfs迁移到libr上， 用户对这个需求十分强烈，并让libr 在2016年成为FusionInsight 的产品。 </p>
+<p>2017年Libr 上云， 四大特性， 1. 系统可用性； 2. 自动tuning； 3. 可以query 大量异构数据模型；4. 充分利用新硬件。 </p>
+<h1 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h1><ol>
+<li>高可用， 增加节点或升级，通过在线扩容或在线升级， 很少影响客户业务。 系统可以线性扩容， 以支持几百台机器去处理高并发ad-hoc。</li>
+<li>自动tuning， oracle的自驱动数据库强调了数据库的自我管理和自我tuning， 利用机器学习对runtime的反馈进行自我tuning。 </li>
+<li>异构存储， 客户存有各种现成的数据， DataLake 变得流行， 2016年提供SQL-ON-HADOOP 后， 这个功能大受欢迎。 </li>
+<li>支持新硬件， 现代机器配置大内存， 数据库可以reside in 内存， fast io device如ssd， optane。 </li>
+<li>通过在执行引擎上使用jit 动态编译 code generate 的方式来对query 进行加速。 query 产生的特定的runtime机器码可以省掉传统的解析开销（理论上还有大量的出入栈和虚函数调用等开销）， 最后对结果进行分析， jit 编译效果由编译带来的开销和优化的可执行代码带来性能提升 来决定。<br>支持行存和列存 混存。 </li>
+<li>向量化执行引擎使用了最新的simd 指令集。</li>
+</ol>
+<h1 id="事务支持"><a href="#事务支持" class="headerlink" title="事务支持"></a>事务支持</h1><ol>
+<li>datanode 是分区来管理， 支持本地acid 语义。跨分区一致性由二阶段提交和全局事务管理器来进行管理。 </li>
+<li>创新的使用了gtm-lite, 分布式事务管理， 单分区事务可以被加速， 因为避免了获取中心事务id 和全局snapshot。 </li>
+<li>支持read committed 事务隔离级别。</li>
+</ol>
+<h1 id="高可用强化"><a href="#高可用强化" class="headerlink" title="高可用强化"></a>高可用强化</h1><h2 id="连接优化"><a href="#连接优化" class="headerlink" title="连接优化"></a>连接优化</h2><p>如果使用tcp&#x2F;ip 协议， 当几百台机器互联是， connection 急剧增加， 如1000个node集群， node 之间的连接会超过1百万（1000个节点 * 100 个并发 * 10个exchange operator）， 研发了一种新的协议， 每个数据交换的提供方和消费方组成一个虚拟连接。 多个虚拟连接可以共享一个物理连接， libr 选择了sctp协议， 它支持可靠传输， 一个物理连接上可以支持64k的逻辑连接， 并且支持带外流控。 </p>
+<h2 id="分组模式"><a href="#分组模式" class="headerlink" title="分组模式"></a>分组模式</h2><p>高可用主动模式和同步机制， 节省存储空间至关重要， 当备机挂了后， 会启动一个节点只做log-copy操作来提升可用性， 当备机挂了， 主节点依旧可执行bulk load和dml。 </p>
+<h2 id="资源管理器"><a href="#资源管理器" class="headerlink" title="资源管理器"></a>资源管理器</h2><p>workload 管理器， 管理query的并发书， 做了限流功能， 分为3个部分， 资源池， workload组和一个controler。 资源池管理内存和磁盘i&#x2F;o， 设置各种阀值来决定是否执行。workload group 用于分配请求的query到资源池。 用应用名来标示query（估计资源分组）。</p>
+<p>控制器，评估query的cost和系统当前的可用资源来决定是否运行query， 当不满足时，query 进入等待队列。 资源的预申请和反馈用于追踪系统的可用资源。 </p>
+<h2 id="在线扩容"><a href="#在线扩容" class="headerlink" title="在线扩容"></a>在线扩容</h2><img data-src="/img/libr-redistribute.png">
+
+<p>在线扩容， 最大的问题是如何将数据分布到新的节点， 通常是对distribute key 进行计算来决定（hash算法， round-robin， modulo算法）， 通常这些算法会依赖节点数， 数据重新分布需要恢复一致性和在分配算法和实际数据位置。 hash算法可能导致数据倾向， 导致有些节点out of space， 这种情况下，需要采用新的hash 算法来进行平衡。 简单的一种做法是使用影子表， 原始表可以继续被查询， 直到 数据被分布到新的节点， 分布属性是不含新节点。 一种让数据可被访问，在重分布过程中， 使用random算法替换hash 算法。 这种方式会让性能下降， 相关查询（collocation join）不支持，另外写或修改也是不允许的。 </p>
+<p>librA 使用shadow table， 但没有让表只读， 让表append-only， 并阻止存储空间的recycle。 这种方式可以很快识别哪些record是新增的，哪些是历史的， 创建一个表存储删除的数据， 然后lock 表， apply append的delta， 再apply delete的delta， 于此同时， shadow table 会增加一列隐藏列rowid。 这样好处可以一个minibatchi 接着一个minibatch 执行， 并且支持重来和resume。 </p>
+<p>算法。</p>
+<ol>
+<li>创建T的影子表。</li>
+<li>Mark t as append-only</li>
+<li>disable garbage collect on T</li>
+<li>create delete-delat D for delete on T</li>
+<li>redistribute a segment from T 到 S</li>
+<li>apply D on S, 并且重试D  当apply D完时</li>
+<li>提交修改</li>
+<li>重复执行执行，直到T的数据小于一个阀值</li>
+<li>Lock T, 重复5 和6</li>
+<li>在catalog中， Switch T as S, </li>
+<li>提交修改</li>
+<li>rebuild index</li>
+</ol>
+<h1 id="自动tuning"><a href="#自动tuning" class="headerlink" title="自动tuning"></a>自动tuning</h1><ol>
+<li>基于 data exchange 的cbo来生成mpp 的plan</li>
+<li>cbo 基于vector 执行和多种文件系统如orc</li>
+<li>query rewrite engine, 在olap系统中添加一些额外的 rewrite 很关键</li>
+<li>基于机器学习的cutting edge 技术</li>
+<li>早期的优化器的机器学习是基于统计学， 需要大量的资源投入， 不通的数据来源不同的数据格式又要求合适的精度带来很大的挑战。</li>
+<li>可选捕获执行参数，为后续类似提供精确参考， 这种方式比传统数据收集方式代价要小。</li>
+</ol>
+<h1 id="SPM"><a href="#SPM" class="headerlink" title="SPM"></a>SPM</h1><img data-src="/img/libr-spm.png">
+
+<p>执行器可选捕获执行计划到plan store。 每一个步骤 scan， join， aggregation， 并预估和实际获取的row counts， 一般情况下， 预估值和真实值是有很大出入的。 plan store 另外一个功能是用于sql 审计和离线分析。 </p>
+<ol>
+<li>优化器从plan store中获取statics 用于cbo而不是自己评估的， 如果没有找到，则使用自己评估的<br>plan store 类似一个cache，可以通过api来高效获取数据。 </li>
+<li>plan store的cache 封装不同步骤的信息，保护step type， step prediction和input descritption。 </li>
+<li>早期， 对于scan和join做了statics learning。这个阶段称为selectivity matching.</li>
+<li>除了抽取之前存取的谓词， 自动tuning可以用于类似谓词。 可以收集predicate selectivity的反馈到谓词cache(不同之前的plan store cache)中， 并用它来评估类似的情况。 许多机器学习或statics learning 算法技术可用在这个阶段， 我们称这第二个learning为similarity selectivity。similarity selectivity模型最初用于复杂的predicate 如x》y+ c， x和y都是column，而c是常数。 在date field经常碰到这种情况 如tpch中。 这种predicates 给query 优化带来一种挑战并且他们是一种好的candidates 来做similarity selectivity。 libra 使用knn（k nearest neighbors）来获取similarity selectivity。</li>
+</ol>
+<h1 id="SQL-ON-Hadoop"><a href="#SQL-ON-Hadoop" class="headerlink" title="SQL-ON-Hadoop"></a>SQL-ON-Hadoop</h1><img data-src="/img/libr-sql-on-hadoop.png">
+通过pq foreign data wrapper来访问hdfs， bypass hadoop mr 框架， 引入一个调度器， 动态吧文件的分片分配到mpp的节点上进行计算， 一个hdfs目录被影射到db的外表，这个外表支持分区表。 因为hdfs的分区是基于目录的， 优化器可用做一些优化操作从而跳过一些分区而减少io操作。 
+支持orc或parque 格式， 这些格式内部保护一些index，充分利用这些信息。 
+hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更好的性能（需要知道data collocation）
+
+
+<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><ol>
+<li><p>优化器可用做谓词下推优化操作，减少io。<br>query engine支持向量化执行。<br>使用动态 多维 runtime 过滤 从start join 到分区裁剪。</p>
+</li>
+<li><p>better data collocation<br>商业数据库通过一致性hash算法来达到data collocation， 标准db 一般要求数据shuffle在join或group by之后。</p>
+</li>
+</ol>
+<p>2种data collocation<br>mppdb 和hdfs node之间的data collocation， mapp datanode 读取hdfs的data 通过快速的本地读接口。 </p>
+<p>table collocation在hdfs node， table 被分区到hdfs 不同的data node上，执行co-located join和group 来减少网络shuffle</p>
+<p>当把数据通过mppdb data node 导到hdfs上， 用一个本地描述的table 来记录每个节点每个文件的ownership。 datanode 序列号数据到特定的pax 格式文件（orc&#x2F;parquet）到hdfs。 这个本地table 由一列组成， 如blockid， min&#x2F;max 一个block每个列， 删除列的bitmap。 </p>
+<p>通过hdfs hint 来尽可能本地访问。 </p>
+<h2 id="DML"><a href="#DML" class="headerlink" title="DML"></a>DML</h2><p>block map 决定了block中row的可见性， 先把数据插到row base的delta table， 当delta table到了一定量，刷hdfs （orc&#x2F;parquet）， 如果在delta table删除数据，则直接删除数据， 如果数据在pax file时删除，在block map的bitmap中，标记这个行被删除， 当删除的行超过一定阀值， 执行compaction操作。 </p>
+<p> # 未完待续<br>后续讲了一下优化器的优化<br>以后有机会补充一下 </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/docs/paper/snowflake/" rel="prev" title="Snowflake 架构讨论 《The Snowflake Elastic Data Warehouse》">
+                  <i class="fa fa-chevron-left"></i> Snowflake 架构讨论 《The Snowflake Elastic Data Warehouse》
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/rovaniemi/" rel="next" title="罗瓦涅米之旅">
+                  罗瓦涅米之旅 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/docs/paper/libr/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"983f06ebaf05d6fa0b394d809b2fb2f3"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

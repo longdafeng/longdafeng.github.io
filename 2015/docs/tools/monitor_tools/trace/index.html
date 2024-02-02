@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="监控工具 -- trace 工具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="监控工具 -- trace 工具">
+<meta property="og:url" content="http://ilongda.com/2015/docs/tools/monitor_tools/trace/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="监控工具 -- trace 工具">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ilongda.com/assets/btrace_jvisual.png">
+<meta property="article:published_time" content="2015-10-16T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:33:41.833Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="工具">
+<meta property="article:tag" content="监控工具">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ilongda.com/assets/btrace_jvisual.png">
+
+
+<link rel="canonical" href="http://ilongda.com/2015/docs/tools/monitor_tools/trace/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2015/docs/tools/monitor_tools/trace/","path":"2015/docs/tools/monitor_tools/trace/","title":"监控工具 -- trace 工具"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>监控工具 -- trace 工具 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#trace-%E5%B7%A5%E5%85%B7"><span class="nav-number">1.</span> <span class="nav-text">trace 工具</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#btrace"><span class="nav-number">1.1.</span> <span class="nav-text">btrace</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#btrace%E6%A6%82%E8%BF%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text">btrace概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E4%BB%A4%E4%BD%BF%E7%94%A8"><span class="nav-number">1.1.2.</span> <span class="nav-text">命令使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#strace"><span class="nav-number">1.2.</span> <span class="nav-text">strace</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%87%BA%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89"><span class="nav-number">1.2.1.</span> <span class="nav-text">输出参数含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%B8%AA%E5%8F%AF%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F"><span class="nav-number">1.2.2.</span> <span class="nav-text">跟踪可执行程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%B8%AA%E6%9C%8D%E5%8A%A1%E7%A8%8B%E5%BA%8F"><span class="nav-number">1.2.3.</span> <span class="nav-text">跟踪服务程序</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2015/docs/tools/monitor_tools/trace/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          监控工具 -- trace 工具
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2015-10-16 19:42:57" itemprop="dateCreated datePublished" datetime="2015-10-16T19:42:57+08:00">2015-10-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">工具</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%B7%A5%E5%85%B7/%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">监控工具</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>2.6k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">监控工具 -- trace 工具</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="trace-工具"><a href="#trace-工具" class="headerlink" title="trace 工具"></a>trace 工具</h1><p>有btrace 和strace 2个工具，<br>btrace 主要监控java程序状态，获取运行时数据信息，如方法返回值，参数，调用次数，全局变量，调用堆栈等。<br>strace 常用来跟踪进程执行时的系统调用和所接收的信号。常用它查看mysql系统调用耗时</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -cfp $(pidof mysqld)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="btrace"><a href="#btrace" class="headerlink" title="btrace"></a>btrace</h2><h3 id="btrace概述"><a href="#btrace概述" class="headerlink" title="btrace概述"></a>btrace概述</h3><p>这两天在调试程序时，发现一个比较好用的工具-btrace，能够线上监控程序状态，获取运行时数据信息，如方法返回值，参数，调用次数，全局变量，调用堆栈等。BTrace是Java的安全可靠的动态跟踪工具。 他的工作原理是通过 instrument + asm 来对正在运行的java程序中的class类进行动态增强。</p>
+<p>有几篇文章介绍的不错， 推荐一下： </p>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly93d3cuamlhbnNodS5jb20vcC85M2U5NGI3MjQ0NzY=">https://www.jianshu.com/p/93e94b724476<i class="fa fa-external-link-alt"></i></span>   偏重如何使用</li>
+<li><span class="exturl" data-url="aHR0cDovL2FnYXBwbGUuaXRleWUuY29tL2Jsb2cvMTAwNTkxOA==">http://agapple.iteye.com/blog/1005918<i class="fa fa-external-link-alt"></i></span>    偏重底层实现和原理</li>
+<li><span class="exturl" data-url="aHR0cDovL2FnYXBwbGUuaXRleWUuY29tL2Jsb2cvOTYyMTE5">http://agapple.iteye.com/blog/962119<i class="fa fa-external-link-alt"></i></span>     偏重底层实现</li>
+</ul>
+<p>本文主要示例如何使用</p>
+<h3 id="命令使用"><a href="#命令使用" class="headerlink" title="命令使用"></a>命令使用</h3><p>下载地址：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2J0cmFjZWlvL2J0cmFjZQ==">https://github.com/btraceio/btrace<i class="fa fa-external-link-alt"></i></span></p>
+<p>位于bin目录下面主要有6个脚本，3个windows的，另外3个是linux的，分别是btrace、btracec、btracer。具体功能如下：      </p>
+<h4 id="btrace-1"><a href="#btrace-1" class="headerlink" title="btrace"></a>btrace</h4><p>功能: 用于运行BTrace跟踪程序。<br>命令格式: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">btrace [-I &lt;include-path&gt;] [-p &lt;port&gt;] [-cp &lt;classpath&gt;] &lt;pid&gt; &lt;btrace-script&gt; [&lt;args&gt;] </span><br><span class="line">参数含义: </span><br><span class="line"></span><br><span class="line">        include-path指定头文件的路径，用于脚本预处理功能，可选； </span><br><span class="line"></span><br><span class="line">        port指定BTrace agent的服务端监听端口号，用来监听clients，默认为2020，可选； </span><br><span class="line"></span><br><span class="line">        classpath用来指定类加载路径，默认为当前路径，可选； </span><br><span class="line"></span><br><span class="line">        pid表示进程号，可通过jps命令获取； </span><br><span class="line"></span><br><span class="line">        btrace-script即为BTrace脚本；btrace脚本如果以.java结尾，会先编译再提交执行。可使用btracec命令对脚本进行预编译。 </span><br><span class="line"></span><br><span class="line">       args是BTrace脚本可选参数，在脚本中可通过&quot;$&quot;和&quot;$length&quot;获取参数信息。 </span><br><span class="line"></span><br><span class="line">示例: </span><br><span class="line"></span><br><span class="line">          btrace -cp build/  1200 AllCalls1.java </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<h4 id="btracec"><a href="#btracec" class="headerlink" title="btracec"></a>btracec</h4><p>功能: 用于预编译BTrace脚本，用于在编译时期验证脚本正确性。 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">btracec [-I &lt;include-path&gt;] [-cp &lt;classpath&gt;] [-d &lt;directory&gt;] &lt;one-or-more-BTrace-.java-files&gt; </span><br></pre></td></tr></table></figure>
+<p>参数意义同btrace命令一致，directory表示编译结果输出目录。</p>
+<h4 id="btracer"><a href="#btracer" class="headerlink" title="btracer"></a>btracer</h4><p>功能: btracer命令同时启动应用程序和BTrace脚本，即在应用程序启动过程中使用BTrace脚本。而btrace命令针对已运行程序执行BTrace脚本。<br>命令格式: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">btracer &lt;pre-compiled-btrace.class&gt; &lt;application-main-class&gt; &lt;application-args&gt; </span><br><span class="line">参数说明: </span><br><span class="line"></span><br><span class="line">       pre-compiled-btrace.class表示经过btracec编译后的BTrace脚本。 </span><br><span class="line"></span><br><span class="line">       application-main-class表示应用程序代码； </span><br><span class="line"></span><br><span class="line">       application-args表示应用程序参数。 </span><br><span class="line"></span><br><span class="line">       该命令的等价写法为: </span><br><span class="line"></span><br><span class="line">java -javaagent:btrace-agent.jar=script=&lt;pre-compiled-btrace-script1&gt;[,&lt;pre-compiled-btrace-script1&gt;]*        &lt;MainClass&gt; &lt;AppArguments&gt;</span><br></pre></td></tr></table></figure>
+
+<h4 id="btrace脚本限制"><a href="#btrace脚本限制" class="headerlink" title="btrace脚本限制"></a>btrace脚本限制</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">In particular, a BTrace class</span><br><span class="line">can not create new objects.</span><br><span class="line">can not create new arrays.</span><br><span class="line">can not throw exceptions.</span><br><span class="line">can not catch exceptions.</span><br><span class="line">can not make arbitrary instance or static method calls - only the public static methods of com.sun.btrace.BTraceUtils class may be called from a BTrace program.</span><br><span class="line">can not assign to static or instance fields of target program&#x27;s classes and objects. But, BTrace class can assign to it&#x27;s own static fields (&quot;trace state&quot; can be mutated).</span><br><span class="line">can not have instance fields and methods. Only static public void returning methods are allowed for a BTrace class. And all fields have to be static.</span><br><span class="line">can not have outer, inner, nested or local classes.</span><br><span class="line">can not have synchronized blocks or synchronized methods.</span><br><span class="line">can not have loops (for, while, do..while)</span><br><span class="line">can not extend arbitrary class (super class has to be java.lang.Object)</span><br><span class="line">can not implement interfaces.</span><br><span class="line">can not contains assert statements.</span><br><span class="line">can not use class literals.</span><br></pre></td></tr></table></figure>
+
+<h4 id="jvisualvm-插件"><a href="#jvisualvm-插件" class="headerlink" title="jvisualvm 插件"></a>jvisualvm 插件</h4><p>BTrace提供了jvisualvm插件，强烈推荐在jvisualvm中编写和测试BTrace脚本，启动、关闭、发送事件、增加classpath都非常方便。<br><img data-src="/assets/btrace_jvisual.png" alt="jvisualvm"></p>
+<h4 id="btrace实例"><a href="#btrace实例" class="headerlink" title="btrace实例"></a>btrace实例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">package baby.btrace;  </span><br><span class="line">  </span><br><span class="line">public   class CaseObject&#123;  </span><br><span class="line">       </span><br><span class="line">       private static int sleepTotalTime=0;   </span><br><span class="line">       private  int sleepTotalTime2=0;   </span><br><span class="line">       </span><br><span class="line">       public boolean execute(int sleepTime) throws Exception&#123;  </span><br><span class="line">           System.out.println(&quot;sleep: &quot;+sleepTime);  </span><br><span class="line">           sleepTotalTime+=sleepTime;  </span><br><span class="line">           sleepTotalTime2=sleepTotalTime+1;  </span><br><span class="line">          sleep(sleepTime);  </span><br><span class="line">           if(sleepTime%2==0)  </span><br><span class="line">               return true;  </span><br><span class="line">           else   </span><br><span class="line">               return false;  </span><br><span class="line">       &#125;  </span><br><span class="line">  </span><br><span class="line">        public void sleep(int sleepTime) throws Exception &#123;     </span><br><span class="line">            Thread.sleep(sleepTime);     </span><br><span class="line">        &#125;  </span><br><span class="line">       </span><br><span class="line">    &#125; </span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">package baby.btrace;  </span><br><span class="line">  </span><br><span class="line">import java.util.Random;  </span><br><span class="line">  </span><br><span class="line">public class CaseObjectMain &#123;  </span><br><span class="line">    int times = 10;  </span><br><span class="line">  </span><br><span class="line">    public static void main(String[] args)  &#123;  </span><br><span class="line">        CaseObjectMain main= new CaseObjectMain();  </span><br><span class="line">        try &#123;  </span><br><span class="line">            main.begin();  </span><br><span class="line">        &#125; catch (Exception e) &#123;  </span><br><span class="line">            // TODO Auto-generated catch block  </span><br><span class="line">            e.printStackTrace();  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">    public void begin() throws Exception&#123;  </span><br><span class="line">          </span><br><span class="line">         CaseObject object=new CaseObject();  </span><br><span class="line">         while(true)&#123;  </span><br><span class="line">             times++;  </span><br><span class="line">             boolean result=doWork(object);  </span><br><span class="line">            Thread.sleep(1000);  </span><br><span class="line">         &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    public boolean doWork(CaseObject object) throws Exception&#123;  </span><br><span class="line">            Random random=new Random();  </span><br><span class="line">          </span><br><span class="line">            boolean temp=   object.execute(random.nextInt(1000));  </span><br><span class="line">            return  temp;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<h5 id="获取返回值，参数等信息"><a href="#获取返回值，参数等信息" class="headerlink" title="获取返回值，参数等信息"></a>获取返回值，参数等信息</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/* BTrace Script Template */  </span><br><span class="line">import com.sun.btrace.annotations.*;  </span><br><span class="line">import static com.sun.btrace.BTraceUtils.*;  </span><br><span class="line">  </span><br><span class="line">@BTrace  </span><br><span class="line">public class TracingScript &#123;  </span><br><span class="line">    /* put your code here */  </span><br><span class="line">/*指明要查看的方法，类*/  </span><br><span class="line">  @OnMethod(  </span><br><span class="line">     clazz=&quot;baby.btrace.CaseObject&quot;,  </span><br><span class="line">     method=&quot;execute&quot;,  </span><br><span class="line">     location=@Location(Kind.RETURN)  </span><br><span class="line">  )  </span><br><span class="line">/*主要两个参数是对象自己的引用 和 返回值，其它参数都是方法调用时传入的参数*/  </span><br><span class="line">   public static void traceExecute(@Self baby.btrace.CaseObject object,int sleepTime, @Return boolean result)&#123;  </span><br><span class="line">      println(&quot;调用堆栈！！&quot;);  </span><br><span class="line">       println(strcat(&quot;返回结果是：&quot;,str(result)));  </span><br><span class="line">      jstack();  </span><br><span class="line">      println(strcat(&quot;时间是：&quot;,str(sleepTime)));  </span><br><span class="line">   &#125;  </span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="获取对象属性值"><a href="#获取对象属性值" class="headerlink" title="获取对象属性值"></a>获取对象属性值</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/* BTrace Script Template */  </span><br><span class="line">import com.sun.btrace.annotations.*;  </span><br><span class="line">import static com.sun.btrace.BTraceUtils.*;  </span><br><span class="line">  </span><br><span class="line">@BTrace  </span><br><span class="line">public class TracingScript &#123;  </span><br><span class="line">    /* put your code here */  </span><br><span class="line">/*指明要查看的方法，类*/  </span><br><span class="line">  @OnMethod(  </span><br><span class="line">     clazz=&quot;baby.btrace.CaseObject&quot;,  </span><br><span class="line">     method=&quot;execute&quot;,  </span><br><span class="line">     location=@Location(Kind.RETURN)  </span><br><span class="line">  )  </span><br><span class="line">/*主要两个参数是对象自己的引用 和 返回值，其它参数都是方法调用时传入的参数*/  </span><br><span class="line">   public static void traceExecute(@Self baby.btrace.CaseObject object,int sleepTime, @Return boolean result)&#123;  </span><br><span class="line">      println(&quot;调用堆栈！！&quot;);  </span><br><span class="line">       println(strcat(&quot;返回结果是：&quot;,str(result)));  </span><br><span class="line">      jstack();  </span><br><span class="line">      println(strcat(&quot;时间是：&quot;,str(sleepTime)));  </span><br><span class="line">   &#125;  </span><br><span class="line">  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+
+<h5 id="获取方法执行时长"><a href="#获取方法执行时长" class="headerlink" title="获取方法执行时长"></a>获取方法执行时长</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.btrace.annotations.*;  </span><br><span class="line">import static com.sun.btrace.BTraceUtils.*;  </span><br><span class="line">  </span><br><span class="line">@BTrace  </span><br><span class="line">public class TracingScript3 &#123;  </span><br><span class="line">   @TLS private static long startTime = 0;  </span><br><span class="line">     </span><br><span class="line">   @OnMethod(  </span><br><span class="line">      clazz=&quot;baby.btrace.CaseObject&quot;,  </span><br><span class="line">      method=&quot;execute&quot;  </span><br><span class="line">   )   </span><br><span class="line">   public static void startExecute()&#123;  </span><br><span class="line">     startTime = timeNanos();  </span><br><span class="line">   &#125;   </span><br><span class="line">      </span><br><span class="line">   @OnMethod(  </span><br><span class="line">      clazz=&quot;baby.btrace.CaseObject&quot;,  </span><br><span class="line">      method=&quot;execute&quot;,  </span><br><span class="line">      location=@Location(Kind.RETURN)  </span><br><span class="line">   )   </span><br><span class="line">   public static void endExecute(@Duration long duration)&#123;  </span><br><span class="line">     long time = timeNanos() - startTime;  </span><br><span class="line">     println(strcat(&quot;execute time(nanos): &quot;, str(time)));  </span><br><span class="line">     println(strcat(&quot;duration(nanos): &quot;, str(duration)));  </span><br><span class="line">   &#125;   </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+
+<h5 id="正则匹配和获取方法执行次数"><a href="#正则匹配和获取方法执行次数" class="headerlink" title="正则匹配和获取方法执行次数"></a>正则匹配和获取方法执行次数</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.btrace.annotations.*;  </span><br><span class="line">import static com.sun.btrace.BTraceUtils.*;  </span><br><span class="line">  </span><br><span class="line">@BTrace  </span><br><span class="line">public class TracingScript4 &#123;  </span><br><span class="line">   private static long count;   </span><br><span class="line">       </span><br><span class="line">   @OnMethod(  </span><br><span class="line">      clazz=&quot;/.*/&quot;,  </span><br><span class="line">      method=&quot;execute&quot;,  </span><br><span class="line">      location=@Location(value=Kind.CALL, clazz=&quot;/.*/&quot;, method=&quot;sleep&quot;)  </span><br><span class="line">   )  </span><br><span class="line">   public static void traceExecute(@ProbeClassName String pcm, @ProbeMethodName String pmn,  </span><br><span class="line">   @TargetInstance Object instance,  @TargetMethodOrField String method)&#123;  </span><br><span class="line">     println(&quot;====== &quot;);  </span><br><span class="line">     println(strcat(&quot;ProbeClassName: &quot;,pcm));  </span><br><span class="line">     println(strcat(&quot;ProbeMethodName: &quot;,pmn));  </span><br><span class="line">     println(strcat(&quot;TargetInstance: &quot;,str(classOf(instance))));  </span><br><span class="line">     println(strcat(&quot;TargetMethodOrField : &quot;,str(method)));  </span><br><span class="line">     count++;  </span><br><span class="line">   &#125;  </span><br><span class="line">     </span><br><span class="line">   @OnEvent  </span><br><span class="line">   public static void getCount()&#123;  </span><br><span class="line">       println(strcat(&quot;count: &quot;, str(count)));  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<h5 id="正则和事件交互"><a href="#正则和事件交互" class="headerlink" title="正则和事件交互"></a>正则和事件交互</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">import com.sun.btrace.annotations.*;  </span><br><span class="line">import static com.sun.btrace.BTraceUtils.*;  </span><br><span class="line">  </span><br><span class="line">@BTrace  </span><br><span class="line">public class TracingScript5 &#123;  </span><br><span class="line">   private static long count;   </span><br><span class="line">       </span><br><span class="line">   @OnMethod(  </span><br><span class="line">      clazz=&quot;/.*/&quot;,  </span><br><span class="line">      method=&quot;execute&quot;,  </span><br><span class="line">      location=@Location(value=Kind.CALL, clazz=&quot;/.*/&quot;, method=&quot;sleep&quot;)  </span><br><span class="line">   )  </span><br><span class="line">   public static void traceExecute(@ProbeClassName String pcm, @ProbeMethodName String pmn,  </span><br><span class="line">   @TargetInstance Object instance,  @TargetMethodOrField String method)&#123;  </span><br><span class="line">     println(&quot;====== &quot;);  </span><br><span class="line">     println(strcat(&quot;ProbeClassName: &quot;,pcm));  </span><br><span class="line">     println(strcat(&quot;ProbeMethodName: &quot;,pmn));  </span><br><span class="line">     println(strcat(&quot;TargetInstance: &quot;,str(classOf(instance))));  </span><br><span class="line">     println(strcat(&quot;TargetMethodOrField : &quot;,str(method)));  </span><br><span class="line">     count++;  </span><br><span class="line">   &#125;  </span><br><span class="line">     </span><br><span class="line">   @OnEvent  </span><br><span class="line">   public static void getCount()&#123;  </span><br><span class="line">       println(strcat(&quot;count: &quot;, str(count)));  </span><br><span class="line">   &#125;  </span><br><span class="line">    @OnEvent(&quot;A&quot;)  </span><br><span class="line">   public static void getCountA()&#123;  </span><br><span class="line">        println(&quot;==AAAA==== &quot;);  </span><br><span class="line">       println(strcat(&quot;count: &quot;, str(count)));  </span><br><span class="line">   &#125;  </span><br><span class="line">    @OnEvent(&quot;B&quot;)  </span><br><span class="line">   public static void getCountB()&#123;  </span><br><span class="line">        println(&quot;==BBB==== &quot;);  </span><br><span class="line">       println(strcat(&quot;count: &quot;, str(count)));  </span><br><span class="line">   &#125;  </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<h2 id="strace"><a href="#strace" class="headerlink" title="strace"></a>strace</h2><p>strace常用来跟踪进程执行时的系统调用和所接收的信号。 在Linux世界，进程不能直接访问硬件设备，当进程需要访问硬件设备(比如读取磁盘文件，接收网络数据等等)时，必须由用户态模式切换至内核态模式，通过系统调用访问硬件设备。strace可以跟踪到一个进程产生的系统调用,包括参数，返回值，执行消耗的时间。</p>
+<h3 id="输出参数含义"><a href="#输出参数含义" class="headerlink" title="输出参数含义"></a>输出参数含义</h3><p>每一行都是一条系统调用，等号左边是系统调用的函数名及其参数，右边是该调用的返回值。 strace 显示这些调用的参数并返回符号形式的值。strace 从内核接收信息，而且不需要以任何特殊的方式来构建内核。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$strace cat /dev/null</span><br><span class="line">execve(&quot;/bin/cat&quot;, [&quot;cat&quot;, &quot;/dev/null&quot;], [/* 22 vars */]) = 0</span><br><span class="line">brk(0)                                  = 0xab1000</span><br><span class="line">access(&quot;/etc/ld.so.nohwcap&quot;, F_OK)      = -1 ENOENT (No such file or directory)</span><br><span class="line">mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f29379a7000</span><br><span class="line">access(&quot;/etc/ld.so.preload&quot;, R_OK)      = -1 ENOENT (No such file or directory)</span><br></pre></td></tr></table></figure>
+
+<p>参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">-c 统计每一系统调用的所执行的时间,次数和出错的次数等.</span><br><span class="line">-d 输出strace关于标准错误的调试信息.</span><br><span class="line">-f 跟踪由fork调用所产生的子进程.</span><br><span class="line">-ff 如果提供-o filename,则所有进程的跟踪结果输出到相应的filename.pid中,pid是各进程的进程号.</span><br><span class="line">-F 尝试跟踪vfork调用.在-f时,vfork不被跟踪.</span><br><span class="line">-h 输出简要的帮助信息.</span><br><span class="line">-i 输出系统调用的入口指针.</span><br><span class="line">-q 禁止输出关于脱离的消息.</span><br><span class="line">-r 打印出相对时间关于,,每一个系统调用.</span><br><span class="line">-t 在输出中的每一行前加上时间信息.</span><br><span class="line">-tt 在输出中的每一行前加上时间信息,微秒级.</span><br><span class="line">-ttt 微秒级输出,以秒了表示时间.</span><br><span class="line">-T 显示每一调用所耗的时间.</span><br><span class="line">-v 输出所有的系统调用.一些调用关于环境变量,状态,输入输出等调用由于使用频繁,默认不输出.</span><br><span class="line">-V 输出strace的版本信息.</span><br><span class="line">-x 以十六进制形式输出非标准字符串</span><br><span class="line">-xx 所有字符串以十六进制形式输出.</span><br><span class="line">-a column</span><br><span class="line">设置返回值的输出位置.默认 为40.</span><br><span class="line">-e expr</span><br><span class="line">指定一个表达式,用来控制如何跟踪.格式如下:</span><br><span class="line">[qualifier=][!]value1[,value2]...</span><br><span class="line">qualifier只能是 trace,abbrev,verbose,raw,signal,read,write其中之一.value是用来限定的符号或数字.默认的 qualifier是 trace.感叹号是否定符号.例如:</span><br><span class="line">-eopen等价于 -e trace=open,表示只跟踪open调用.而-etrace!=open表示跟踪除了open以外的其他调用.有两个特殊的符号 all 和 none.</span><br><span class="line">注意有些shell使用!来执行历史记录里的命令,所以要使用\\.</span><br><span class="line">-e trace=set</span><br><span class="line">只跟踪指定的系统 调用.例如:-e trace=open,close,rean,write表示只跟踪这四个系统调用.默认的为set=all.</span><br><span class="line">-e trace=file</span><br><span class="line">只跟踪有关文件操作的系统调用.</span><br><span class="line">-e trace=process</span><br><span class="line">只跟踪有关进程控制的系统调用.</span><br><span class="line">-e trace=network</span><br><span class="line">跟踪与网络有关的所有系统调用.</span><br><span class="line">-e strace=signal</span><br><span class="line">跟踪所有与系统信号有关的 系统调用</span><br><span class="line">-e trace=ipc</span><br><span class="line">跟踪所有与进程通讯有关的系统调用</span><br><span class="line">-e abbrev=set</span><br><span class="line">设定 strace输出的系统调用的结果集.-v 等与 abbrev=none.默认为abbrev=all.</span><br><span class="line">-e raw=set</span><br><span class="line">将指 定的系统调用的参数以十六进制显示.</span><br><span class="line">-e signal=set</span><br><span class="line">指定跟踪的系统信号.默认为all.如 signal=!SIGIO(或者signal=!io),表示不跟踪SIGIO信号.</span><br><span class="line">-e read=set</span><br><span class="line">输出从指定文件中读出 的数据.例如:</span><br><span class="line">-e read=3,5</span><br><span class="line">-e write=set</span><br><span class="line">输出写入到指定文件中的数据.</span><br><span class="line">-o filename</span><br><span class="line">将strace的输出写入文件filename</span><br><span class="line">-p pid</span><br><span class="line">跟踪指定的进程pid.</span><br><span class="line">-s strsize</span><br><span class="line">指定输出的字符串的最大长度.默认为32.文件名一直全部输出.</span><br><span class="line">-u username</span><br><span class="line">以username 的UID和GID执行被跟踪的命令</span><br></pre></td></tr></table></figure>
+
+<h3 id="跟踪可执行程序"><a href="#跟踪可执行程序" class="headerlink" title="跟踪可执行程序"></a>跟踪可执行程序</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -f -F -o ~/straceout.txt myserver</span><br></pre></td></tr></table></figure>
+<p>-f -F选项告诉strace同时跟踪fork和vfork出来的进程，-o选项把所有strace输出写到~&#x2F;straceout.txt里 面，myserver是要启动和调试的程序。</p>
+<h3 id="跟踪服务程序"><a href="#跟踪服务程序" class="headerlink" title="跟踪服务程序"></a>跟踪服务程序</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strace -o output.txt -T -tt -e trace=all -p 28979</span><br></pre></td></tr></table></figure>
+<p>跟踪28979进程的所有系统调用（-e trace&#x3D;all），并统计系统调用的花费时间，以及开始时间（并以可视化的时分秒格式显示），最后将记录结果存在output.txt文件里面。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%B7%A5%E5%85%B7/" rel="tag"># 工具</a>
+              <a href="/tags/%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7/" rel="tag"># 监控工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2015/docs/tools/monitor_tools/sar/" rel="prev" title="监控工具 -- sar">
+                  <i class="fa fa-chevron-left"></i> 监控工具 -- sar
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2015/docs/tools/monitor_tools/vmstat/" rel="next" title="监控工具 -- vmstat">
+                  监控工具 -- vmstat <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2015/docs/tools/monitor_tools/trace/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"765d4ff9f1a60e2366a84bdd594a32b2"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

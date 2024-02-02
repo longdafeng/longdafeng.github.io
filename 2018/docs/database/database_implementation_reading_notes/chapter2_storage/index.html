@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="《数据库实现》-- 第二章 存储概述">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《数据库实现》-- 第二章 存储概述">
+<meta property="og:url" content="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter2_storage/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="《数据库实现》-- 第二章 存储概述">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572274485630-c07f784f-8968-4c92-af6d-c554afdd7d05.png#align=left&display=inline&height=309&name=image.png&originHeight=618&originWidth=1302&size=63165&status=done&width=651">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572275332217-9e4b4d83-5a33-4f55-b8ed-723c602d4cc2.png#align=left&display=inline&height=128&name=image.png&originHeight=256&originWidth=328&size=7818&status=done&width=164">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572276648831-b4914edd-9083-436f-9461-164d6a6ab21d.png#align=left&display=inline&height=78&name=image.png&originHeight=156&originWidth=904&size=11877&status=done&width=452">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572336958538-de6f0241-1f1e-4760-a79b-25883c435455.png#align=left&display=inline&height=173&name=image.png&originHeight=346&originWidth=910&size=23214&status=done&width=455">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572337094137-7596f4de-1611-4f9c-9ce7-158e488e6989.png#align=left&display=inline&height=186&name=image.png&originHeight=372&originWidth=862&size=22345&status=done&width=431">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339265424-62b1a478-6668-4e1d-9b00-b04b425d5082.png#align=left&display=inline&height=328&name=image.png&originHeight=656&originWidth=942&size=41176&status=done&width=471">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339313689-1ca3dee9-2baf-4303-ae75-0ee9a40ec917.png#align=left&display=inline&height=148&name=image.png&originHeight=296&originWidth=910&size=25523&status=done&width=455">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339677146-4f7a8924-b522-46a4-89bf-70e9a8867ec5.png#align=left&display=inline&height=182&name=image.png&originHeight=364&originWidth=936&size=23610&status=done&width=468">
+<meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572340084639-acfb23cc-62f1-4a07-938a-3d0887d93714.png#align=left&display=inline&height=192&name=image.png&originHeight=384&originWidth=1054&size=30045&status=done&width=527">
+<meta property="article:published_time" content="2018-08-06T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:15:16.426Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="数据库实现">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1572274485630-c07f784f-8968-4c92-af6d-c554afdd7d05.png#align=left&display=inline&height=309&name=image.png&originHeight=618&originWidth=1302&size=63165&status=done&width=651">
+
+
+<link rel="canonical" href="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter2_storage/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter2_storage/","path":"2018/docs/database/database_implementation_reading_notes/chapter2_storage/","title":"《数据库实现》-- 第二章 存储概述"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《数据库实现》-- 第二章 存储概述 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E7%AB%A0-%E5%AD%98%E5%82%A8%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">第二章 存储概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%B1%82%E6%AC%A1"><span class="nav-number">2.</span> <span class="nav-text">存储层次</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A3%81%E7%9B%98"><span class="nav-number">2.1.</span> <span class="nav-text">磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%85%E9%9A%9C"><span class="nav-number">2.2.</span> <span class="nav-text">故障</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.3.</span> <span class="nav-text">数据格式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E9%95%BF%E8%AE%B0%E5%BD%95"><span class="nav-number">2.3.1.</span> <span class="nav-text">定长记录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%98%E9%95%BF%E5%AD%97%E6%AE%B5"><span class="nav-number">2.3.2.</span> <span class="nav-text">变长字段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E7%9A%84%E5%A2%9E%E5%88%A0%E6%94%B9"><span class="nav-number">2.3.3.</span> <span class="nav-text">记录的增删改</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter2_storage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《数据库实现》-- 第二章 存储概述
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-08-06 19:42:57" itemprop="dateCreated datePublished" datetime="2018-08-06T19:42:57+08:00">2018-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">数据库实现</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>1.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">《数据库实现》-- 第二章 存储概述</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="第二章-存储概述"><a href="#第二章-存储概述" class="headerlink" title="第二章 存储概述"></a>第二章 存储概述</h1><p><a name="tdlWX"></a></p>
+<h1 id="存储层次"><a href="#存储层次" class="headerlink" title="存储层次"></a>存储层次</h1><p>cpu cache  几纳秒<br>内存     10纳秒～ 100ns<br>本地磁盘&#x2F;san     10ms    通常是非易失性<br>第三级存储  秒级 – 如光盘&#x2F;磁带等</p>
+<p>cache 和内存之间， 以line 为单位， 通常32个字节<br>磁盘到内存 相互之间数据传输， 通常会划分成块或页  4～64kb</p>
+<p>为了优化性能， line 内的指令能被顺序执行或者需要， 这要cache 命中率高， cpu流水线指令效率高。</p>
+<p><a name="JolSn"></a></p>
+<h2 id="磁盘"><a href="#磁盘" class="headerlink" title="磁盘"></a>磁盘</h2><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572274485630-c07f784f-8968-4c92-af6d-c554afdd7d05.png#align=left&display=inline&height=309&name=image.png&originHeight=618&originWidth=1302&size=63165&status=done&width=651" alt="image.png"><br>存取延迟</p>
+<ol>
+<li>寻道时间</li>
+<li>旋转延迟</li>
+</ol>
+<p>为了提高数据的存取效率， 因此，很多优化手段</p>
+<ol>
+<li>使用上通常会使用电梯算法， 强化顺序读取或写入， 减少额外的寻道时间和旋转延迟。</li>
+<li>磁盘内部， 关联数据放到同一柱面，减少寻道和旋转时间</li>
+<li>并行 – 多个磁盘同时获取数据， 常用raid算法</li>
+<li>数据预取</li>
+</ol>
+<p><a name="hhFip"></a></p>
+<h2 id="故障"><a href="#故障" class="headerlink" title="故障"></a>故障</h2><ol>
+<li>磁盘是有寿命限制， 可出现间歇性故障或介质损耗，最严重是磁盘崩溃</li>
+<li>校验和， 利用额外的附加位来存储扇区的校验和<ol>
+<li>奇偶校验和。 </li>
+<li>crc &#x2F;md5 等其他校验和</li>
+</ol>
+</li>
+<li>稳定存储<ol>
+<li>冗余扇区， 当写一个扇区是，写入正常数据或校验和， 检验校验和是否正确， 如果错误， 写入另一份存储</li>
+<li>raid 算法</li>
+</ol>
+</li>
+<li>平均失效时间 mean time to failure</li>
+<li>raid 算法<ol>
+<li>raid0 无冗余</li>
+<li>raid1 镜像</li>
+<li>raid4</li>
+</ol>
+</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572275332217-9e4b4d83-5a33-4f55-b8ed-723c602d4cc2.png#align=left&display=inline&height=128&name=image.png&originHeight=256&originWidth=328&size=7818&status=done&width=164" alt="image.png"> </p>
+<ol>
+<li>raid5， 非固定盘的奇偶校验</li>
+<li>raid6， 海明码纠错码<ol>
+<li>2(power k) -1 块盘， k为冗余盘， 2（power k） - k - 1 为数据盘。</li>
+</ol>
+</li>
+</ol>
+<p> </p>
+<br>
+
+<p><a name="oh0aO"></a></p>
+<h2 id="数据格式"><a href="#数据格式" class="headerlink" title="数据格式"></a>数据格式</h2><p><a name="trw9r"></a></p>
+<h3 id="定长记录"><a href="#定长记录" class="headerlink" title="定长记录"></a>定长记录</h3><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572276648831-b4914edd-9083-436f-9461-164d6a6ab21d.png#align=left&display=inline&height=78&name=image.png&originHeight=156&originWidth=904&size=11877&status=done&width=452" alt="image.png"><br>物理地址：</p>
+<ol>
+<li>主机地址</li>
+<li>磁盘标识符</li>
+<li>柱面号</li>
+<li>磁道号</li>
+<li>扇区号</li>
+</ol>
+<p>逻辑地址</p>
+<ol>
+<li>通常使用逻辑地址， 然后通过映射表映射逻辑地址道物理地址， 物理地址比较长，而且物理地址可能由于扩容或故障发生一些变更， 而上层直接使用逻辑地址</li>
+<li>一种是， 逻辑地址是offset， 结合物理地址一起使用， 物理地址到块地址</li>
+</ol>
+<p><a name="qVIYJ"></a></p>
+<h3 id="变长字段"><a href="#变长字段" class="headerlink" title="变长字段"></a>变长字段</h3><ol>
+<li>当是变长字段时， 比如varchar时， 我们会在记录头上记录长度， 指向变长字段起始处</li>
+</ol>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572336958538-de6f0241-1f1e-4760-a79b-25883c435455.png#align=left&display=inline&height=173&name=image.png&originHeight=346&originWidth=910&size=23214&status=done&width=455" alt="image.png"></p>
+<ol start="2">
+<li>当出现重复字段， 如果定长字段f出现次数可变， 在记录头， 放起始地址，</li>
+</ol>
+<p> </p>
+<p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572337094137-7596f4de-1611-4f9c-9ce7-158e488e6989.png#align=left&display=inline&height=186&name=image.png&originHeight=372&originWidth=862&size=22345&status=done&width=431" alt="image.png"><br>另外一种方式， 分开存储， <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339265424-62b1a478-6668-4e1d-9b00-b04b425d5082.png#align=left&display=inline&height=328&name=image.png&originHeight=656&originWidth=942&size=41176&status=done&width=471" alt="image.png"><br>可变格式的记录， 比如xml<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339313689-1ca3dee9-2baf-4303-ae75-0ee9a40ec917.png#align=left&display=inline&height=148&name=image.png&originHeight=296&originWidth=910&size=25523&status=done&width=455" alt="image.png"><br>类似kv的记录， key 一个变长记录， value 一个变长记录</p>
+<p>当不能装入一个块时， 通常需要跨块记录， 对于一个跨块记录格式</p>
+<ol>
+<li>头，首先需要标识， 记录是否为一个块</li>
+<li>如果记录跨块， 必须标识，当前块是记录的第几个片段</li>
+<li>记录尾得含有下个块的指针。 </li>
+<li><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572339677146-4f7a8924-b522-46a4-89bf-70e9a8867ec5.png#align=left&display=inline&height=182&name=image.png&originHeight=364&originWidth=936&size=23610&status=done&width=468" alt="image.png"></li>
+</ol>
+<p><a name="HQfSc"></a></p>
+<h3 id="记录的增删改"><a href="#记录的增删改" class="headerlink" title="记录的增删改"></a>记录的增删改</h3><p><a name="hf9ct"></a></p>
+<h4 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h4><p>插入通常会直接修改偏移量来做到， 尤其是当记录是按主键排序时， <br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1572340084639-acfb23cc-62f1-4a07-938a-3d0887d93714.png#align=left&display=inline&height=192&name=image.png&originHeight=384&originWidth=1054&size=30045&status=done&width=527" alt="image.png"><br>很多系统都是使用系统自增的id， 保证系统都是只做append操作。</p>
+<p>对于跨块操作， 会留一个指针指向下一个block， </p>
+<p><a name="Qihbg"></a></p>
+<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><p>如果可以移动偏移量表， 则可以直接操作偏移量表。<br>如果不能移动偏移量， 需要一个空间列表，标识记录是否有效或否。 <br>一种方式，在记录的某块地方标识这个记录是否有效或已经被删除<br>当删除记录时， 有的时候，需要对这个记录的指针进行处理， 可以将指针指向删除记录地址处的新记录。</p>
+<p><a name="zAUD4"></a></p>
+<h4 id="修改"><a href="#修改" class="headerlink" title="修改"></a>修改</h4><p>对于定长记录，可以直接进行修改<br>对于非定长记录， 一种方式转化为insert和delete 组合。<br>一种方式还是原地修改，但当记录长度变长时， 需要进行跨块处理。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0/" rel="tag"># 数据库实现</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/docs/database/index/" rel="prev" title="数据库">
+                  <i class="fa fa-chevron-left"></i> 数据库
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/docs/database/database_implementation_reading_notes/chapter3_index/" rel="next" title="《数据库实现》-- 第三章 索引">
+                  《数据库实现》-- 第三章 索引 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter2_storage/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"364949018a1658a21c5f766c07f68618"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>

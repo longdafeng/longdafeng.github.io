@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.1.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="论文解读 -- Microsoft ScreamScope">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The ScreamScope Model： Microsoft ScreamScope 编程模型">
+<meta property="og:url" content="http://ilongda.com/2016/docs/paper/screamscope/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="论文解读 -- Microsoft ScreamScope">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://img3.tbcdn.cn/L1/461/1/c4eeb3b681401ab943322dc9481b941b2df1b770">
+<meta property="og:image" content="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/6c58947d56e453105d3828b39a830e08/image.png">
+<meta property="og:image" content="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/12ac8360628ba278f64cab4ab7f334b4/image.png">
+<meta property="og:image" content="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/6ca6b875f6804d884878a3d2163a3c0f/image.png">
+<meta property="og:image" content="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/7338ad5d3520095a76b9865e62798d11/image.png">
+<meta property="og:image" content="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/1736a2ece8c7db918c1556f23e23aa42/image.png">
+<meta property="article:published_time" content="2016-11-26T11:42:57.000Z">
+<meta property="article:modified_time" content="2024-02-02T13:32:03.769Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="论文">
+<meta property="article:tag" content="大数据">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img3.tbcdn.cn/L1/461/1/c4eeb3b681401ab943322dc9481b941b2df1b770">
+
+
+<link rel="canonical" href="http://ilongda.com/2016/docs/paper/screamscope/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2016/docs/paper/screamscope/","path":"2016/docs/paper/screamscope/","title":"The ScreamScope Model： Microsoft ScreamScope 编程模型"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>The ScreamScope Model： Microsoft ScreamScope 编程模型 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longda's Interesting World</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        
+            
+  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
+
+
+      
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8F%92%E6%9B%B2"><span class="nav-number">1.</span> <span class="nav-text">插曲</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">总结：</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E4%B8%80%E4%BA%9B%E8%A7%82%E7%82%B9%EF%BC%9A"><span class="nav-number">2.1.</span> <span class="nav-text">核心一些观点：</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">编程模型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#StreamScope-%E6%8A%BD%E8%B1%A1"><span class="nav-number">5.</span> <span class="nav-text">StreamScope 抽象</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">6.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#rStream-%E6%A6%82%E5%BF%B5"><span class="nav-number">6.1.</span> <span class="nav-text">rStream 概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0rStream"><span class="nav-number">6.2.</span> <span class="nav-text">实现rStream</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="nav-number">6.3.</span> <span class="nav-text">垃圾回收</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rVertex-%E6%A6%82%E5%BF%B5"><span class="nav-number">6.4.</span> <span class="nav-text">rVertex 概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0rVertex"><span class="nav-number">6.5.</span> <span class="nav-text">实现rVertex</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E6%81%A2%E5%A4%8D"><span class="nav-number">6.6.</span> <span class="nav-text">错误恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E6%81%A2%E5%A4%8D%E7%AD%96%E7%95%A5"><span class="nav-number">6.6.1.</span> <span class="nav-text">错误恢复策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Echeckpoint%E7%9A%84%E6%81%A2%E5%A4%8D%E3%80%82"><span class="nav-number">6.6.2.</span> <span class="nav-text">基于checkpoint的恢复。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E9%87%8D%E6%92%AD%E6%9C%BA%E5%88%B6%E7%9A%84%E6%81%A2%E5%A4%8D%E3%80%82"><span class="nav-number">6.6.3.</span> <span class="nav-text">基于重播机制的恢复。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#replication%E6%9C%BA%E5%88%B6%E7%9A%84recovery%E3%80%82"><span class="nav-number">6.6.4.</span> <span class="nav-text">replication机制的recovery。</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%A8%E8%AE%BA"><span class="nav-number">7.</span> <span class="nav-text">讨论</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#StreamScope-%E5%9C%A8%E7%8E%B0%E6%9C%89%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E8%AE%A1%E7%AE%97%E5%BC%95%E6%93%8E%E4%B8%8A%E9%80%89%E6%8B%A9%E5%8F%A6%E5%A4%96%E4%B8%80%E7%A7%8D%E6%96%B9%E5%BC%8F%E3%80%82"><span class="nav-number">7.1.</span> <span class="nav-text">StreamScope 在现有的分布式流计算引擎上选择另外一种方式。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%9E%E7%A1%AE%E5%AE%9A%E6%80%A7%E3%80%82"><span class="nav-number">7.2.</span> <span class="nav-text">非确定性。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%B1%E5%BA%8Fevent%E3%80%82"><span class="nav-number">7.3.</span> <span class="nav-text">乱序event。</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E7%BB%8F%E9%AA%8C"><span class="nav-number">8.</span> <span class="nav-text">生产经验</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2016/docs/paper/screamscope/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          The ScreamScope Model： Microsoft ScreamScope 编程模型
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2016-11-26 19:42:57" itemprop="dateCreated datePublished" datetime="2016-11-26T19:42:57+08:00">2016-11-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87/%E5%A4%A7%E6%95%B0%E6%8D%AE/" itemprop="url" rel="index"><span itemprop="name">大数据</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>6.5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>23 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">论文解读 -- Microsoft ScreamScope</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="插曲"><a href="#插曲" class="headerlink" title="插曲"></a>插曲</h1><p><span class="exturl" data-url="aHR0cHM6Ly93d3cudXNlbml4Lm9yZy9zeXN0ZW0vZmlsZXMvY29uZmVyZW5jZS9uc2RpMTYvbnNkaTE2LXBhcGVyLWxpbi13ZWkucGRm">screamscope<i class="fa fa-external-link-alt"></i></span> 论文读了好几个月了，把之前分享，今天发出来。</p>
+<hr>
+<h1 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h1><p><b><u>论文主要是提出一种设计理念 rVertex&#x2F;rStream, 这个设计理念其实还非常先进。尤其是在低延迟和容错性上思考很多</u></b></p>
+<p>这个设计理念换了一种角度来思考常见的分布式计算框架（常见思路，主要是考虑DAG 和节点）， 将计算拆解为计算单元（rVertex）和管道(rStream)2种抽象， 尤其是管道（rStream）将上下游的关系进行解藕， 对failure 问题上还是解的很漂亮。</p>
+<h2 id="核心一些观点："><a href="#核心一些观点：" class="headerlink" title="核心一些观点："></a>核心一些观点：</h2><ul>
+<li>这套系统起源于批处理系统SCOPE, 是对SCOPE 系统一个扩展，并且将原来一些批处理的任务已经迁移到StreamScope 上。已经部署到2万台机器上，每天处理百亿／数十TB 的数据。另外因为它起源于SCOPE, 它应该用sql 解决应用问题上， 会比其他流式框架要更成熟（这个是个人猜测）；</li>
+<li>用户接口上面， 为用户提供申明式语言（类似sql）和udf,</li>
+<li>用户提交一段类sql，将它编译成logic plan(含一些udf和各种算子)，然后用优化器，选择一个最优路径，然后，转化为physical plan，部署到每台机器上， 最后用job manager 来跟踪所有的状态。 很多组件都是用scope的组件完成或稍加改造。 （现代系统大致思路都是这个逻辑）   </li>
+<li>接口抽象上，接口还是适配性非常强； 节点rVertex 提供3个核心接口Load&#x2F;Execute&#x2F;GetSnapshot， 这个模型可以适配到绝大部分计算场景。rStream 接口 Write(seq, e)／Register(seq)／GarbageCollect(seq)</li>
+<li>在容错性上， 首先通过rStream 来将上下游节点进行解藕， 下游的失败不一定需要影响到上游， 然后提供3种策略来，让用户选择。（读者可以看后面的详细介绍）</li>
+<li>在exactly-once 要求上， 依赖3大部分： 1. 容错机制； 2. sequence number（每条消息配置单调递增的） 3. 确定性， 明确每个节点在状态相同时，接受相同输入时（无论是多实例同时计算或者同一个实例重启后计算），必须产生相同结果</li>
+<li>性能上， 1. 通过sequence number来减少ack 数据流；2. rStream 的3层设计 （volatile／Reliable&#x2F;GC）在保障稳定性同时，可以获得一些好的性能。3. 一次读取，可以获取一个小collection</li>
+</ul>
+ <span id="more"></span>
+
+<h1 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h1><p>StreamScope 是 SCOPE  批处理系统的流式扩展的设计与实现。StreamScope 深度考虑SCOPE中的架构， compiler， 优化器和任务管理器, 对这些组件进行调整或redesign 以适应流式计算。通过对批处理和流计算的整合在实践中提供显著好处。</p>
+<p>在StreamScope 中， 用户程序类似sql。 这个程序倍编译成一个流式 DAG 如图4 所示</p>
+<p><img data-src="http://img3.tbcdn.cn/L1/461/1/c4eeb3b681401ab943322dc9481b941b2df1b770" alt="screenshot"></p>
+<p>为了产生这种DAG, StreamScope 的compiler 执行如下步骤：</p>
+<ul>
+<li>程序首先被转化为logical plan(DAG), logical plan 中含有StreamScope runtime operators， 如临时join， window aggregates和用户自定义函数。</li>
+<li>StreamScope optimizer 评估各种执行计划， 选择一个评估最低成本的执行计划， 基于可获得的资源， 数据参数如数据流入速度和内部成本模型</li>
+<li>创建最终的physical plan(DAG), 映射一个logical 节点到适当的physical 节点上，并发执行。 为每个节点生成code， 并部署到集群上。 这些细节类似SCOPE .</li>
+</ul>
+<p>整个执行由streaming job manager 进行精心安排：</p>
+<ul>
+<li>调度节点到并建立DAG 中的channel到不同的机器上</li>
+<li>监控进程并跟踪snapshots</li>
+<li>当发现错误时提供容错，并初始化恢复动作。</li>
+</ul>
+<p>不像批处理的job manager， 批处理的job manager在不同的时间上调度节点， 流计算job manager在任务的起始阶段就开始调度DAG中所有的节点 。 为了提供容错性和应付动态变更， rVertex 和rStream 用来实现DAG 中的节点和channel， 同job manager协同工作。</p>
+<h1 id="编程模型"><a href="#编程模型" class="headerlink" title="编程模型"></a>编程模型</h1><p>本章将介绍一个high－level的编程模型概述， 重点描述重要概念，包括数据模型和查询语言。</p>
+<p>连续事件流（continuous event StreamScope）。 在StreamScope中， 数据以事件流的形式来表达， 每一个描述一个潜在的无限事件集合， 每一个事件流有一个定义好的schema。 除此之外， 每一个事件有一个事件间隔[Vs, Ve), 描述事件有效的起始时间和终止事件。</p>
+<p>像其他的流计算引擎， StreamScope 支持current time increments(CTI) event, 它可以来保证截止到CTI的Vs的event已经发送完毕； 也就意味着，在CTI event 后再没有消息的timestamp小于Vs。 依赖CTI event的算子决定了当前处理事件从而保证流程继续并丢掉失效的状态信息。</p>
+<p>Declarative query language. (申明式查询语言)， StreamScope 提供一个陈述式查询语言， 这样用户可以编程他们的应用而不用担心分布式环境的一些细节，比如scalability或容错性。 尤其是， StreamScope 扩展了SCOPE 查询语言 来支撑一个full  temporal relational algebra（完整所有关系型代数），通过用户自定义函数， aggregator 和算子来进行扩展。</p>
+<p>StreamScope支持一套复杂的关系型算子包括 projection， filter， grouping和join 适配到所有语法。 举例来说， 一个inner join 适用于存在重叠时间窗口的事件。 window是另外一个重要概念。 一个window明确定义时间窗口和在这个窗口内的事件子集， 这样在这个子集上可以做aggregate。 StreamScope支持几种时间窗口，比如hopping／tumbling／snapshot 窗口。 例如， hopping window是按照固定大小H进行jump的窗口（大小为S）, 一个新的S大小的窗口会被创建每H 单位时间内。</p>
+<p>Example.<br><img data-src="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/6c58947d56e453105d3828b39a830e08/image.png" alt="image"></p>
+<p>Figure 1 展示一个实例程序， 他执行连续分析行为在Process上并Alert 事件流。 一个StreamScope程序包含一系列在事件流上申明式查询操作。 Process 事件记录了每一个process并且关联用户，而Alert event记录了每一个alert的信息， 包括谁产生这个alert。 这个程序首先join 2个数据流并关联用户信息到alert，然后用一个hopping window计算每个用户 alert的数量每5秒钟 。</p>
+<h1 id="StreamScope-抽象"><a href="#StreamScope-抽象" class="headerlink" title="StreamScope 抽象"></a>StreamScope 抽象</h1><p>StreamScope的程序执行可以用一个DAG 来表述， 每一个vertex 在输入数据流上进行本地计算并产生输出数据流。 每一个数据流描述为一个无限顺序的事件， 每个事件包含一个连续增加的sequence number（序列号）。</p>
+<p><img data-src="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/12ac8360628ba278f64cab4ab7f334b4/image.png" alt="image"></p>
+<p>图2展示了图1的的DAG, 每一个stage的计算会被分区到多个节点上进行并行执行。StreamScope 根据数据量和计算复杂度来决定每个stage的并发程度。</p>
+<p>一个节点可以维护一个本地状态。 它的执行从它最初的状态开始并逐步执行。 在每一步， 节点从它的输入源上中消费下一个事件， 更新状态，并可能产生新的事件到它的输出流。 这个节点的执行可以通过一系列的snapshot来跟踪， 每一个snapshot都是一个三元组，包含当前输入流的sequence numbers， 输出流的sequence numbers和它的当前状态。</p>
+<p><img data-src="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/6ca6b875f6804d884878a3d2163a3c0f/image.png" alt="image"></p>
+<p>图3 展示了节点的处理过程， 从snapshot s0 到 s1 （处理了a1）， 然后到s2（处理了b1）. StreamScope 引入2个抽象 rStream 和rVertex 来实现流和节点。</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><h2 id="rStream-概念"><a href="#rStream-概念" class="headerlink" title="rStream 概念"></a>rStream 概念</h2><p>不同于节点直接通过网络进行通信， StreamScope引入一个rStream抽象来解藕上下游的节点 通过一些属性来达到错误恢复。</p>
+<p>rStream 包含一系列event，这些event包含连续并单调递增的sequence number， 支持多个writer和reader。 一个writer 调用Write(seq, e) 吧sequence number seq加到event中去。  rStream支持多个writer主要是为了允许同一个vertex的2个实例， 它会非常有用，当处理失败和重复执行中的stragglers。</p>
+<p>一个reader可以调用Register(seq) 来显示他的感兴趣的event的起始sequence number seq，并开始通过ReadNext来读取数据，ReadNext 会返回下一个batch的带有sequence numbers的事件并调整读取偏移量。在实现中， event可以被push到一个注册的reader中，而不是被pull。 每一个reader可以异步处理events而不用和同个stream的气体readers或writers同步。一个reader同样可以rewind 一个stream通过重新register sequence number。 rStream 同样支持GarbageCollect(seq)来显示所有的小于seq的event不再需要并可以被丢弃。rStream 保留下面属性</p>
+<ul>
+<li>唯一性(Uniqueness), 每个sequence number是一个唯一值。 当第一个seq的写成功后， 任何后续的关联到seq的写操作都会被扔弃。</li>
+<li>有效性（Validity）假设一个ReadNext 返回一个带seq的event， 那必然有一个成功的Write(seq, e)</li>
+<li>可靠性(Reliability), 假设一个write(seq, e)成功了， 任何ReadNext 读取到seq 位置时，都会返回(seq, e)</li>
+</ul>
+<p>唯一性保证了每一个sequence number的一致性， 有效性保证每个sequence number的event value的正确性， 可靠性保证写到流的所有event 都是available。 rStream 可以通过一个带有后台存储的可靠的pub&#x2F;sub 系统来实现， 但StreamScope采用一个更高效的实现，避免时延变长因为在关键路径上把数据序序列化到存储上， 后面会介绍这个实现。</p>
+<h2 id="实现rStream"><a href="#实现rStream" class="headerlink" title="实现rStream"></a>实现rStream</h2><p>rStream  抽象提供稳定的管道， 允许receiver 可以从任何指定位置进行read。 一个简单直接的实现是持久化和稳定的写数据到底层的Cosmos  分布式文件系统。 这些在关键路径上的同步写会带入显著的延迟。 StreamScope因此使用一个混合schema，将一些关键路径上的写操作移出单提供稳定可靠的channel的效果： event首先在内存中进行缓存起来，可以直接传输给消费方的节点。 内存中的buffer 会异步刷新到 Cosmos 来容错。 当错误发生时， 内存中的buffer会丢失，但当需要时，可以被重新计算。</p>
+<p>为了在失败时，可以重新计算丢失的event， stream 跟踪每条消息的计算，类似TimeStream的依赖跟踪或D-Stream的血统跟踪， job manager跟踪节点的snapshots， 它可以用后来来通知如何重现event到输出流中。 一个节点自己决定什么时候获取snapshot， 保存并汇报给job manager。 举例来说，如图5，<br><img data-src="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/7338ad5d3520095a76b9865e62798d11/image.png" alt="image"></p>
+<p>节点v4 发送2个更新到job manager， 第一个更新汇报<code>snapshot s1=&#123;&lt;2, 7&gt;, &lt;12&gt;, t1&#125;</code>, 它表示这个节点这个秒时， 消费到2的event对第一个数据流，消费到7对第二个数据流， 并且在状态t1，产生event 12. 第二个update s2&#x3D;<code>&#123;&lt;5, 10&gt;, &lt;20&gt;, t2&#125;</code>, 它接受到5的event 在第一个数据流， 在第二个数据流到10， 当前状态为t2. 这种跟踪机制完全对用户透明。 如果输出流中的event 16需要被重新计算， job manager可以找到最大的output sequence number 小于16的snapshot， 这个例子中是s1. 这样他会启动一个新的节点， 加载snapshot s1, 然后持续计算直到产生event 16。这个新实例的执行需要第一个数据流的event 3到5， 第二个数据流的8到10， 这样有可能会触发上游节点重新计算，当这些event也是无法获取时。 当原始输入数据假设为可靠序列化时，这个过程最终会结束（指下游不断触发上游做重新计算，直到需要的原始数据已经持久化好，就不用再触发上游做重新计算）。总的来说， 这种设计移动flush 到可靠持久化存储的过程到关键路径外， 同时，减少需要重新计算的event的数量。 因为rStream 是无限的， 在一个真实的实现中， 垃圾收集是有必要删除失效的event和相关的tracking 信息（用来在错误发生时，重新生成event之用）</p>
+<p><img data-src="http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/aloha/aloha/1736a2ece8c7db918c1556f23e23aa42/image.png" alt="image"></p>
+<p>图6 展示了rStream 的实现方式。 在本例中， 只有一个writer W 和3个reader R1, R2, R3. 数据流不断增长从左到右。 stream的头（标记为GC）包含失效的event和可以被垃圾回收的event， 紧接着时一系列已经被可靠持久化的event， stream的尾部（最新的event） 是volatile， 当失败发生时，这些数据会丢失。 checkpoint可以定期创建（比如c1,c2, c3, c4, c5）, 当volatile 部分的stream 丢失时， it 可以从c4 snapshot开始做重新计算。 在可靠持久化部分的event可以提供给R1 R2而无序重新计算。 在可靠存储中还有部分数据直接重播。 没有更近一步的重叠重新计算需要重新恢复。</p>
+<h2 id="垃圾回收"><a href="#垃圾回收" class="headerlink" title="垃圾回收"></a>垃圾回收</h2><p>StreamScope 持久化snapshot， StreamScope 和其他跟踪信息（用于恢复错误）， 并且需要确定什么时候开始进行垃圾回收。 StreamScope 为节点／StreamScope维护一个low－water－marks。 对于一个stream， 这个low-water-mark指向需要的最小event的sequence number。</p>
+<p>对于每个节点， snapshot 根据它的输入流和输出流的sequence number来做完全排序。 举例来说， 假设一个节点有2个输入，1个输出， snapshot s 为<code>(&lt;7, 12&gt;, &lt;5&gt;)</code> 将会比比<code>(&lt;7, 20&gt;, &lt;8&gt;)</code>要小， 并且不存在<code>(&lt;6, 16&gt;, &lt;4&gt; )</code>这样的snapshot。</p>
+<p>考虑一个节点v ， I 作为它的输入数据流， O 做为它的输出流。 节点v 维护一个low-water-marker sequence number lm0 为每个输出流， 初始化为0. 节点v实现GC(o, m)来实现垃圾回收， 显示所有小于m的sequence number的event将不再被下游vertex需要（下游vertex 消费输出流o）。 简单假设，每一个数据流只被一个下游节点消费， 但一般来说， 一个流经常被多个下游节点一起消费。</p>
+<ul>
+<li>假如 m &lt;&#x3D; lm0, 返回； ／／ 不需要进一步gc</li>
+<li>设置lm0到m。 假设s是最新的checkpoint的snapshot， s必须满足条件， 在s中输出流o的sequence number并不高于lm0. 丢掉所有小于s的snapshot</li>
+<li>对于每个输入的stream， 让vi 是上游节点，它产生输入流i 并且让si是对应s中输入流i的sequence number si， 调用vi GarbageCollect(si), 丢掉所有小于si的event在输入流i中， 递归调用vi GC(i, si)intuitive</li>
+</ul>
+<p>直觉来说， GC(o, m) 算出哪些信息将不再被下游节点需要， sequence number小于m。 当最重输出event被持久化或消费，或档任何输出的event被持久化。 图7 显示一个low-water-marks的例子。 尽管递归确定算法， 可以通过相反的拓扑遍历顺序来实现。</p>
+<h2 id="rVertex-概念"><a href="#rVertex-概念" class="headerlink" title="rVertex 概念"></a>rVertex 概念</h2><p>rVertex 支持如下的操作<br>Load(s) 节点从snapshot s 开始一个实例。<br>Execute()  从当前snapshot 开始执行一步<br>GetSnapshot() 返回当前snapshot</p>
+<p>一个节点可以以Load(s0) 开始， s0是起始状态并且所有的流以起始的position。 节点然后可以执行一系列的Execute(), Execute  会读取输入数据， 更新状态，产生新数据。任何时候， 节点可以调用GetSnapshot() 获取当前snapshot并保存它。 当节点失败时， 可以用Load(s)来restart。</p>
+<p>确定性(Determinism). 对于一个确定输入流的节点来说， 运行 Execute() 在相同的snapshot上会产生相同的状态（snapshot）和相同的输出结果。</p>
+<p>确定性保证了当从失败中进行重放event时，数据的准确性。 它也暗示了执行从不同输入stream获取的event的顺序是确定的； 第4章会介绍StreamScope是怎么做到顺序性而又不引入不必要的delay。 确定性极大保证正确性，并让应用更容易开发和调试。</p>
+<h2 id="实现rVertex"><a href="#实现rVertex" class="headerlink" title="实现rVertex"></a>实现rVertex</h2><p>实现rVertex的关键是保障如section 3所述的确定性， 它要求function determinism和input determinism。 在StreamScope中， 所有的算子和用户自定义函数必须确定性的。 我们假设一个任务的输入stream是确定性的， event的顺序和值都是确定性的。 唯一的不确定性是穿过不同管道的event的顺序性。因为StreamScope使用CTI event做为标记， 我们插入一个特殊的MERGE 算子在一个接收多个输入的节点的起始位置， 这样可以生成一个确定性的顺序，为后序的操作。通过等待对应的CTI event 来露出并排序event，并按照确定性顺序来emit 它们。 因为， 节点的处理逻辑用相同方式等待CTI event,   这种方式并没有引入额外的dely。<br>StreamScope 对每个stream的event 以连续单调递增的方式进行打标sequence number。 一个节点可以用sequence number来从所有的流中定位最后的消费／产生 event。 在每个步骤， 一个节点消费输入流的一个event，比如调用Execute(),  它可能改变内部状态，产生新的event 到输出流中， 因此达到一个新的snapshot。 GetSnapshot() 返回当前snapshot， 他可以在一个步骤后暂停执行或者在不中断执行的情况，对一些copy－on－write的数据做一些拷贝动作，来保证一致性。Load(s)  启动一个节点并load s 作为当前snapshot在继续执行前。 为了可以从一个snapshot上可以进行断点恢复， 一个节点会定期做checkpoint。</p>
+<h2 id="错误恢复"><a href="#错误恢复" class="headerlink" title="错误恢复"></a>错误恢复</h2><p>rStream 抽象解藕了上下游节点，从而允许单个节点从错误中恢复。当一个节点失败时， 可以简单重启节点通过Load(s) 从最近的保存的snapshot 开始执行。 rVertex 抽象表示恢复后的执行同没有错误发生时的执行结果是相同的。rStream抽象保证重启的节点可以reread 输入数据。 第4章介绍 如何实现rVertex和rStream. 不同的错误恢复策略来达到不同的tradeoff</p>
+<h3 id="错误恢复策略"><a href="#错误恢复策略" class="headerlink" title="错误恢复策略"></a>错误恢复策略</h3><p>StreamScope 必须能够从错误中进行恢复。 rVertex 和rStream 抽象结果下游的节点， 从而很容易查找并恢复错误。 除此之外， 他们还抽象潜在的实现机制， 允许他们共享公共的机制来容错。</p>
+<p>已经实现了集中错误恢复策略， 可以根据一些因子来做判断和选择， 普通情况开销(需要资源消耗)， 普通情况费用（指延迟）， 恢复成本（恢复资源）和恢复时间。</p>
+<p>目前有3种策略， 对于rStream 和rVertex, 每个节点可以从错误中独立恢复出来。 因此，这些策略可以用在这些节点上甚至相同job上不同的节点使用不同的策略。</p>
+<h3 id="基于checkpoint的恢复。"><a href="#基于checkpoint的恢复。" class="headerlink" title="基于checkpoint的恢复。"></a>基于checkpoint的恢复。</h3><p>节点会定期做checkpoint，把snapshot保存到持久化存储上。 当一个节点失败时， 他会加载最近的checkpoint 并继续执行。 checkpoint 的直接实现会引入正常执行的额外开销， 并且在维护一个大的state时并不是很理想。 高级的checkpoint技术会需要特定的数据结构，他们会引入复杂性和额外开销。</p>
+<h3 id="基于重播机制的恢复。"><a href="#基于重播机制的恢复。" class="headerlink" title="基于重播机制的恢复。"></a>基于重播机制的恢复。</h3><p>常见的流计算是无状态或者因为使用window 算子儿拥有一个短期的内存。也就是说， 当前的内部状态依赖最新window的一些event。 这这鞋情况下， 节点可以抛开显示的checkoint，而采用重新加载那个window的event从而从一个起始状态开始rebuild 状态。 然而这是一种特殊情况， 很常见很有用。 利用这种属性， stream能够简单跟踪输入／输出流的sequence number而不用存储节点的本地状态。 这种策略有可能需要重新加载一个大的window， 但它避免checkpoint的一些开销。<br>这种策略有一个潜在暗示在垃圾回收机制。 不是从一个snapshot中加载一个状态， 一个节点必须recover从它输入的早起的event， 这些event必须可以获得。</p>
+<h3 id="replication机制的recovery。"><a href="#replication机制的recovery。" class="headerlink" title="replication机制的recovery。"></a>replication机制的recovery。</h3><p>另外一种策略是对于相同的节点同时有多个instance。 他们连接到相同的输入流和输出流。 rStream 允许多个reader和writer， 自动根据sequence number进行去重。<br>rVertex的确定性属性让replication 方式可行， 因为这些instance 行为是一致性的。 通过replication， 一个节点可以有instance 轮流进行checkpoint而不会影响latency，因为其他的instance正以正常速度进行允许。 当一个instance fail， 它可以获得另外一个instance的当前snapshot，从而直接加速recovery。 这些好处都是来自于同时运行多个instance。</p>
+<h1 id="讨论"><a href="#讨论" class="headerlink" title="讨论"></a>讨论</h1><h2 id="StreamScope-在现有的分布式流计算引擎上选择另外一种方式。"><a href="#StreamScope-在现有的分布式流计算引擎上选择另外一种方式。" class="headerlink" title="StreamScope 在现有的分布式流计算引擎上选择另外一种方式。"></a>StreamScope 在现有的分布式流计算引擎上选择另外一种方式。</h2><p>minibatch 的带RDD 的流处理。 不是支持连续的流模型， D-Streams 模型一个流计算为一系列minibatch的计算在一些小的时间间隔，并且利用immutable RDD 来做错误恢复。 将流计算拆解为一系列minibatch的方式会比较笨重， 因为一些流算子，比如windowing， join， aggregation， 维护状态到处理event 会高效一些。 拆分这些操作到独立的minibatch计算要求重建计算状态从前一个batch在处理当前batch event之前。 比如图1 的inner join。 这个join的算子需要track 所有的event， 这些event 有可能生成匹配结果从当前或将来batch 以高效的数据结构并且可以仅当接收到CTI event 时retie他们， 这种join状态是潜在复杂的join类型， 并且需要在每个batch或连续的mini－batch中进行重构。 更近一步， D-Streams 不考虑低延迟和容错性， 一个minibatch决定节点计算的粒度， 然而一个imuutable RDD, 主要为了错误恢复， 根据每个minibatch来创建。 这种低延迟要求小的small batch size甚至已经没有必要在那个粒度开启错误恢复。</p>
+<h2 id="非确定性。"><a href="#非确定性。" class="headerlink" title="非确定性。"></a>非确定性。</h2><p>rVertex 要求确定性来保证正确性和容易debug。 非确定性容易引起不一致性当一个节点失败重新计算时。 非确定性有可能引起重新执行结果偏离起始的执行并导致一种情况， 下游节点使用2种不一致的输出event。 StreamScope 可以扩展去支持不一致性，但以一定代价。<br>一种方式来避免因为非确定导致的不一致性 是保证节点输出的任何event 不再需要重新计算。 这可以通过在让下游可见event之前，对它做checkpoint并持久化到存储中去。 这就是millwheel的本质。 这个设计会引入显著额外开销，因为在关键路径上的高昂checkpoint。 一种可选的方式是log 非确定性的决定当执行replay是。 log方式的开销会小于checkpoint方式， 但这种方式要求所有的非确定的来源必须被标记，适度log并重放。 StreamScope 并不支持这种实现方式。</p>
+<h2 id="乱序event。"><a href="#乱序event。" class="headerlink" title="乱序event。"></a>乱序event。</h2><p>event可以不按它吗应用时间的顺序来到达， 比如event来自多个消息。 比如storm或millwheel 分配一个唯一的但非顺序性的id给每个event。 下游节点发送带这些id的acks给上游节点来跟踪状态和处理失败。 StreamScope 解藕 event的logical order 于物理发送或消费顺序。 它借用了流数据库中的CTI  理念 来达到乱序event处理在语言和算子层面。 在系统层面， StreamScope 分配唯一病情顺序性的sequence number给event， 从而轻松可以跟踪处理进程和错误恢复， 从而避免显著的acks而引起性能开销。</p>
+<h1 id="生产经验"><a href="#生产经验" class="headerlink" title="生产经验"></a>生产经验</h1><ul>
+<li>从batch到流， StreamScope 是batch处理系统的扩展，并且大量使用现有的组件。并且大量的批处理应用迁移到StreamScope上， 并且提供迁移支持， 允许batch version来验证流部分的正确性。</li>
+<li>伸缩性和健壮性波动。 rStream 有效的保证了错误恢复时和扩容时，新节点能更上节奏。</li>
+<li>简化分布式流计算。 声明式语言让业务方很容易些流应用。StreamScope 提供off-line模式，  有限的数据持久化到存储后， 可以模拟线上数据流， 并且对一个节点进行单独debug</li>
+<li>回溯， 比如发生数据订正时， 就需要对数据进行回溯，修正之前的数据。  StreamScope会保留所有的checkpoints 和输入channel 到一个全局repository， 它实现了一定的保留策略。</li>
+<li>当系统维护时不间断执行。其实就是利用rVetex的确定性，当部分节点需要升级维护时，会启动一个备份，当备份节点ready后， 会把停机维护的节点给杀掉。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+          <span class="icon">
+            <i class></i>
+          </span>
+
+          <span class="label">Github</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
+              <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag"># 大数据</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/docs/paper/dataflow/" rel="prev" title="The Dataflow Model： Google Dataflow 编程模型">
+                  <i class="fa fa-chevron-left"></i> The Dataflow Model： Google Dataflow 编程模型
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/docs/machine_learning/machine_learning_in_action_reading_notes/index/" rel="next" title="《Machine Learning In Action》">
+                  《Machine Learning In Action》 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Symbols count total: </span>
+    <span title="Symbols count total">192k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:37</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2016/docs/paper/screamscope/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"b3b368b9fd84e2187f25a95b521d7842"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+</body>
+</html>
