@@ -635,6 +635,26 @@ master代表当前分支</li>
       </tags>
   </entry>
   <entry>
+    <title>磁盘性能测试</title>
+    <url>/2020/fileio/</url>
+    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>心血来潮，想测试一下阿里云的essd 和阿里云的本地ssd 性能， 不巧的是阿里云ecs 的存储， 有几种类型， essd， ssd 云盘， 高效云盘 和本地盘nvme 盘<br>最终测试下来确实nvme 盘的性能最好。</p>
+<p>测试工具： 本文用sysbench 进行测试， 以前读书的时候使用过iometer 进行测试， sysbench 测试参数更多， 对iops 的测试效果更丰富， iometer 偏重吞吐量的测试。 </p>
+<span id="more"></span>
+
+
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>参考之前的博文， 学会如何安装sysbench</p>
+<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>测试脚本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line"></span><br><span class="line">SYSBENCH_FILE_TOTAL_SIZE=16G</span><br><span class="line">SYSBENCH_FILE_NUM=16</span><br><span class="line">SYSBENCH_NUM_THREADS=16</span><br><span class="line">FSYNC=off</span><br><span class="line">SYSBENCH_BLOCK_SIZE=4096</span><br><span class="line">SYSBENCH_TIME=60</span><br><span class="line"></span><br><span class="line">#  --file-num=N                  number of files to create [128]</span><br><span class="line">#  --file-block-size=N           block size to use in all IO operations [16384]</span><br><span class="line">#  --file-total-size=SIZE        total size of files to create [2G]</span><br><span class="line">#  --file-test-mode=STRING       test mode &#123;seqwr, seqrewr, seqrd, rndrd, rndwr, rndrw&#125;</span><br><span class="line">#  --file-io-mode=STRING         file operations mode &#123;sync,async,mmap&#125; [sync]</span><br><span class="line">#  --file-extra-flags=[LIST,...] list of additional flags to use to open files &#123;sync,dsync,direct&#125; []</span><br><span class="line">#  --file-fsync-freq=N           do fsync() after this number of requests (0 - don&#x27;t use fsync()) [100]</span><br><span class="line">#  --file-fsync-all[=on|off]     do fsync() after each write operation [off]</span><br><span class="line">#  --file-fsync-end[=on|off]     do fsync() at the end of test [on]</span><br><span class="line">#  --file-fsync-mode=STRING      which method to use for synchronization &#123;fsync, fdatasync&#125; [fsync]</span><br><span class="line">#  --file-merged-requests=N      merge at most this number of IO requests if possible (0 - don&#x27;t merge) [0]</span><br><span class="line">#  --file-rw-ratio=N             reads/writes ratio for combined test [1.5]</span><br><span class="line"></span><br><span class="line">testmodes=(</span><br><span class="line">    &quot;seqwr&quot; </span><br><span class="line">    &quot;seqrewr&quot; </span><br><span class="line">    &quot;seqrd&quot;</span><br><span class="line">    &quot;rndrd&quot;</span><br><span class="line">    &quot;rndwr&quot; </span><br><span class="line">    &quot;rndrw&quot;</span><br><span class="line">    )</span><br><span class="line">for testmode in &quot;$&#123;testmodes[@]&#125;&quot;</span><br><span class="line">do</span><br><span class="line">    directios=(</span><br><span class="line">    &quot;&quot;</span><br><span class="line">    &quot;sync&quot;</span><br><span class="line">    &quot;direct&quot;</span><br><span class="line">    &quot;dsync&quot;</span><br><span class="line">    )</span><br><span class="line">    for directio in &quot;$&#123;directios[@]&#125;&quot;</span><br><span class="line">    do</span><br><span class="line">        date</span><br><span class="line">        echo 1 &gt; /proc/sys/vm/drop_caches</span><br><span class="line">        echo &quot;begin to run $testmode   $directio&quot;</span><br><span class="line">        sysbench fileio  --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0 --threads=$SYSBENCH_NUM_THREADS prepare</span><br><span class="line">        sysbench fileio --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0  --report-interval=10  --threads=$SYSBENCH_NUM_THREADS --time=$SYSBENCH_TIME run</span><br><span class="line">        sysbench fileio  --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0   cleanup</span><br><span class="line">        date</span><br><span class="line">        esynccho &quot;Finish one loop test&quot;</span><br><span class="line">    done</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">rm -rf test_file.*</span><br><span class="line"></span><br><span class="line">echo &quot;Finish all test&quot;</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>《OceanBase开发者手册》之五 如何debug OceanBase</title>
     <url>/2021/debug_ob/</url>
     <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>《OceanBase开发者手册》 主要指导开发者如何参与到OceanBase 的研发, 铺平参与OceanBase 开发的准备工作遇到的问题, 当前章节大概这几篇文章, 未来可能会增加部分文章, 目前OceanBase 源码参考OceanBase 开源官网的<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYXJ0aWNsZXMvODYwMDEyOQ==">《开源数据库OceanBase源码解读》 系列<i class="fa fa-external-link-alt"></i></span> :</p>
@@ -816,26 +836,6 @@ master代表当前分支</li>
       </tags>
   </entry>
   <entry>
-    <title>磁盘性能测试</title>
-    <url>/2020/fileio/</url>
-    <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>心血来潮，想测试一下阿里云的essd 和阿里云的本地ssd 性能， 不巧的是阿里云ecs 的存储， 有几种类型， essd， ssd 云盘， 高效云盘 和本地盘nvme 盘<br>最终测试下来确实nvme 盘的性能最好。</p>
-<p>测试工具： 本文用sysbench 进行测试， 以前读书的时候使用过iometer 进行测试， sysbench 测试参数更多， 对iops 的测试效果更丰富， iometer 偏重吞吐量的测试。 </p>
-<span id="more"></span>
-
-
-<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>参考之前的博文， 学会如何安装sysbench</p>
-<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>测试脚本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line"></span><br><span class="line">SYSBENCH_FILE_TOTAL_SIZE=16G</span><br><span class="line">SYSBENCH_FILE_NUM=16</span><br><span class="line">SYSBENCH_NUM_THREADS=16</span><br><span class="line">FSYNC=off</span><br><span class="line">SYSBENCH_BLOCK_SIZE=4096</span><br><span class="line">SYSBENCH_TIME=60</span><br><span class="line"></span><br><span class="line">#  --file-num=N                  number of files to create [128]</span><br><span class="line">#  --file-block-size=N           block size to use in all IO operations [16384]</span><br><span class="line">#  --file-total-size=SIZE        total size of files to create [2G]</span><br><span class="line">#  --file-test-mode=STRING       test mode &#123;seqwr, seqrewr, seqrd, rndrd, rndwr, rndrw&#125;</span><br><span class="line">#  --file-io-mode=STRING         file operations mode &#123;sync,async,mmap&#125; [sync]</span><br><span class="line">#  --file-extra-flags=[LIST,...] list of additional flags to use to open files &#123;sync,dsync,direct&#125; []</span><br><span class="line">#  --file-fsync-freq=N           do fsync() after this number of requests (0 - don&#x27;t use fsync()) [100]</span><br><span class="line">#  --file-fsync-all[=on|off]     do fsync() after each write operation [off]</span><br><span class="line">#  --file-fsync-end[=on|off]     do fsync() at the end of test [on]</span><br><span class="line">#  --file-fsync-mode=STRING      which method to use for synchronization &#123;fsync, fdatasync&#125; [fsync]</span><br><span class="line">#  --file-merged-requests=N      merge at most this number of IO requests if possible (0 - don&#x27;t merge) [0]</span><br><span class="line">#  --file-rw-ratio=N             reads/writes ratio for combined test [1.5]</span><br><span class="line"></span><br><span class="line">testmodes=(</span><br><span class="line">    &quot;seqwr&quot; </span><br><span class="line">    &quot;seqrewr&quot; </span><br><span class="line">    &quot;seqrd&quot;</span><br><span class="line">    &quot;rndrd&quot;</span><br><span class="line">    &quot;rndwr&quot; </span><br><span class="line">    &quot;rndrw&quot;</span><br><span class="line">    )</span><br><span class="line">for testmode in &quot;$&#123;testmodes[@]&#125;&quot;</span><br><span class="line">do</span><br><span class="line">    directios=(</span><br><span class="line">    &quot;&quot;</span><br><span class="line">    &quot;sync&quot;</span><br><span class="line">    &quot;direct&quot;</span><br><span class="line">    &quot;dsync&quot;</span><br><span class="line">    )</span><br><span class="line">    for directio in &quot;$&#123;directios[@]&#125;&quot;</span><br><span class="line">    do</span><br><span class="line">        date</span><br><span class="line">        echo 1 &gt; /proc/sys/vm/drop_caches</span><br><span class="line">        echo &quot;begin to run $testmode   $directio&quot;</span><br><span class="line">        sysbench fileio  --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0 --threads=$SYSBENCH_NUM_THREADS prepare</span><br><span class="line">        sysbench fileio --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0  --report-interval=10  --threads=$SYSBENCH_NUM_THREADS --time=$SYSBENCH_TIME run</span><br><span class="line">        sysbench fileio  --file-num=$SYSBENCH_FILE_NUM --file-block-size=$SYSBENCH_BLOCK_SIZE --file-total-size=$SYSBENCH_FILE_TOTAL_SIZE --file-test-mode=$testmode --file-io-mode=sync --file-extra-flags=$directio --file-fsync-all=$FSYNC --file-fsync-mode=fsync --file-fsync-freq=0 --file-merged-requests=0   cleanup</span><br><span class="line">        date</span><br><span class="line">        esynccho &quot;Finish one loop test&quot;</span><br><span class="line">    done</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">rm -rf test_file.*</span><br><span class="line"></span><br><span class="line">echo &quot;Finish all test&quot;</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HashCorp Reading Notes</title>
     <url>/2022/hashcorp-read-notes/</url>
     <content><![CDATA[<h1 id="随谈"><a href="#随谈" class="headerlink" title="随谈"></a>随谈</h1><p>万字 大文章 <span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3MvWTJBNy1VaTJuelVnb2RrRWJnUjZsUQ==">https://mp.weixin.qq.com/s/Y2A7-Ui2nzUgodkEbgR6lQ<i class="fa fa-external-link-alt"></i></span></p>
@@ -970,6 +970,38 @@ master代表当前分支</li>
       </categories>
       <tags>
         <tag>travel</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《华为崛起》</title>
+    <url>/2020/huawei/</url>
+    <content><![CDATA[<h1 id="题外话"><a href="#题外话" class="headerlink" title="题外话"></a>题外话</h1><p>今年年初， 买书的时候，无意中看到《华为崛起》， 介绍的挺有意思的， 于是买了一本看看， 买了很久但一直没有看， 拖了很久， 终于看完了， 忍不住写点总结吧， 免得左边耳朵进，右边耳朵出。<br>华为从一家这么小的公司，最后成长成为差不多中国最大的民营企业， 而且很多年前, 营收和研发投入就是互联网三巨头bat 的总和， 绝对值得去学习和研究一下(现在互联网叫bat， 其实叫hat 更合适)。 这本书讲了很多华为成长过程中，发生的一些事和决策，可以从中思考一下，为什么华为成功了，而巨大中华中，其他的几乎没有多少声音了。<br>另外，绝对要吐槽一下作者， 全文无处不在的拍马屁， 有的地方，简直要吐了。这本书组织管理介绍比较浅， 很多组织管理的思考充斥着对任老板和管理层的拍马屁。</p>
+<p>创业的朋友，推荐读一下这本书， 带着问题 “为什么华为能成功”？ 读下去，相信会有很多收获。 而我没有什么体感，只能站在第三者的角度去看， 所以聊的深度比较浅， 大家就当博君一笑。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>华为大概分了几个阶段， 每一次都是破茧成蝶，突破天花板</p>
+<ol>
+<li>创业之战</li>
+<li>成长之战</li>
+<li>生存之战</li>
+<li>大象狂奔</li>
+</ol>
+<span id="more"></span>
+
+<h1 id="创业之战"><a href="#创业之战" class="headerlink" title="创业之战"></a>创业之战</h1><p>创业的时候， 选择了暴利行业的电信行业， 这个是最大的关键点， 如果不是选择这个暴利行业， 否则根本没有钱去支撑后续一系列的研发和快速扩张， 包括允许了一定的战略决策失误。 今天，对于创业的朋友来说，就是一个常说的词， 蓝海和红海， 只有下海到蓝海中， 才有更多的机会，更多的容错性（反脆弱）。 而怎样找到一个蓝海， 就是需要发现问题。</p>
+<h1 id="成长之战"><a href="#成长之战" class="headerlink" title="成长之战"></a>成长之战</h1><p>最早代理交换机， 只要有路子，能拿到货， 转手一下， 就有大把钞票。 有的时候，经常有些热门的交换机，根本拿不到， 任老板于是决定自己去研发，避免自己被人卡脖子。 但凡做事的人， 都会希望自己能把握关键点，降低风险， 这个其实没有什么好吹的。 但老任比较牛b的是，就是坚持，在一系列研发失败后， 最后赌了一把大的， all in 了光纤交换机，而且一下就搞万门交换机，选择了一个非常正确的方向， 这个非常有魄力。 另外，当时第一款产品出来时， 找到第一个关键客户 – 义乌电信局时， 真的是客户第一， 研发所有人员都蹲现场， 现场有问题，现场解决问题， 第一时间解决所有问题， 和义乌电信局成了命运共同体， 一荣皆荣， 一损俱损。 这种手法，是甲方和乙方的最高境界， 也给了华为一个真正的练兵场， 帮助华为打开了局面。</p>
+<p>一家小公司成长起来，非常依赖老板的战略决策， 赌对了就飞黄腾达，赌错了，就树倒猢狲散，做大事的人，往往赌性比较重， 但当公司长大后， 却要防止这种错误的决策, 需要一种机制来防止决策失误， 类似阿里的合伙人，华为的轮值董事等。另外一种防止决策错误的思路是， 客户第一。 华为在客户第一上，做的真是贯穿到骨子里。</p>
+<h1 id="生存之战"><a href="#生存之战" class="headerlink" title="生存之战"></a>生存之战</h1><p>在2003年的时候， 任正非中间打算将华为打包价75亿美金卖掉， 想想这背后的导火索，肯定就是华为遭遇了生存危机。<br>这个生存危机， 第一 港湾之战， 第二 思科之战。<br>港湾之战， 李一男 林立山头， 最初任老板的想法是，让李一男 帮助华为补位， 做一些华为的配合工作，但在巨大利益面前， 谁能抵挡的， 哪个公司不想成为巨头， 所以不要挑战人性， 利益面前，人是会变的。 第二个就是港湾就是华为的山寨版， 做事方式和华为一模一样， 这种方式，如果不斩草除根， 不彻底干掉， 哪怕自损800 也要灭敌1000， 否则就是放虎归山。<br>同样，思科在攻击华为时， 就是害怕自己担负 垄断罪名时， 放了华为一把， 明知华为未来不可阻挡，还是舍不得肉。 这个里面， 华为策略， 小输就是赢， 站的高度还是非常高。<br>2个形成鲜明对比， 一个是宁可自损800也要1000，也要斩草除根， 另外一个舍不得孩子，套不住狼。 最终的结果，大家也看到，永远铭记，从长远思考问题。<br>在2003年时， 挡住饮鸩止渴（挡住小灵通的诱惑），从未来着手布局， 还是高人一等。</p>
+<h1 id="大象狂奔"><a href="#大象狂奔" class="headerlink" title="大象狂奔"></a>大象狂奔</h1><p>采取农村包围城市， 先从一些贫瘠的土地开始播种， 从别人不要的残羹冷炙着手， 深挖梁，缓称王。<br>在一些难啃的国家中， 组建合资公司， 这种做法还是相当smart。<br>在手机业务上， 从默默无闻到巨头， 每一步都是一步一个脚印。<br>布局海思半导体， 最初应该是无奈之举， 但海思半导体却成了华为的一个神来之笔。 </p>
+<h1 id="组织管理"><a href="#组织管理" class="headerlink" title="组织管理"></a>组织管理</h1><p>全书介绍管理上，包装了各种理论， 什么军事管理， 机械主义， 自适应平衡（有个具体的理论，但忘记了名字， 差不多就是每个组织或模块是在一个动态环境中， 需要不停的流入资源&#x2F;人，然后也不断输出资源&#x2F;人，有一点点优胜略汰）。其实背后：</p>
+<ol>
+<li>钱， 2. 权， 3. 精神统一 （客户第一， 奋斗者为本）<br>不同阶段，应用这3点用了不同的手段。</li>
+</ol>
+<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>今天的华为，俨然一个巨无霸， 不可能一家公司在所有领域都是寡头， 所以，还是需要资源重组，集中优势兵力布局未来主航道， 另外也要给合作伙伴留一条路吧。</p>
+]]></content>
+      <categories>
+        <category>杂谈</category>
+      </categories>
+      <tags>
+        <tag>杂谈</tag>
       </tags>
   </entry>
   <entry>
@@ -1197,29 +1229,35 @@ master代表当前分支</li>
       </tags>
   </entry>
   <entry>
-    <title>《华为崛起》</title>
-    <url>/2020/huawei/</url>
-    <content><![CDATA[<h1 id="题外话"><a href="#题外话" class="headerlink" title="题外话"></a>题外话</h1><p>今年年初， 买书的时候，无意中看到《华为崛起》， 介绍的挺有意思的， 于是买了一本看看， 买了很久但一直没有看， 拖了很久， 终于看完了， 忍不住写点总结吧， 免得左边耳朵进，右边耳朵出。<br>华为从一家这么小的公司，最后成长成为差不多中国最大的民营企业， 而且很多年前, 营收和研发投入就是互联网三巨头bat 的总和， 绝对值得去学习和研究一下(现在互联网叫bat， 其实叫hat 更合适)。 这本书讲了很多华为成长过程中，发生的一些事和决策，可以从中思考一下，为什么华为成功了，而巨大中华中，其他的几乎没有多少声音了。<br>另外，绝对要吐槽一下作者， 全文无处不在的拍马屁， 有的地方，简直要吐了。这本书组织管理介绍比较浅， 很多组织管理的思考充斥着对任老板和管理层的拍马屁。</p>
-<p>创业的朋友，推荐读一下这本书， 带着问题 “为什么华为能成功”？ 读下去，相信会有很多收获。 而我没有什么体感，只能站在第三者的角度去看， 所以聊的深度比较浅， 大家就当博君一笑。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>华为大概分了几个阶段， 每一次都是破茧成蝶，突破天花板</p>
-<ol>
-<li>创业之战</li>
-<li>成长之战</li>
-<li>生存之战</li>
-<li>大象狂奔</li>
-</ol>
+    <title>小谈跳槽</title>
+    <url>/2016/jump/</url>
+    <content><![CDATA[<h1 id="小谈-跳槽"><a href="#小谈-跳槽" class="headerlink" title="小谈 跳槽"></a>小谈 跳槽</h1><p>最近看一个帖子《阿里70w vs IBM 40W》， 帖子里面充斥着阿里和IBM 各种出差补助的争吵， 实在无语， 忍不住，利用周末的时间，总结自己的想法， 抛砖引玉一下， 欢迎各位朋友一起探讨。<br>跳槽其实是一个非常大的话题，可以从梦想，从性格，从经历，从专业等各个维度长篇大论一番，另外每个人都有自己的经历，从而都有自己的解读， 没有哪一种是完全正确的，也没有哪一种是完全错误的，而我只能说，将我的理解表达出来，如果你有更多的想法，不妨也探讨一下。</p>
 <span id="more"></span>
 
-<h1 id="创业之战"><a href="#创业之战" class="headerlink" title="创业之战"></a>创业之战</h1><p>创业的时候， 选择了暴利行业的电信行业， 这个是最大的关键点， 如果不是选择这个暴利行业， 否则根本没有钱去支撑后续一系列的研发和快速扩张， 包括允许了一定的战略决策失误。 今天，对于创业的朋友来说，就是一个常说的词， 蓝海和红海， 只有下海到蓝海中， 才有更多的机会，更多的容错性（反脆弱）。 而怎样找到一个蓝海， 就是需要发现问题。</p>
-<h1 id="成长之战"><a href="#成长之战" class="headerlink" title="成长之战"></a>成长之战</h1><p>最早代理交换机， 只要有路子，能拿到货， 转手一下， 就有大把钞票。 有的时候，经常有些热门的交换机，根本拿不到， 任老板于是决定自己去研发，避免自己被人卡脖子。 但凡做事的人， 都会希望自己能把握关键点，降低风险， 这个其实没有什么好吹的。 但老任比较牛b的是，就是坚持，在一系列研发失败后， 最后赌了一把大的， all in 了光纤交换机，而且一下就搞万门交换机，选择了一个非常正确的方向， 这个非常有魄力。 另外，当时第一款产品出来时， 找到第一个关键客户 – 义乌电信局时， 真的是客户第一， 研发所有人员都蹲现场， 现场有问题，现场解决问题， 第一时间解决所有问题， 和义乌电信局成了命运共同体， 一荣皆荣， 一损俱损。 这种手法，是甲方和乙方的最高境界， 也给了华为一个真正的练兵场， 帮助华为打开了局面。</p>
-<p>一家小公司成长起来，非常依赖老板的战略决策， 赌对了就飞黄腾达，赌错了，就树倒猢狲散，做大事的人，往往赌性比较重， 但当公司长大后， 却要防止这种错误的决策, 需要一种机制来防止决策失误， 类似阿里的合伙人，华为的轮值董事等。另外一种防止决策错误的思路是， 客户第一。 华为在客户第一上，做的真是贯穿到骨子里。</p>
-<h1 id="生存之战"><a href="#生存之战" class="headerlink" title="生存之战"></a>生存之战</h1><p>在2003年的时候， 任正非中间打算将华为打包价75亿美金卖掉， 想想这背后的导火索，肯定就是华为遭遇了生存危机。<br>这个生存危机， 第一 港湾之战， 第二 思科之战。<br>港湾之战， 李一男 林立山头， 最初任老板的想法是，让李一男 帮助华为补位， 做一些华为的配合工作，但在巨大利益面前， 谁能抵挡的， 哪个公司不想成为巨头， 所以不要挑战人性， 利益面前，人是会变的。 第二个就是港湾就是华为的山寨版， 做事方式和华为一模一样， 这种方式，如果不斩草除根， 不彻底干掉， 哪怕自损800 也要灭敌1000， 否则就是放虎归山。<br>同样，思科在攻击华为时， 就是害怕自己担负 垄断罪名时， 放了华为一把， 明知华为未来不可阻挡，还是舍不得肉。 这个里面， 华为策略， 小输就是赢， 站的高度还是非常高。<br>2个形成鲜明对比， 一个是宁可自损800也要1000，也要斩草除根， 另外一个舍不得孩子，套不住狼。 最终的结果，大家也看到，永远铭记，从长远思考问题。<br>在2003年时， 挡住饮鸩止渴（挡住小灵通的诱惑），从未来着手布局， 还是高人一等。</p>
-<h1 id="大象狂奔"><a href="#大象狂奔" class="headerlink" title="大象狂奔"></a>大象狂奔</h1><p>采取农村包围城市， 先从一些贫瘠的土地开始播种， 从别人不要的残羹冷炙着手， 深挖梁，缓称王。<br>在一些难啃的国家中， 组建合资公司， 这种做法还是相当smart。<br>在手机业务上， 从默默无闻到巨头， 每一步都是一步一个脚印。<br>布局海思半导体， 最初应该是无奈之举， 但海思半导体却成了华为的一个神来之笔。 </p>
-<h1 id="组织管理"><a href="#组织管理" class="headerlink" title="组织管理"></a>组织管理</h1><p>全书介绍管理上，包装了各种理论， 什么军事管理， 机械主义， 自适应平衡（有个具体的理论，但忘记了名字， 差不多就是每个组织或模块是在一个动态环境中， 需要不停的流入资源&#x2F;人，然后也不断输出资源&#x2F;人，有一点点优胜略汰）。其实背后：</p>
+<h1 id="跳槽的本质"><a href="#跳槽的本质" class="headerlink" title="跳槽的本质"></a>跳槽的本质</h1><p>任何一次跳槽，都是自己人生中的一次选择， 这次选择都会对自己的人生产生一定的影响， 但每次选择出发点都是期望让自己的职业生涯向前一步或者家庭幸福感向前一步。</p>
+<p>如果选择了家庭幸福感， 那在跳槽的权重中，家庭的因素自然放在首要位置。</p>
+<p>如果选择了职业生涯，这次选择有没有让自己工作成就感更上一层楼。当工作成就感增强时，会感觉工作的动力源源不断涌现， 这就是为什么出现那么多的工作狂人的缘故。关于职业生涯，强烈建议拜读一下《你为什么没有好工作》， 里面有前辈很深刻的总结和理解。</p>
+<p>但无论是选择家庭幸福感还是职业生涯，得先问自己，这是一次中长期的跳槽，还是一次短暂的旅途。但无论是短期旅途还是中长期跳槽， 是不是和自己长远的一个目标吻合。</p>
+<h1 id="跳槽的权衡"><a href="#跳槽的权衡" class="headerlink" title="跳槽的权衡"></a>跳槽的权衡</h1><h2 id="薪水"><a href="#薪水" class="headerlink" title="薪水"></a>薪水</h2><p>谈跳槽，不可避免会涉及到薪水。<br>马云曾用2句话，很精辟的解释了为什么跳槽，无非2个原因：</p>
 <ol>
-<li>钱， 2. 权， 3. 精神统一 （客户第一， 奋斗者为本）<br>不同阶段，应用这3点用了不同的手段。</li>
+<li>干的不爽</li>
+<li>钱少了</li>
 </ol>
-<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>今天的华为，俨然一个巨无霸， 不可能一家公司在所有领域都是寡头， 所以，还是需要资源重组，集中优势兵力布局未来主航道， 另外也要给合作伙伴留一条路吧。</p>
+<p>背后也说明了， 薪水其实能摆平跳槽中的很多问题。<br>当你很在意薪水时，如果这次跳槽，薪水离自己的预期有很大差距，建议不要跳， 因为一开始，就注定了心情不好， 这个不好的状态会维持到你下一次涨薪前， 又会让你对下一次涨薪充满期待，当期待越高时，也越容易失望。因此，薪水绝对会影响一个人的心情。<br>当你开始关注薪水之外的东西时，薪水的比重会逐渐降低。</p>
+<p>记得第一次跳槽时， 老板的老板对我说，薪水不要看的太重， 多几千少几千都不是问题的关键，关键是你自己有没有机会成长更多。</p>
+<h2 id="未来和当前："><a href="#未来和当前：" class="headerlink" title="未来和当前："></a>未来和当前：</h2><p>随着年纪和阅历不断增加，跳槽会看薪水之外越来越多的东西，也就是马老师的 “干的不爽”， 很多时候就归结于5个字 “未来和当前”<br>未来：</p>
+<ol>
+<li>自己职业的未来， 这次跳槽能否带来自己职业的提升， 视野，技术，能力能否有提升， 或者有一个更好的职位，通俗一点更好的坑， 专业的讲，更好的卡位。</li>
+<li>公司的未来，<br>2.1 公司的未来有没有可能给一个平台给自己更好的展示，<br>2.2 另外这个公司的文化， 适不适合自己， 很多人忽视这个因素，但往往这个因素会影响一个人能不能长久的在一个公司呆下去。<br>家庭：</li>
+<li>会给自己家庭带来什么变化， 一个稳定的工作，必然需要一个稳定的家庭<br>1.1 如果有提升，比如，原来的异地分居，现在合二为一， 那就是加分项<br>1.2 如果有冲击， 这个冲击是否能够接受， 比如异地跳槽或者夫妻分居， 当冲击出现时， 得仔细思考家庭，</li>
+</ol>
+<h2 id="创业"><a href="#创业" class="headerlink" title="创业"></a>创业</h2><p>随着现在政府口号 “大众创业，万众创新”的口号，很多事情，跳槽的过程中，遭遇了创业的问题：<br>创业就相当于一次跳槽过程，通常这次跳槽（创业）的结果是以失败告终，但收获了自己人生的阅历。<br>创业的人，往往需要足够强的脑力和体力，去面对所有已知或未知， 足够的能力去面对折腾，因此创业第一步需要分析自己的性格是否偏好创业，对于一些性格成熟稳重（赌性比较少），偏好安逸的人，建议到大公司工作，可能更适合一些。当然打算创业的原因太多，这里无法一一列举。</p>
+<p>附带一句：<br>创业和情商是没有直接关系的，任何情况下（无论是创业还是在大公司工作，抑或小公司工作），都需要高情商。高情商的人，成功的概率永远都会比普通人高出一大截。， </p>
+<h1 id="跳槽一点小技巧"><a href="#跳槽一点小技巧" class="headerlink" title="跳槽一点小技巧"></a>跳槽一点小技巧</h1><p>跳槽很多时候都是自己去选择公司，选择团队， 而不是被动接受外界猎头的鼓动。 自己心中有个大致概念，自己能去哪些公司，已经想去哪些公司。</p>
+<p>如果你开始迈出跳槽的一步， 很简单， 搜索你想去公司的猎头， 发封邮件给他，如果有回复后，附上一份简历。 同样，也可以搜索这家公司的员工， 也可以发邮件给他，向他求助， 任何一家公司都非常欢迎内部推荐，因为，更可靠和成本更低。</p>
+<p>至于跳槽过程中的技巧， 基本上属于术的范畴， 有很多文章，都有很多介绍， 这里有2个策略吧：<br>（1）一定需要临时抱佛脚， 临阵抹枪，不抹也光， 你准备的越多，机会的大门也向你敞开的越多<br>（2）尽可能的诚实</p>
+<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>跳槽永远都是一个 围城 的故事， 城外的人拼命想进来， 城内的人拼命想出去。 当前所在的公司， 绝不是你想象中的那么不堪， 新进入的公司，也绝不是梦中的那么美好， 没有一家十全十美的公司， 所以在跳槽的第一步，就要想清楚，自己想要什么，自己想改变什么？</p>
+<p>作为老板其实不喜欢跳槽太多的人。</p>
 ]]></content>
       <categories>
         <category>杂谈</category>
@@ -1273,35 +1311,22 @@ master代表当前分支</li>
       </tags>
   </entry>
   <entry>
-    <title>小谈跳槽</title>
-    <url>/2016/jump/</url>
-    <content><![CDATA[<h1 id="小谈-跳槽"><a href="#小谈-跳槽" class="headerlink" title="小谈 跳槽"></a>小谈 跳槽</h1><p>最近看一个帖子《阿里70w vs IBM 40W》， 帖子里面充斥着阿里和IBM 各种出差补助的争吵， 实在无语， 忍不住，利用周末的时间，总结自己的想法， 抛砖引玉一下， 欢迎各位朋友一起探讨。<br>跳槽其实是一个非常大的话题，可以从梦想，从性格，从经历，从专业等各个维度长篇大论一番，另外每个人都有自己的经历，从而都有自己的解读， 没有哪一种是完全正确的，也没有哪一种是完全错误的，而我只能说，将我的理解表达出来，如果你有更多的想法，不妨也探讨一下。</p>
-<span id="more"></span>
-
-<h1 id="跳槽的本质"><a href="#跳槽的本质" class="headerlink" title="跳槽的本质"></a>跳槽的本质</h1><p>任何一次跳槽，都是自己人生中的一次选择， 这次选择都会对自己的人生产生一定的影响， 但每次选择出发点都是期望让自己的职业生涯向前一步或者家庭幸福感向前一步。</p>
-<p>如果选择了家庭幸福感， 那在跳槽的权重中，家庭的因素自然放在首要位置。</p>
-<p>如果选择了职业生涯，这次选择有没有让自己工作成就感更上一层楼。当工作成就感增强时，会感觉工作的动力源源不断涌现， 这就是为什么出现那么多的工作狂人的缘故。关于职业生涯，强烈建议拜读一下《你为什么没有好工作》， 里面有前辈很深刻的总结和理解。</p>
-<p>但无论是选择家庭幸福感还是职业生涯，得先问自己，这是一次中长期的跳槽，还是一次短暂的旅途。但无论是短期旅途还是中长期跳槽， 是不是和自己长远的一个目标吻合。</p>
-<h1 id="跳槽的权衡"><a href="#跳槽的权衡" class="headerlink" title="跳槽的权衡"></a>跳槽的权衡</h1><h2 id="薪水"><a href="#薪水" class="headerlink" title="薪水"></a>薪水</h2><p>谈跳槽，不可避免会涉及到薪水。<br>马云曾用2句话，很精辟的解释了为什么跳槽，无非2个原因：</p>
+    <title>认知革命读后感</title>
+    <url>/2017/knowledgerevolution/</url>
+    <content><![CDATA[<p>认知革命</p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>花了半天，快速学习了认知革命的课程，不能保证能理解李善友所表达的所有观点， 只能说按照我现有的知识体系，对他的理论有一个消化和吸收。<br>他有几个核心观点，<br>（1）第一性原理<br>（2）认知世界的方式<br>（3）科学革命<br>（4）非连续性。 </p>
+<h1 id="第一性原理"><a href="#第一性原理" class="headerlink" title="第一性原理"></a>第一性原理</h1><p>第一性原理， 我个人非常赞同这个观点， 其实就是哲学中的现象和本质说， 只不过换了一个角度来演绎这个说法， 另外在李善友的观点中， 第一性原理是需要建立在认知世界方式中演绎归纳法的基础上， 认知世界的方式中演绎法，需要一个假设的前提， 这个前提是一个具备自证清白的共识，这个共识就是第一性原理。 我个人观点，这是哲学中现象和本质 这一理论的另外一个说法而已。</p>
+<p>在我们今天人类的发展历史上， 所有的科学进步都是为了一个目标， 如何让人类变得更懒， 更舒适。 曾经paypal 的创始人Peter Thiel就说过关于创新的一段话（原话已经忘记，但意思应该差不多）， 所有的创业第一原则，就是让人们更懒去完成一些事情， 另外，乔布斯信奉的 大道至简（简单就是美） 的产品理念， 其实，就是让用户不要去花时间去思考什么是好的。今天我们程序员开发， 为什么进行模块化，分层化， 就是将每个成果固化，方便别人快速使用。 我们开源一个技术， 就是让别人不要再花时间再去重复建设， 直接站在别人的肩膀上工作。另外，比如，像浏览器之争， 今天google chrome 浏览器做到浏览器的第一把座椅， 就是google chrome 是最快的浏览器（至少号称是最快的）， 对于浏览器的众多需求中， 没有一个需求是能和性能相比， 人们永远都是追求更高，更快， 更远。</p>
+<p>对比今天的产品设计， 如果我们面向用户， 那我们在思考用户的需求中， 哪些是最核心的需求， 哪些是第二原则， 哪些是末等公民。同样，如果我们中间件推出一些产品如果面向程序员， 帮助程序员开发程序， 那我们第一需求是什么， 第一需求就是如何帮助程序员更快的开发程序，帮助他们用更短的代价完成业务目标。 从技术语言的发展上， 从早期c 到c++， 再到java， 再到python， scala， go， 语言的层次愈来愈高， 一份需求需要的代码数量也变得越来越少。 </p>
+<h1 id="认知世界的方式"><a href="#认知世界的方式" class="headerlink" title="认知世界的方式"></a>认知世界的方式</h1><p>在李善友的观点中， 认知世界， 有3种方式， 1. 归纳法， 2. 演绎法， 3. 带假设的归纳法； 归纳法就是通过大量的结果，来抽象出一个事务的内在联系，是一个证明在前，假设在后的逻辑思维， 由果去推因，这种思维会遭遇一个坑， 就是归纳出来的理论，只能证伪，不能存真， 只能用来验证一些东西，而不适合去做为普遍真理；而演绎法， 通过一些假设，再加上一些已知的规律， 由假设一步一步来推导结果， 是一个假设在前， 证明在后的观点， 由因去推果， 这种思维其实是更符合逻辑思维， 符合世界是由本质来推导出原因的过程， 不过这种思维会遭遇一个悖论， 演绎法需要一个证明的起点， 就是能够自证清白的原理，也就是第一性原理，当第一性原理不存在或无法自证清白时，就无法完成整个演绎； 因为2种理论都会有一些瑕疵， 因此李善友提出了一个补充，就是带假设的归纳法。</p>
+<p>对世界的认知方式上， 从逻辑思维角度出发， 演绎论会更全面更严谨； 归纳法会直接，更快速。 对于我们it 工程师来说， 结合第一性原理和科学革命原来来思考， 很多的事情都是要抓住事物的本质， 少受一些干扰项干扰， 当现有的做法是从大量的结果中抽象出一套规律时， 我们需要研究是不是需要从客户的最本质需求上去思考，如何一步一步完成客户最大的痛点。 </p>
+<h1 id="科学革命"><a href="#科学革命" class="headerlink" title="科学革命"></a>科学革命</h1><p>科学革命，在李善友的名词中， 有一个叫范式转换， 就是 只有管道更替， 创新是新的范式出现， 对过去很多东西，是一个颠覆性思考， 或者是完全换道考虑。 就像intel 从存储器转到cpu领域， 苹果推出iphone， 所谓 “重新定义手机”， 对过去的功能机一种完全全新的革命。</p>
+<p>我对这种观点认为， 科学革命是一种颠覆性的创新， 这种创新其实很难， 也是非常少见的。 但有几点，需要注意</p>
 <ol>
-<li>干的不爽</li>
-<li>钱少了</li>
+<li>自我革命的勇气，  当意识到一种新的创新出现时， 必须有勇气自我革命， 就是腾讯 就说过， 微信就是要革qq的命， 如果害怕革命， 当别人完成自我蜕变时， 自己就沦为鱼肉， 比如柯达， 当数码出现时，没有及时抛弃传统胶片，最终被市场抛弃。</li>
+<li>这个事情大的创新都是非常非常难的， 只能从几个角度去努力尝试创新， 从认知世界的方式出发， 从用户最本质的需求上， 从另外一个赛道上全新去演绎一件事情， 会有更多的思路。 另外个人观点是， 博采众家之长， 把一个领域的成功经验移植到另外一个领域， 从而对这个领域进行全新的改变。 就像《三体》里面说的降维攻击。</li>
 </ol>
-<p>背后也说明了， 薪水其实能摆平跳槽中的很多问题。<br>当你很在意薪水时，如果这次跳槽，薪水离自己的预期有很大差距，建议不要跳， 因为一开始，就注定了心情不好， 这个不好的状态会维持到你下一次涨薪前， 又会让你对下一次涨薪充满期待，当期待越高时，也越容易失望。因此，薪水绝对会影响一个人的心情。<br>当你开始关注薪水之外的东西时，薪水的比重会逐渐降低。</p>
-<p>记得第一次跳槽时， 老板的老板对我说，薪水不要看的太重， 多几千少几千都不是问题的关键，关键是你自己有没有机会成长更多。</p>
-<h2 id="未来和当前："><a href="#未来和当前：" class="headerlink" title="未来和当前："></a>未来和当前：</h2><p>随着年纪和阅历不断增加，跳槽会看薪水之外越来越多的东西，也就是马老师的 “干的不爽”， 很多时候就归结于5个字 “未来和当前”<br>未来：</p>
-<ol>
-<li>自己职业的未来， 这次跳槽能否带来自己职业的提升， 视野，技术，能力能否有提升， 或者有一个更好的职位，通俗一点更好的坑， 专业的讲，更好的卡位。</li>
-<li>公司的未来，<br>2.1 公司的未来有没有可能给一个平台给自己更好的展示，<br>2.2 另外这个公司的文化， 适不适合自己， 很多人忽视这个因素，但往往这个因素会影响一个人能不能长久的在一个公司呆下去。<br>家庭：</li>
-<li>会给自己家庭带来什么变化， 一个稳定的工作，必然需要一个稳定的家庭<br>1.1 如果有提升，比如，原来的异地分居，现在合二为一， 那就是加分项<br>1.2 如果有冲击， 这个冲击是否能够接受， 比如异地跳槽或者夫妻分居， 当冲击出现时， 得仔细思考家庭，</li>
-</ol>
-<h2 id="创业"><a href="#创业" class="headerlink" title="创业"></a>创业</h2><p>随着现在政府口号 “大众创业，万众创新”的口号，很多事情，跳槽的过程中，遭遇了创业的问题：<br>创业就相当于一次跳槽过程，通常这次跳槽（创业）的结果是以失败告终，但收获了自己人生的阅历。<br>创业的人，往往需要足够强的脑力和体力，去面对所有已知或未知， 足够的能力去面对折腾，因此创业第一步需要分析自己的性格是否偏好创业，对于一些性格成熟稳重（赌性比较少），偏好安逸的人，建议到大公司工作，可能更适合一些。当然打算创业的原因太多，这里无法一一列举。</p>
-<p>附带一句：<br>创业和情商是没有直接关系的，任何情况下（无论是创业还是在大公司工作，抑或小公司工作），都需要高情商。高情商的人，成功的概率永远都会比普通人高出一大截。， </p>
-<h1 id="跳槽一点小技巧"><a href="#跳槽一点小技巧" class="headerlink" title="跳槽一点小技巧"></a>跳槽一点小技巧</h1><p>跳槽很多时候都是自己去选择公司，选择团队， 而不是被动接受外界猎头的鼓动。 自己心中有个大致概念，自己能去哪些公司，已经想去哪些公司。</p>
-<p>如果你开始迈出跳槽的一步， 很简单， 搜索你想去公司的猎头， 发封邮件给他，如果有回复后，附上一份简历。 同样，也可以搜索这家公司的员工， 也可以发邮件给他，向他求助， 任何一家公司都非常欢迎内部推荐，因为，更可靠和成本更低。</p>
-<p>至于跳槽过程中的技巧， 基本上属于术的范畴， 有很多文章，都有很多介绍， 这里有2个策略吧：<br>（1）一定需要临时抱佛脚， 临阵抹枪，不抹也光， 你准备的越多，机会的大门也向你敞开的越多<br>（2）尽可能的诚实</p>
-<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>跳槽永远都是一个 围城 的故事， 城外的人拼命想进来， 城内的人拼命想出去。 当前所在的公司， 绝不是你想象中的那么不堪， 新进入的公司，也绝不是梦中的那么美好， 没有一家十全十美的公司， 所以在跳槽的第一步，就要想清楚，自己想要什么，自己想改变什么？</p>
-<p>作为老板其实不喜欢跳槽太多的人。</p>
+<h1 id="非连续性"><a href="#非连续性" class="headerlink" title="非连续性"></a>非连续性</h1><p>李善友的观点是 “世界是由非连续性节点组成，而人类的认知是由连续性的节点来贯穿， 在一些非连续的节点之间穿插连续的桥梁， 而这些桥梁就是人类解决问题的各种手段”。 我觉得这个观点可能正确， 但没有什么大的价值。 对于一个程序员来说， 这个世界无论是连续还是非连续性的， 在计算机的世界里面都是非连续性的， 需要一些手段将他们连贯起来。 任何一个曲线都是由一串的节点贯穿起来。 </p>
 ]]></content>
       <categories>
         <category>杂谈</category>
@@ -1334,31 +1359,6 @@ master代表当前分支</li>
 <li>练习需要不断反馈，  哪些做的好，哪些做的不好，需要不断调整练习，克服不足。</li>
 <li>练习需要不断挑战自己， 强迫自己走出舒适区。 如果持续不断待在舒适区， 就永远无法进步，大脑有偏爱稳定性的倾向。 离开舒适区，才能获得更大潜能。</li>
 </ol>
-]]></content>
-      <categories>
-        <category>杂谈</category>
-      </categories>
-      <tags>
-        <tag>杂谈</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>认知革命读后感</title>
-    <url>/2017/knowledgerevolution/</url>
-    <content><![CDATA[<p>认知革命</p>
-<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>花了半天，快速学习了认知革命的课程，不能保证能理解李善友所表达的所有观点， 只能说按照我现有的知识体系，对他的理论有一个消化和吸收。<br>他有几个核心观点，<br>（1）第一性原理<br>（2）认知世界的方式<br>（3）科学革命<br>（4）非连续性。 </p>
-<h1 id="第一性原理"><a href="#第一性原理" class="headerlink" title="第一性原理"></a>第一性原理</h1><p>第一性原理， 我个人非常赞同这个观点， 其实就是哲学中的现象和本质说， 只不过换了一个角度来演绎这个说法， 另外在李善友的观点中， 第一性原理是需要建立在认知世界方式中演绎归纳法的基础上， 认知世界的方式中演绎法，需要一个假设的前提， 这个前提是一个具备自证清白的共识，这个共识就是第一性原理。 我个人观点，这是哲学中现象和本质 这一理论的另外一个说法而已。</p>
-<p>在我们今天人类的发展历史上， 所有的科学进步都是为了一个目标， 如何让人类变得更懒， 更舒适。 曾经paypal 的创始人Peter Thiel就说过关于创新的一段话（原话已经忘记，但意思应该差不多）， 所有的创业第一原则，就是让人们更懒去完成一些事情， 另外，乔布斯信奉的 大道至简（简单就是美） 的产品理念， 其实，就是让用户不要去花时间去思考什么是好的。今天我们程序员开发， 为什么进行模块化，分层化， 就是将每个成果固化，方便别人快速使用。 我们开源一个技术， 就是让别人不要再花时间再去重复建设， 直接站在别人的肩膀上工作。另外，比如，像浏览器之争， 今天google chrome 浏览器做到浏览器的第一把座椅， 就是google chrome 是最快的浏览器（至少号称是最快的）， 对于浏览器的众多需求中， 没有一个需求是能和性能相比， 人们永远都是追求更高，更快， 更远。</p>
-<p>对比今天的产品设计， 如果我们面向用户， 那我们在思考用户的需求中， 哪些是最核心的需求， 哪些是第二原则， 哪些是末等公民。同样，如果我们中间件推出一些产品如果面向程序员， 帮助程序员开发程序， 那我们第一需求是什么， 第一需求就是如何帮助程序员更快的开发程序，帮助他们用更短的代价完成业务目标。 从技术语言的发展上， 从早期c 到c++， 再到java， 再到python， scala， go， 语言的层次愈来愈高， 一份需求需要的代码数量也变得越来越少。 </p>
-<h1 id="认知世界的方式"><a href="#认知世界的方式" class="headerlink" title="认知世界的方式"></a>认知世界的方式</h1><p>在李善友的观点中， 认知世界， 有3种方式， 1. 归纳法， 2. 演绎法， 3. 带假设的归纳法； 归纳法就是通过大量的结果，来抽象出一个事务的内在联系，是一个证明在前，假设在后的逻辑思维， 由果去推因，这种思维会遭遇一个坑， 就是归纳出来的理论，只能证伪，不能存真， 只能用来验证一些东西，而不适合去做为普遍真理；而演绎法， 通过一些假设，再加上一些已知的规律， 由假设一步一步来推导结果， 是一个假设在前， 证明在后的观点， 由因去推果， 这种思维其实是更符合逻辑思维， 符合世界是由本质来推导出原因的过程， 不过这种思维会遭遇一个悖论， 演绎法需要一个证明的起点， 就是能够自证清白的原理，也就是第一性原理，当第一性原理不存在或无法自证清白时，就无法完成整个演绎； 因为2种理论都会有一些瑕疵， 因此李善友提出了一个补充，就是带假设的归纳法。</p>
-<p>对世界的认知方式上， 从逻辑思维角度出发， 演绎论会更全面更严谨； 归纳法会直接，更快速。 对于我们it 工程师来说， 结合第一性原理和科学革命原来来思考， 很多的事情都是要抓住事物的本质， 少受一些干扰项干扰， 当现有的做法是从大量的结果中抽象出一套规律时， 我们需要研究是不是需要从客户的最本质需求上去思考，如何一步一步完成客户最大的痛点。 </p>
-<h1 id="科学革命"><a href="#科学革命" class="headerlink" title="科学革命"></a>科学革命</h1><p>科学革命，在李善友的名词中， 有一个叫范式转换， 就是 只有管道更替， 创新是新的范式出现， 对过去很多东西，是一个颠覆性思考， 或者是完全换道考虑。 就像intel 从存储器转到cpu领域， 苹果推出iphone， 所谓 “重新定义手机”， 对过去的功能机一种完全全新的革命。</p>
-<p>我对这种观点认为， 科学革命是一种颠覆性的创新， 这种创新其实很难， 也是非常少见的。 但有几点，需要注意</p>
-<ol>
-<li>自我革命的勇气，  当意识到一种新的创新出现时， 必须有勇气自我革命， 就是腾讯 就说过， 微信就是要革qq的命， 如果害怕革命， 当别人完成自我蜕变时， 自己就沦为鱼肉， 比如柯达， 当数码出现时，没有及时抛弃传统胶片，最终被市场抛弃。</li>
-<li>这个事情大的创新都是非常非常难的， 只能从几个角度去努力尝试创新， 从认知世界的方式出发， 从用户最本质的需求上， 从另外一个赛道上全新去演绎一件事情， 会有更多的思路。 另外个人观点是， 博采众家之长， 把一个领域的成功经验移植到另外一个领域， 从而对这个领域进行全新的改变。 就像《三体》里面说的降维攻击。</li>
-</ol>
-<h1 id="非连续性"><a href="#非连续性" class="headerlink" title="非连续性"></a>非连续性</h1><p>李善友的观点是 “世界是由非连续性节点组成，而人类的认知是由连续性的节点来贯穿， 在一些非连续的节点之间穿插连续的桥梁， 而这些桥梁就是人类解决问题的各种手段”。 我觉得这个观点可能正确， 但没有什么大的价值。 对于一个程序员来说， 这个世界无论是连续还是非连续性的， 在计算机的世界里面都是非连续性的， 需要一些手段将他们连贯起来。 任何一个曲线都是由一串的节点贯穿起来。 </p>
 ]]></content>
       <categories>
         <category>杂谈</category>
@@ -1683,30 +1683,6 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
-    <title>监控工具总结</title>
-    <url>/2021/monitor_tool/</url>
-    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>将过去使用的几个监控工具分享一下， 也方便自己以后查找。 </p>
-<ul>
-<li><a href="/knowledge/tools/monitor_tools/sar.html">sar， Linux 上最为全面的系统性能分析工具之一</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/pidstat.html">pidstat， 系统资源监控工具之一</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/iostat.html">iostat， IO性能分析工具之一</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/network.html">network 监控与分析工具</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/perf.html">perf， 性能分析工具之一</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/trace.html">trace系统</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/vmstat.html">vmstat， 内存监控工具之一</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/memory.html">内存监控与分析工具</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/java_gc.html">对java gc 性能调优</a></br></li>
-<li><a href="/knowledge/tools/monitor_tools/java_mem.html">java memory 监控与分析</a></br></li>
-</ul>
-]]></content>
-      <categories>
-        <category>monitor tools</category>
-      </categories>
-      <tags>
-        <tag>monitor</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Mac 下 clion 单机debug mysql</title>
     <url>/2019/mysql-build/</url>
     <content><![CDATA[<p>最近花了几天的时间搭建和编译MySQL 环境</p>
@@ -1770,6 +1746,30 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </categories>
       <tags>
         <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>监控工具总结</title>
+    <url>/2021/monitor_tool/</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>将过去使用的几个监控工具分享一下， 也方便自己以后查找。 </p>
+<ul>
+<li><a href="/knowledge/tools/monitor_tools/sar.html">sar， Linux 上最为全面的系统性能分析工具之一</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/pidstat.html">pidstat， 系统资源监控工具之一</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/iostat.html">iostat， IO性能分析工具之一</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/network.html">network 监控与分析工具</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/perf.html">perf， 性能分析工具之一</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/trace.html">trace系统</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/vmstat.html">vmstat， 内存监控工具之一</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/memory.html">内存监控与分析工具</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/java_gc.html">对java gc 性能调优</a></br></li>
+<li><a href="/knowledge/tools/monitor_tools/java_mem.html">java memory 监控与分析</a></br></li>
+</ul>
+]]></content>
+      <categories>
+        <category>monitor tools</category>
+      </categories>
+      <tags>
+        <tag>monitor</tag>
       </tags>
   </entry>
   <entry>
@@ -2183,6 +2183,85 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
+    <title>OceanBase监控对接Prometheus/Grafana</title>
+    <url>/2021/obagent/</url>
+    <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文讲介绍如何让OceanBase监控对接Prometheus和Grafana. </p>
+<p>​<img data-src="/img/ob/obagent1.jpg" ><br>​<span id="more"></span></p>
+<h1 id="安装流程"><a href="#安装流程" class="headerlink" title="安装流程"></a>安装流程</h1><p>大致过程, 分为3大步骤:</p>
+<ol>
+<li>安装oceanbase和obagent</li>
+<li>安装prometheus和grafana</li>
+<li>配置prometheus和grafana</li>
+</ol>
+<h2 id="安装OceanBase和Obagent"><a href="#安装OceanBase和Obagent" class="headerlink" title="安装OceanBase和Obagent"></a>安装OceanBase和Obagent</h2><p>如何安装OceanBase 可以参考上一篇文章<a href="http://ilongda.com/2021/ob_offline_install/">《OceanBase离线安装》</a>, 本节重点介绍如何安装obagent, 可以参考文档<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vZG9jcy9jb21tdW5pdHkvb2NlYW5iYXNlLWRhdGFiYXNlL1YzLjEuMS91c2Utb2JkLXRvLWRlcGxveS1vYmFnZW50">使用 OBD 部署 OBAgent<i class="fa fa-external-link-alt"></i></span></p>
+<p>OBAgent 是一个监控采集框架。OBAgent 支持推、拉两种数据采集模式，可以满足不同的应用场景。OBAgent 默认支持的插件包括主机数据采集、OceanBase 数据库指标的采集、监控数据标签处理和 Prometheus 协议的 HTTP 服务。要使 OBAgent 支持其他数据源的采集，或者自定义数据的处理流程，您只需要开发对应的插件即可。</p>
+<p>obagent 的配置, 在原来的配置基础上, 增加了obagent的配置, 详情可以参考<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveS9ibG9iL21hc3Rlci9leGFtcGxlL2F1dG9kZXBsb3kvZGlzdHJpYnV0ZWQtd2l0aC1vYnByb3h5LWFuZC1vYmFnZW50LWV4YW1wbGUueWFtbA==">distributed-with-obproxy-and-obagent-example<i class="fa fa-external-link-alt"></i></span>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obagent:</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  # The list of servers to be monitored. This list is consistent with the servers in oceanbase-ce. </span><br><span class="line">  servers:</span><br><span class="line">    - name: server1</span><br><span class="line">      # Please don&#x27;t use hostname, only IP is supported.</span><br><span class="line">      ip: 172.19.33.2</span><br><span class="line">    - name: server2</span><br><span class="line">      ip: 172.19.33.3</span><br><span class="line">    - name: server3</span><br><span class="line">      ip: 172.19.33.4</span><br><span class="line">  # Set dependent components for the component.</span><br><span class="line">  # When the associated configurations are not done, OBD will automatically get the these configurations from the dependent components.</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  global:</span><br><span class="line">    # The working directory for obagent. obagent is started under this directory. This is a required field.</span><br><span class="line">    home_path: /root/observer</span><br><span class="line">    skip_proxy_sys_private_check: true</span><br></pre></td></tr></table></figure>
+
+<p>特别说明:</p>
+<ol>
+<li>depends里面的 “oceanbase-ce” 的名字必须和配置文件集群的名字一致. </li>
+<li>servers里面的配置必须与在配置文件中”oceanbase-ce”一节中servers 配置一摸一样</li>
+<li>记住home_path, 后续需要用到这个路径.</li>
+</ol>
+<p>安装完成后, 可以执行“obd cluster display ” 看到obagent 已经启动了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obd cluster display obtest</span><br><span class="line">Get local repositories and plugins ok</span><br><span class="line">Open ssh connection ok</span><br><span class="line">Cluster status check ok</span><br><span class="line">Connect to observer ok</span><br><span class="line">Wait for observer init ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     observer                    |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| ip            | version | port | zone  | status |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| 172.30.62.210 | 3.1.1   | 2881 | zone1 | active |</span><br><span class="line">| 172.30.62.211 | 3.1.1   | 2881 | zone2 | active |</span><br><span class="line">| 172.30.62.212 | 3.1.1   | 2881 | zone3 | active |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line"></span><br><span class="line">Connect to obproxy ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     obproxy                     |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| ip            | port | prometheus_port | status |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| 172.30.62.213 | 2883 | 2884            | active |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">+---------------------------------------------------+</span><br><span class="line">|                      obagent                      |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| ip            | server_port | pprof_port | status |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| 172.30.62.210 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.211 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.212 | 8088        | 8089       | active |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="安装prometheus和grafana"><a href="#安装prometheus和grafana" class="headerlink" title="安装prometheus和grafana"></a>安装prometheus和grafana</h2><p>选择一台机器上安装prometheus 和grafana, 这台机器尽量不是observer 中的一台, 本例中, prometheus 和grafana 部署在obproxy机器上. </p>
+<ol>
+<li>从<span class="exturl" data-url="aHR0cHM6Ly9wcm9tZXRoZXVzLmlvL2Rvd25sb2FkLw==">https://prometheus.io/download/<i class="fa fa-external-link-alt"></i></span> 上把prometheus 和alertmanager 下载下来, 本章将不介绍 alertmanager 怎么使用. </li>
+<li>从<span class="exturl" data-url="aHR0cHM6Ly9ncmFmYW5hLmNvbS9ncmFmYW5hL2Rvd25sb2FkP3BnPWdldCZwbGNtdD1zZWxmbWFuYWdlZC1ib3gxLWN0YTE=">https://grafana.com/grafana/download?pg=get&amp;plcmt=selfmanaged-box1-cta1<i class="fa fa-external-link-alt"></i></span> 上下载grapha</li>
+<li>讲prometheus 和grafana 压缩包拷贝到obproxy 的机器上, </li>
+<li>解压prometheus 和grafana<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -xzf prometheus-2.31.0.linux-amd64.tar.gz</span><br><span class="line"># tar -xzf grafana-enterprise-8.2.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="配置prometheus和grafana"><a href="#配置prometheus和grafana" class="headerlink" title="配置prometheus和grafana"></a>配置prometheus和grafana</h2><h3 id="配置prometheus"><a href="#配置prometheus" class="headerlink" title="配置prometheus"></a>配置prometheus</h3><ol>
+<li>讲obagent上的prometheus 的配置文件给拷贝到prometheus 的安装目录中<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd prometheus-2.31.0.linux-amd64</span><br><span class="line"># mv prometheus.yml prometheus.yml.old</span><br><span class="line"># scp -r observer001:/root/observer/conf/prometheus_config/* . </span><br></pre></td></tr></table></figure>
+备注说明: </li>
+<li>observer001 为安装obagent的一台机器</li>
+<li>&#x2F;root&#x2F;observer 为之前在配置文件中, 配置obagent中配置的home_path路径</li>
+<li>从observer001 上会copy 过来几个文件, prometheus.yaml 和rules, rules 是存储拉取规则, prometheus 是配置prometheus的文件.</li>
+</ol>
+<p>启动prometheus</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./prometheus --config.file=./prometheus.yaml &gt;&gt; run.log 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>检查run.log 可以查看运行日志. 正常情况下, </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl http://localhost:9090/metrics</span><br></pre></td></tr></table></figure>
+<p>可以获得大量的数据. </p>
+<h3 id="配置grafana"><a href="#配置grafana" class="headerlink" title="配置grafana"></a>配置grafana</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd grafana-8.2.3/</span><br><span class="line"># nohup bin/grafana-server &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line"># ps -ef|grep grafana</span><br></pre></td></tr></table></figure>
+<p>可以坚持run.log 或ps -ef|grep grafana 均可以查看到grafana 正常工作. </p>
+<p>打开grafana 的页面,  第一次登录, 输入admin&#x2F;admin, 然后设置管理员密码, 然后增加data source<br>​<img data-src="/img/ob/obagent2.jpg" ><br>进入增加data source后, 选择prometheus, 然后进入配置prometheus 后, 关键设置url<br>​<img data-src="/img/ob/obagent3.jpg" ></p>
+<p>import 配置项<br>​<img data-src="/img/ob/obagent4.jpg" ></p>
+<p>ob 已经提前准备好了 15215和15216 , 一个是监控oceanbase, 一个是监控host的.<br>当加载好模版后, 在dashboard 就可以看到2个预设好的dashboard, </p>
+<p>​<img data-src="/img/ob/obagent1.jpg" ></p>
+<p>恭喜你, 已经完成配置oceanbase对接prometheus 和grafana</p>
+]]></content>
+      <categories>
+        <category>OceanBase</category>
+      </categories>
+      <tags>
+        <tag>OceanBase</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《乔布斯传》读后感</title>
+    <url>/2018/qiaobusi/</url>
+    <content><![CDATA[<div align="center" style="width: 480px; height: auto;  text-align: center;" >
+                <img data-src="/img/qiaobusi.png" >
+</div>
+
+
+<p>乔布斯传，很早以前就看到人手一册， 但看到外界对乔布斯的点评就如同媒体点评马老师一样， 众彩纷纭， 最近因为机缘巧合， 被人要求阅读一下乔布斯传， 就把乔布斯传，拿过来读了一番， 读完之后，有很多不同的感悟，挑2个和大家探讨一下。<br> 第一个印象就是 唯有偏执才能成功，做什么事情都有自己的想法和见地， 甚至对很多事情到了偏执的程度， 年少的乔布斯就放荡不羁，想到了什么就会坚信不疑，   对精神世界的探索， 对素食主义的偏好， 对极简主义的信奉，所幸这些偏执大部分都是善意的， 但在中国， 有句古语叫， 兼听则明， 偏听则暗， 个人观点， 天才往往是超凡脱俗， 天才往往总是坚持自己内心深处的追求， 总是引领世界， 将世界引向自己的方向， 如果非天才级的人物， 最终还是会走向“三个臭皮匠抵得上一个诸葛亮”，依赖群体智慧， 群体的智慧往往是最稳定，大部分时候都是正确的。<br>营销大师，这个世界上， 有2种事情是最难的， 第一就是从别人的口袋里把钱掏过来， 第二个，就是把自己的思想灌输到别人的大脑中。 乔布斯是一位世界级的营销大师。 乔布斯，最开始也不是总是灌输自己的idea到别人的脑中， 但从印度之行回来后， 就开始开挂的人生， 总是在不停的说服其他人按照自己想法，当还是一家小公司时，在做每次展览的时候，就深谙如何抓住眼球 而且他总是和很多营销大师进行交流， 因此他的营销技巧在不断的完善， 另外，他对营销的追求， 远远是高于其他人一个量级， 因此，当苹果的广告出来时，总是给人耳目一新。 营销已经不仅仅对苹果的产品产生深远影响， 同样带来了一个 “乔布斯磁场”， 当乔布斯出现时，大家最后总是在不知不觉中和乔布斯的观点一致。</p>
+<p>最后，一千个读者就会有一千个哈姆雷特， 相信大家每次阅读乔布斯，都会有不同的感悟 。</p>
+]]></content>
+      <categories>
+        <category>杂谈</category>
+      </categories>
+      <tags>
+        <tag>杂谈</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>OceanBase离线安装</title>
     <url>/2021/ob_offline_install/</url>
     <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>将8月份写的离线安装文档, share 出来. 后续可能会发一系列的使用文档. </p>
@@ -2564,109 +2643,6 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
-    <title>OceanBase监控对接Prometheus/Grafana</title>
-    <url>/2021/obagent/</url>
-    <content><![CDATA[<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文讲介绍如何让OceanBase监控对接Prometheus和Grafana. </p>
-<p>​<img data-src="/img/ob/obagent1.jpg" ><br>​<span id="more"></span></p>
-<h1 id="安装流程"><a href="#安装流程" class="headerlink" title="安装流程"></a>安装流程</h1><p>大致过程, 分为3大步骤:</p>
-<ol>
-<li>安装oceanbase和obagent</li>
-<li>安装prometheus和grafana</li>
-<li>配置prometheus和grafana</li>
-</ol>
-<h2 id="安装OceanBase和Obagent"><a href="#安装OceanBase和Obagent" class="headerlink" title="安装OceanBase和Obagent"></a>安装OceanBase和Obagent</h2><p>如何安装OceanBase 可以参考上一篇文章<a href="http://ilongda.com/2021/ob_offline_install/">《OceanBase离线安装》</a>, 本节重点介绍如何安装obagent, 可以参考文档<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vZG9jcy9jb21tdW5pdHkvb2NlYW5iYXNlLWRhdGFiYXNlL1YzLjEuMS91c2Utb2JkLXRvLWRlcGxveS1vYmFnZW50">使用 OBD 部署 OBAgent<i class="fa fa-external-link-alt"></i></span></p>
-<p>OBAgent 是一个监控采集框架。OBAgent 支持推、拉两种数据采集模式，可以满足不同的应用场景。OBAgent 默认支持的插件包括主机数据采集、OceanBase 数据库指标的采集、监控数据标签处理和 Prometheus 协议的 HTTP 服务。要使 OBAgent 支持其他数据源的采集，或者自定义数据的处理流程，您只需要开发对应的插件即可。</p>
-<p>obagent 的配置, 在原来的配置基础上, 增加了obagent的配置, 详情可以参考<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmRlcGxveS9ibG9iL21hc3Rlci9leGFtcGxlL2F1dG9kZXBsb3kvZGlzdHJpYnV0ZWQtd2l0aC1vYnByb3h5LWFuZC1vYmFnZW50LWV4YW1wbGUueWFtbA==">distributed-with-obproxy-and-obagent-example<i class="fa fa-external-link-alt"></i></span>:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obagent:</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  # The list of servers to be monitored. This list is consistent with the servers in oceanbase-ce. </span><br><span class="line">  servers:</span><br><span class="line">    - name: server1</span><br><span class="line">      # Please don&#x27;t use hostname, only IP is supported.</span><br><span class="line">      ip: 172.19.33.2</span><br><span class="line">    - name: server2</span><br><span class="line">      ip: 172.19.33.3</span><br><span class="line">    - name: server3</span><br><span class="line">      ip: 172.19.33.4</span><br><span class="line">  # Set dependent components for the component.</span><br><span class="line">  # When the associated configurations are not done, OBD will automatically get the these configurations from the dependent components.</span><br><span class="line">  depends:</span><br><span class="line">    - oceanbase-ce</span><br><span class="line">  global:</span><br><span class="line">    # The working directory for obagent. obagent is started under this directory. This is a required field.</span><br><span class="line">    home_path: /root/observer</span><br><span class="line">    skip_proxy_sys_private_check: true</span><br></pre></td></tr></table></figure>
-
-<p>特别说明:</p>
-<ol>
-<li>depends里面的 “oceanbase-ce” 的名字必须和配置文件集群的名字一致. </li>
-<li>servers里面的配置必须与在配置文件中”oceanbase-ce”一节中servers 配置一摸一样</li>
-<li>记住home_path, 后续需要用到这个路径.</li>
-</ol>
-<p>安装完成后, 可以执行“obd cluster display ” 看到obagent 已经启动了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">obd cluster display obtest</span><br><span class="line">Get local repositories and plugins ok</span><br><span class="line">Open ssh connection ok</span><br><span class="line">Cluster status check ok</span><br><span class="line">Connect to observer ok</span><br><span class="line">Wait for observer init ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     observer                    |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| ip            | version | port | zone  | status |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line">| 172.30.62.210 | 3.1.1   | 2881 | zone1 | active |</span><br><span class="line">| 172.30.62.211 | 3.1.1   | 2881 | zone2 | active |</span><br><span class="line">| 172.30.62.212 | 3.1.1   | 2881 | zone3 | active |</span><br><span class="line">+---------------+---------+------+-------+--------+</span><br><span class="line"></span><br><span class="line">Connect to obproxy ok</span><br><span class="line">+-------------------------------------------------+</span><br><span class="line">|                     obproxy                     |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| ip            | port | prometheus_port | status |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">| 172.30.62.213 | 2883 | 2884            | active |</span><br><span class="line">+---------------+------+-----------------+--------+</span><br><span class="line">+---------------------------------------------------+</span><br><span class="line">|                      obagent                      |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| ip            | server_port | pprof_port | status |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br><span class="line">| 172.30.62.210 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.211 | 8088        | 8089       | active |</span><br><span class="line">| 172.30.62.212 | 8088        | 8089       | active |</span><br><span class="line">+---------------+-------------+------------+--------+</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="安装prometheus和grafana"><a href="#安装prometheus和grafana" class="headerlink" title="安装prometheus和grafana"></a>安装prometheus和grafana</h2><p>选择一台机器上安装prometheus 和grafana, 这台机器尽量不是observer 中的一台, 本例中, prometheus 和grafana 部署在obproxy机器上. </p>
-<ol>
-<li>从<span class="exturl" data-url="aHR0cHM6Ly9wcm9tZXRoZXVzLmlvL2Rvd25sb2FkLw==">https://prometheus.io/download/<i class="fa fa-external-link-alt"></i></span> 上把prometheus 和alertmanager 下载下来, 本章将不介绍 alertmanager 怎么使用. </li>
-<li>从<span class="exturl" data-url="aHR0cHM6Ly9ncmFmYW5hLmNvbS9ncmFmYW5hL2Rvd25sb2FkP3BnPWdldCZwbGNtdD1zZWxmbWFuYWdlZC1ib3gxLWN0YTE=">https://grafana.com/grafana/download?pg=get&amp;plcmt=selfmanaged-box1-cta1<i class="fa fa-external-link-alt"></i></span> 上下载grapha</li>
-<li>讲prometheus 和grafana 压缩包拷贝到obproxy 的机器上, </li>
-<li>解压prometheus 和grafana<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -xzf prometheus-2.31.0.linux-amd64.tar.gz</span><br><span class="line"># tar -xzf grafana-enterprise-8.2.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="配置prometheus和grafana"><a href="#配置prometheus和grafana" class="headerlink" title="配置prometheus和grafana"></a>配置prometheus和grafana</h2><h3 id="配置prometheus"><a href="#配置prometheus" class="headerlink" title="配置prometheus"></a>配置prometheus</h3><ol>
-<li>讲obagent上的prometheus 的配置文件给拷贝到prometheus 的安装目录中<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd prometheus-2.31.0.linux-amd64</span><br><span class="line"># mv prometheus.yml prometheus.yml.old</span><br><span class="line"># scp -r observer001:/root/observer/conf/prometheus_config/* . </span><br></pre></td></tr></table></figure>
-备注说明: </li>
-<li>observer001 为安装obagent的一台机器</li>
-<li>&#x2F;root&#x2F;observer 为之前在配置文件中, 配置obagent中配置的home_path路径</li>
-<li>从observer001 上会copy 过来几个文件, prometheus.yaml 和rules, rules 是存储拉取规则, prometheus 是配置prometheus的文件.</li>
-</ol>
-<p>启动prometheus</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nohup ./prometheus --config.file=./prometheus.yaml &gt;&gt; run.log 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
-
-<p>检查run.log 可以查看运行日志. 正常情况下, </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl http://localhost:9090/metrics</span><br></pre></td></tr></table></figure>
-<p>可以获得大量的数据. </p>
-<h3 id="配置grafana"><a href="#配置grafana" class="headerlink" title="配置grafana"></a>配置grafana</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># cd grafana-8.2.3/</span><br><span class="line"># nohup bin/grafana-server &gt; run.log 2&gt;&amp;1 &amp;</span><br><span class="line"># ps -ef|grep grafana</span><br></pre></td></tr></table></figure>
-<p>可以坚持run.log 或ps -ef|grep grafana 均可以查看到grafana 正常工作. </p>
-<p>打开grafana 的页面,  第一次登录, 输入admin&#x2F;admin, 然后设置管理员密码, 然后增加data source<br>​<img data-src="/img/ob/obagent2.jpg" ><br>进入增加data source后, 选择prometheus, 然后进入配置prometheus 后, 关键设置url<br>​<img data-src="/img/ob/obagent3.jpg" ></p>
-<p>import 配置项<br>​<img data-src="/img/ob/obagent4.jpg" ></p>
-<p>ob 已经提前准备好了 15215和15216 , 一个是监控oceanbase, 一个是监控host的.<br>当加载好模版后, 在dashboard 就可以看到2个预设好的dashboard, </p>
-<p>​<img data-src="/img/ob/obagent1.jpg" ></p>
-<p>恭喜你, 已经完成配置oceanbase对接prometheus 和grafana</p>
-]]></content>
-      <categories>
-        <category>OceanBase</category>
-      </categories>
-      <tags>
-        <tag>OceanBase</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>paper推荐</title>
-    <url>/2020/paper/</url>
-    <content><![CDATA[<p>因为楼主有个不好的习惯， 论文看完后， 过了一段时间就忘了讲什么，另外英语并不是很好，英文论文常常理解抓不住重点，因为习惯做一个笔记， 方便以后进行会议， 也方便理解论文。<br>后期会不定时进行更新。有一些论文是之前留下的笔记，做了一些梳理。 </p>
-<p>有一些论文，还没有读完， 读完的，会有link</p>
-<h1 id="Database"><a href="#Database" class="headerlink" title="Database"></a>Database</h1><h2 id="System"><a href="#System" class="headerlink" title="System"></a>System</h2><ul>
-<li><a href="/knowledge/paper/libr.html">《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》</a></li>
-<li><a href="/knowledge/paper/redshift.html">《Amazon Redshift and the Case for Simpler Data Warehouses》</a></li>
-<li><a href="/knowledge/paper/snowflake.html">《The Snowflake Elastic Data Warehouse》</a></li>
-<li><a href="/knowledge/paper/f1.html">《F1 Query: Declarative Querying at Scale》</a></li>
-</ul>
-<h2 id="Optimizer"><a href="#Optimizer" class="headerlink" title="Optimizer"></a>Optimizer</h2><ul>
-<li>《Access Path Selection in a Relational Database Management System》 </li>
-<li><a href="/knowledge/paper/The_Volcano_Optimizer_Generator.html">《The Volcano Optimizer Generator: Extensibility and Efficient Search》</a></li>
-<li><a href="/knowledge/paper/Volcano.html">《Volcano-An Extensible and Parallel Query Evaluation System》</a></li>
-<li><a href="/knowledge/paper/cascade.html">《The Cascades Framework for Query Optimization》</a></li>
-<li><a href="/knowledge/paper/ms-sql-server-pdw.html">《Query Optimization in Microsoft SQL Server PDW》</a></li>
-<li>《Inside The SQL Server Query Optimizer》</li>
-<li>《Incorporating Partitioning and Parallel Plans into the SCOPE Optimizer》</li>
-<li>《Orca: A Modular Query Optimizer Architecture for Big Data》</li>
-<li>《How Good Are Query Optimizers, Really?》</li>
-<li>《An overview of query optimization in relational systems.》</li>
-<li>《Query optimization through the looking glass, and what we found running the Join Order Benchmark.》</li>
-<li>《Adaptive statistics in Oracle 12c.》</li>
-<li>《Exploiting Statistics on Query Expressions for Optimization》</li>
-</ul>
-<h1 id="BigData"><a href="#BigData" class="headerlink" title="BigData"></a>BigData</h1><ul>
-<li><a href="/knowledge/paper/dataflow.html">《The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing》</a></li>
-<li><a href="/knowledge/paper/heron.html">《Hero stream process stream》 </a></li>
-<li><a href="/knowledge/paper/millwheel.html">《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》</a></li>
-<li><a href="/knowledge/paper/screamscope.html">《StreamScope: Continuous Reliable Distributed Processing of Big Data Streams》</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>Database</category>
-        <category>BigData</category>
-      </categories>
-      <tags>
-        <tag>BigData</tag>
-        <tag>Database</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>performance schema 源码走读</title>
     <url>/2020/performance_schema/</url>
     <content><![CDATA[<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>转载：<a href="/knowledge/mysql/source_code_reading/storage/performance_schema">performance_schema</a></p>
@@ -2757,21 +2733,45 @@ hdfs 客户常常有2个额外的要求， 1. dml和acid 支持； 2. 要求更�
       </tags>
   </entry>
   <entry>
-    <title>《乔布斯传》读后感</title>
-    <url>/2018/qiaobusi/</url>
-    <content><![CDATA[<div align="center" style="width: 480px; height: auto;  text-align: center;" >
-                <img data-src="/img/qiaobusi.png" >
-</div>
-
-
-<p>乔布斯传，很早以前就看到人手一册， 但看到外界对乔布斯的点评就如同媒体点评马老师一样， 众彩纷纭， 最近因为机缘巧合， 被人要求阅读一下乔布斯传， 就把乔布斯传，拿过来读了一番， 读完之后，有很多不同的感悟，挑2个和大家探讨一下。<br> 第一个印象就是 唯有偏执才能成功，做什么事情都有自己的想法和见地， 甚至对很多事情到了偏执的程度， 年少的乔布斯就放荡不羁，想到了什么就会坚信不疑，   对精神世界的探索， 对素食主义的偏好， 对极简主义的信奉，所幸这些偏执大部分都是善意的， 但在中国， 有句古语叫， 兼听则明， 偏听则暗， 个人观点， 天才往往是超凡脱俗， 天才往往总是坚持自己内心深处的追求， 总是引领世界， 将世界引向自己的方向， 如果非天才级的人物， 最终还是会走向“三个臭皮匠抵得上一个诸葛亮”，依赖群体智慧， 群体的智慧往往是最稳定，大部分时候都是正确的。<br>营销大师，这个世界上， 有2种事情是最难的， 第一就是从别人的口袋里把钱掏过来， 第二个，就是把自己的思想灌输到别人的大脑中。 乔布斯是一位世界级的营销大师。 乔布斯，最开始也不是总是灌输自己的idea到别人的脑中， 但从印度之行回来后， 就开始开挂的人生， 总是在不停的说服其他人按照自己想法，当还是一家小公司时，在做每次展览的时候，就深谙如何抓住眼球 而且他总是和很多营销大师进行交流， 因此他的营销技巧在不断的完善， 另外，他对营销的追求， 远远是高于其他人一个量级， 因此，当苹果的广告出来时，总是给人耳目一新。 营销已经不仅仅对苹果的产品产生深远影响， 同样带来了一个 “乔布斯磁场”， 当乔布斯出现时，大家最后总是在不知不觉中和乔布斯的观点一致。</p>
-<p>最后，一千个读者就会有一千个哈姆雷特， 相信大家每次阅读乔布斯，都会有不同的感悟 。</p>
+    <title>paper推荐</title>
+    <url>/2020/paper/</url>
+    <content><![CDATA[<p>因为楼主有个不好的习惯， 论文看完后， 过了一段时间就忘了讲什么，另外英语并不是很好，英文论文常常理解抓不住重点，因为习惯做一个笔记， 方便以后进行会议， 也方便理解论文。<br>后期会不定时进行更新。有一些论文是之前留下的笔记，做了一些梳理。 </p>
+<p>有一些论文，还没有读完， 读完的，会有link</p>
+<h1 id="Database"><a href="#Database" class="headerlink" title="Database"></a>Database</h1><h2 id="System"><a href="#System" class="headerlink" title="System"></a>System</h2><ul>
+<li><a href="/knowledge/paper/libr.html">《FusionInsight LibrA Huawei’s Enterprise Cloud Data Analytics Platform》</a></li>
+<li><a href="/knowledge/paper/redshift.html">《Amazon Redshift and the Case for Simpler Data Warehouses》</a></li>
+<li><a href="/knowledge/paper/snowflake.html">《The Snowflake Elastic Data Warehouse》</a></li>
+<li><a href="/knowledge/paper/f1.html">《F1 Query: Declarative Querying at Scale》</a></li>
+</ul>
+<h2 id="Optimizer"><a href="#Optimizer" class="headerlink" title="Optimizer"></a>Optimizer</h2><ul>
+<li>《Access Path Selection in a Relational Database Management System》 </li>
+<li><a href="/knowledge/paper/The_Volcano_Optimizer_Generator.html">《The Volcano Optimizer Generator: Extensibility and Efficient Search》</a></li>
+<li><a href="/knowledge/paper/Volcano.html">《Volcano-An Extensible and Parallel Query Evaluation System》</a></li>
+<li><a href="/knowledge/paper/cascade.html">《The Cascades Framework for Query Optimization》</a></li>
+<li><a href="/knowledge/paper/ms-sql-server-pdw.html">《Query Optimization in Microsoft SQL Server PDW》</a></li>
+<li>《Inside The SQL Server Query Optimizer》</li>
+<li>《Incorporating Partitioning and Parallel Plans into the SCOPE Optimizer》</li>
+<li>《Orca: A Modular Query Optimizer Architecture for Big Data》</li>
+<li>《How Good Are Query Optimizers, Really?》</li>
+<li>《An overview of query optimization in relational systems.》</li>
+<li>《Query optimization through the looking glass, and what we found running the Join Order Benchmark.》</li>
+<li>《Adaptive statistics in Oracle 12c.》</li>
+<li>《Exploiting Statistics on Query Expressions for Optimization》</li>
+</ul>
+<h1 id="BigData"><a href="#BigData" class="headerlink" title="BigData"></a>BigData</h1><ul>
+<li><a href="/knowledge/paper/dataflow.html">《The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing》</a></li>
+<li><a href="/knowledge/paper/heron.html">《Hero stream process stream》 </a></li>
+<li><a href="/knowledge/paper/millwheel.html">《MillWheel: Fault-Tolerant Stream Processing at Internet Scale》</a></li>
+<li><a href="/knowledge/paper/screamscope.html">《StreamScope: Continuous Reliable Distributed Processing of Big Data Streams》</a></li>
+</ul>
 ]]></content>
       <categories>
-        <category>杂谈</category>
+        <category>Database</category>
+        <category>BigData</category>
       </categories>
       <tags>
-        <tag>杂谈</tag>
+        <tag>BigData</tag>
+        <tag>Database</tag>
       </tags>
   </entry>
   <entry>
