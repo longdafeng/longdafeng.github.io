@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne">
+    <meta name="description" content="Google Spanner 全球分布式数据库论文阅读笔记：TrueTime、Paxos 与外部一致性事务">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Spanner: Google’s Globally Distributed Database">
 <meta property="og:url" content="https://ilongda.com/2019/spanner/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne">
+<meta property="og:description" content="Google Spanner 全球分布式数据库论文阅读笔记：TrueTime、Paxos 与外部一致性事务">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://ilongda.com/img/spanner/arch.png">
 <meta property="og:image" content="https://ilongda.com/img/spanner/arch.png">
@@ -37,11 +37,11 @@
 <meta property="og:image" content="https://ilongda.com/img/spanner/tx.png">
 <meta property="og:image" content="https://ilongda.com/img/spanner/commit-ts.png">
 <meta property="article:published_time" content="2019-11-05T11:42:57.000Z">
-<meta property="article:modified_time" content="2026-06-08T13:45:01.246Z">
+<meta property="article:modified_time" content="2026-06-08T13:57:33.028Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="Distributed Database">
-<meta property="article:tag" content="OLAP">
+<meta property="article:tag" content="Spanner">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://ilongda.com/img/spanner/arch.png">
 
@@ -337,7 +337,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="Spanner: Google’s Globally Distributed Database | Longda's Interesting World">
-      <meta itemprop="description" content>
+      <meta itemprop="description" content="Google Spanner 全球分布式数据库论文阅读笔记：TrueTime、Paxos 与外部一致性事务">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -378,7 +378,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>5.2k</span>
+      <span>5.3k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -389,6 +389,7 @@
     </span>
 </div>
 
+            <div class="post-description">Google Spanner 全球分布式数据库论文阅读笔记：TrueTime、Paxos 与外部一致性事务</div>
         </div>
       </header>
 
@@ -399,9 +400,9 @@
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": "Spanner: Google’s Globally Distributed Database",
-  "description": "总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne",
+  "description": "Google Spanner 全球分布式数据库论文阅读笔记：TrueTime、Paxos 与外部一致性事务",
   "datePublished": "2019-11-05T11:42:57.000Z",
-  "dateModified": "2026-06-08T13:45:01.246Z",
+  "dateModified": "2026-06-08T13:57:33.028Z",
   "author": {
     "@type": "Person",
     "name": "Longda Feng",
@@ -418,7 +419,10 @@
   "url": "https://ilongda.com/2019/spanner/",
   "inLanguage": "zh-CN"
 }</script>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>第一段话, 直接引用原英文介绍<br>Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanner的原子性模式更改。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><blockquote>
+<p>Spanner is Google’s scalable, multi-version, globally-distributed, and synchronously-replicated database. It is the first system to distribute data at global scale and support externally-consistent distributed transactions. This paper describes how Spanner is structured, its feature set, the rationale underlying various design decisions, and a novel time API that exposes clock uncertainty. This API and its implementation are critical to supporting external consistency and a variety of powerful features: non-blocking reads in the past, lock-free snapshot transactions, and atomic schema changes across all of Spanner.</p>
+</blockquote>
+<p>Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanner的原子性模式更改。</p>
 <img data-src="/img/spanner/arch.png">
 <span id="more"></span>
 
@@ -722,8 +726,8 @@
 
           <div class="post-tags">
               <a href="/tags/Database/" rel="tag"># Database</a>
-              <a href="/tags/OLAP/" rel="tag"># OLAP</a>
               <a href="/tags/Distributed-Database/" rel="tag"># Distributed Database</a>
+              <a href="/tags/Spanner/" rel="tag"># Spanner</a>
           </div>
 
         
@@ -785,7 +789,7 @@
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:56</span>
+    <span title="Reading time total">11:57</span>
   </span>
 </div>
 <div class="busuanzi-count">
