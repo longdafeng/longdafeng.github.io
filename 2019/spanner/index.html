@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="87zOg36R4nAIIjPP">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Spanner: Google’s Globally Distributed Database">
+<meta property="og:url" content="https://ilongda.com/2019/spanner/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/spanner/arch.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/arch.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/software-stack.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/datamode.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/truetime_api.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/tx.png">
+<meta property="og:image" content="https://ilongda.com/img/spanner/commit-ts.png">
+<meta property="article:published_time" content="2019-11-05T11:42:57.000Z">
+<meta property="article:modified_time" content="2026-06-08T13:45:01.246Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="Distributed Database">
+<meta property="article:tag" content="OLAP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/spanner/arch.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2019/spanner/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2019/spanner/","path":"2019/spanner/","title":"Spanner: Google’s Globally Distributed Database"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Spanner: Google’s Globally Distributed Database | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2019/spanner/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Longda's Interesting World",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "inLanguage": "zh-CN",
+  "publisher": {
+    "@type": "Person",
+    "name": "Longda Feng"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://ilongda.com/?s={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Longda Feng",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "image": "https://ilongda.com/img/my.jpg",
+  "sameAs": [
+    "https://github.com/longdafeng",
+    "https://www.zhihu.com/people/longda-feng",
+    "https://x.com/longdafeng",
+    "https://www.linkedin.com/in/longdafeng",
+    "https://weibo.com/longdafeng"
+  ],
+  "jobTitle": "Software Engineer",
+  "worksFor": {
+    "@type": "Organization",
+    "name": "OceanBase"
+  }
+}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%A6%82%E8%BF%B0"><span class="nav-number">2.</span> <span class="nav-text">技术概述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#True-Time"><span class="nav-number">2.1.</span> <span class="nav-text">True Time</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%E7%BB%86%E8%8A%82"><span class="nav-number">2.2.</span> <span class="nav-text">架构细节</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%AF%E4%BB%B6%E6%A0%88"><span class="nav-number">2.3.</span> <span class="nav-text">软件栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.4.</span> <span class="nav-text">数据模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TrueTime"><span class="nav-number">2.5.</span> <span class="nav-text">TrueTime</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E8%A1%8C%E6%8E%A7%E5%88%B6"><span class="nav-number">2.6.</span> <span class="nav-text">并行控制</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYWZlbmc=" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longdafeng"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93ZWliby5jb20vbG9uZ2RhZmVuZw==" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;longdafeng"><i class="fab fa-weibo fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS9sb25nZGEtZmVuZw==" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;longda-feng"><i class="fab fa-zhihu fa-fw"></i></span>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2019/spanner/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Spanner: Google’s Globally Distributed Database | Longda's Interesting World">
+      <meta itemprop="description" content>
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Spanner: Google’s Globally Distributed Database
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-11-05 19:42:57" itemprop="dateCreated datePublished" datetime="2019-11-05T19:42:57+08:00">2019-11-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5.2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>19 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Spanner: Google’s Globally Distributed Database",
+  "description": "总结第一段话, 直接引用原英文介绍Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanne",
+  "datePublished": "2019-11-05T11:42:57.000Z",
+  "dateModified": "2026-06-08T13:45:01.246Z",
+  "author": {
+    "@type": "Person",
+    "name": "Longda Feng",
+    "url": "https://ilongda.com"
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Longda Feng"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://ilongda.com/2019/spanner/"
+  },
+  "url": "https://ilongda.com/2019/spanner/",
+  "inLanguage": "zh-CN"
+}</script>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>第一段话, 直接引用原英文介绍<br>Spanner是Google的可扩展，多版本，全球分布式和同步复制数据库。它是第一个在全球范围内分布数据并支持外部一致的分布式事务的系统。本文描述了Spanner的结构，其功能集，各种设计决策背后的原理，以及一个揭示时钟不确定性的新型时间API。这个API及其实现对于支持外部一致性和各种强大功能至关重要：在过去进行非阻塞读取，无锁快照交易，以及跨越所有Spanner的原子性模式更改。</p>
+<img data-src="/img/spanner/arch.png">
+<span id="more"></span>
+
+<ol>
+<li>是一个全球数据库, 数据分布到全球datacenter(能跨continents), 设计目标是支撑百万机器跨域数百个datacenter, 数据量支撑trillions of database row</li>
+<li>通过paxos 来保证数据高可用</li>
+<li>数据能自动做resharding, 当扩缩容或数据变化, failover时</li>
+</ol>
+<h1 id="技术概述"><a href="#技术概述" class="headerlink" title="技术概述"></a>技术概述</h1><ol>
+<li>最早用户是F1, F1 使用5个副本, 一般情况下是一个地理region下3到5个datacenter, 这样能抗1~2个datacenter 灾难, 并且引用优先选择本地region</li>
+<li>最开始的痛点来自bigtable:<ol start="3">
+<li>复杂, 并持续演进的schema</li>
+<li>强一致性在跨区域环境(低时延环境)</li>
+<li>有一些尝试用megastore(300多个应用, 如gmail, picasa, calandar, android market, AppEngine), 尽管写吞吐比较查, 当支持半关系模型数据和支撑强同步</li>
+</ol>
+</li>
+<li>开始从bigtable 这样的kv store 进化而来, 支撑多版本的数据库<ol start="7">
+<li>数据采用半结构化table</li>
+<li>数据具备多版本, 每个版本以commit timestamp 标签</li>
+<li>应用可以使用老的timestamp 进行获取老的版本</li>
+<li>老的版本数据会由gc 策略来决定是否保留</li>
+<li>支持参加事物模型</li>
+<li>提供sql 查询语言</li>
+<li>percolator 的性能慢, 导致事务都在上层来处理, 从而提高性能</li>
+</ol>
+</li>
+<li>技术特点<ol start="14">
+<li>数据的副本配置, 可以由应用动态调整, 并且以一定的细粒度</li>
+<li>应用可以控制, <ol start="16">
+<li>数据放到哪个datacenter, </li>
+<li>数据距离user 多远, </li>
+<li>每个副本之间的距离</li>
+<li>有多少个副本</li>
+</ol>
+</li>
+<li>数据可以根据使用负载平衡透明并动态的从一个datacenter 挪到另外一个</li>
+<li>事务2个能力(支持分布式)<ol start="22">
+<li>external consistent reads and writes <ol start="23">
+<li>序列化顺序, 如果t1 比t2 commit 更早, 则t1 的timestamp 比t2 的timestamp 更小. </li>
+<li>核心是TrueTime API</li>
+</ol>
+</li>
+<li>以一个timestamp 全局一致性读</li>
+</ol>
+</li>
+<li>事务的能力保障了一致性backup, 一致性mapreduce 执行, 原子更新, 全球范围内, 甚至正在进行的事务中. </li>
+<li></li>
+</ol>
+</li>
+</ol>
+<h2 id="True-Time"><a href="#True-Time" class="headerlink" title="True Time"></a>True Time</h2><ol>
+<li>true time api 直接暴露clock 的不确定性</li>
+<li>如果clock 的不确定性太大, spanner 会slow down and wait uncertain. </li>
+<li>true time api 由cluster-managerment software 来提供并实现</li>
+<li>cluster-managerment software 的实现保障不确定性足够小, 一般不小于10ms. 通过使用多个现代时钟reference(gps和原子钟)</li>
+<li>不确定性的保守report 对正确性很有必要, 并保持不确定区间小从而保障了性能.</li>
+</ol>
+<h2 id="架构细节"><a href="#架构细节" class="headerlink" title="架构细节"></a>架构细节</h2><ol>
+<li><p>数据搬迁, 副本, 数据locality的最小单元是direcotry</p>
+</li>
+<li><p>一个spanner的部署称为universe. (可以理解为一个universe 为一个spanner 集群)</p>
+</li>
+<li><p>spanner 集群由一组zone 来管理, 一个zone 是一批spanner的模拟组合. (非常类似ob)</p>
+</li>
+<li><p>可管理部署单元是zone, 可以添加一个zone(添加一个新的datacenter), 也可以减少一个zone(turn off 一些机器), zone 是物理isolation, 一个datacenter 可能含有一个或多个zone, 一个datacenter的不同组的机器可以组成不同的zone, 然后数据被分区到不同的zone里. </p>
+<img data-src="/img/spanner/arch.png"> 
+</li>
+<li><p>一个zone 有一个zonemaster和数以牵记的spannerserver. zonemaster 负责assign data 到spannerserver. </p>
+</li>
+<li><p>spannerserver 响应客户请求. </p>
+</li>
+<li><p>每个zone 有一批location proxy, 他们负责路由. </p>
+</li>
+<li><p>universe master 和placement driver 当前是单点. </p>
+</li>
+<li><p>universe master 展示所有zone的状态信息</p>
+</li>
+<li><p>placement driver 定期和spannerserver 通信, 确认哪些数据需要搬迁(满足负载均衡或升级副本限制), 搬迁的粒度是分钟级.</p>
+</li>
+</ol>
+<h2 id="软件栈"><a href="#软件栈" class="headerlink" title="软件栈"></a>软件栈</h2><img data-src="/img/spanner/software-stack.png">
+
+<ol>
+<li>在底层, 每个spannerserver 负责100 到1000 个tablet 实例. </li>
+<li>tablet 类似bigtable tablet 的抽象. 可以理解为一批类似如下<ol start="3">
+<li>(key:string, timestamp:int64) –&gt; string</li>
+</ol>
+</li>
+<li>tablet 组织在类似b-tree的file 和wal 的日志中, </li>
+<li>所有数据存在colossus这个分布式文件系统(gfs的继任者)</li>
+<li>每个tablet 一个paxos group(最早一个tablet 多个paxos group), 每个</li>
+<li>每个paxos state machine 把它的元数据和日志存到它的tablet中</li>
+<li>paxos 支持long-lived leader, leader 是基于时间的leader lease, 默认10s</li>
+<li>每个log 实际上要写2次, 一次在tablet 的log, 另外一次在paxos log 中. (这是当前的权宜之计, 后续会彻底修正)</li>
+<li>paxos 是基于pipeline的, 因此会提升吞吐量. pipeline 基于Lamport “multi-decree parliament”, pipeline 摊平了leader 选举的代价以及在不同的裁定中允许并行投票. 尽管裁定(decree)允许乱序, 当实现中还是让裁定有序. </li>
+<li>paxos 实现了一致性的复制性的mapping(前述数据的mapping 方式), 每个副本的key-value mapping 存到它对应的tablet中. </li>
+<li>leader 发起paxos 协议写, 如果副本已经更新了, 可以直接读副本的底层tablet的state. </li>
+<li>每个paxos group 的leader 来实现lock table 来实现并发控制(leader 的long live 是保障lock table 高效的关键手段).  lock table 含2阶段locking, <ol start="14">
+<li>map key的范围到lock 状态</li>
+<li>当冲突时, 在优化并发控制下, 长事务慢慢执行</li>
+<li>要求同步的操作如事务读, 需要申请lock table 的lock, 其他操作bypass lock table. </li>
+<li>lock table的状态是volatile</li>
+</ol>
+</li>
+<li>每个paxos group 的leader实现事务manager来支持分布式事务. <ol start="11">
+<li>事务manager 用于实现 参与leader(participant leader), 其他为参与slave</li>
+<li>如果一个事务只涉及一个paxos group, 它会bypass 事务manager, lock table和paxos 可以提供事务能力</li>
+<li>如果一个事务涉及多个paxos group, paxos group的leader 会执行2阶段提交. 其中之一的leader 会被选举为协调者, 那个paxos group的其他成员为协调slave. </li>
+<li>每一个事务manager的状态也是用paxos group 存储下来的.</li>
+</ol>
+</li>
+<li>数据搬迁, 副本, 数据locality的最小单元是direcotry (更好的称呼应该为bucket)<ol start="12">
+<li>directory 是一段连续的key, 贡献一个公共的prefix</li>
+<li>应用可以控制这批数据的locality, 可以通过小心选择key</li>
+<li>dirctory下的数据拥有相同副本配置. </li>
+<li>directory 可以在不同的paxos group 之间迁移</li>
+<li>常常因为让数据更靠近访问者而进行搬迁</li>
+<li>一个50MB 的direcoty 几秒就可以搬迁万</li>
+<li>一个paxos group 包含多个directory</li>
+<li>paxos group 并不是row space 一段字段序连续的partition</li>
+<li>实际上一个tablet 是包含多个row space partition的container, 方便多个directory 被关联访问. </li>
+<li>如果directory 如果增长非常大, 会把directory 分成fragments, 搬迁粒度会以fragment拉完成</li>
+</ol>
+</li>
+<li>movedir 是一个后台任务, 不仅可以在paxos group 中进行搬迁direcotry, 也可以将一个paxos group 中的directory 添加或删除到一个新的paxos group.<ol start="21">
+<li>movedir 并不是一个事务, 为了不阻塞后续的读写. </li>
+<li>它是后台进行数据搬迁, 如果大部分数据已经搬迁完, 剩下的数据通过事务来完成搬迁和元数据变更.</li>
+</ol>
+</li>
+<li>placement 可以应用来确定 <ol start="24">
+<li>placement language 单独负责副本配置管理. </li>
+<li>管理控制2个维度<ol start="26">
+<li>副本类型和数量</li>
+<li>副本的地理placement</li>
+</ol>
+</li>
+<li>应用可以自由控制, 比如a的数据在欧洲有3个副本, b的数据在北美有5个副本.</li>
+</ol>
+</li>
+</ol>
+<h2 id="数据模式"><a href="#数据模式" class="headerlink" title="数据模式"></a>数据模式</h2><ol>
+<li>应用数据模型基于key-value的directory-bucket的分层模型. 一个应用在一个universe中创建一个或多个database. 每个database 可以包含无数个schemaed table. table 类似关系数据库的table, 有row, column和带版本的值. </li>
+<li>数据模型并不是纯粹的关系模型, row 必须有名字. 每个表必须有一个或多个排好序的主键.</li>
+<li>只要为某些key 定义了value(即使是null), 这些行都会存在. 选择key的区间, 可以决定数据放在哪些directory, 从而也就决定locality.<img data-src="/img/spanner/datamode.png"></li>
+<li>example 显示:<ol start="5">
+<li>通过interleave in 声明在schema 来定义table的hierachies. </li>
+<li>一个hierachies的最顶部为directory table. </li>
+<li>在directory table的每一行都有key, 它的后续关联table 和这个key 相关的所有行页放在这里, 按照字典序进行排列, 形成一个directory. </li>
+<li>on delete cascade 意味着 删除directory table的这一行, 会删除所有相关的child row. </li>
+<li>这种方式, 保留了多个table 的相关性, 并具备相同的locality. 也会有更好的性能.</li>
+</ol>
+</li>
+</ol>
+<h2 id="TrueTime"><a href="#TrueTime" class="headerlink" title="TrueTime"></a>TrueTime</h2>   <img data-src="/img/spanner/truetime_api.png">
+1. 上图展示了truetime的api, truetime 用TTinterval来表示时间, 是一个不确定的时间间隔. 
+2. TTinterval 的端点是TTstamp. 
+3. TT.now 表示调用的绝对时间. time epoch 类似 unix的time(支持闰秒).
+4. 定义瞬间error bound为ε, 是间隔的一半宽度
+5. 平均error bound 为ε(带上划线)
+6. 一个event的绝对时间用Tabs(e), tt = TT.now(), tt.earlist <= 0 1 4 6 7 30 200 tabs(enow) <="tt.latest." enow 是调用event 7. 使用gps 和原子钟作为truetime的参考, 因为他们有不同的失败模型. gps参考源的脆弱性包括天线和接收器故障，本地无线电干扰，相关故障（例如，设计错误，如不正确的闰秒处理和欺骗），以及gps系统停机。原子钟可能以与gps和彼此无关的方式失败，并且由于频率错误，长时间可能会产生显著的漂移。 8. 每个datacenter 有个time master, 每台机器上有个timeslave 后台进程. 大多数主服务器都有专用天线的gps接收器;这些主服务器都被物理分隔开以减少天线故障、无线电干扰和欺骗的影响。剩余的主服务器（我们称之为armageddon master）都配备了原子钟。一个原子钟并不那么昂贵：armageddon master的成本与gps主服务器的成本大致相当。所有主服务器的时间参考都定期互相对比。每个主服务器也会交叉检查其参考时间推进的速率与自己的本地时钟，并在存在大的偏差时剔除自己。在同步之间，armageddon master会宣布一个慢慢增加的时间不确定性，这是从保守应用的最坏情况时钟漂移中得出的。gps主服务器宣布的不确定性通常接近于零。 9. 每个守护进程都会查询各种主服务器，以减少对任何一个主服务器错误的敏感性。其中一些是从附近的数据中心选择的gps主服务器；其余的是来自较远数据中心的gps主服务器，以及一些 armageddon masters。守护进程应用marzullo的算法的一个变体来检测和拒绝说谎者，并将本地机器的时钟与非说谎者同步。为了防止本地时钟出错，那些表现出频率偏差大于由组件规格和操作环境派生出的最坏情况界限的机器将被逐出。正确性取决于确保最坏情况界限得到执行。 10. 在同步之间，守护进程会产生一个缓慢增加的时间不确定性。ε 是由保守地应用最坏情况的本地时钟漂移派生出来的。ε 还取决于timemaster的不确定性和与timemaster的通信延迟。在我们的生产环境中，ε 通常是时间的锯齿函数，每个轮询间隔从大约 到 毫秒变化。因此，ε 大部分时间都是 毫秒。守护进程的轮询间隔目前是 秒，当前应用的漂移率设置为每秒 微秒，这两者共同构成了从 毫秒的锯齿边界。剩下的 毫秒来自与时间主的通信延迟。在故障存在的情况下可能会偏离这个锯齿。例如，偶然的时间主不可用可能会导致数据中心范围内的 ε 增加。同样，过载的机器和网络连接可能会导致偶然的本地化 峰值。由于 spanner 可以等待不确定性，所以 的变化不会影响正确性，但是如果 增加太多，性能可能会降低。 <h2 id="并行控制"><a href="#并行控制" class="headerlink" title="并行控制"></a>并行控制<ol>
+<li>如何实现外部一致性事务, lock free 快照事务和过去的非阻塞读<img data-src="/img/spanner/tx.png"></li>
+<li>单独的写转为读写事务, 无快照单独读转为快照读, 都是内部重试, 无需客户端做重试. </li>
+<li>快照事务可以享受快照隔离性的优点. <ol start="4">
+<li>快照事务必须声明无写操作. 并不是一个简单的不带写操作的读写事务. </li>
+<li>快照读用一个获取的系统时间来执行, 并没有locking, 所以后续的写都是无锁的. </li>
+<li>快照事务读中, 当任何一个副本都是update-to-date时, 都可以提供读服务</li>
+</ol>
+</li>
+<li>快照读事务中, 客户端可以选择一个timestamp 或者提供期望timestamp 区间的上限,从而spanner来选择一个时间. </li>
+<li>在快照事务或快照读事务中, 一旦选择了timestamp, 就commit, 除非那个timestamp的数据被gc. 客户端可以避免不停retry.<ol start="9">
+<li>当一个server失败时, 客户端会用timestamp和当前读位置, 从别的server 上进行读.</li>
+</ol>
+</li>
+<li>paxos leader lease<ol start="10">
+<li>leader lease 大概10s. 当候选leader 获取多数派后, 它获得leader lease. </li>
+<li>当leader lease 快超时, 当前leader 发起投票, 副本会在一个成功的写响应中携带lease 投票. </li>
+<li>每个paxos group 的leader 都是不相交的. </li>
+<li>leader 可以通过lease 投票, 退位给slave.</li>
+</ol>
+</li>
+<li>读写事务都是严格的2阶段锁. <ol start="15">
+<li>当获得所有的锁后并且还没有释放任何锁前, 他们会被分配timestamp, 这个timestamp 就是代表事务提交的paxos write的timestamp. </li>
+<li>单调性<ol start="17">
+<li>paxos write 保持单调递增, 即使交叉leader. 通过利用leader的不交叉性, 强化了跨leader时的单调递增性. </li>
+<li>一个leader 只能assign 它任期内的timestamp</li>
+<li>任何时候, assign 一个timestamp, Smax 进阶到s 来保障不相交.</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>强化外部一致性<ol start="21">
+<li>T2 事务的起始时间在T1 事务的commit 时间之后, T2的commit 时间必须大于 T1的commit时间. </li>
+<li>一个事务Ti的star 事件和commit 事件用E-i-star, E-i-commit(数学表达式, 不好用markdown来写, 转义一下), Ti 的commit timestamp 用Si 表示. </li>
+<li>写事务Ti在协调者leader的cmmit 到达时间为E-i-server.</li>
+<li>Ti 事务的commit timestamp Si 不小于 TT.now().latest. 参与的leader 无关紧要. </li>
+<li>commit wait. 协调者保证客户端无法看到Ti commit的数据直到TT.after(si) 为true. commit wait 保障si 小于Ti的绝对commit 时间.<img data-src="/img/spanner/commit-ts.png"></li>
+<li>每个副本的同步时间称为safe time, Tsafe &#x3D; min(T-safe-paxos, T-safe-TM), <ol start="27">
+<li>每个paxos state 有一个safe time T-safe-paxos, 每个事务manager 有个T-safe-TM</li>
+<li>T-safe-paxos 简单, 是最高aplly的paxos write 时间. paxos的write 是单调递增并排序的. </li>
+<li>T-safe-TM 比较复杂<ol start="30">
+<li>当没有prepared 事务时, 是无穷大. 也就是事务处在2阶段提交期间. </li>
+<li>2阶段提交中, 每个参与者知道prepared 事务的timestamp的下限.</li>
+<li>用S-i&#x2F;g-prepare表示prepare record的prepare timestamp, 并保证事务的提交时间si &gt;&#x3D; S-i&#x2F;g-prepare. </li>
+<li>T-safe-TM &#x3D; min(all事务)(S-i&#x2F;g-prepare) -1 时间.</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>快照事务执行2阶段提交, <ol start="35">
+<li>分配一个timestamp S-read, 然后用S-read来读</li>
+<li>最简单的方式: 当一个事务开启时, S-read &#x3D; TT.now().latest. 但有的时候会遇到一些问题. </li>
+<li>当副本的T-safe 还不足够时, 会block 在S-read上.</li>
+<li>未来减少blocking, spanner 选择了保持外部一致性的最大时间.</li>
+</ol>
+</li>
+<li>读写事务<ol start="40">
+<li>读写事务中的读使用wound-wait 方式来避免读写锁. </li>
+<li>请求发到leader, 申请读锁和读取最新的数据</li>
+<li>如果客户端事务重新打开, 使用keepalive 方式, 避免参与leader超时. </li>
+<li>客户端选择协调者paxos group, 然后发送commit 信息带上协调者id和buffered 的写操作 到所有的参与leader. </li>
+<li>当非协调者的leader 第一次申请写锁, 它会选择一个prepare timestamp, 这个timestamp 会比之前事务的timestamp 都要大, 并通过paxos 来写preprare record 的日志. 并通知协调者leader它的prepare timestamp. </li>
+<li>当协调者第一次申请写锁时, 它会跳过prepare 阶段. 在收到所有参与者leader后, 它会选择一个timestamp 作为整个事务的timestamp(应该时commit timestamp). <ol start="46">
+<li>commit timestamp s 会比所有prepare timestamp 都要大或者和最大相等. 实际上会比协调者收到commit message 时的TT.now().latest 还要大.也会比之前所有的事务的所有timestamp 都要大. </li>
+<li>然后协调者通过paxo log这个commit record.</li>
+</ol>
+</li>
+<li>只能paxo leader 才能申请锁. 仅仅当事务prepare 阶段才会log 锁的状态<ol start="49">
+<li>如果在prepare之前丢失锁(死锁, paxos leader 变更, timeout等因素), 参与者会放弃. </li>
+<li>spanner 保证自由当所有的锁都hold 时, 才会去log 一个prepare或commit record. </li>
+<li>如果leader 发送变更, 新leader 会在接受新事务之前, 恢复所有已经prepare但还没有uncommit事务的锁状态,</li>
+</ol>
+</li>
+<li>在所有的协调者的副本应用commit record之前, 协调者的leader会wait 直到TT.after(s), 从而可以遵守commit-wait 规则. 因为要保证TT.now().latest确实已经成为过去. 通常这个等待值是2倍的平均bound ε. 这个等待可以和paxos 通信并行. </li>
+<li>在commit-wait 之后, 每个协调者会把commit timestamp 发给客户端和所有的参与者leader. </li>
+<li>每个参与者log 这个事务的输出通过paxos 协议. 然后应用这个timestamp, 最后释放锁.</li>
+</ol>
+</li>
+<li>快照事务. <ol start="56">
+<li>在分配timestamp之前, 需要这个read 所有涉及的paxos group leader 进行协商.</li>
+<li>然后spanner require 一个scope expression, 这个expression 会总结这个读事务的key, 然后触发独立查询.</li>
+<li>如果这个scope 的values 只涉及一个paxos group, 客户端就直接发送这个快照事务到这个paxos leader. <ol start="59">
+<li>这个leader 会分配一个S-read, 并执行这个read. </li>
+<li>对于单节点读, spanner 会比TT.now().latest做的更好.</li>
+<li>定义LastTS() 为最后一个已经提交的写事务的timestamp.</li>
+<li>如果没有prepared 事务, 直接S-read &#x3D; LastTS() 来满足外部一致性.</li>
+</ol>
+</li>
+<li>如果是多paxos group 来<ol start="53">
+<li>复杂的做法: 所有的参与者的leader 需要一起协商S-read 基于每个LastTS()</li>
+<li>简单的做法(当前做法):客户端不用一轮协商, 直接选择一个安全的S-read&#x3D;TT.now().latest.</li>
+</ol>
+</li>
+<li>Schema-Change 事务:<ol start="56">
+<li>truetime 支持原子schema 变更. </li>
+<li>使用标准的事务是不可行的, 因为参与者数以百万计</li>
+<li>bigtable 支持在一个datacent 进行原子schema change, 但这个操作会block 所有的操作</li>
+<li>当前schema change事务是一个标准事务的无锁变种. </li>
+<li>第一步, 分配一个未来时间的timestamp, 在prepare 阶段. 减少对数千个server 的当前业务产生冲击. </li>
+<li>明显依赖这个schema的读写请求,把注册 schema-change的timestamp t 同步起来</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+
+    </=></div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+            <span class="icon">
+              <i class></i>
+            </span>
+
+            <span class="label">Zhihu</span>
+          </a>
+      </div>
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+            <span class="icon">
+              <i class></i>
+            </span>
+
+            <span class="label">Github</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/OLAP/" rel="tag"># OLAP</a>
+              <a href="/tags/Distributed-Database/" rel="tag"># Distributed Database</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/docs/mysql/source_code_reading/storage/performance_schema/index/" rel="prev" title="performance schema 源码走读">
+                  <i class="fa fa-angle-left"></i> performance schema 源码走读
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/New-Year-Wish/" rel="next" title="新年愿望">
+                  新年愿望 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">197k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">11:56</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"c5281b18cc9f9a8daafdd20131c5fc45"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
+
+</body>
+</html>

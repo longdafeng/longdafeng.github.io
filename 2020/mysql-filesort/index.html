@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.1.0">
-
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -18,15 +16,16 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="MySQL 技术讲解 -- filesort 详细解析">
-<meta property="og:type" content="article">
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="MySQL 技术讲解 -- filesort 详细解析">
+<meta property="og:type" content="website">
 <meta property="og:title" content="filesort 详细解析">
-<meta property="og:url" content="http://ilongda.com/2020/mysql-filesort/index.html">
+<meta property="og:url" content="https://ilongda.com/2020/mysql-filesort/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="MySQL 技术讲解 -- filesort 详细解析">
 <meta property="og:locale" content="zh_CN">
@@ -35,39 +34,121 @@
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 
 
-<link rel="canonical" href="http://ilongda.com/2020/mysql-filesort/">
+<link rel="canonical" href="https://ilongda.com/2020/mysql-filesort/">
 
 
-
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/2020/mysql-filesort/","path":"2020/mysql-filesort/","title":"filesort 详细解析"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2020/mysql-filesort/","path":"2020/mysql-filesort/","title":"filesort 详细解析"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>filesort 详细解析 | Longda's Interesting World</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
-  <script src="/js/third-party/analytics/google-analytics.js"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
-  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
 
 
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2020/mysql-filesort/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Longda's Interesting World",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "inLanguage": "zh-CN",
+  "publisher": {
+    "@type": "Person",
+    "name": "Longda Feng"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://ilongda.com/?s={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Longda Feng",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "image": "https://ilongda.com/img/my.jpg",
+  "sameAs": [
+    "https://github.com/longdafeng",
+    "https://www.zhihu.com/people/longda-feng",
+    "https://x.com/longdafeng",
+    "https://www.linkedin.com/in/longdafeng",
+    "https://weibo.com/longdafeng"
+  ],
+  "jobTitle": "Software Engineer",
+  "worksFor": {
+    "@type": "Organization",
+    "name": "OceanBase"
+  }
+}</script>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
   <div class="headband"></div>
 
   <main class="main">
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="Toggle navigation bar" role="button">
         <span class="toggle-line"></span>
@@ -80,14 +161,14 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">Longda's Interesting World</h1>
+      <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -96,17 +177,7 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu">
-        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
-        
-            
-  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
-
-
-      
-        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
-        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
-        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
       <li class="menu-item menu-item-search">
         <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
         </a>
@@ -117,35 +188,29 @@
 
 
   <div class="search-pop-overlay">
-    <div class="popup search-popup"><div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close" role="button">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div class="search-result-container no-result">
-  <div class="search-result-icon">
-    <i class="fa fa-spinner fa-pulse fa-5x"></i>
-  </div>
-</div>
-
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
     </div>
   </div>
 
-</div>
+</header>
         
   
-  <div class="toggle sidebar-toggle" role="button">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-
   <aside class="sidebar">
 
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
@@ -166,16 +231,16 @@
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
-          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
   <div class="site-description" itemprop="description">Longda's Interesting World</div>
 </div>
-<div class="site-state-wrap site-overview-item animated">
+<div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-count">135</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -186,30 +251,30 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">23</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
 </div>
-  <div class="links-of-author site-overview-item animated">
+  <div class="links-of-author animated">
       <span class="links-of-author-item">
         <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
       </span>
       <span class="links-of-author-item">
         <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
       </span>
-  </div>
-
-
-  <div class="links-of-blogroll site-overview-item animated">
-    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-      Links
-    </div>
-    <ul class="links-of-blogroll-list">
-        <li class="links-of-blogroll-item">
-          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
-        </li>
-    </ul>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYWZlbmc=" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longdafeng"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93ZWliby5jb20vbG9uZ2RhZmVuZw==" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;longdafeng"><i class="fab fa-weibo fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS9sb25nZGEtZmVuZw==" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;longda-feng"><i class="fab fa-zhihu fa-fw"></i></span>
+      </span>
   </div>
 
         </div>
@@ -219,20 +284,24 @@
           <span>0%</span>
         </div>
     </div>
-  </aside>
-  <div class="sidebar-dimmer"></div>
-
-
-    </header>
 
     
-  <div class="reading-progress-bar"></div>
-  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
 
-<noscript>
-  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
 
+    </div>
 
     <div class="main-inner post posts-expand">
 
@@ -245,16 +314,21 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
-    <link itemprop="mainEntityOfPage" href="http://ilongda.com/2020/mysql-filesort/">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2020/mysql-filesort/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/img/my.jpg">
       <meta itemprop="name" content="Longda Feng">
-      <meta itemprop="description" content="Longda's Interesting World">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="filesort 详细解析 | Longda's Interesting World">
+      <meta itemprop="description" content="MySQL 技术讲解 -- filesort 详细解析">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -294,11 +368,11 @@
       <span id="busuanzi_value_page_pv"></span>
     </span>
     <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Symbols count in article">
+    <span class="post-meta-item" title="Word count in article">
       <span class="post-meta-item-icon">
         <i class="far fa-file-word"></i>
       </span>
-      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span class="post-meta-item-text">Word count in article: </span>
       <span>10k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
@@ -317,8 +391,30 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <p>这篇文章介绍的非常好， 所以给大家推荐一下<br>【转载】<span class="exturl" data-url="aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L244OExwbw==">https://blog.csdn.net/n88Lpo<i class="fa fa-external-link-alt"></i></span></p>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "filesort 详细解析",
+  "description": "MySQL 技术讲解 -- filesort 详细解析",
+  "datePublished": "2020-06-21T11:42:57.000Z",
+  "dateModified": "2024-02-02T13:08:57.941Z",
+  "author": {
+    "@type": "Person",
+    "name": "Longda Feng",
+    "url": "https://ilongda.com"
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Longda Feng"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://ilongda.com/2020/mysql-filesort/"
+  },
+  "url": "https://ilongda.com/2020/mysql-filesort/",
+  "inLanguage": "zh-CN"
+}</script>
+<p>这篇文章介绍的非常好， 所以给大家推荐一下<br>【转载】<span class="exturl" data-url="aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L244OExwbw==">https://blog.csdn.net/n88Lpo<i class="fa fa-external-link-alt"></i></span></p>
 <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>排序（filesort）作为DBA绕不开的话题，也经常有朋友讨论它，比如常见的问题如下：</p>
 <ul>
 <li>排序的时候，用于排序的数据会不会如Innodb一样压缩空字符存储，比如varchar(30)，我只是存储了1个字符是否会压缩，还是按照30个字符计算？</li>
@@ -347,9 +443,9 @@
 </li>
 <li><p>如果addon字段包含可变字段比如varchar字段，则会使用打包（pack）技术进行压缩，节省空间。<br>可以参考第3、第4、第5、第6、第8节。<br>总结2：排序使用什么样的方法进行？</p>
 </li>
-<li><p>original filesort algorithm（回表排序）</p>
-</li>
+<li></li>
 </ul>
+<p>original filesort algorithm（回表排序）</p>
 <p>如果使用的是sort字段+ref字段进行排序，那么必须要回表获取需要的数据，如果排序使用了临时文件（也就是说使用外部归并排序，排序量较大）则会使用批量回表，批量回表会涉及到read_rnd_buffer_size参数指定的内存大小，主要用于排序和结果返回。如果排序没有使用临时文件（内存排序就可以完成，排序量较小）则采用单行回表。</p>
 <p>*<br>modified filesort algorithm（不回表排序）</p>
 <p>如果使用的是sort字段+addon字段进行排序，那么使用不回表排序，所有需要的字段均在排序过程中进行存储，addon字段中的可变长度字段可以进行打包（pack）压缩节省空间。其次sort字段和addon字段中可能有重复的字段，比如例2中，sort字段为a2、a3，addon字段为a1、a2、a3，这是排序使用空间较大的另外一个原因。<br>在OPTIMIZER_TRACE中可以查看到使用了那种方法，参考12节。<br>总结3：每次排序一定会分配sort_buffer_size参数指定的内存大小吗？</p>
@@ -394,8 +490,10 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show create table tests1 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: tests1</span><br><span class="line">Create Table: CREATE TABLE `tests1` (</span><br><span class="line">  `a1` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(300) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(300) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tests1;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| a    | a    | a    |</span><br><span class="line">| a    | b    | b    |</span><br><span class="line">| a    | c    | c    |</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">| c    | g    | g    |</span><br><span class="line">| c    | h    | h    |</span><br><span class="line">+------+------+------+</span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests1 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
 
 <ul>
-<li>modified filesort algorithm（不回表排序）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show create table tests2 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: tests2</span><br><span class="line">Create Table: CREATE TABLE `tests2` (</span><br><span class="line">  `a1` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(20) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tests2;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| a    | a    | a    |</span><br><span class="line">| a    | b    | b    |</span><br><span class="line">| a    | c    | c    |</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">| c    | g    | g    |</span><br><span class="line">| c    | h    | h    |</span><br><span class="line">+------+------+------+</span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.01 sec)</span><br></pre></td></tr></table></figure></li>
+<li>modified filesort algorithm（不回表排序）</li>
 </ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show create table tests2 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: tests2</span><br><span class="line">Create Table: CREATE TABLE `tests2` (</span><br><span class="line">  `a1` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a2` varchar(20) DEFAULT NULL,</span><br><span class="line">  `a3` varchar(20) DEFAULT NULL</span><br><span class="line">) ENGINE=InnoDB DEFAULT CHARSET=utf8</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tests2;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| a    | a    | a    |</span><br><span class="line">| a    | b    | b    |</span><br><span class="line">| a    | c    | c    |</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">| c    | g    | g    |</span><br><span class="line">| c    | h    | h    |</span><br><span class="line">+------+------+------+</span><br><span class="line">8 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; desc select * from tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table  | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tests2 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where; Using filesort |</span><br><span class="line">+----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+</span><br><span class="line">1 row in set, 1 warning (0.01 sec)</span><br></pre></td></tr></table></figure>
+
 <p>整个流程我们从filesort 函数接口开始讨论。下面第3到第10节为排序的主要流程。</p>
 <h1 id="三、阶段1-确认排序字段及顺序"><a href="#三、阶段1-确认排序字段及顺序" class="headerlink" title="三、阶段1 确认排序字段及顺序"></a>三、阶段1 确认排序字段及顺序</h1><p>这里主要将排序顺序存入到Filesort 类的 sortorder中，比如我们例子中的order by a2,a3就是a2和a3列，主要接口为Filesort::make_sortorder，我们按照源码描述为sort字段（源码中为sort_length），显然我们在排序的时候除了sort字段以外，还应该包含额外的字段，到底包含哪些字段就与方法 original filesort algorithm（回表排序） 和 modified filesort algorithm（不回表排序）有关了，下面进行讨论。</p>
 <h1 id="四、阶段2-计算sort字段的长度"><a href="#四、阶段2-计算sort字段的长度" class="headerlink" title="四、阶段2 计算sort字段的长度"></a>四、阶段2 计算sort字段的长度</h1><p>这里主要调用使用sortlength函数，这一步将会带入max_sort_length参数的设置进行判断，默认情况下max_sort_length 为1024字节。<br>这一步大概步骤为：</p>
@@ -448,10 +546,14 @@
 </ul>
 <p>好了，还是回头看看第2节的两个例子，分别计算它们的行长度：</p>
 <ul>
-<li>例子1：根据我们的计算，它将使用original filesort algorithm排序方式，最终的计算行长度应该为（sort字段长度+rowid长度）及 ≈ 1202+6 字节，下面是debug的结果：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$1 = 1208</span><br></pre></td></tr></table></figure></li>
-<li>例子2：根据我们的计算，它将使用modified filesort algorithm排序方式，最终计算行长度应该为（sort字段长度+addon字段长度）及 ≈ 82 + 20 * 3 * 3 （结果为262），注意这里是约等于没有计算非空等因素和可变长度因素，下面是debug的结果：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$2 = 266</span><br></pre></td></tr></table></figure>
-可以看出误差不大。</li>
+<li>例子1：根据我们的计算，它将使用original filesort algorithm排序方式，最终的计算行长度应该为（sort字段长度+rowid长度）及 ≈ 1202+6 字节，下面是debug的结果：</li>
 </ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$1 = 1208</span><br></pre></td></tr></table></figure>
+<ul>
+<li>例子2：根据我们的计算，它将使用modified filesort algorithm排序方式，最终计算行长度应该为（sort字段长度+addon字段长度）及 ≈ 82 + 20 * 3 * 3 （结果为262），注意这里是约等于没有计算非空等因素和可变长度因素，下面是debug的结果：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_length</span><br><span class="line">$2 = 266</span><br></pre></td></tr></table></figure>
+<p>可以看出误差不大。</p>
 <h1 id="七、阶段5-确认最大内存分配"><a href="#七、阶段5-确认最大内存分配" class="headerlink" title="七、阶段5 确认最大内存分配"></a>七、阶段5 确认最大内存分配</h1><p>这里的分配内存就是参数sort_buffer_size大小有关了。但是是不是每次都会分配至少sort_buffer_size大小的内存的呢？其实不是，MySQL会判断是否表很小的情况，也就是做一个简单的运算，目的在于节省内存的开销，这里我们将来描述。</p>
 <ol>
 <li>大概计算出Innodb层主键叶子结点的行数</li>
@@ -496,14 +598,14 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">(gdb) x/1300bx start_of_rec</span><br><span class="line">0x7ffe7ca79998: 0x01    0x00    0x45    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799a0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799a8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799b0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799b8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799c0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7ca799c8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <p>这后面还有大量的0X20 0X00<br>我们看到了大量的0X20 0X00，这正是占位符号，实际有用的数据也就只有0x45 0x00这两个字节了，而0x45正是我们的大写字母E，也就是数据中的e，这和比较字符集有关。这里的0X20 0X00占用了大量的空间，我们最初计算sort 字段大约为1200字节，实际上只有少量的几个字节有用。<br>这里对于sort字段而言，比实际存储的数据大得多。</p>
 <ul>
-<li>例子2（字段都是varchar（20））：它将使用modified filesort algorithm，最终应该存储的是sort字段（a2，a3）+addon字段（需要的字段，这里就是a1，a2，a3）<br>排序的结果如下：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test.tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br></pre></td></tr></table></figure>
-我们以第一行为查看目标<br>这里数据不大，通过压缩后只有91个字节了，我们整体查看如下：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_sz</span><br><span class="line">$6 = 91</span><br><span class="line">(gdb) x/91x start_of_rec </span><br><span class="line">0x7ffe7c991bc0: 0x01    0x00    0x44    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bc8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be8: 0x20    0x01    0x00    0x44    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf0: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf8: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c00: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c08: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c10: 0x00    0x20    0x07    0x00    0x00    0x01    0x62    0x01</span><br><span class="line">0x7ffe7c991c18: 0x64    0x01    0x64</span><br></pre></td></tr></table></figure>
-这就是整行记录了，我们发现对于sort字段而言没有压缩，依旧是0x20 0x00占位，而对于addon字段（需要的字段，这里就是a1，a2，a3）而言，这里小了很多，因为做了打包（pack）即：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0x01 0x62：数据b</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br></pre></td></tr></table></figure>
-而0x01应该就是长度了。<br>不管怎么说，对于sort字段而言依旧比实际存储的数据大很多。</li>
+<li>例子2（字段都是varchar（20））：它将使用modified filesort algorithm，最终应该存储的是sort字段（a2，a3）+addon字段（需要的字段，这里就是a1，a2，a3）<br>排序的结果如下：</li>
 </ul>
-<ol start="5">
-<li>如果sort buffer存满，对sort buffer中的数据进行排序，然后写入到临时文件</li>
-</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from test.tests2 where a1=&#x27;b&#x27; order by a2,a3;</span><br><span class="line">+------+------+------+</span><br><span class="line">| a1   | a2   | a3   |</span><br><span class="line">+------+------+------+</span><br><span class="line">| b    | d    | d    |</span><br><span class="line">| b    | e    | e    |</span><br><span class="line">| b    | f    | f    |</span><br><span class="line">+------+------+------+</span><br></pre></td></tr></table></figure>
+<p>我们以第一行为查看目标<br>这里数据不大，通过压缩后只有91个字节了，我们整体查看如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p rec_sz</span><br><span class="line">$6 = 91</span><br><span class="line">(gdb) x/91x start_of_rec </span><br><span class="line">0x7ffe7c991bc0: 0x01    0x00    0x44    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bc8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991bd8: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be0: 0x20    0x00    0x20    0x00    0x20    0x00    0x20    0x00</span><br><span class="line">0x7ffe7c991be8: 0x20    0x01    0x00    0x44    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf0: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991bf8: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c00: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c08: 0x00    0x20    0x00    0x20    0x00    0x20    0x00    0x20</span><br><span class="line">0x7ffe7c991c10: 0x00    0x20    0x07    0x00    0x00    0x01    0x62    0x01</span><br><span class="line">0x7ffe7c991c18: 0x64    0x01    0x64</span><br></pre></td></tr></table></figure>
+<p>这就是整行记录了，我们发现对于sort字段而言没有压缩，依旧是0x20 0x00占位，而对于addon字段（需要的字段，这里就是a1，a2，a3）而言，这里小了很多，因为做了打包（pack）即：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0x01 0x62：数据b</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br><span class="line"></span><br><span class="line">0x01 0x64：数据d</span><br></pre></td></tr></table></figure>
+<p>而0x01应该就是长度了。<br>不管怎么说，对于sort字段而言依旧比实际存储的数据大很多。<br>5. 如果sort buffer存满，对sort buffer中的数据进行排序，然后写入到临时文件</p>
 <p>如果需要排序的数据量很大的话，那么sort buffer肯定是不能容下的，因此如果写满后就进行一次内存排序操作，然后将排序好的数据写入到外部排序文件中去，这叫做一个chunk。外部文件的位置由tmpdir参数指定，名字以MY开头，注意外部排序通常需要2个临时文件，这里是第1个用于存储内存排序结果的临时文件，以chunk的方式写入。如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">if (fs_info-&gt;isfull()) //如果sort buffer满了  并且sort buffer已经排序完成</span><br><span class="line">        &#123;</span><br><span class="line">          if (write_keys(param, fs_info, idx, chunk_file, tempfile)) //写入到物理文件 完成内存排序   如果内存不会满这里不会做 会在create_sort_index 中排序完成</span><br><span class="line">          &#123;</span><br><span class="line">            num_records= HA_POS_ERROR;</span><br><span class="line">            goto cleanup;</span><br><span class="line">          &#125;</span><br><span class="line">          idx= 0;</span><br><span class="line">          indexpos++;</span><br><span class="line">        &#125;    </span><br></pre></td></tr></table></figure>
 <p>最终会调入write_keys函数进行排序和写入外部排序文件，这里核心就是先排序，然后循环每条排序文件写入到外部排序文件。下面我来验证一下写入临时文件的长度，我将第2节中的例子2数据扩大了N倍后，让其使用外部文件排序，下面是验证结果，断点write_keys即可：</p>
@@ -530,10 +632,12 @@
 <li>如果sort buffer满了，则进行归并排序，调入函数merge_many_buff-&gt;merge_buffers，最后调入merge_index完成归并排序。<br>对于归并排序来讲，这里可能会生成另外2个临时文件用于存储最终排序的结果，它们依然以MY开头，且依然是存储在tmpdir参数指定的位置。因此在外部排序中将可能会生成3个临时文件，总结如下：</li>
 <li>临时文件1：用于存储内存排序的结果，以chunk为单位，一个chunk的大小就是sort buffer的大小。</li>
 <li>临时文件2：以前面的临时文件1为基础，做归并排序。</li>
-<li>临时文件3：将最后的归并排序结果存储，去掉sort字段，只保留addon字段（需要访问的字段）或者ref字段（ROWID或者主键），因此它一般会比前面2个临时文件小。<br>但是它们不会同时存在，要么 临时文件1和临时文件2存在，要么 临时文件2和临时文件3存在。<br>这个很容易验证，将断点放到merge_buffers和merge_index上就可以验证了，如下：<br>临时文件1和临时文件2同时存在：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3   79167488    2249135 /mysqldata/mysql3340/tmp/MYt1QIvr (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   58327040    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
-临时文件2和临时文件3共同存在：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3     360448    2249135 /mysqldata/mysql3340/tmp/MYg109Wp (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   79167488    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
-但是由于能力有限对于归并排序的具体过程我并没有仔细学习了，这里给一个大概的接口。注意这里每次调用merge_buffers将会增加Sort_merge_passes 1次，应该是归并的次数，这个值增量的大小可以侧面反映出外部排序使用临时文件的大小。</li>
+<li>临时文件3：将最后的归并排序结果存储，去掉sort字段，只保留addon字段（需要访问的字段）或者ref字段（ROWID或者主键），因此它一般会比前面2个临时文件小。<br>但是它们不会同时存在，要么 临时文件1和临时文件2存在，要么 临时文件2和临时文件3存在。<br>这个很容易验证，将断点放到merge_buffers和merge_index上就可以验证了，如下：<br>临时文件1和临时文件2同时存在：</li>
 </ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3   79167488    2249135 /mysqldata/mysql3340/tmp/MYt1QIvr (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   58327040    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
+<p>临时文件2和临时文件3共同存在：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@gp1 test]# lsof|grep tmp/MY</span><br><span class="line">mysqld     8769     mysql   70u      REG              252,3     360448    2249135 /mysqldata/mysql3340/tmp/MYg109Wp (deleted)</span><br><span class="line">mysqld     8769     mysql   71u      REG              252,3   79167488    2249242 /mysqldata/mysql3340/tmp/MY4CrO4m (deleted)</span><br></pre></td></tr></table></figure>
+<p>但是由于能力有限对于归并排序的具体过程我并没有仔细学习了，这里给一个大概的接口。注意这里每次调用merge_buffers将会增加Sort_merge_passes 1次，应该是归并的次数，这个值增量的大小可以侧面反映出外部排序使用临时文件的大小。</p>
 <h1 id="十一、排序的其他问题"><a href="#十一、排序的其他问题" class="headerlink" title="十一、排序的其他问题"></a>十一、排序的其他问题</h1><p>这里将描述2个额外的排序问题。<br>1、original filesort algorithm（回表排序）的回表</p>
 <p>最后对于original filesort algorithm（回表排序）排序方式而言，可能还需要做一个回表获取数据的操作，这一步可能会用到参数read_rnd_buffer_size定义的内存大小。<br>比如我们第2节中第1个例子将会使用到original filesort algorithm（回表排序），但是对于回表操作有如下标准：</p>
 <ul>
@@ -550,9 +654,15 @@
 <h1 id="十二、通过OPTIMIZER-TRACE查看排序结果"><a href="#十二、通过OPTIMIZER-TRACE查看排序结果" class="headerlink" title="十二、通过OPTIMIZER_TRACE查看排序结果"></a>十二、通过OPTIMIZER_TRACE查看排序结果</h1><p>要使用OPTIMIZER_TRACE只需要“SET optimizer_trace&#x3D;”enabled&#x3D;on”;”，跑完语句后查看information_schema.OPTIMIZER_TRACE即可。</p>
 <p>前面第9节我们解释了排序方式总结输出的含义，这里我们来看看具体的结果，我们还是以第2节的2个例子为例：</p>
 <ul>
-<li>例1：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 1285312,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, rowid&gt;&quot;</span><br></pre></td></tr></table></figure></li>
-<li>例2：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 322920,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, packed_additional_fields&gt;&quot;</span><br></pre></td></tr></table></figure>
-现在我们清楚了，这些总结实际上是在执行阶段生成的，需要注意几点如下：</li>
+<li>例1：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 1285312,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, rowid&gt;&quot;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>例2：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&quot;filesort_priority_queue_optimization&quot;: &#123;</span><br><span class="line">  &quot;usable&quot;: false,</span><br><span class="line">  &quot;cause&quot;: &quot;not applicable (no LIMIT)&quot;</span><br><span class="line">&#125;,</span><br><span class="line">&quot;filesort_execution&quot;: [</span><br><span class="line">],</span><br><span class="line">&quot;filesort_summary&quot;: &#123;</span><br><span class="line">  &quot;rows&quot;: 3,</span><br><span class="line">  &quot;examined_rows&quot;: 8,</span><br><span class="line">  &quot;number_of_tmp_files&quot;: 0,</span><br><span class="line">  &quot;sort_buffer_size&quot;: 322920,</span><br><span class="line">  &quot;sort_mode&quot;: &quot;&lt;sort_key, packed_additional_fields&gt;&quot;</span><br></pre></td></tr></table></figure>
+<p>现在我们清楚了，这些总结实际上是在执行阶段生成的，需要注意几点如下：</p>
+<ul>
 <li>这里的examined_rows和慢查询中的Rows_examined不一样，因为这里不会有重复计数，是准确的。</li>
 <li>这里还会说明是否使用了优先队列排序即“filesort_priority_queue_optimization”部分。</li>
 <li>通过“sort_buffer_size”可以发现，这里并没有分配参数sort_buffer_size指定的大小，节约了内存，这在第7节说明了。<br>其他指标在第9节已经说明过了，不在描述。</li>
@@ -582,23 +692,23 @@
   <div class="social-list">
 
       <div class="social-item">
-        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
-          <span class="icon">
-            <i class></i>
-          </span>
+          <a target="_blank" class="social-link" href="https://www.zhihu.com/people/longda-feng" rel="external nofollow noopener noreferrer">
+            <span class="icon">
+              <i class></i>
+            </span>
 
-          <span class="label">Zhihu</span>
-        </a>
+            <span class="label">Zhihu</span>
+          </a>
       </div>
 
       <div class="social-item">
-        <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
-          <span class="icon">
-            <i class></i>
-          </span>
+          <a target="_blank" class="social-link" href="https://github.com/longdafeng" rel="external nofollow noopener noreferrer">
+            <span class="icon">
+              <i class></i>
+            </span>
 
-          <span class="label">Github</span>
-        </a>
+            <span class="label">Github</span>
+          </a>
       </div>
   </div>
 </div>
@@ -609,16 +719,21 @@
           </div>
 
         
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
 
           <div class="post-nav">
             <div class="post-nav-item">
                 <a href="/2020/mysql-cluster-index/" rel="prev" title="聚簇索引介绍">
-                  <i class="fa fa-chevron-left"></i> 聚簇索引介绍
+                  <i class="fa fa-angle-left"></i> 聚簇索引介绍
                 </a>
             </div>
             <div class="post-nav-item">
                 <a href="/2020/TPCH/" rel="next" title="DB性能测试-常用3套件-手把手一步一步跑TPCH">
-                  DB性能测试-常用3套件-手把手一步一步跑TPCH <i class="fa fa-chevron-right"></i>
+                  DB性能测试-常用3套件-手把手一步一步跑TPCH <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -641,29 +756,28 @@
   <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
-
-<div class="copyright">
-  &copy; 2014 – 
-  <span itemprop="copyrightYear">2024</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
-</div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
 <div class="wordcount">
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Symbols count total: </span>
-    <span title="Symbols count total">192k</span>
+      <span>Word count total: </span>
+    <span title="Word count total">197k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:37</span>
+    <span title="Reading time total">11:56</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -689,46 +803,22 @@
   </footer>
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
-<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
 
-  
-<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
-<script src="/js/third-party/search/local-search.js"></script>
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
-  <script src="/js/third-party/tags/pdf.js"></script>
-
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
-  <script src="/js/third-party/tags/mermaid.js"></script>
-
-  <script src="/js/third-party/fancybox.js"></script>
-
-
-  
-  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-
-
-
-  
-
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
-<script src="/js/third-party/math/mathjax.js"></script>
-
-
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
-  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/2020/mysql-filesort/"}</script>
-  <script src="/js/third-party/quicklink.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"bc442527d5d501a92abde42e2a09f79f"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"bc442527d5d501a92abde42e2a09f79f"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>

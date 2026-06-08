@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.1.0">
-
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
@@ -18,15 +16,16 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.8.1","exturl":true,"sidebar":{"position":"right","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="MySQL 源码解读 -- 内存分配器">
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="MySQL 源码解读 -- 内存分配器">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- 内存分配器">
-<meta property="og:url" content="http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html">
+<meta property="og:url" content="https://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="MySQL 源码解读 -- 内存分配器">
 <meta property="og:locale" content="zh_CN">
@@ -55,41 +54,123 @@
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="MySQL 源码解读">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567665279009-43315a17-d054-462e-99a5-a02de5cb6525.png#align=left&display=inline&height=755&name=image.png&originHeight=755&originWidth=1335&size=94913&status=done&width=1335">
 
 
-<link rel="canonical" href="http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator">
+<link rel="canonical" href="https://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator">
 
 
-
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html","path":"knowledge/mysql/source_code_reading/memory/allocator.html","title":"MySQL 源码解读 -- 内存分配器"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html","path":"knowledge/mysql/source_code_reading/memory/allocator.html","title":"MySQL 源码解读 -- 内存分配器"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>MySQL 源码解读 -- 内存分配器 | Longda's Interesting World
 </title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false}</script>
-  <script src="/js/third-party/analytics/google-analytics.js"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
-  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
 
 
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
 
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Longda's Interesting World",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "inLanguage": "zh-CN",
+  "publisher": {
+    "@type": "Person",
+    "name": "Longda Feng"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://ilongda.com/?s={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}</script>
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Longda Feng",
+  "description": "Longda's Interesting World",
+  "url": "https://ilongda.com",
+  "image": "https://ilongda.com/img/my.jpg",
+  "sameAs": [
+    "https://github.com/longdafeng",
+    "https://www.zhihu.com/people/longda-feng",
+    "https://x.com/longdafeng",
+    "https://www.linkedin.com/in/longdafeng",
+    "https://weibo.com/longdafeng"
+  ],
+  "jobTitle": "Software Engineer",
+  "worksFor": {
+    "@type": "Organization",
+    "name": "OceanBase"
+  }
+}</script>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
   <div class="headband"></div>
 
   <main class="main">
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="Toggle navigation bar" role="button">
         <span class="toggle-line"></span>
@@ -102,14 +183,14 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">Longda's Interesting World</h1>
+      <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -118,17 +199,7 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu">
-        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
-        
-            
-  <li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li>
-
-
-      
-        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
-        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li>
-        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
       <li class="menu-item menu-item-search">
         <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
         </a>
@@ -139,35 +210,29 @@
 
 
   <div class="search-pop-overlay">
-    <div class="popup search-popup"><div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close" role="button">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div class="search-result-container no-result">
-  <div class="search-result-icon">
-    <i class="fa fa-spinner fa-pulse fa-5x"></i>
-  </div>
-</div>
-
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
     </div>
   </div>
 
-</div>
+</header>
         
   
-  <div class="toggle sidebar-toggle" role="button">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-
   <aside class="sidebar">
 
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
@@ -188,16 +253,16 @@
         <!--/noindex-->
 
         <div class="site-overview-wrap sidebar-panel">
-          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
   <div class="site-description" itemprop="description">Longda's Interesting World</div>
 </div>
-<div class="site-state-wrap site-overview-item animated">
+<div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-count">135</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -208,30 +273,30 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">23</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
 </div>
-  <div class="links-of-author site-overview-item animated">
+  <div class="links-of-author animated">
       <span class="links-of-author-item">
         <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
       </span>
       <span class="links-of-author-item">
         <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
       </span>
-  </div>
-
-
-  <div class="links-of-blogroll site-overview-item animated">
-    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-      Links
-    </div>
-    <ul class="links-of-blogroll-list">
-        <li class="links-of-blogroll-item">
-          <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
-        </li>
-    </ul>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYWZlbmc=" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longdafeng"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93ZWliby5jb20vbG9uZ2RhZmVuZw==" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;longdafeng"><i class="fab fa-weibo fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS9sb25nZGEtZmVuZw==" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;longda-feng"><i class="fab fa-zhihu fa-fw"></i></span>
+      </span>
   </div>
 
         </div>
@@ -241,91 +306,26 @@
           <span>0%</span>
         </div>
     </div>
-  </aside>
-  <div class="sidebar-dimmer"></div>
-
-
-    </header>
 
     
-  <div class="reading-progress-bar"></div>
-  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuZ2l0aHViLmNvbQ==" title="https:&#x2F;&#x2F;oceanbase.github.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
 
-<noscript>
-  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
 
+    </div>
 
     <div class="main-inner page posts-expand">
-  
-
-      
-
-        
-        <ul class="sub-menu menu">
-          
-            
-          
-          
-            
-                
-  <li class="menu-item menu-item-mysql"><a href="/knowledge/mysql/" rel="section"><i class="fa fa-book fa-fw"></i>MySQL</a></li>
-
-
-          
-              
-  <li class="menu-item menu-item-论文阅读"><a href="/knowledge/paper/" rel="section"><i class="fa fa-th fa-fw"></i>论文阅读</a></li>
-
-
-          
-          
-              
-  <li class="menu-item menu-item-常用工具"><a href="/knowledge/tools/" rel="section"><i class="fa fa-th fa-fw"></i>常用工具</a></li>
-
-
-          
-          
-            
-                
-  <li class="menu-item menu-item-数据库"><a href="/knowledge/database/" rel="section"><i class="fa fa-book fa-fw"></i>数据库</a></li>
-
-
-          
-            
-                
-  <li class="menu-item menu-item-机器学习"><a href="/knowledge/machine_learning/" rel="section"><i class="fa fa-book fa-fw"></i>机器学习</a></li>
-
-
-        </ul>
-        
-
-        
-
-                
-
-                    
-                    <ul class="sub-menu menu">
-                      
-                        
-  <li class="menu-item menu-item-mysql源码分析"><a href="/knowledge/mysql/source_code_reading/" rel="section"><i class="fa fa-archive fa-fw"></i>MySQL源码分析</a></li>
-
-
-                        
-  <li class="menu-item menu-item-深入迁出mysql"><a href="/knowledge/mysql/%E6%B7%B1%E5%85%A5%E8%BF%81%E5%87%BAMySQL_reading_notes/" rel="section"><i class="fa fa-book fa-fw"></i>深入迁出MySQL</a></li>
-
-
-                    </ul>
-                    
-                
-
-                
-                
-
-                
-                
-        
-      
-  
 
 
     
@@ -339,17 +339,17 @@
 <div class="post-meta-container">
     <div class="post-description">MySQL 源码解读 -- 内存分配器</div>
   <ul class="breadcrumb">
-            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/">知识库</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>
-            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">MYSQL源码分析</a></li>
             <li><a href="/knowledge/mysql/source_code_reading/memory/">MEMORY</a></li>
             <li>ALLOCATOR</li>
-          
   </ul>
 </div>
 
 </header>
 
+      
       
       
       <div class="post-body">
@@ -385,8 +385,9 @@
 <li>分配速度尽可能快</li>
 <li>尽量避免内存碎片</li>
 <li>缓存本地化友好</li>
-<li>通用性，兼容性，可移植性，易调试<br><a name="84fba1b6"></a></li>
+<li>通用性，兼容性，可移植性，易调试</li>
 </ul>
+<p><a name="84fba1b6"></a></p>
 <h2 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h2><p>目前大部分服务端程序使用glibc提供的malloc&#x2F;free系列函数，而glibc使用的ptmalloc2在性能上远远弱后于google的tcmalloc和facebook的jemalloc。 而且后两者只需要使用LD_PRELOAD环境变量启动程序即可，甚至并不需要重新编译。<br><a name="ug1su"></a></p>
 <h2 id="glibc-ptmalloc"><a href="#glibc-ptmalloc" class="headerlink" title="glibc ptmalloc"></a>glibc ptmalloc</h2><p>ptmalloc2即是我们当前使用的glibc malloc版本。<br><a name="d3ZVs"></a></p>
 <h3 id="ptmalloc原理"><a href="#ptmalloc原理" class="headerlink" title="ptmalloc原理"></a>ptmalloc原理</h3><p><a name="tTFFf"></a></p>
@@ -420,8 +421,9 @@
 </ul>
 <p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567666142989-e96ec686-f8ba-4b28-962a-717a81d37cae.png#align=left&display=inline&height=366&name=image.png&originHeight=366&originWidth=405&size=29217&status=done&width=405" alt="image.png"></p>
 <ul>
-<li>需要分配的 chunk 足够大,而且 fast bins 和 bins 都不能满足要求,甚至 top chunk 本身也不能满足分配需求时,ptmalloc 会使用 mmap 来直接使用内存映射来将页映射到进程空间。<br><a name="pREQp"></a></li>
+<li>需要分配的 chunk 足够大,而且 fast bins 和 bins 都不能满足要求,甚至 top chunk 本身也不能满足分配需求时,ptmalloc 会使用 mmap 来直接使用内存映射来将页映射到进程空间。</li>
 </ul>
+<p><a name="pREQp"></a></p>
 <h4 id="ptmalloc分配流程"><a href="#ptmalloc分配流程" class="headerlink" title="ptmalloc分配流程"></a>ptmalloc分配流程</h4><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/ptmalloc-alloc-flow.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773375-540945f6-01c8-4b42-b149-1c726e1a2d28.jpeg#align=left&display=inline&height=834&originHeight=834&originWidth=550&size=0&status=done&width=550"></a><br><a name="jwQJl"></a></p>
 <h3 id="ptmalloc的缺陷"><a href="#ptmalloc的缺陷" class="headerlink" title="ptmalloc的缺陷"></a>ptmalloc的缺陷</h3><ul>
 <li>后分配的内存先释放,因为 ptmalloc 收缩内存是从 top chunk 开始,如果与 top chunk 相邻的 chunk 不能释放, top chunk 以下的 chunk 都无法释放。</li>
@@ -434,25 +436,29 @@
 <h2 id="tcmalloc"><a href="#tcmalloc" class="headerlink" title="tcmalloc"></a>tcmalloc</h2><p>tcmalloc是Google开源的一个内存管理库， 作为glibc malloc的替代品。目前已经在chrome、safari等知名软件中运用。<br>根据官方测试报告，ptmalloc在一台2.8GHz的P4机器上（对于小对象）执行一次malloc及free大约需要300纳秒。而TCMalloc的版本同样的操作大约只需要50纳秒。<br><a name="zJPBO"></a></p>
 <h3 id="小对象分配"><a href="#小对象分配" class="headerlink" title="小对象分配"></a>小对象分配</h3><ul>
 <li>tcmalloc为每个线程分配了一个线程本地ThreadCache，小内存从ThreadCache分配，此外还有个中央堆（CentralCache），ThreadCache不够用的时候，会从CentralCache中获取空间放到ThreadCache中。</li>
-<li>小对象（&lt;&#x3D;32K）从ThreadCache分配，大对象从CentralCache分配。大对象分配的空间都是4k页面对齐的，多个pages也能切割成多个小对象划分到ThreadCache中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-smallsize-class.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773357-3ec1b788-a18f-4446-9acf-c9ed0a2f221d.jpeg#align=left&display=inline&height=212&originHeight=212&originWidth=310&size=0&status=done&width=310"></a><br>小对象有将近170个不同的大小分类(class)，每个class有个该大小内存块的FreeList单链表，分配的时候先找到best fit的class，然后无锁的获取该链表首元素返回。如果链表中无空间了，则到CentralCache中划分几个页面并切割成该class的大小，放入链表中。<br><a name="pt1RF"></a></li>
+<li>小对象（&lt;&#x3D;32K）从ThreadCache分配，大对象从CentralCache分配。大对象分配的空间都是4k页面对齐的，多个pages也能切割成多个小对象划分到ThreadCache中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-smallsize-class.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773357-3ec1b788-a18f-4446-9acf-c9ed0a2f221d.jpeg#align=left&display=inline&height=212&originHeight=212&originWidth=310&size=0&status=done&width=310"></a><br>小对象有将近170个不同的大小分类(class)，每个class有个该大小内存块的FreeList单链表，分配的时候先找到best fit的class，然后无锁的获取该链表首元素返回。如果链表中无空间了，则到CentralCache中划分几个页面并切割成该class的大小，放入链表中。</li>
 </ul>
+<p><a name="pt1RF"></a></p>
 <h3 id="CentralCache分配管理"><a href="#CentralCache分配管理" class="headerlink" title="CentralCache分配管理"></a>CentralCache分配管理</h3><ul>
 <li>大对象(&gt;32K)先4k对齐后，从CentralCache中分配。 CentralCache维护的PageHeap如下图所示， 数组中第256个元素是所有大于255个页面都挂到该链表中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-pageheap.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773371-efe6a41c-2c8e-421e-b7a2-c183bbdd75c1.jpeg#align=left&display=inline&height=308&originHeight=308&originWidth=449&size=0&status=done&width=449"></a></li>
 <li>当best fit的页面链表中没有空闲空间时，则一直往更大的页面空间则，如果所有256个链表遍历后依然没有成功分配。 则使用sbrk, mmap, &#x2F;dev&#x2F;mem从系统中分配。</li>
 <li>tcmalloc PageHeap管理的连续的页面被称为span.<br>如果span未分配， 则span是PageHeap中的一个链表元素<br>如果span已经分配，它可能是返回给应用程序的大对象， 或者已经被切割成多小对象，该小对象的size-class会被记录在span中</li>
-<li>在32位系统中，使用一个中央数组(central array)映射了页面和span对应关系， 数组索引号是页面号，数组元素是页面所在的span。 在64位系统中，使用一个3-level radix tree记录了该映射关系。<br><a name="e4QMq"></a></li>
+<li>在32位系统中，使用一个中央数组(central array)映射了页面和span对应关系， 数组索引号是页面号，数组元素是页面所在的span。 在64位系统中，使用一个3-level radix tree记录了该映射关系。</li>
 </ul>
+<p><a name="e4QMq"></a></p>
 <h3 id="回收"><a href="#回收" class="headerlink" title="回收"></a>回收</h3><ul>
 <li>当一个object free的时候，会根据地址对齐计算所在的页面号，然后通过central array找到对应的span。</li>
 <li>如果是小对象，span会告诉我们他的size class，然后把该对象插入当前线程的ThreadCache中。如果此时ThreadCache超过一个预算的值（默认2MB），则会使用垃圾回收机制把未使用的object从ThreadCache移动到CentralCache的central free lists中。</li>
 <li>如果是大对象，span会告诉我们对象锁在的页面号范围。 假设这个范围是[p,q]， 先查找页面p-1和q+1所在的span，如果这些临近的span也是free的，则合并到[p,q]所在的span， 然后把这个span回收到PageHeap中。</li>
-<li>CentralCache的central free lists类似ThreadCache的FreeList，不过它增加了一级结构，先根据size-class关联到spans的集合， 然后是对应span的object链表。如果span的链表中所有object已经free， 则span回收到PageHeap中。<br><a name="7Z3gz"></a></li>
+<li>CentralCache的central free lists类似ThreadCache的FreeList，不过它增加了一级结构，先根据size-class关联到spans的集合， 然后是对应span的object链表。如果span的链表中所有object已经free， 则span回收到PageHeap中。</li>
 </ul>
+<p><a name="7Z3gz"></a></p>
 <h3 id="tcmalloc的改进"><a href="#tcmalloc的改进" class="headerlink" title="tcmalloc的改进"></a>tcmalloc的改进</h3><ul>
 <li>ThreadCache会阶段性的回收内存到CentralCache里。 解决了ptmalloc2中arena之间不能迁移的问题。</li>
 <li>Tcmalloc占用更少的额外空间。例如，分配N个8字节对象可能要使用大约8N * 1.01字节的空间。即，多用百分之一的空间。Ptmalloc2使用最少8字节描述一个chunk。</li>
-<li>更快。小对象几乎无锁， &gt;32KB的对象从CentralCache中分配使用自旋锁。 并且&gt;32KB对象都是页面对齐分配，多线程的时候应尽量避免频繁分配，否则也会造成自旋锁的竞争和页面对齐造成的浪费。<br><a name="0xir0"></a></li>
+<li>更快。小对象几乎无锁， &gt;32KB的对象从CentralCache中分配使用自旋锁。 并且&gt;32KB对象都是页面对齐分配，多线程的时候应尽量避免频繁分配，否则也会造成自旋锁的竞争和页面对齐造成的浪费。</li>
 </ul>
+<p><a name="0xir0"></a></p>
 <h3 id="性能对比"><a href="#性能对比" class="headerlink" title="性能对比"></a>性能对比</h3><p>测试环境是2.4GHz dual Xeon，开启超线程，redhat9，glibc-2.3.2, 每个线程测试100万个操作。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-perf1.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773374-8deadcd2-cd1c-4e44-bdee-72d8bf6bbd38.jpeg#align=left&display=inline&height=435&originHeight=435&originWidth=554&size=0&status=done&width=554"></a><br>上图中可以看到尤其是对于小内存的分配， tcmalloc有非常明显性能优势。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/tcmalloc-perf2.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773331-86821b81-28fe-4c81-b58b-7c471e821e5e.jpeg#align=left&display=inline&height=427&originHeight=427&originWidth=565&size=0&status=done&width=565"></a><br>上图可以看到随着线程数的增加，tcmalloc性能上也有明显的优势，并且相对平稳。<br><a name="dd20f91b"></a></p>
 <h3 id="github-mysql优化"><a href="#github-mysql优化" class="headerlink" title="github mysql优化"></a>github mysql优化</h3><p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2Jsb2cvMTQyMi10Y21hbGxvYy1hbmQtbXlzcWw=">github使用tcmalloc后，mysql性能提升30%<i class="fa fa-external-link-alt"></i></span><br></p>
 <p><a name="dxUvl"></a></p>
@@ -470,8 +476,9 @@
 </ul>
 <p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-arena-chunk.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773364-586e08b6-fbc9-4f7c-91d4-9a3861269d33.jpeg#align=left&display=inline&height=438&originHeight=438&originWidth=385&size=0&status=done&width=385"></a><br>上图可以看到每个arena管理的arena chunk结构， 开始的header主要是维护了一个page map（1024个页面关联的对象状态）， header下方就是它的页面空间。 Small对象被分到一起， metadata信息存放在起始位置。 large chunk相互独立，它的metadata信息存放在chunk header map中。</p>
 <ul>
-<li>通过arena分配的时候需要对arena bin（每个small size-class一个，细粒度）加锁，或arena本身加锁。<br>并且线程cache对象也会通过垃圾回收指数退让算法返回到arena中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-arena-thread-cache.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773340-a19544d0-dde6-4b76-8407-46544edc453b.jpeg#align=left&display=inline&height=506&originHeight=506&originWidth=555&size=0&status=done&width=555"></a><br><a name="tj32c"></a></li>
+<li>通过arena分配的时候需要对arena bin（每个small size-class一个，细粒度）加锁，或arena本身加锁。<br>并且线程cache对象也会通过垃圾回收指数退让算法返回到arena中。<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-arena-thread-cache.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773340-a19544d0-dde6-4b76-8407-46544edc453b.jpeg#align=left&display=inline&height=506&originHeight=506&originWidth=555&size=0&status=done&width=555"></a></li>
 </ul>
+<p><a name="tj32c"></a></p>
 <h4 id="释放"><a href="#释放" class="headerlink" title="释放"></a>释放</h4><p>•Thread cache -&gt; Extent<br>•每进行一定次数（默认 228 次）的 malloc&#x2F;free，就对一个<br>cache_bin 进行 flush<br>•释放一定数量的 region 并调整单次获取的<br>region 数量<br>•Extent -&gt; Arena<br>•Extent 有四种状态：clean,<br>dirty, muzzy, retained<br>•达到一定的时间和 malloc&#x2F;free<br>次数后，进行垃圾回收<br>•相邻 extent_dirty 合并 à 加入 extend_muzzy à 相邻 extent_muzzy 合并<br>•相邻 extend_muzzy 合并 à 加入 extend_retained à mmap + PORT_NONE à 相邻 extend_muzzy 合并<br>•5.2 版本中， extend_muzzy 回收的默认时间间隔由<br>10s 改为 0</p>
 <p><a name="Qqhnb"></a></p>
 <h3 id="jemalloc的优化"><a href="#jemalloc的优化" class="headerlink" title="jemalloc的优化"></a>jemalloc的优化</h3><ul>
@@ -489,10 +496,11 @@
 </ul>
 </li>
 <li>•arena 之间内存无法共享，不同 arena<br>中的线程频繁进行内存申请与释放后，释放大量地址连续却不属于同一 arena （因此无法合并）的内存块。<ul>
-<li>通过 ASAN 等内存检测工具无法发现此类情况<br><a name="Ot1d0"></a></li>
+<li>通过 ASAN 等内存检测工具无法发现此类情况</li>
 </ul>
 </li>
 </ul>
+<p><a name="Ot1d0"></a></p>
 <h3 id="性能对比-1"><a href="#性能对比-1" class="headerlink" title="性能对比"></a>性能对比</h3><p><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-throughput.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773148-66459623-f15b-4314-8834-d710ef7b9b36.jpeg#align=left&display=inline&height=525&originHeight=525&originWidth=704&size=0&status=done&width=704"></a><br>上图是服务器吞吐量分别用6个malloc实现的对比数据，可以看到tcmalloc和jemalloc最好(facebook在2011年的测试结果，tcmalloc这里版本较旧)。<br>4.3.2 mysql优化<br>测试环境：2x Intel E5&#x2F;2.2Ghz with 8 real cores per socket，16 real cores， 开启hyper-threading， 总共32个vcpu。 16个table，每个5M row。<br>OLTP_RO测试包含5个select查询：select_ranges, select_order_ranges, select_distinct_ranges, select_sum_ranges,<br><a target="_blank" rel="external nofollow noopener noreferrer" href="http://www.cnhalo.net/images/jemalloc-mysql-perf.png"><img data-src="https://cdn.nlark.com/yuque/0/2019/jpeg/106206/1567665773338-fb25a731-a3c6-46ae-a996-f74dca690213.jpeg#align=left&display=inline&height=370&originHeight=370&originWidth=561&size=0&status=done&width=561"></a><br>可以看到在多核心或者多线程的场景下， jemalloc和tcmalloc带来的tps增加非常明显。<br><a name="d41d8cd9"></a></p>
 <h1 id><a href="#" class="headerlink" title></a></h1><p><a name="ukL1y"></a></p>
 <h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p><span class="exturl" data-url="aHR0cDovL3d3dy52YWxsZXl0YWxrLm9yZy93cC1jb250ZW50L3VwbG9hZHMvMjAxNS8wMi9nbGliYyVFNSU4NiU4NSVFNSVBRCU5OCVFNyVBRSVBMSVFNyU5MCU4NnB0bWFsbG9jJUU2JUJBJTkwJUU0JUJCJUEzJUU3JUEwJTgxJUU1JTg4JTg2JUU2JTlFJTkwMS5wZGY=">glibc内存管理ptmalloc源代码分析<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cDovL3d3dy5jbmJsb2dzLmNvbS92ZWN0b3IwMy9wLzUxODI3MzAuaHRtbA==">Inside jemalloc<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly95cS5hbGl5dW4uY29tL2FydGljbGVzLzYwNDU=">tcmalloc浅析<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cDovL2dvb2ctcGVyZnRvb2xzLnNvdXJjZWZvcmdlLm5ldC9kb2MvdGNtYWxsb2MuaHRtbA==">tcmalloc官方文档<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL25vdGVzL2ZhY2Vib29rLWVuZ2luZWVyaW5nL3NjYWxhYmxlLW1lbW9yeS1hbGxvY2F0aW9uLXVzaW5nLWplbWFsbG9jLzQ4MDIyMjgwMzkxOQ==">Scalable memory allocation using jemalloc<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly93d3cucGVyY29uYS5jb20vYmxvZy8yMDEzLzAzLzA4L215c3FsLXBlcmZvcm1hbmNlLWltcGFjdC1vZi1tZW1vcnktYWxsb2NhdG9ycy1wYXJ0LTIv">mysql-performance-impact-of-memory-allocators-part-2<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cDovL3d3dy4zNjBkb2MuY29tL2NvbnRlbnQvMTMvMDkxNS8wOS84MzYzNTI3XzMxNDU0OTEyOC5zaHRtbA==">ptmalloc,tcmalloc和jemalloc内存分配策略研究<i class="fa fa-external-link-alt"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1SY1dwNXZ3R2xZVQ==">Tick Tock, malloc Needs a Clock<i class="fa fa-external-link-alt"></i></span><br><a name="25f9c7fa"></a></p>
@@ -504,12 +512,11 @@
       
     </div>
   <ul class="breadcrumb">
-            <li><a href="/knowledge/">KNOWLEDGE</a></li>
+            <li><a href="/knowledge/">知识库</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>
-            <li><a href="/knowledge/mysql/source_code_reading/">SOURCE_CODE_READING</a></li>
+            <li><a href="/knowledge/mysql/source_code_reading/">MYSQL源码分析</a></li>
             <li><a href="/knowledge/mysql/source_code_reading/memory/">MEMORY</a></li>
             <li>ALLOCATOR</li>
-          
   </ul>
 
     
@@ -526,29 +533,28 @@
   <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
-
-<div class="copyright">
-  &copy; 2014 – 
-  <span itemprop="copyrightYear">2024</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
-</div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
 <div class="wordcount">
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Symbols count total: </span>
-    <span title="Symbols count total">192k</span>
+      <span>Word count total: </span>
+    <span title="Word count total">197k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:37</span>
+    <span title="Reading time total">11:56</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -574,46 +580,22 @@
   </footer>
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.5.0/pjax.min.js" integrity="sha256-3NkoLDrmHLTYj7csHIZSr0MHAFTXth7Ua/DDt4MRUAg=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
-<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script><script src="/js/pjax.js"></script>
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
 
-  
-<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
-<script src="/js/third-party/search/local-search.js"></script>
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.7/pdfobject.min.js","integrity":"sha256-ph3Dk89VmuTVXG6x/RDzk53SU9LPdAh1tpv0UvnDZ2I="},"url":"/lib/pdf/web/viewer.html"}</script>
-  <script src="/js/third-party/tags/pdf.js"></script>
-
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.3/dist/mermaid.min.js","integrity":"sha256-blHXaX2RMvNwEOnrYOl/6/RKqNi97Ig3o6Ae3bhXPvM="}}</script>
-  <script src="/js/third-party/tags/mermaid.js"></script>
-
-  <script src="/js/third-party/fancybox.js"></script>
-
-
-  
-  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-
-
-
-  
-
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
-<script src="/js/third-party/math/mathjax.js"></script>
-
-
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
-  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"http://ilongda.com/knowledge/mysql/source_code_reading/memory/allocator.html"}</script>
-  <script src="/js/third-party/quicklink.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
-
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"bde569b958bd66d19fa32b31f5a80563"}</script>
-<script src="/js/third-party/comments/gitalk.js"></script>
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"longdafeng","repo":"blog_comment","client_id":"f3790bd6aac94e6dea33","client_secret":"622ab34542b27299e5717d0634a53399e4d129da","admin_user":"longdafeng","distraction_free_mode":true,"proxy":"/login/oauth/access_token","language":"zh-CN","body":null,"js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"bde569b958bd66d19fa32b31f5a80563"}</script>
+<script src="/js/third-party/comments/gitalk.js" defer></script>
 
 </body>
 </html>
