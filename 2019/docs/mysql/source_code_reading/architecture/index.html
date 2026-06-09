@@ -22,18 +22,18 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 源码解读 -- 整体架构">
+    <meta name="description" content="MySQL 源码整体架构笔记：介绍 server&#x2F;sql&#x2F;storage 等模块划分，以及 innodb 子目录 btr&#x2F;buf&#x2F;dict 等功能职责">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- 整体架构">
 <meta property="og:url" content="https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 源码解读 -- 整体架构">
+<meta property="og:description" content="MySQL 源码整体架构笔记：介绍 server&#x2F;sql&#x2F;storage 等模块划分，以及 innodb 子目录 btr&#x2F;buf&#x2F;dict 等功能职责">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1568950157043-bf6379e6-cbd9-469c-acca-4f1af93f7864.png#align=left&display=inline&height=373&name=image.png&originHeight=373&originWidth=601&size=171739&status=done&width=601">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567414414300-9fd2ea48-280c-4105-803b-12e3f637ff61.png#align=left&display=inline&height=235&name=image.png&originHeight=235&originWidth=413&size=27344&status=done&width=413">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1568961394296-609be7e8-2809-4323-a239-aade4f6cf215.png#align=left&display=inline&height=1085&name=%E5%9B%BE%E7%89%87%201.png&originHeight=1085&originWidth=874&size=214106&status=done&width=874">
 <meta property="article:published_time" content="2019-06-07T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:25:56.866Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.952Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -295,7 +295,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="MySQL 源码解读 -- 整体架构 | Longda's Interesting World">
-      <meta itemprop="description" content="MySQL 源码解读 -- 整体架构">
+      <meta itemprop="description" content="MySQL 源码整体架构笔记：介绍 server&#x2F;sql&#x2F;storage 等模块划分，以及 innodb 子目录 btr&#x2F;buf&#x2F;dict 等功能职责">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -355,14 +355,14 @@
     </span>
 </div>
 
-            <div class="post-description">MySQL 源码解读 -- 整体架构</div>
+            <div class="post-description">MySQL 源码整体架构笔记：介绍 server/sql/storage 等模块划分，以及 innodb 子目录 btr/buf/dict 等功能职责</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 整体架构","description":"MySQL 源码解读 -- 整体架构","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1568950157043-bf6379e6-cbd9-469c-acca-4f1af93f7864.png#align=left&display=inline&height=373&name=image.png&originHeight=373&originWidth=601&size=171739&status=done&width=601","wordCount":1125,"datePublished":"2019-06-07T11:42:57.000Z","dateModified":"2024-02-02T13:25:56.866Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 整体架构","description":"MySQL 源码整体架构笔记：介绍 server/sql/storage 等模块划分，以及 innodb 子目录 btr/buf/dict 等功能职责","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1568950157043-bf6379e6-cbd9-469c-acca-4f1af93f7864.png#align=left&display=inline&height=373&name=image.png&originHeight=373&originWidth=601&size=171739&status=done&width=601","wordCount":1125,"datePublished":"2019-06-07T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.952Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 整体架构","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/architecture/"}]}</script>
 <h1 id="基本介绍-模块简介"><a href="#基本介绍-模块简介" class="headerlink" title="基本介绍 &amp; 模块简介"></a>基本介绍 &amp; 模块简介</h1><h1 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h1><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1568950157043-bf6379e6-cbd9-469c-acca-4f1af93f7864.png#align=left&display=inline&height=373&name=image.png&originHeight=373&originWidth=601&size=171739&status=done&width=601" alt="image.png"></p>
 <h1 id="modules"><a href="#modules" class="headerlink" title="modules"></a>modules</h1><h2 id="模块介绍"><a href="#模块介绍" class="headerlink" title="模块介绍"></a>模块介绍</h2><ul>

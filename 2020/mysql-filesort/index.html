@@ -22,15 +22,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 技术讲解 -- filesort 详细解析">
+    <meta name="description" content="MySQL filesort 排序机制笔记：对比 original 与 modified 算法、max_sort_length 含义及 sort&#x2F;addon 字段组织方式">
 <meta property="og:type" content="website">
 <meta property="og:title" content="filesort 详细解析">
 <meta property="og:url" content="https://ilongda.com/2020/mysql-filesort/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 技术讲解 -- filesort 详细解析">
+<meta property="og:description" content="MySQL filesort 排序机制笔记：对比 original 与 modified 算法、max_sort_length 含义及 sort&#x2F;addon 字段组织方式">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-21T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:08:57.941Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.939Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -290,7 +290,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="filesort 详细解析 | Longda's Interesting World">
-      <meta itemprop="description" content="MySQL 技术讲解 -- filesort 详细解析">
+      <meta itemprop="description" content="MySQL filesort 排序机制笔记：对比 original 与 modified 算法、max_sort_length 含义及 sort&#x2F;addon 字段组织方式">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -346,14 +346,14 @@
     </span>
 </div>
 
-            <div class="post-description">MySQL 技术讲解 -- filesort 详细解析</div>
+            <div class="post-description">MySQL filesort 排序机制笔记：对比 original 与 modified 算法、max_sort_length 含义及 sort/addon 字段组织方式</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"filesort 详细解析","description":"MySQL 技术讲解 -- filesort 详细解析","image":"https://ilongda.com/img/my.jpg","wordCount":10760,"datePublished":"2020-06-21T11:42:57.000Z","dateModified":"2024-02-02T13:08:57.941Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2020/mysql-filesort/"},"url":"https://ilongda.com/2020/mysql-filesort/","inLanguage":"zh-CN","keywords":["Database","MySQL"],"articleSection":["Database","MySQL"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"filesort 详细解析","description":"MySQL filesort 排序机制笔记：对比 original 与 modified 算法、max_sort_length 含义及 sort/addon 字段组织方式","image":"https://ilongda.com/img/my.jpg","wordCount":10760,"datePublished":"2020-06-21T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.939Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2020/mysql-filesort/"},"url":"https://ilongda.com/2020/mysql-filesort/","inLanguage":"zh-CN","keywords":["Database","MySQL"],"articleSection":["Database","MySQL"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"filesort 详细解析","item":"https://ilongda.com/2020/mysql-filesort/"}]}</script>
 <p>这篇文章介绍的非常好， 所以给大家推荐一下<br>【转载】<span class="exturl" data-url="aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L244OExwbw==">https://blog.csdn.net/n88Lpo<i class="fa fa-external-link-alt"></i></span></p>
 <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>排序（filesort）作为DBA绕不开的话题，也经常有朋友讨论它，比如常见的问题如下：</p>

@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="《数据库实现》-- 第七章 并发控制">
+    <meta name="description" content="《数据库实现》第七章并发控制：可串行化调度、冲突图、两阶段锁、优先图判断及基于锁的并发实现，更多细节与示例见正文。，完整内容请阅读正文。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="《数据库实现》-- 第七章 并发控制">
 <meta property="og:url" content="https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="《数据库实现》-- 第七章 并发控制">
+<meta property="og:description" content="《数据库实现》第七章并发控制：可串行化调度、冲突图、两阶段锁、优先图判断及基于锁的并发实现，更多细节与示例见正文。，完整内容请阅读正文。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574233140606-3c6ae6cc-5ce3-4e56-b8fd-597aabb83d35.png#align=left&display=inline&height=32&margin=%5Bobject%20Object%5D&name=image.png&originHeight=32&originWidth=514&size=4287&status=done&style=none&width=514">
@@ -47,7 +47,7 @@
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574389787062-6e4d7be7-9384-46b9-9a25-f38132932ebc.png#align=left&display=inline&height=493&margin=%5Bobject%20Object%5D&name=image.png&originHeight=986&originWidth=1428&size=130834&status=done&style=none&width=714">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1574391962115-8a9fb9af-6f01-45e4-ad06-04265771ecd0.png#align=left&display=inline&height=378&margin=%5Bobject%20Object%5D&name=image.png&originHeight=756&originWidth=1208&size=64554&status=done&style=none&width=604">
 <meta property="article:published_time" content="2018-08-11T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:16:07.365Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.950Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="数据库实现">
@@ -308,7 +308,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="《数据库实现》-- 第七章 并发控制 | Longda's Interesting World">
-      <meta itemprop="description" content="《数据库实现》-- 第七章 并发控制">
+      <meta itemprop="description" content="《数据库实现》第七章并发控制：可串行化调度、冲突图、两阶段锁、优先图判断及基于锁的并发实现，更多细节与示例见正文。，完整内容请阅读正文。">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -364,14 +364,14 @@
     </span>
 </div>
 
-            <div class="post-description">《数据库实现》-- 第七章 并发控制</div>
+            <div class="post-description">《数据库实现》第七章并发控制：可串行化调度、冲突图、两阶段锁、优先图判断及基于锁的并发实现，更多细节与示例见正文。，完整内容请阅读正文。</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"《数据库实现》-- 第七章 并发控制","description":"《数据库实现》-- 第七章 并发控制","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258","wordCount":2099,"datePublished":"2018-08-11T11:42:57.000Z","dateModified":"2024-02-02T13:16:07.365Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/"},"url":"https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/","inLanguage":"zh-CN","keywords":["Database","数据库实现"],"articleSection":["Database","数据库实现"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"《数据库实现》-- 第七章 并发控制","description":"《数据库实现》第七章并发控制：可串行化调度、冲突图、两阶段锁、优先图判断及基于锁的并发实现，更多细节与示例见正文。，完整内容请阅读正文。","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258","wordCount":2099,"datePublished":"2018-08-11T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.950Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/"},"url":"https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/","inLanguage":"zh-CN","keywords":["Database","数据库实现"],"articleSection":["Database","数据库实现"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"《数据库实现》-- 第七章 并发控制","item":"https://ilongda.com/2018/docs/database/database_implementation_reading_notes/chapter7_concurrency/"}]}</script>
 <h1 id="第七章，-并发控制"><a href="#第七章，-并发控制" class="headerlink" title="第七章， 并发控制"></a>第七章， 并发控制</h1><p><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1574143862145-9fa229cc-3e93-4a54-aeb2-996a0b444f0f.png#align=left&display=inline&height=232&margin=%5Bobject%20Object%5D&name=image.png&originHeight=232&originWidth=258&size=11020&status=done&style=none&width=258" alt="image.png"><br>调度器保证并发执行事务能保持一致性， 当调度器接受到事务请求时，并不是立即执行，而是稍等一下， 有的时候是因为缓冲区的缘故， 有的时候是因为lock的缘故， 甚至有的时候会中止提交的请求。 <br>调度器关注3样元素， 锁， 时间戳和有效性确认。 <br></p>
 <p><a name="2wWad"></a></p>

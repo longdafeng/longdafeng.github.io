@@ -22,15 +22,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 源码解读 -- 基础结构之THD">
+    <meta name="description" content="MySQL THD 线程描述符源码笔记：连接级核心结构，涵盖 DiagnosticsArea、MDL、资源组与事务状态等成员">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- 基础结构之THD">
 <meta property="og:url" content="https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 源码解读 -- 基础结构之THD">
+<meta property="og:description" content="MySQL THD 线程描述符源码笔记：连接级核心结构，涵盖 DiagnosticsArea、MDL、资源组与事务状态等成员">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-06-18T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:20:02.216Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.954Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -290,7 +290,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="MySQL 源码解读 -- 基础结构之THD | Longda's Interesting World">
-      <meta itemprop="description" content="MySQL 源码解读 -- 基础结构之THD">
+      <meta itemprop="description" content="MySQL THD 线程描述符源码笔记：连接级核心结构，涵盖 DiagnosticsArea、MDL、资源组与事务状态等成员">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -350,14 +350,14 @@
     </span>
 </div>
 
-            <div class="post-description">MySQL 源码解读 -- 基础结构之THD</div>
+            <div class="post-description">MySQL THD 线程描述符源码笔记：连接级核心结构，涵盖 DiagnosticsArea、MDL、资源组与事务状态等成员</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 基础结构之THD","description":"MySQL 源码解读 -- 基础结构之THD","image":"https://ilongda.com/img/my.jpg","wordCount":190,"datePublished":"2019-06-18T11:42:57.000Z","dateModified":"2024-02-02T13:20:02.216Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 基础结构之THD","description":"MySQL THD 线程描述符源码笔记：连接级核心结构，涵盖 DiagnosticsArea、MDL、资源组与事务状态等成员","image":"https://ilongda.com/img/my.jpg","wordCount":190,"datePublished":"2019-06-18T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.954Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 基础结构之THD","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/basic_data_structure/THD/"}]}</script>
 <p>THD 是最复杂的数据结构</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">class THD : public MDL_context_owner,</span><br><span class="line">            public Query_arena,</span><br><span class="line">            public Open_tables_state &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -418,13 +418,13 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2019/docs/mysql/source_code_reading/diagram/index/" rel="prev" title="MySQL 源码解读 -- MySQL 变量">
-                  <i class="fa fa-angle-left"></i> MySQL 源码解读 -- MySQL 变量
+                <a href="/2019/docs/mysql/source_code_reading/basic_data_structure/TABLE/" rel="prev" title="MySQL 源码解读 -- 基础结构之Table">
+                  <i class="fa fa-angle-left"></i> MySQL 源码解读 -- 基础结构之Table
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2019/docs/mysql/source_code_reading/init/init_param/" rel="next" title="MySQL 源码解读 -- 参数初始化">
-                  MySQL 源码解读 -- 参数初始化 <i class="fa fa-angle-right"></i>
+                <a href="/2019/docs/mysql/source_code_reading/diagram/index/" rel="next" title="MySQL 源码解读 -- MySQL 变量">
+                  MySQL 源码解读 -- MySQL 变量 <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>

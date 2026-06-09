@@ -22,16 +22,16 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 源码解读 -- 无锁hash">
+    <meta name="description" content="MySQL 无锁 hash LF_HASH 源码笔记：LF_DYNARRAY、LF_ALLOCATOR 与 hazard pointer pin 机制分析">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- 无锁hash">
 <meta property="og:url" content="https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 源码解读 -- 无锁hash">
+<meta property="og:description" content="MySQL 无锁 hash LF_HASH 源码笔记：LF_DYNARRAY、LF_ALLOCATOR 与 hazard pointer pin 机制分析">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2020/png/106206/1581951743012-926612a6-df5b-4130-90c0-2ff49d31819c.png#align=left&display=inline&height=678&margin=%5Bobject%20Object%5D&name=image.png&originHeight=1356&originWidth=1270&size=109698&status=done&style=none&width=635">
 <meta property="article:published_time" content="2019-08-02T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:25:16.586Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.958Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -293,7 +293,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="MySQL 源码解读 -- 无锁hash | Longda's Interesting World">
-      <meta itemprop="description" content="MySQL 源码解读 -- 无锁hash">
+      <meta itemprop="description" content="MySQL 无锁 hash LF_HASH 源码笔记：LF_DYNARRAY、LF_ALLOCATOR 与 hazard pointer pin 机制分析">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -353,14 +353,14 @@
     </span>
 </div>
 
-            <div class="post-description">MySQL 源码解读 -- 无锁hash</div>
+            <div class="post-description">MySQL 无锁 hash LF_HASH 源码笔记：LF_DYNARRAY、LF_ALLOCATOR 与 hazard pointer pin 机制分析</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 无锁hash","description":"MySQL 源码解读 -- 无锁hash","image":"https://cdn.nlark.com/yuque/0/2020/png/106206/1581951743012-926612a6-df5b-4130-90c0-2ff49d31819c.png#align=left&display=inline&height=678&margin=%5Bobject%20Object%5D&name=image.png&originHeight=1356&originWidth=1270&size=109698&status=done&style=none&width=635","wordCount":1684,"datePublished":"2019-08-02T11:42:57.000Z","dateModified":"2024-02-02T13:25:16.586Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 无锁hash","description":"MySQL 无锁 hash LF_HASH 源码笔记：LF_DYNARRAY、LF_ALLOCATOR 与 hazard pointer pin 机制分析","image":"https://cdn.nlark.com/yuque/0/2020/png/106206/1581951743012-926612a6-df5b-4130-90c0-2ff49d31819c.png#align=left&display=inline&height=678&margin=%5Bobject%20Object%5D&name=image.png&originHeight=1356&originWidth=1270&size=109698&status=done&style=none&width=635","wordCount":1684,"datePublished":"2019-08-02T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.958Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 无锁hash","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/lf_hash/"}]}</script>
 <h1 id="无锁hash"><a href="#无锁hash" class="headerlink" title="无锁hash"></a>无锁hash</h1><p><a name="SxkQ0"></a></p>
 <h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><p><a name="ZKZkW"></a></p>

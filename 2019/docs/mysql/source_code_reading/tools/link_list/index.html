@@ -22,15 +22,15 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 源码解读 -- 链表">
+    <meta name="description" content="InnoDB ut_list 双向链表源码笔记：ut_list_node&#x2F;base 模板设计与 buffer pool LRU 链使用示例">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- 链表">
 <meta property="og:url" content="https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/index.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 源码解读 -- 链表">
+<meta property="og:description" content="InnoDB ut_list 双向链表源码笔记：ut_list_node&#x2F;base 模板设计与 buffer pool LRU 链使用示例">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-08-03T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:25:23.920Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.959Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -291,7 +291,7 @@
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="MySQL 源码解读 -- 链表 | Longda's Interesting World">
-      <meta itemprop="description" content="MySQL 源码解读 -- 链表">
+      <meta itemprop="description" content="InnoDB ut_list 双向链表源码笔记：ut_list_node&#x2F;base 模板设计与 buffer pool LRU 链使用示例">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -351,14 +351,14 @@
     </span>
 </div>
 
-            <div class="post-description">MySQL 源码解读 -- 链表</div>
+            <div class="post-description">InnoDB ut_list 双向链表源码笔记：ut_list_node/base 模板设计与 buffer pool LRU 链使用示例</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 链表","description":"MySQL 源码解读 -- 链表","image":"https://ilongda.com/img/my.jpg","wordCount":853,"datePublished":"2019-08-03T11:42:57.000Z","dateModified":"2024-02-02T13:25:23.920Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 链表","description":"InnoDB ut_list 双向链表源码笔记：ut_list_node/base 模板设计与 buffer pool LRU 链使用示例","image":"https://ilongda.com/img/my.jpg","wordCount":853,"datePublished":"2019-08-03T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.959Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 链表","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/link_list/"}]}</script>
 <h1 id="链表结构"><a href="#链表结构" class="headerlink" title="链表结构"></a>链表结构</h1><p><a name="KYI6I"></a></p>
 <h2 id="链表结构-1"><a href="#链表结构-1" class="headerlink" title="链表结构"></a>链表结构</h2><p>innodb 的链表结构设计的比较巧妙，而且灵活， 一个基本的类型elem_type 可以是多个list的一个成员, 只要这个elem_type里面对应的node 对象<br><a name="klD9M"></a></p>

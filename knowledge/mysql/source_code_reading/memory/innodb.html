@@ -22,19 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="MySQL 源码解读 -- innodb 内存">
+    <meta name="description" content="InnoDB 内存管理源码笔记：mem_heap_t 堆分配、ut_allocator 封装与 block 对齐及 no-man land 调试机制">
 <meta property="og:type" content="website">
 <meta property="og:title" content="MySQL 源码解读 -- innodb 内存">
 <meta property="og:url" content="https://ilongda.com/knowledge/mysql/source_code_reading/memory/innodb.html">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
-<meta property="og:description" content="MySQL 源码解读 -- innodb 内存">
+<meta property="og:description" content="InnoDB 内存管理源码笔记：mem_heap_t 堆分配、ut_allocator 封装与 block 对齐及 no-man land 调试机制">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567608375891-e051f193-78b8-4d57-a45f-03f9d191cc08.png#align=left&display=inline&height=840&name=image.png&originHeight=840&originWidth=1618&size=131594&status=done&width=1618">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567677490173-6b992b9c-4ac9-42c9-867a-30727818470f.png#align=left&display=inline&height=128&name=image.png&originHeight=128&originWidth=371&size=10991&status=done&width=371">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/0/2019/png/106206/1567694528755-1406da58-09b8-43e6-b074-a110ffe1d689.png#align=left&display=inline&height=304&name=image.png&originHeight=608&originWidth=372&size=28859&status=done&width=186">
 <meta property="og:image" content="https://cdn.nlark.com/yuque/__flowchart/95268bd84792afede164c92907f40929.svg#lake_card_v2=eyJjb2RlIjoicz0-c3RhcnQ6IOeUs-ivt-WGheWtmFxuZj0-ZW5kOuWksei0pVxuZT5lbmQ6IOe7k-adn1xuXG5jdXJyZW50SXNFbm91Z2g9PmNvbmRpdGlvbjog5b2T5YmN5YaF5a2Y6Laz5aSfP1xubWVtX2hlYXBfYWRkX2Jsb2NrPT5vcGVyYXRpb246IOeUs-ivt-aWsOeahGJsb2NrXG5hc3NpZ25NZW09Pm9wZXJhdGlvbjog5YiG6YWN5YaF5a2YXG5cbnMtPmN1cnJlbnRJc0Vub3VnaFxuY3VycmVudElzRW5vdWdoKG5vLCByaWdodCktPm1lbV9oZWFwX2FkZF9ibG9jay0-YXNzaWduTWVtLT5lXG5jdXJyZW50SXNFbm91Z2goeWVzLCBkb3duKS0-YXNzaWduTWVtLT5lIiwidHlwZSI6ImZsb3djaGFydCIsImlkIjoiWmJpd2giLCJ1cmwiOiJodHRwczovL2Nkbi5ubGFyay5jb20veXVxdWUvX19mbG93Y2hhcnQvOTUyNjhiZDg0NzkyYWZlZGUxNjRjOTI5MDdmNDA5Mjkuc3ZnIiwiY2FyZCI6ImRpYWdyYW0ifQ==">
 <meta property="article:published_time" content="2019-06-23T11:42:57.000Z">
-<meta property="article:modified_time" content="2024-02-02T13:21:38.645Z">
+<meta property="article:modified_time" content="2026-06-09T08:46:25.956Z">
 <meta property="article:author" content="Longda Feng">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="MySQL">
@@ -284,7 +284,7 @@
 </h1>
 
 <div class="post-meta-container">
-    <div class="post-description">MySQL 源码解读 -- innodb 内存</div>
+    <div class="post-description">InnoDB 内存管理源码笔记：mem_heap_t 堆分配、ut_allocator 封装与 block 对齐及 no-man land 调试机制</div>
   <ul class="breadcrumb">
             <li><a href="/knowledge/">知识库</a></li>
             <li><a href="/knowledge/mysql/">MYSQL</a></li>
