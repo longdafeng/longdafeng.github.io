@@ -1,4 +1,6 @@
-# Agent Authentication for ilongda.com
+# Auth.md
+
+Agent authentication and registration guidance for `https://ilongda.com`.
 
 No registration is required to read public content on this site.
 
