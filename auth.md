@@ -1,22 +1,83 @@
 # auth.md
 
-Agent authentication and registration guidance for `https://ilongda.com`.
+You are an agent. This site supports **agentic registration** for read-only public access: discover metadata, confirm the anonymous flow, then use public endpoints under the `public:read` scope. No OAuth credentials are issued today.
 
-No registration is required to read public content on this site.
+## Step 1 — Discover
 
-Agents may crawl, index, summarize, and retrieve public pages, feeds, and discovery resources without OAuth credentials. The site currently does not expose protected write APIs or user-specific APIs.
+Discovery is two hops on `https://ilongda.com`.
 
-## Agent Registration
+### 1a. Fetch the Protected Resource Metadata
 
-Anonymous access is the supported registration method for agents today. Agents do not need to create an account, complete OAuth, present a bearer token, or request a client credential before reading public resources.
+```http
+GET /.well-known/oauth-protected-resource
+```
 
-- Registration URI: <https://ilongda.com/auth.md#agent-registration>
+Machine-readable source of truth:
+
+```json
+{
+  "resource": "https://ilongda.com/",
+  "resource_name": "Longda's Interesting World",
+  "authorization_servers": ["https://ilongda.com/"],
+  "scopes_supported": ["public:read"],
+  "bearer_methods_supported": ["header"],
+  "resource_documentation": "https://ilongda.com/auth.md"
+}
+```
+
+What each field tells you:
+
+- `resource` — canonical site URL for public content and discovery resources.
+- `resource_name` — display name to show users when asking for consent.
+- `authorization_servers` — OAuth Authorization Server issuer(s) for this resource.
+- `scopes_supported` — scopes the site understands. Today only `public:read` is available.
+- `bearer_methods_supported` — bearer presentation method if a token were issued (`header`).
+
+### 1b. Fetch the Authorization Server metadata
+
+```http
+GET /.well-known/oauth-authorization-server
+```
+
+Read the `agent_auth` block for supported registration methods, credential types, and claim URLs.
+
+## Step 2 — Pick a method
+
+Only **anonymous** registration is supported today.
+
+- You have a user identity assertion or verified email → not supported yet.
+- You have neither and only need public read access → use [anonymous](#agent-registration).
+
+Before proceeding, confirm `anonymous` appears in `agent_auth.identity_types_supported`.
+
+## Step 3 — Register
+
+<a id="agent-registration"></a>
+
+### anonymous
+
+No registration POST is required for public reads on this static site.
+
+1. Read this document and the linked discovery metadata.
+2. Use public endpoints under scope `public:read`.
+3. Do not send an `Authorization` header; no bearer token or API key is issued.
+4. Respect `robots.txt`, `ai.txt`, and published rate limits.
+
+Supported values for this method:
+
+- Registration URI: `https://ilongda.com/auth.md#agent-registration`
 - Identity type: `anonymous`
 - Credential type: `none`
-- Claim URI: <https://ilongda.com/auth.md#agent-registration>
+- Claim URI: `https://ilongda.com/auth.md#agent-registration`
 - Revocation URI: not applicable because no credentials are issued
 
 If protected APIs are added later, this section will list the registration endpoint, supported identity assertions, credential types, scopes, claim endpoint, and revocation endpoint.
+
+## Supported Scopes
+
+| Scope | Description |
+| --- | --- |
+| `public:read` | Read public pages, feeds, search indexes, and discovery resources without authentication |
 
 ## Discovery Metadata
 

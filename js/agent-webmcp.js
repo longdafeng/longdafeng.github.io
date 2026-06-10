@@ -1,14 +1,6 @@
 (function registerAgentTools() {
   'use strict';
 
-  const browserNavigator = typeof navigator === 'undefined' ? null : navigator;
-  const browserDocument = typeof document === 'undefined' ? null : document;
-  const modelContext = (browserNavigator && browserNavigator.modelContext) || (browserDocument && browserDocument.modelContext);
-  if (!modelContext) {
-    console.info('[WebMCP] navigator.modelContext/document.modelContext is not available in this browser');
-    return;
-  }
-
   const emptyInputSchema = {
     type: 'object',
     properties: {},
@@ -17,40 +9,57 @@
 
   const tools = [
     {
+      name: 'get_site_info',
+      title: 'Get site info',
+      description: 'Return basic discovery metadata for ilongda.com, including feeds and auth guidance URLs.',
+      inputSchema: emptyInputSchema,
+      annotations: {
+        readOnlyHint: true
+      },
+      execute: async () => ({
+        name: "Longda's Interesting World",
+        url: 'https://ilongda.com/',
+        authGuide: 'https://ilongda.com/auth.md',
+        siteGuide: 'https://ilongda.com/llms.txt',
+        fullArchive: 'https://ilongda.com/llms-full.txt',
+        atomFeed: 'https://ilongda.com/atom.xml',
+        searchIndex: 'https://ilongda.com/search.xml',
+        apiCatalog: 'https://ilongda.com/.well-known/api-catalog'
+      })
+    },
+    {
       name: 'get_site_guide',
+      title: 'Get site guide',
       description: 'Fetch the agent-readable guide for ilongda.com public content.',
       inputSchema: emptyInputSchema,
       annotations: {
         readOnlyHint: true
       },
-      execute: async () => {
-        return { content: await fetchTextResource('/llms.txt', 'text/plain', 'site guide') };
-      }
+      execute: async () => textResult(await fetchTextResource('/llms.txt', 'text/plain', 'site guide'))
     },
     {
       name: 'get_full_content_archive',
+      title: 'Get full content archive',
       description: 'Fetch the generated plain-text archive of public posts and knowledge pages.',
       inputSchema: emptyInputSchema,
       annotations: {
         readOnlyHint: true
       },
-      execute: async () => {
-        return { content: await fetchTextResource('/llms-full.txt', 'text/plain', 'full content archive') };
-      }
+      execute: async () => textResult(await fetchTextResource('/llms-full.txt', 'text/plain', 'full content archive'))
     },
     {
       name: 'get_recent_feed',
+      title: 'Get recent feed',
       description: 'Fetch the Atom feed for recent public posts on ilongda.com.',
       inputSchema: emptyInputSchema,
       annotations: {
         readOnlyHint: true
       },
-      execute: async () => {
-        return { content: await fetchTextResource('/atom.xml', 'application/atom+xml,application/xml,text/xml', 'recent feed') };
-      }
+      execute: async () => textResult(await fetchTextResource('/atom.xml', 'application/atom+xml,application/xml,text/xml', 'recent feed'))
     },
     {
       name: 'search_public_content',
+      title: 'Search public content',
       description: 'Search the public Hexo search index for a query string.',
       inputSchema: {
         type: 'object',
@@ -103,34 +112,88 @@
 
   const controller = new AbortController();
   const registrationOptions = { signal: controller.signal };
-  window.addEventListener('pagehide', () => controller.abort(), { once: true });
 
-  registerTools().catch(error => {
-    console.warn('[WebMCP] Failed to register ilongda.com tools', error);
-  });
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', () => controller.abort(), { once: true });
+  }
 
-  async function registerTools() {
-    if (typeof modelContext.provideContext === 'function') {
-      try {
-        await modelContext.provideContext({ tools }, registrationOptions);
-        console.info('[WebMCP] Provided ilongda.com tools with navigator.modelContext.provideContext');
-        return;
-      } catch (error) {
-        if (typeof modelContext.registerTool !== 'function') {
-          throw error;
-        }
+  registerForAgentBrowsers();
 
-        console.warn('[WebMCP] provideContext failed; falling back to registerTool', error);
-      }
-    }
-
-    if (typeof modelContext.registerTool === 'function') {
-      await Promise.all(tools.map(tool => modelContext.registerTool(tool, registrationOptions)));
-      console.info('[WebMCP] Registered ilongda.com tools with document.modelContext.registerTool');
+  function registerForAgentBrowsers() {
+    const navigatorContext = getNavigatorModelContext();
+    if (navigatorContext) {
+      registerTools(navigatorContext, 'navigator.modelContext');
       return;
     }
 
-    console.warn('[WebMCP] navigator.modelContext/document.modelContext does not expose provideContext or registerTool');
+    const documentContext = getDocumentModelContext();
+    if (documentContext) {
+      registerTools(documentContext, 'document.modelContext');
+      return;
+    }
+
+    console.info('[WebMCP] navigator.modelContext is not available in this browser');
+  }
+
+  function getNavigatorModelContext() {
+    if (typeof navigator === 'undefined' || !('modelContext' in navigator)) {
+      return null;
+    }
+
+    return navigator.modelContext;
+  }
+
+  function getDocumentModelContext() {
+    if (typeof document === 'undefined' || !('modelContext' in document)) {
+      return null;
+    }
+
+    return document.modelContext;
+  }
+
+  function registerTools(modelContext, label) {
+    if (typeof modelContext.provideContext === 'function') {
+      try {
+        const result = modelContext.provideContext({ tools }, registrationOptions);
+        if (result && typeof result.then === 'function') {
+          result
+            .then(() => {
+              console.info(`[WebMCP] Provided ilongda.com tools via ${label}.provideContext()`);
+            })
+            .catch(error => {
+              fallbackRegisterTools(modelContext, label, error);
+            });
+          return;
+        }
+
+        console.info(`[WebMCP] Provided ilongda.com tools via ${label}.provideContext()`);
+        return;
+      } catch (error) {
+        fallbackRegisterTools(modelContext, label, error);
+        return;
+      }
+    }
+
+    fallbackRegisterTools(modelContext, label);
+  }
+
+  function fallbackRegisterTools(modelContext, label, priorError) {
+    if (typeof modelContext.registerTool !== 'function') {
+      console.warn(`[WebMCP] ${label} does not expose provideContext or registerTool`, priorError || '');
+      return;
+    }
+
+    if (priorError) {
+      console.warn(`[WebMCP] provideContext failed on ${label}; falling back to registerTool`, priorError);
+    }
+
+    Promise.all(tools.map(tool => modelContext.registerTool(tool, registrationOptions)))
+      .then(() => {
+        console.info(`[WebMCP] Registered ilongda.com tools via ${label}.registerTool()`);
+      })
+      .catch(error => {
+        console.warn(`[WebMCP] Failed to register ilongda.com tools on ${label}`, error);
+      });
   }
 
   async function fetchTextResource(path, accept, label) {
@@ -141,6 +204,12 @@
     }
 
     return response.text();
+  }
+
+  function textResult(text) {
+    return {
+      content: [{ type: 'text', text }]
+    };
   }
 
   function clampLimit(value) {
