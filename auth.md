@@ -33,13 +33,23 @@ What each field tells you:
 - `scopes_supported` — scopes the site understands. Today only `public:read` is available.
 - `bearer_methods_supported` — bearer presentation method if a token were issued (`header`).
 
-### 1b. Fetch the Authorization Server metadata
+### 1b. Fetch the Authorization Server Metadata
 
 ```http
 GET /.well-known/oauth-authorization-server
 ```
 
-Read the `agent_auth` block for supported registration methods, credential types, and claim URLs.
+This returns a JSON document with standard OAuth 2.0 Authorization Server fields plus an `agent_auth` extension block. Key fields inside `agent_auth`:
+
+- `skill` — URL of this auth.md document.
+- `register_uri` — where to register (for anonymous, this document itself).
+- `identity_endpoint` — endpoint that accepts identity assertions (anonymous, ID-JAG, verified email).
+- `claim_endpoint` — endpoint for RFC 8628-style claim ceremonies.
+- `identity_types_supported` — which flows are available (`anonymous`, `identity_assertion`).
+- `credential_types_supported` — what the service issues (`none`, `api_key`, `access_token`).
+- `events_supported` — revocation or lifecycle events the service accepts.
+
+Read these fields to decide which registration method to use.
 
 ## Step 2 — Pick a method
 
@@ -65,7 +75,10 @@ No registration POST is required for public reads on this static site.
 
 Supported values for this method:
 
+- Skill: `https://ilongda.com/auth.md`
 - Registration URI: `https://ilongda.com/auth.md#agent-registration`
+- Identity endpoint: `https://ilongda.com/auth.md#agent-registration`
+- Claim endpoint: `https://ilongda.com/auth.md#agent-registration`
 - Identity type: `anonymous`
 - Credential type: `none`
 - Claim URI: `https://ilongda.com/auth.md#agent-registration`
