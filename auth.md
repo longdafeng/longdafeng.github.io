@@ -45,6 +45,7 @@ This returns a JSON document with standard OAuth 2.0 Authorization Server fields
 - `register_uri` — where to register (for anonymous, this document itself).
 - `identity_endpoint` — endpoint that accepts identity assertions (anonymous, ID-JAG, verified email).
 - `claim_endpoint` — endpoint for RFC 8628-style claim ceremonies.
+- `claim_uri` — canonical URI for the claim ceremony (same as `claim_endpoint` for this site).
 - `identity_types_supported` — which flows are available (`anonymous`, `identity_assertion`).
 - `credential_types_supported` — what the service issues (`none`, `api_key`, `access_token`).
 - `events_supported` — revocation or lifecycle events the service accepts.
