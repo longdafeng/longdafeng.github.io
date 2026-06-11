@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 向量数据库官方使用指南：详解 HNSW、HNSW_SQ、HNSW_BQ、IVF、IVF_PQ 等向量索引的类型选择、参数调优、内存估算与分区表实践，覆盖百万到亿级数据量的性能优化建议。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 向量数据库使用指南">
+<meta property="og:url" content="https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 向量数据库官方使用指南：详解 HNSW、HNSW_SQ、HNSW_BQ、IVF、IVF_PQ 等向量索引的类型选择、参数调优、内存估算与分区表实践，覆盖百万到亿级数据量的性能优化建议。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-24-oceanbase-vector-db-guide/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-24-oceanbase-vector-db-guide/02.png">
+<meta property="article:published_time" content="2025-09-24T01:49:13.000Z">
+<meta property="article:modified_time" content="2025-09-24T01:49:13.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HNSW">
+<meta property="article:tag" content="IVF">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="向量索引">
+<meta property="article:tag" content="性能调优">
+<meta property="article:tag" content="混合检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2025-09-24-oceanbase-vector-db-guide/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/","path":"2025/2025-09-24-oceanbase-vector-db-guide/","title":"OceanBase 向量数据库使用指南"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 向量数据库使用指南 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E4%BD%BF%E7%94%A8%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">向量索引使用基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95"><span class="nav-number">1.1.</span> <span class="nav-text">创建向量索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E8%BF%9B%E8%A1%8C%E6%9F%A5%E8%AF%A2"><span class="nav-number">1.2.</span> <span class="nav-text">使用向量索引进行查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E5%86%85%E5%AD%98%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE"><span class="nav-number">1.3.</span> <span class="nav-text">向量索引内存相关配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E7%B1%BB%E5%9E%8B%E9%80%89%E6%8B%A9"><span class="nav-number">2.</span> <span class="nav-text">索引类型选择</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HNSW%E7%94%A8%E4%BA%8E%E9%AB%98%E6%80%A7%E8%83%BD%E5%9C%BA%E6%99%AF"><span class="nav-number">2.1.</span> <span class="nav-text">HNSW用于高性能场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IVF-%E7%94%A8%E4%BA%8E%E9%AB%98%E5%AE%B9%E9%87%8F%E5%9C%BA%E6%99%AF"><span class="nav-number">2.2.</span> <span class="nav-text">IVF 用于高容量场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%BB%BA%E8%AE%AE"><span class="nav-number">2.3.</span> <span class="nav-text">参数建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E%E5%92%8C%E8%B0%83%E4%BC%98"><span class="nav-number">3.</span> <span class="nav-text">索引参数说明和调优</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HNSW-%E5%8F%8A%E5%85%B6%E9%87%8F%E5%8C%96%E7%AE%97%E6%B3%95%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">3.1.</span> <span class="nav-text">HNSW 及其量化算法参数说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IVF%E5%8F%8A%E5%85%B6%E9%87%8F%E5%8C%96%E7%AE%97%E6%B3%95%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="nav-number">3.2.</span> <span class="nav-text">IVF及其量化算法参数说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%88%86%E5%8C%BA%E8%A1%A8"><span class="nav-number">4.</span> <span class="nav-text">使用分区表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%BB%BA%E8%AE%AE"><span class="nav-number">4.1.</span> <span class="nav-text">使用建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB"><span class="nav-number">5.</span> <span class="nav-text">推荐阅读</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 向量数据库使用指南 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 向量数据库官方使用指南：详解 HNSW、HNSW_SQ、HNSW_BQ、IVF、IVF_PQ 等向量索引的类型选择、参数调优、内存估算与分区表实践，覆盖百万到亿级数据量的性能优化建议。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 向量数据库使用指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-24 09:49:13" itemprop="dateCreated datePublished" datetime="2025-09-24T09:49:13+08:00">2025-09-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">舸灏</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>8.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>31 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 向量数据库官方使用指南：详解 HNSW、HNSW_SQ、HNSW_BQ、IVF、IVF_PQ 等向量索引的类型选择、参数调优、内存估算与分区表实践，覆盖百万到亿级数据量的性能优化建议。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 向量数据库使用指南","description":"OceanBase 向量数据库官方使用指南：详解 HNSW、HNSW_SQ、HNSW_BQ、IVF、IVF_PQ 等向量索引的类型选择、参数调优、内存估算与分区表实践，覆盖百万到亿级数据量的性能优化建议。","image":"https://ilongda.com/img/2025-09-24-oceanbase-vector-db-guide/01.png","wordCount":8704,"datePublished":"2025-09-24T01:49:13.000Z","dateModified":"2025-09-24T01:49:13.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/"},"url":"https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","HNSW","混合检索","向量索引","性能调优","IVF"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase 向量数据库使用指南","item":"https://ilongda.com/2025/2025-09-24-oceanbase-vector-db-guide/"}]}</script>
+<p>AI 时代已经到来，如何用好 AI 时代的数据底座 “向量数据库”，也已经成为了如今 DBA 和 AI 应用开发者必知必会的东西。</p>
+<p>为了大家更好地使用 OceanBase 向量数据库，老纪邀请了 OceanBase 中负责研发向量能力的高级技术专家舸灏，以及一众研发同学，共同为大家写了这篇《OceanBase 向量数据库使用指南》。</p>
+<p>推荐大家先收藏本文，以备不时之需。</p>
+<p>这篇文章是一篇超级干货，旨在为具备向量数据库和向量索引基础知识的用户，提供对 OceanBase 向量能力进行性能优化的指导。</p>
+<p>说明：</p>
+<p>阅读本文需要的前置知识：<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NDY3MyZpZHg9MSZzbj0yYWQ4NDk4NTkwYTQ1YmViNDhhMzQxMWU0YjYyMmI5ZiZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《浅入了解向量数据库》<i class="fa fa-external-link-alt"></i></span>。</p>
+<p>还不了解向量数据库的朋友们可以先看这篇~</p>
+<p>当向量数据量低于百万级别时，建议采用 OceanBase 数据库的默认参数配置。</p>
+<p>而当数据量突破百万，且有更高性能提升需求时，就强烈建议去认真阅读本文的内容了。</p>
+<span id="more"></span>
+
+<h2 id="向量索引使用基础"><a href="#向量索引使用基础" class="headerlink" title="向量索引使用基础"></a>向量索引使用基础</h2><h3 id="创建向量索引"><a href="#创建向量索引" class="headerlink" title="创建向量索引"></a>创建向量索引</h3><p>OceanBase 支持随建表创建索引和建表后再创建索引。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 随表创建向量索引</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> test(</span><br><span class="line">  id <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  label <span class="type">varchar</span>(<span class="number">256</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  embedding VECTOR(<span class="number">768</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (id),</span><br><span class="line">  VECTOR INDEX vec_idx (embedding) <span class="keyword">WITH</span> (DISTANCE<span class="operator">=</span>COSINE, TYPE<span class="operator">=</span>HNSW)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 写入数据后再创建索引</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> test(</span><br><span class="line">  id <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  label <span class="type">varchar</span>(<span class="number">256</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  embedding VECTOR(<span class="number">768</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (id)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> VECTOR INDEX vec_idx <span class="keyword">ON</span> test(embedding) <span class="keyword">WITH</span> (DISTANCE<span class="operator">=</span>COSINE, TYPE<span class="operator">=</span>HNSW);</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果已有的数据量较多，例如达到百万及以上，建议是先建表，导入完数据，再多线程并发创建索引。</strong> 创建完索引后，新增或修改的向量是能够被立即查询的，但是写入性能会受到一定的影响。这与 OceanBase 当前支持的索引增量策略有关。</p>
+<p>由于向量索引在构建过程中需要进行大量的浮点数计算，业界不少实现采用了异步模式，数据先写入，暂不创建索引，待查询时采用暴力搜索增量数据，或者等待异步构建完成增量索引后并加载到内存中才可查询。这种方式增量数据无法被实时查询，或对查询性能的影响较大。</p>
+<p>大部分用户场景下对数据新增或修改的需求是每天或每隔一段时间写入一批数据，而实时进行 DML 的 TPS 虽然不高，但都希望写入即可见。因此 OceanBase 优先支持了同步模式，新增数据会在写入时立刻进入增量索引，通过向量索引可以立即查询到。为了保证较好的写入性能，增量部分目前没有进行量化压缩。<strong>HNSW 索引在增量数据达到已有数据 20% 时，后台任务会自动进行索引重建，将增量数据量化并将增量和原有数据合并到一起以压缩索引内存占用并提高性能。IVF 索引并不需要通过重建来恢复性能，如果新增的数据较多，可能会导致聚类特征发生变化，建议新增数据达到 30% 时主动进行重建。</strong></p>
+<h4 id="并发构建索引"><a href="#并发构建索引" class="headerlink" title="并发构建索引"></a>并发构建索引</h4><p>并行构建向量索引的方法和并行构建其它索引的方法相同，需要通过 parallel hint 进行指定。在构建索引时，如果业务负载不高，<strong>建议将并行度设置为租户 CPU 数量的两倍</strong>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="comment">/*+ PARALLEL(16) */</span> VECTOR INDEX vec_idx</span><br><span class="line"><span class="keyword">ON</span> test(embedding)</span><br><span class="line"><span class="keyword">WITH</span> (distance<span class="operator">=</span>cosine, type<span class="operator">=</span>HNSW);</span><br></pre></td></tr></table></figure>
+
+<p>注意：在数据量达到千万以上时，建议设置 alter system set _px_object_sampling &#x3D; 5000; 以提高采样结果的准确度，使得构建中各线程的负载尽可能的均匀，提高构建速度。</p>
+<h4 id="创建索引时索引参数"><a href="#创建索引时索引参数" class="headerlink" title="创建索引时索引参数"></a>创建索引时索引参数</h4><p>在创建向量索引时，除了指定索引构建参数 m, ef_construction, nlist，也可指定默认查询参数 ef_search, nprobes。查询参数会作为查询时的默认参数使用。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="comment">/*+ PARALLEL(16) */</span> VECTOR INDEX vec_idx</span><br><span class="line"><span class="keyword">ON</span> test(embedding)</span><br><span class="line"><span class="keyword">WITH</span> (distance<span class="operator">=</span>cosine,</span><br><span class="line">      type<span class="operator">=</span>HNSW,</span><br><span class="line">      lib<span class="operator">=</span>vsag,</span><br><span class="line">      m<span class="operator">=</span><span class="number">16</span>,</span><br><span class="line">      ef_construction<span class="operator">=</span><span class="number">200</span>);</span><br></pre></td></tr></table></figure>
+
+<p>每个参数的具体作用会在第 3 节进行说明。</p>
+<p>如果需要在查询时修改查询参数，请参考 1.2 节相关内容。</p>
+<p>IVF&#x2F;IVFPQ 索引是基于磁盘（表）的索引，因此存储编码策略会影响索引性能。<strong>建议在使用 IVF 索引时启用 CSEncoding 编码，需要在创建表时指定 ROW_FORMAT，并设置 BLOCK_SIZE</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> test(</span><br><span class="line">  id <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  label <span class="type">varchar</span>(<span class="number">256</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  embedding VECTOR(<span class="number">768</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (id)</span><br><span class="line">) ROW_FORMAT <span class="operator">=</span> COMPRESSED;</span><br><span class="line"></span><br><span class="line"><span class="keyword">create</span> <span class="comment">/*+ parallel(16) */</span> VECTOR INDEX vec_idx</span><br><span class="line"><span class="keyword">ON</span> test(embedding) <span class="keyword">with</span> (</span><br><span class="line">  distance<span class="operator">=</span>cosine, type<span class="operator">=</span>IVF_PQ, lib<span class="operator">=</span>OB,</span><br><span class="line">  M<span class="operator">=</span><span class="number">384</span>, SAMPLE_PER_NLIST<span class="operator">=</span><span class="number">256</span>, NBITS<span class="operator">=</span><span class="number">8</span>, NLIST<span class="operator">=</span><span class="number">1000</span>)</span><br><span class="line">block_size<span class="operator">=</span><span class="number">1048576</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用向量索引进行查询"><a href="#使用向量索引进行查询" class="headerlink" title="使用向量索引进行查询"></a>使用向量索引进行查询</h3><p>使用向量索引进行查询的方法和使用其他索引有所不同，其他索引是通过 where 条件指定搜索范围，满足条件的数据会被精确的过滤出来。而<strong>向量索引的用途是进行相关性的近似搜索，并按照向量距离值从小到大排序，</strong> 它并没有精确过滤的语义（虽然通过条件索引构建和查询参数，可以将召回率拉到 99% 以上）。因此使用索引查询时，必须使用如下语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span></span><br><span class="line">  id, label,</span><br><span class="line">  cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，<strong>如果不指定近似关键词 APPROXIMATE 或 APPROX，将不会使用向量索引，而是基于表上数据进行扫描和精确计算。</strong></p>
+<h4 id="为过滤条件字段创建标量索引"><a href="#为过滤条件字段创建标量索引" class="headerlink" title="为过滤条件字段创建标量索引"></a>为过滤条件字段创建标量索引</h4><p>在实际业务中，纯向量的查询不一定能满足需要，例如需要查询符合某些特定条件的数据，且需要按照向量的相似度来排序，这类场景就需要进行标量和向量的混合检索。在过去的系统中，因为数据库能力有限，需要分别进行向量和标量查询，这会带来 2 个方面的影响：</p>
+<ul>
+<li>性能的衰退；</li>
+<li>可能带来召回率的下降。</li>
+</ul>
+<p>例如先进行标量查询，再将查询出来的向量进行距离计算和排序，可能导致大量多余的向量计算，性能不佳。如果先进行向量搜索，则可能因为第一次的向量查询没有返回足够多的数据满足标量条件，导致有数据遗漏，从而引起召回率的下降。为解决召回率下降的问题，往往引入在外部的迭代查询，但在外部的迭代查询不能使用代价更低的执行计划以及在查询中不能叠加过滤，导致无意中扫描了更多的数据，也使得性能不佳。</p>
+<p>OceanBase 自 4.3.5 版本开始实现标量和向量的混合检索，并支持在执行期间算法的自适应选择，优化器可以给出不同的执行计划，分别根据标量的过滤性和向量的过滤性，分别计算出每种执行计划的物理代价，从而选出最优的计划，从而可以保证尽可能高的性能和召回率，例如，当标量条件过滤性较好时，会自动选择前过滤算法。</p>
+<p><strong>使用标量过滤条件的方法是在向量索引查询中直接带上标量过滤条件</strong>。OceanBase 为标量和向量的混合检索实现了多种查询算法，例如前过滤和迭代式过滤算法，可以保证尽可能高的性能和召回率。在 HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引上，还实现了执行期算法的自适应选择（IVF &#x2F; IVFPQ 的自适应将在下个版本提供），这是为了应对代价估计和实际数据的差异，在查询执行时，OceanBase 也会通过执行中的统计信息来修正后续的执行流程。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id, label, cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果标量条件的选择性较好，OceanBase 会选择前过滤算法，并利用最佳的标量索引。因此在标量字段上创建索引可以加速查询性能。</strong> 例如对于上面的查询，假设 label&#x3D;’red’ 能过滤掉大部分数据，比 id &lt; 1000 的过滤性更好，可以在 label 列上创建标量索引。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> INDEX label_idx <span class="keyword">on</span> test(label);</span><br></pre></td></tr></table></figure>
+
+<p>创建完标量索引后，不需要对查询语句进行任何修改。</p>
+<h4 id="通过-hint-指定索引查询策略优先级"><a href="#通过-hint-指定索引查询策略优先级" class="headerlink" title="通过 hint 指定索引查询策略优先级"></a>通过 hint 指定索引查询策略优先级</h4><p>对于 HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引，hint 可以指定使用算法的优先级。这在一些标量和向量混合查询的场景能用来提高性能。OceanBase 具有计划缓存的能力，相同模式的 SQL 会命中同样的执行计划，对于向量索引来说，需要通过标量条件过滤性的好坏来选择不同的执行策略，如果已知某类查询，大部分场景下标量条件的过滤性非常好，那么可以指定向量检索优先使用前过滤算法，反之则使用迭代式过滤。</p>
+<p>hint 语法与 index hint 相同，形式是 <code>/*+index(表名 索引名)*/</code>。使用 approximate 关键词指定向量索引的查询时，如果 index hint 指定的索引名是标量索引，那么就优先使用前过滤；如果 index hint 指定的索引名是向量索引本身，则会优先使用迭代式过滤。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+index(test label_idx)*/</span></span><br><span class="line">  id, label,</span><br><span class="line">  cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>通过 explain 可以观察到执行计划会显示自适应查询（前过滤）：</p>
+<p><img data-src="/img/2025-09-24-oceanbase-vector-db-guide/01.png" alt="OceanBase 向量数据库使用指南"></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+index(test vec_idx)*/</span> id, label, cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>通过 explain 可以观察到执行计划会显示自适应查询（迭代式）：</p>
+<p><img data-src="/img/2025-09-24-oceanbase-vector-db-guide/02.png" alt="OceanBase 向量数据库使用指南"></p>
+<p>对于 IVF&#x2F;IVFPQ 算法同样可以通过 hint 进行指定，但定 hint 后执行方法就不再改变，IVF&#x2F;IVFPQ 的自适应算法选择将在 435BP5 提供。</p>
+<h4 id="通过-PARAMETERS-调整查询参数"><a href="#通过-PARAMETERS-调整查询参数" class="headerlink" title="通过 PARAMETERS 调整查询参数"></a>通过 PARAMETERS 调整查询参数</h4><p>在使用 HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引进行查询时，可以通过 PARAMETERS 进行语句级的调整。当前支持的语句级查询参数包括 ef_search，refine_k（仅 HNSWBQ）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span></span><br><span class="line">  id, label,</span><br><span class="line">  cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span></span><br><span class="line">PARAMETERS (ef_search<span class="operator">=</span><span class="number">200</span>);</span><br></pre></td></tr></table></figure>
+
+<p>除了在创建索引时指定查询参数，和通过 PARAMETERS 设置语句级查询参数，还可以通过 session 变量进行设置，例如 HNSW 索引可以 set ob_hnsw_ef_search &#x3D; 100，IVF 索引可以 set ob_ivf_nprobes &#x3D; 10；</p>
+<p>参数的优先级从大到小是：PARAMETERS &gt; Session 变量 &gt; 创建索引时的参数。</p>
+<p>各参数的作用将在本文第 3 节详细介绍。</p>
+<h3 id="向量索引内存相关配置"><a href="#向量索引内存相关配置" class="headerlink" title="向量索引内存相关配置"></a>向量索引内存相关配置</h3><p>OceanBase 向量索引提供了向量索引内存相关的配置参数，主要是 ob_vector_memory_limit_percentage 和 load_vector_index_on_follower，通常情况下使用默认值即可。</p>
+<h4 id="ob-vector-memory-limit-percentage"><a href="#ob-vector-memory-limit-percentage" class="headerlink" title="ob_vector_memory_limit_percentage"></a>ob_vector_memory_limit_percentage</h4><p>这个配置项用于控制向量索引能使用的内存占租户总内存的百分比。</p>
+<p>4.3.5BP3 版本之前，这个配置项需要用户手动配置为大于 0 的值，否则不能使用向量索引功能，建议值是 30%。<strong>从 4.3.5 BP3 开始，该配置项的默认值为 0，表示自适应模式，如无特殊需要，用户可以不再关注这一配置项。</strong> 自适应策略是：租户实际内存为 8 GB 及以下时，向量索引最多占用租户 40% 的内存；租户实际内存为 8 GB 以上时，向量索引最多占用租户 50% 的内存。为租户预留足够的内存，是为了保证其查询业务负载，或 DML 的稳定性。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> ob_vector_memory_limit_percentage <span class="operator">=</span> <span class="number">60</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="load-vector-index-on-follower"><a href="#load-vector-index-on-follower" class="headerlink" title="load_vector_index_on_follower"></a>load_vector_index_on_follower</h4><p>这个配置项从 4.3.5 BP3 才开始提供，用于指定 follower 是否自动同步加载内存向量索引，默认值为 true，follower 也会加载向量索引到内存中。关闭配置项之后，follower 上面的向量索引将不会自动加载到内存中。如果不需要弱读，可将此配置项关闭以减少向量索引占用的内存。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> load_vector_index_on_follower <span class="operator">=</span> <span class="literal">false</span>;</span><br></pre></td></tr></table></figure>
+
+<p>配置项不会同步到备库，在主备库的场景下，主库和备库都需要单独设置。</p>
+<h2 id="索引类型选择"><a href="#索引类型选择" class="headerlink" title="索引类型选择"></a>索引类型选择</h2><p>OceanBase 提供了多种向量索引算法，用户可以依据使用场景的不同选择合适的索引。</p>
+<p>首先索引分为两大类：</p>
+<ol>
+<li>基于图的 HNSW 索引及其量化索引 HNSW_SQ 和 HNSW_BQ；</li>
+<li>基于磁盘的 IVF 索引及其量化索引 IVF_PQ</li>
+</ol>
+<p>图索需要常驻内存，但是性能会高于磁盘索引，磁盘索引在缓存足够的情况下也可提供较好的性能，极端情况下可以完全不依赖常驻内存。 在 OceanBase 中，可以通过以下 SQL 进行内存用量的估算。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> dbms_vector.index_vector_memory_advisor(<span class="string">&#x27;HNSW&#x27;</span>, <span class="number">1000000</span>, <span class="number">768</span>, <span class="string">&#x27;FLOAT32&#x27;</span>, <span class="string">&#x27;M=16, DISTANCE=COSINE&#x27;</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> dbms_vector.index_vector_memory_advisor                 <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   (<span class="string">&#x27;HNSW&#x27;</span>,<span class="number">1000000</span>,<span class="number">768</span>,<span class="string">&#x27;FLOAT32&#x27;</span>,<span class="string">&#x27;M=16,DISTANCE=COSINE&#x27;</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> Suggested minimum vector memory <span class="keyword">is</span> <span class="number">7.3</span> GB               <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.004</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>详细用法请参考：</p>
+<ol>
+<li>INDEX_VECTOR_MEMORY_ESTIMATE<sup>[1]</sup></li>
+<li>INDEX_VECTOR_MEMORY_ADVISOR<sup>[2]</sup></li>
+</ol>
+<p>以下对索引类型的选择给出建议。</p>
+<h3 id="HNSW用于高性能场景"><a href="#HNSW用于高性能场景" class="headerlink" title="HNSW用于高性能场景"></a>HNSW用于高性能场景</h3><p>内存图索引的性能会明显高于磁盘索引，但由于需要常驻内存，因此内存成本高，且需要数据总量动态平衡，如果数据明显增多则需要扩容。</p>
+<ol>
+<li>内存足够的情况下（通常是百万级数据量）要求最高召回率和高性能，使用 HNSW 索引</li>
+<li>内存较为充足的情况下（通常是百万～千万数据量）要求高召回和高性能，使用 HNSW_SQ 索引，占用内存约为 HNSW 索引的 1&#x2F;4 ～ 1&#x2F;3</li>
+<li>内存相对数据量较少的情况下（通常是千万～亿数据量）要求高召回和较高性能，使用 HNSW_BQ 索引，占用内存约为 HNSW 索引的 1&#x2F;30</li>
+</ol>
+<p>这几种索引中 HNSW_SQ 的性能最高，HNSW 的召回率最高，但在标准数据集下都可以通过调节参数获得 99% 的召回率。具体参数作用会在下一节介绍。</p>
+<h3 id="IVF-用于高容量场景"><a href="#IVF-用于高容量场景" class="headerlink" title="IVF 用于高容量场景"></a>IVF 用于高容量场景</h3><p>磁盘索引用于高容量场景，可以做到完全不依赖常驻内存，对数据量非常大或者<strong>只增不删的场景</strong>，如果性能可以满足需要，就建议使用磁盘索引。</p>
+<ol>
+<li>IVF 索引的构建会相对更快，但构建过程中的内存占用也相对更高，相比 IVF_PQ 索引查询会慢一些，召回会更高。</li>
+<li>IVF_PQ 索引的构建会慢一些，但构建过程中的内存占用也相对低，但比 IVF 的查询性能更高，召回率略低。</li>
+</ol>
+<p><strong>需要注意，高压缩率的量化算法，例如 HNSW_BQ 和 IVF_PQ，在低维向量下的召回率上限可能较低</strong>，建议 HNSW_BQ 使用在 512 维及以上的向量上，IVF_PQ 使用在 128 维及以上的向量上。</p>
+<h3 id="参数建议"><a href="#参数建议" class="headerlink" title="参数建议"></a>参数建议</h3><table>
+<thead>
+<tr>
+<th><strong>场景</strong></th>
+<th><strong>索引类型</strong></th>
+<th><strong>参数建议</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最高召回<br>（内存占用最多）</td>
+<td>HNSW</td>
+<td>百万数据量：m &#x3D; 16，ef_construct &#x3D; 200，ef_search &#x3D; 100</td>
+</tr>
+<tr>
+<td>最高性能<br>（内存占用较少）</td>
+<td>HNSWSQ</td>
+<td>百万数据量：m &#x3D; 16，ef_construct &#x3D; 200，ef_search &#x3D; 100<br>千万数据量：m &#x3D; 32，ef_construct &#x3D; 400，ef_search &#x3D; 350</td>
+</tr>
+<tr>
+<td>最佳性价比<br>（内存占用少，性能好）</td>
+<td>HNSWBQ</td>
+<td>百万数据量：m &#x3D; 16，ef_construct &#x3D; 200，ef_search &#x3D; 100<br>千万数据量：m &#x3D; 32，ef_construct &#x3D; 400，ef_search &#x3D; 1000，refine_k&#x3D;10<br>亿级数据量：使用分区表，m &#x3D; 32，ef_construct &#x3D; 400，ef_search &#x3D; 1000，refine_k&#x3D;10</td>
+</tr>
+<tr>
+<td>低成本<br>（内存占用极少）</td>
+<td>IVFPQ</td>
+<td>百万数据量：nlist&#x3D;1000, m&#x3D;向量维度&#x2F;2，nprobes &#x3D; 20<br>千万数据量：nlist&#x3D;3000, m&#x3D;向量维度 &#x2F; 2，nprobes &#x3D; 20<br>亿级数据量：使用分区表，nlist&#x3D;3000, m&#x3D;向量维度 &#x2F; 2，nprobes &#x3D; 20</td>
+</tr>
+</tbody></table>
+<p>如果当前数据量较少，例如几百万，但是最终会达到千万级，可以按照最终的数据量来进行设置，对参数的详细解释以及调优在下面的章节进行介绍。</p>
+<h2 id="索引参数说明和调优"><a href="#索引参数说明和调优" class="headerlink" title="索引参数说明和调优"></a>索引参数说明和调优</h2><h3 id="HNSW-及其量化算法参数说明"><a href="#HNSW-及其量化算法参数说明" class="headerlink" title="HNSW 及其量化算法参数说明"></a>HNSW 及其量化算法参数说明</h3><table>
+<thead>
+<tr>
+<th><strong>参数</strong></th>
+<th><strong>默认值</strong></th>
+<th><strong>取值范围</strong></th>
+<th><strong>是否必填</strong></th>
+<th><strong>说明</strong></th>
+<th><strong>备注</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>distance</td>
+<td>&#x2F;</td>
+<td>l2 &#x2F; inner_product &#x2F; cosine</td>
+<td>是</td>
+<td>指定向量距离算法类型。</td>
+<td>l2 表示欧氏距离，inner_product 表示内积距离，cosine 表示余弦距离。</td>
+</tr>
+<tr>
+<td>type</td>
+<td>&#x2F;</td>
+<td>hnsw &#x2F; hnsw_sq &#x2F; hnsw_bq</td>
+<td>是</td>
+<td>指定索引类型</td>
+<td></td>
+</tr>
+<tr>
+<td>m</td>
+<td>16</td>
+<td>[5,64]</td>
+<td>否</td>
+<td>每个节点的最大邻居数。</td>
+<td>值越大，索引构建越慢，查询性能越好。</td>
+</tr>
+<tr>
+<td>ef_construction</td>
+<td>200</td>
+<td>[5,1000]</td>
+<td>否</td>
+<td>构建索引时的候选集大小。</td>
+<td>值越大，索引构建越慢，索引质量越好。<code>ef_construction</code><br>必须大于 <code>m</code></td>
+</tr>
+<tr>
+<td>ef_search</td>
+<td>64</td>
+<td>[1,16000]</td>
+<td>否</td>
+<td>查询时的候选集大小。</td>
+<td>值越大，查询越慢，召回率越高。</td>
+</tr>
+<tr>
+<td>refine_k</td>
+<td>4.0</td>
+<td>[1.0,1000.0]</td>
+<td>否</td>
+<td>仅用于 HNSW_BQ 索引，该参数为浮点数类型，用于调整量化向量索引的重排比例。</td>
+<td>该参数可以在创建索引时设置，也可以在查询时指定：<br>如果查询时没有设置，则使用创建索引时的值；<br>如果查询时设置了，则使用查询时设置的值。</td>
+</tr>
+<tr>
+<td>refine_type</td>
+<td>sq8</td>
+<td>sq8&#x2F;fp32</td>
+<td>否</td>
+<td>仅用于 HNSW_BQ 索引，用于设置量化向量索引的构建精度。</td>
+<td>该值通过降低索引构建时的内存开销和索引构建时间来提高效率，但可能会影响召回率。<br>如果集群是从旧版本升级到 V4.3.5 BP3 版本，则该参数默认值为 fp32。</td>
+</tr>
+<tr>
+<td>bq_bits_query</td>
+<td>32</td>
+<td>4&#x2F;32</td>
+<td>否</td>
+<td>仅用于 HNSW_BQ 索引，用于设置量化向量索引的查询精度，单位为 bit。</td>
+<td>该值通过降低索引构建时的内存开销和索引构建时间来提高效率，但可能会影响召回率。</td>
+</tr>
+</tbody></table>
+<h4 id="HNSW-类索引参数调优"><a href="#HNSW-类索引参数调优" class="headerlink" title="HNSW 类索引参数调优"></a>HNSW 类索引参数调优</h4><p>不同索引类型对应不同的内存成本，性能和召回率指标。在不同的数据量下，推荐的索引构建和查询参数也不相同。本节给出百万和千万数据量下，768 维度向量，HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引的建议配置，以及同环境的测试结果共参考。对于亿级别的向量数据，请参考本文后续章节选用 IVFPQ 索引，或分区表下的 HNSWBQ 索引。可以按照最终数据量来配置索引参数。</p>
+<h5 id="百万级数据量"><a href="#百万级数据量" class="headerlink" title="百万级数据量"></a>百万级数据量</h5><ol>
+<li>构建参数</li>
+</ol>
+<p><strong>m &#x3D; 16，ef_construct &#x3D; 200，HNSWBQ索引其它参数采用默认值。</strong></p>
+<ol start="2">
+<li>内存占用</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th><strong>索引类型</strong></th>
+<th><strong>建议租户内存</strong></th>
+<th><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HNSW</td>
+<td>15GB</td>
+<td>向量索引内存大小建议值为 7.3GB（435bp3 开始，租户内存大于 8GB，向量索引默认最多使用租户内存的 50%，租户内存小于等于 8GB，向量索引默认最多使用租户内存的 40%，因此大约需要 15GB 的租户内存）</td>
+</tr>
+<tr>
+<td>HNSWSQ</td>
+<td>6GB</td>
+<td>向量索引内存大小建议值为 2.1GB</td>
+</tr>
+<tr>
+<td>HNSWBQ</td>
+<td>6GB</td>
+<td>HNSWBQ 索引在构建过程中需要使用高精度的向量，从 435bp3 开始 HNSWBQ 默认使用 HNSWSQ 作为索引构建中的缓存，因此对于非分区表，HNSWBQ 所需要的内存和 HNSWSQ 相同，构建完成后，HNSWBQ 索引只占用 405MB 的内存</td>
+</tr>
+</tbody></table>
+<p><strong>在分区表场景下，OB 会依据租户内存大小控制并发构建的分区数，因此对于 HNSWBQ 索引，可以配置租户内存为 HNSWBQ 索引查询时占用量 + 单分区 SQ 索引占用量。</strong> 细节请参考本文第 4 节。</p>
+<ol start="3">
+<li>召回率</li>
+</ol>
+<p>放大 ef_search 和 refine_k（仅 HNSWBQ），可以通过更多的向量计算来提高召回率，但相应的会降低查询性能。在不同 TopN 下可将参数设置为下表中的建议值，如果需要进一步提升召回率，则可将参数值设置得更大一些。<strong>注意，召回率和数据特征有直接关系，下表给出的是 768 维标准数据集下，召回率达到 0.95 左右的建议值。</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>TopN</strong></th>
+<th><strong>ef_search</strong></th>
+<th><strong>refine_k（仅 HNSWBQ）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Top10</td>
+<td>64</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Top100</td>
+<td>240</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Top1000</td>
+<td>1500</td>
+<td>4</td>
+</tr>
+</tbody></table>
+<p>需要说明的是，几种索引算法的极限召回率不同，在本节设置建议的构建参数下，将 ef_search 设置为 1000，qps 会降低到 0.95 召回率下的 1&#x2F;3，但能只有 HNSW 能达到 0.99 以上的召回率。BQ 索引可以通过进一步增加 refine_k 来提高召回率，但性能也会进一步下降。</p>
+<ul>
+<li>使用 HNSW 索引，召回率是 0.991（ef_search&#x3D;1000）</li>
+<li>使用 HNSWSQ 索引，召回率是 0.9786（ef_search&#x3D;1000）</li>
+<li>使用 HNSWBQ 索引，召回率是 0.9897（ef_search&#x3D;1000，refine k&#x3D;10）</li>
+</ul>
+<ol start="4">
+<li>同参数下性能比较</li>
+</ol>
+<p>本地相同环境下的性能测试对比：（检索 Top 100，ef_search &#x3D; 240, HNSWBQ 中额外设置 refine_k &#x3D; 4）</p>
+<p>可以看到性能 HNSWSQ &gt; HNSW &gt; HNSWBQ</p>
+<p>基础召回率（不带 filter） HNSW &gt; HNSWSQ &gt; HNSWBQ</p>
+<p>带 filter 条件下，HNSW 在召回率整体上略高于 HNSWSQ，HNSWBQ 因在带 filter 场景下内部做了更多的向量查询和 refine，虽然 Recall 看上去较高，但是性能衰减也比前两种算法更大。</p>
+<table>
+<thead>
+<tr>
+<th><strong>Dataset</strong></th>
+<th><strong>QPS（HNBW）</strong></th>
+<th><strong>Recall（HNSW）</strong></th>
+<th><strong>QPS（HNSWSQ）</strong></th>
+<th><strong>Recall（HNSWSQ）</strong></th>
+<th><strong>QPS（HNSWBQ）</strong></th>
+<th><strong>Recall（HNSWBQ）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>768D1M</td>
+<td>3475.44</td>
+<td>0.9499</td>
+<td>5599.11</td>
+<td>0.9468</td>
+<td>3113.23</td>
+<td>0.9278</td>
+</tr>
+<tr>
+<td>768D1M1P</td>
+<td>2859.95</td>
+<td>0.9497</td>
+<td>4177.61</td>
+<td>0.9467</td>
+<td>1428.73</td>
+<td>0.9713</td>
+</tr>
+<tr>
+<td>768D1M10P</td>
+<td>2830.13</td>
+<td>0.9456</td>
+<td>4125.00</td>
+<td>0.9428</td>
+<td>1405.22</td>
+<td>0.9699</td>
+</tr>
+<tr>
+<td>768D1M15P</td>
+<td>2810.78</td>
+<td>0.9430</td>
+<td>4038.47</td>
+<td>0.9407</td>
+<td>1363.12</td>
+<td>0.9689</td>
+</tr>
+<tr>
+<td>768D1M30P</td>
+<td>2708.79</td>
+<td>0.9326</td>
+<td>3869.48</td>
+<td>0.9324</td>
+<td>1265.75</td>
+<td>0.9648</td>
+</tr>
+<tr>
+<td>768D1M50P</td>
+<td>2550.85</td>
+<td>0.9101</td>
+<td>3538.30</td>
+<td>0.9141</td>
+<td>897.87</td>
+<td>0.9779</td>
+</tr>
+<tr>
+<td>768D1M70P</td>
+<td>1130.01</td>
+<td>0.9206</td>
+<td>1302.21</td>
+<td>0.9304</td>
+<td>1178.47</td>
+<td>0.9115</td>
+</tr>
+<tr>
+<td>768D1M90P</td>
+<td>902.03</td>
+<td>0.9294</td>
+<td>1227.79</td>
+<td>0.9388</td>
+<td>1428.38</td>
+<td>0.8943</td>
+</tr>
+<tr>
+<td>768D1M99P</td>
+<td>3589.15</td>
+<td>1.0000</td>
+<td>5477.67</td>
+<td>0.9894</td>
+<td>2542.60</td>
+<td>0.9981</td>
+</tr>
+</tbody></table>
+<h5 id="千万级数据量"><a href="#千万级数据量" class="headerlink" title="千万级数据量"></a>千万级数据量</h5><ol>
+<li>构建参数</li>
+</ol>
+<p><strong>m &#x3D; 32，ef_construct &#x3D; 400，HNSWBQ 索引其它参数采用默认值。</strong></p>
+<ol start="2">
+<li>内存占用</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th><strong>索引类型</strong></th>
+<th><strong>建议租户内存</strong></th>
+<th><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HNSW</td>
+<td>160GB</td>
+<td>向量索引内存大小建议值为 76.3GB</td>
+</tr>
+<tr>
+<td>HNSWSQ</td>
+<td>48GB</td>
+<td>向量索引内存大小建议值为 22.6GB</td>
+</tr>
+<tr>
+<td>HNSWBQ</td>
+<td>48GB</td>
+<td>从 435bp3 开始 HNSWBQ 默认使用 HNSWSQ 作为索引构建中的缓存，因此对于非分区表，HNSWBQ 所需要的内存和 HNSWSQ 相同，构建完成后，HNSWBQ 索引只占用 5.4GB 的内存</td>
+</tr>
+</tbody></table>
+<ol start="3">
+<li>召回率</li>
+</ol>
+<p>放大 ef_search 和 refine_k（仅 HNSWBQ），可以通过更多的向量计算来提高召回率，但相应的会降低查询性能。在不同 TopN 下可将参数设置为下表中的建议值，如果需要进一步提升召回率，则可将参数值设置得更大一些。</p>
+<p><strong>注意，召回率和数据特征有直接关系，下表给出的是 768 维标准数据集下，召回率达到 0.95 左右的建议值。</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>TopN</strong></th>
+<th><strong>ef_search</strong></th>
+<th><strong>refine_k（仅 HNSWBQ）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Top10</td>
+<td>100</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Top100 （HNSW &#x2F; HNSWSQ）</td>
+<td>350</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Top100 （HNSWBQ）</td>
+<td>1000</td>
+<td>10</td>
+</tr>
+</tbody></table>
+<p>HNSWBQ 索引性能参考，测试机器和前面百万数据量相同（检索 Top 100，HNSW ef_search &#x3D; 350，HNSW BQ ef_search &#x3D; 1000，refine_k &#x3D; 10）</p>
+<table>
+<thead>
+<tr>
+<th><strong>Dataset</strong></th>
+<th><strong>QPS（HNBW）</strong></th>
+<th><strong>Recall（HNSW）</strong></th>
+<th><strong>QPS（HNSWBQ）</strong></th>
+<th><strong>Recall（HNSWBQ）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>768D1M</td>
+<td>2637.47</td>
+<td>0.9574</td>
+<td>856.7874</td>
+<td>0.9531</td>
+</tr>
+<tr>
+<td>768D1M1P</td>
+<td>2345.49</td>
+<td>0.9569</td>
+<td>523.6981</td>
+<td>0.9514</td>
+</tr>
+<tr>
+<td>768D1M10P</td>
+<td>2341.62</td>
+<td>0.9530</td>
+<td>522.3097</td>
+<td>0.9514</td>
+</tr>
+<tr>
+<td>768D1M30P</td>
+<td>2344.4467</td>
+<td>0.9438</td>
+<td>521.3001</td>
+<td>0.9516</td>
+</tr>
+<tr>
+<td>768D1M50P</td>
+<td>1614.0711</td>
+<td>0.9488</td>
+<td>510.069</td>
+<td>0.953</td>
+</tr>
+<tr>
+<td>768D1M70P</td>
+<td>764.9825</td>
+<td>0.9691</td>
+<td>272.1819</td>
+<td>0.9532</td>
+</tr>
+<tr>
+<td>768D1M90P</td>
+<td>350.2265</td>
+<td>0.977</td>
+<td>105.4262</td>
+<td>0.98</td>
+</tr>
+</tbody></table>
+<h5 id="亿级数据量"><a href="#亿级数据量" class="headerlink" title="亿级数据量"></a>亿级数据量</h5><p>如果最终数据量会超过一亿，建议结合分区表来使用 HNSWSQ 或 HNSWBQ 索引，或者使用 IVF PQ 索引。</p>
+<h3 id="IVF及其量化算法参数说明"><a href="#IVF及其量化算法参数说明" class="headerlink" title="IVF及其量化算法参数说明"></a>IVF及其量化算法参数说明</h3><table>
+<thead>
+<tr>
+<th><strong>参数</strong></th>
+<th><strong>默认值</strong></th>
+<th><strong>取值范围</strong></th>
+<th><strong>是否必填</strong></th>
+<th><strong>说明</strong></th>
+<th><strong>备注</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>distance</td>
+<td>&#x2F;</td>
+<td>l2 &#x2F; inner_product &#x2F; cosine</td>
+<td>是</td>
+<td>指定向量距离算法类型。</td>
+<td>l2 表示欧氏距离，inner_product 表示内积距离，cosine 表示余弦距离。</td>
+</tr>
+<tr>
+<td>type</td>
+<td>&#x2F;</td>
+<td>ivf_flat&#x2F;ivf_pq</td>
+<td>是</td>
+<td>指定 IVF 索引类型。</td>
+<td></td>
+</tr>
+<tr>
+<td>nlist</td>
+<td>128</td>
+<td>[1, 65536]</td>
+<td>是</td>
+<td>聚类中心的个数。</td>
+<td>建议取值为 sqrt(分区数据量)。</td>
+</tr>
+<tr>
+<td>sample_per_nlist</td>
+<td>256</td>
+<td>[1, unit64_max]</td>
+<td>否</td>
+<td>每个聚类中心的取样的数据量，后建索引中使用。</td>
+<td>一般使用默认值即可</td>
+</tr>
+<tr>
+<td>nbits</td>
+<td>8</td>
+<td>[1, 24]</td>
+<td>否</td>
+<td>仅用于创建 IVF_PQ 索引，指定量化位数。</td>
+<td>建议取值为 8，建议取值范围为 [8, 10]。该值越大，量化精度越高，查询准确率越高，同时查询性能会受到影响。</td>
+</tr>
+<tr>
+<td>m</td>
+<td>&#x2F;</td>
+<td>[1, 65536]</td>
+<td>是</td>
+<td>仅用于创建 IVF_PQ 索引，指定量化后的向量维度。</td>
+<td>建议取值为 dim &#x2F; 2，建议取值范围为 [dim &#x2F; 8, dim]。该值越大，索引构建越慢，查询准确率越高，同时查询性能会受到影响。</td>
+</tr>
+</tbody></table>
+<h4 id="IVF类索引参数调优"><a href="#IVF类索引参数调优" class="headerlink" title="IVF类索引参数调优"></a>IVF类索引参数调优</h4><h5 id="千万数据量"><a href="#千万数据量" class="headerlink" title="千万数据量"></a>千万数据量</h5><ol>
+<li>构建参数</li>
+</ol>
+<ul>
+<li>IVF_FLAT<ul>
+<li>NLIST &#x3D; 3000</li>
+</ul>
+</li>
+<li>IVF_PQ<ul>
+<li>NLIST &#x3D; 3000，M &#x3D; dim &#x2F; 2</li>
+</ul>
+</li>
+</ul>
+<p>考虑平衡聚类中心个数以及每个聚类中心的数据量，一般建议采用 sqrt(数据量)作为 NLIST 的取值。在 IVFPQ 场景下，M 值取向量维度(dim)的一半即可。</p>
+<p>如果是多分区表的场景，因为 IVF 索引目前都是 local index，每个分区会构建自己的 IVF 索引，所以建议根据平均数据量来估算 NLIST 的值。例如 1000W 768 维的场景，在 10 分区的情况下，平均每个分区是百万数据，那应该根据 sqrt(100w) &#x3D; 1000 来设置 NLIST 的值。</p>
+<ol start="2">
+<li>内存占用</li>
+</ol>
+<p>IVF 索引对内存的要求是比较低的，以 1000W 768 维场景为例子，采用推荐参数的情况下，内存开销可以参考下面的表格：</p>
+<table>
+<thead>
+<tr>
+<th><strong>index_type</strong></th>
+<th><strong>索引参数</strong></th>
+<th><strong>内存开销（构建开销 &#x2F; 常驻开销）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IVF_FLAT</td>
+<td>distance&#x3D;l2, nlist&#x3D;3000</td>
+<td>2.7 G &#x2F; 10.5M</td>
+</tr>
+<tr>
+<td>IVF_PQ</td>
+<td>distance&#x3D;l2, nlist&#x3D;3000, m&#x3D;384</td>
+<td>4.0 G &#x2F; 1.3 G</td>
+</tr>
+<tr>
+<td>IVF_PQ</td>
+<td>distance&#x3D;cosine, nlist&#x3D;3000, m&#x3D;384</td>
+<td>2.7 G &#x2F; 11.4 M</td>
+</tr>
+</tbody></table>
+<p>其中表格中内存开销的构建开销部分的内存是指只有索引构建的过程中才会占用的内存，在完成索引构建之后就会释放掉。而常驻内存是指构建完成之后 IVF 向量索引会一直占用的内存大小。</p>
+<p>对于 IVFPQ 来说，distance &#x3D; l2 的情况下，会需要额外的内存来缓存预计算结果，对比 distance &#x3D; ip &#x2F; cos 的情况下会使用更多的常驻内存，所以一般情况下会更推荐使用 distance &#x3D; ip &#x2F; cos。</p>
+<ol start="3">
+<li>召回率</li>
+</ol>
+<p>IVF 类索引的查询根据 nprobes 的取值来决定召回率以及性能。nprobes 越大，IVF 会搜索更多的聚类中心，计算更多的数据，召回率会越高，相应性能会降低。</p>
+<p>在不同 TopN 下可将参数设置为下表中的建议值，预期可以得到 0.9 左右的召回率，如果需要进一步提升召回率，则可将参数值设置得更大一些。<strong>注意，召回率和数据特征有直接关系，下表给出的只是标准数据集下的建议值。</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>TopN</strong></th>
+<th><strong>nprobes</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Top10</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Top100</td>
+<td>20</td>
+</tr>
+<tr>
+<td>Top1000</td>
+<td>90</td>
+</tr>
+<tr>
+<td>Top10000</td>
+<td>300</td>
+</tr>
+</tbody></table>
+<h5 id="亿级数据量-1"><a href="#亿级数据量-1" class="headerlink" title="亿级数据量"></a>亿级数据量</h5><p>从上亿数据量开始，建议考虑采用分区表的场景来使用 IVF 类索引。因为随着数据量增加和 NLIST 的增大，单个 IVF 索引的查询开销会越来越大，拆分成多个分区，多个小数据量的 IVF 索引可以通过并行查询的方式来提升性能以及 recall。</p>
+<ol>
+<li>构建参数</li>
+</ol>
+<ul>
+<li>IVF_FLAT<ul>
+<li>NLIST &#x3D; 3000</li>
+</ul>
+</li>
+<li>IVF_PQ<ul>
+<li>NLIST &#x3D; 3000，M &#x3D; dim &#x2F; 2</li>
+</ul>
+</li>
+</ul>
+<p>IVF 索引是 local index，每个分区都会构造一个 IVF 索引，所以在多分区表的场景下，是使用分区数据量来设置参数，例如 1 亿 10 分区的场景，每个分区平均是 1000W 数据量，所以这里参数跟千万级数据量是一样的，是以分区数据量来设置构建参数。</p>
+<ol start="2">
+<li>内存占用</li>
+</ol>
+<p>对于 IVF 的多分区的内存占用，由于 IVF 索引是 local index，每个分区都会构造一个 IVF 索引，所以对于常驻开销来，实际的内存占用需要乘上分区数，例如下面表格中的 IVF_FLAT，预估常驻内存是 10.5M，由于有 10 个分区，所以实际内存占用是 10.5 * 10 &#x3D; 105 M。</p>
+<table>
+<thead>
+<tr>
+<th><strong>index_type</strong></th>
+<th><strong>索引参数</strong></th>
+<th><strong>内存开销（构建开销 &#x2F; 常驻开销）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IVF_FLAT</td>
+<td>distance&#x3D;l2, nlist&#x3D;3000</td>
+<td>2.7 G &#x2F; 10.5 * 10 M</td>
+</tr>
+<tr>
+<td>IVF_PQ</td>
+<td>distance&#x3D;l2, nlist&#x3D;3000, m&#x3D;384</td>
+<td>4.0 G &#x2F; 1.3 * 10 G</td>
+</tr>
+<tr>
+<td>IVF_PQ</td>
+<td>distance&#x3D;cosine, nlist&#x3D;3000, m&#x3D;384</td>
+<td>2.7 G &#x2F; 11.4 * 10 M</td>
+</tr>
+</tbody></table>
+<ol start="3">
+<li>召回率</li>
+</ol>
+<p>IVF 类索引的查询根据 nprobes 的取值来决定召回率以及性能。nprobes 越大，IVF 会搜索更多的聚类中心，计算更多的数据，召回率会越高，相应性能会降低。</p>
+<p>在分区表场景，因为每个分区都是一个单独的 IVF 索引，所以查询如果落在了多个分区上面的话，实际上是每个分区单独做了一个 IVF 索引查询，返回了 TopN 条数据，然后汇总所有分区的结果再做一次 rerank，所以在实际准确率上面会比单分区场景更高，相应的可以用更低的 nprobes 达到和单分区表相同的召回率。</p>
+<p>在不同 TopN 下可将参数设置为下表中的建议值，预期可以得到 0.9 左右的召回率，如果需要进一步提升召回率，则可将参数值设置得更大一些。<strong>注意，召回率和数据特征有直接关系，下表给出的只是标准数据集下的建议值。</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>TopN</strong></th>
+<th><strong>nprobes</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Top10</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Top100</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Top1000</td>
+<td>45</td>
+</tr>
+<tr>
+<td>Top10000</td>
+<td>150</td>
+</tr>
+</tbody></table>
+<h2 id="使用分区表"><a href="#使用分区表" class="headerlink" title="使用分区表"></a>使用分区表</h2><p>使用分区表的主要目的是为了解决大数据量的场景，其次是如果查询条件可以用于做分区建，那么通过分区裁剪可以提升查询性能。在以下两种场景下建议使用分区表：</p>
+<ol>
+<li>数据量达到几千万或亿级以上。</li>
+<li>查询条件中有明确的标量列可以用作分区裁剪。例如在前问所给的例子中，如果 label 字段总是会出现在 where 条件中，那么就可以考虑以 label 作为 key 分区创建分区表。</li>
+</ol>
+<h3 id="使用建议"><a href="#使用建议" class="headerlink" title="使用建议"></a>使用建议</h3><ol>
+<li>分区划分</li>
+</ol>
+<p>在使用向量索引时，分区并不是越多越好。向量索引不同于一般的标量索引，以 HNSW 索引为例，在相同配置参数下，包含 100W 向量的 HNSW 索引查询 TopK，和包含 200W 向量的 HNSW 索引查询 TopK，所需的计算代价比较接近。因此在不能进行分区裁剪的条件下，分区表的向量索引性能可能还不如非分区表。而过大的单分区，会使得索引重建变慢，与标量进行混合查询时的性能也会受一定影响。<strong>因此在使用分区表时，建议将单个分区内的数据量维持在两千万以下，分区建优选选择可以做分区裁剪的列。</strong></p>
+<ol start="2">
+<li>算法选择</li>
+</ol>
+<p>在大数据量下建议选择 HNSWBQ 或 IVFPQ 索引，如需要使用其他索引，请按参考下面的内存占用进行估算。</p>
+<ol start="3">
+<li>内存占用</li>
+</ol>
+<p>对于 HNSW 索引，HNSWBQ 索引，租户内存需要大于<strong>HNSWBQ 索引查询时占用量 + 单分区 SQ 索引占用量</strong>，<strong>例如对于 1 亿数据</strong>，采用 10 分区，每分区内大致 1000 万向量。单分区需要 48GB 的构建内存，查询时十个分区的 HNSWBQ 占用 54GB 的内存，那么租户至少需要 102GB，考虑到部分增量数据不会实时量化压缩，<strong>建议租户内存配置到 128GB。</strong> 其他数据量可以按此进行估计。</p>
+<p>对于 IVF_FLAT，IVFPQ 索引，租户内存需要大于单个分区构建需要的内存 + 单分区常驻内存 * 分区数。例如对于 1 亿数据，采用 10 分区，每个分区大致 1000 万向量。单分区需要 2.7GB 的构建内存，查询时十个分区的 IVFPQ 占用 110M 内存，那么租户最少需要 3G 内存用户向量索引。这个场景下建议租户内存配置到 6G。其他数据量可以按此进行估计。</p>
+<ol start="4">
+<li>构建和查询参数</li>
+</ol>
+<p><strong>索引构建，查询参数按照单分区内的最大数据量来设定</strong>，对于 HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引请参考 3.1.1 节，对于 IVF &#x2F; IVFPQ 索引请参考 3.2.1 节。例如对于 HNSWBQ 索引，1 亿向量，采用 10 分区，那么可以设置 m &#x3D; 32，ef_construct &#x3D; 400，查询 top100 是设置查询参数为 ef_search&#x3D;1000，refine_k &#x3D; 10。</p>
+<ol start="5">
+<li>性能和召回率</li>
+</ol>
+<p>如果查询能分区裁剪到单分区，性能和召回率与单分区下的一致，请参考前文单分区下的情况。</p>
+<p>如果不能完全裁剪到单分区，那么 qps 可以按照单 observer 节点上的分区数进行估计，例如 observer 上有 3 个分区，那么 qps 参考单分区性能降低到 1&#x2F;3，由于查询了更多的候选结果，召回率会比单分区情况下高。</p>
+<p><strong>参考资料</strong></p>
+<p>[1]</p>
+<p>INDEX_VECTOR_MEMORY_ESTIMATE: <em><span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzUzMjg0Mg==">https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000003532842<i class="fa fa-external-link-alt"></i></span></em></p>
+<p>[2]</p>
+<p>INDEX_VECTOR_MEMORY_ADVISOR: <em><span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzUzMjg0Mw==">https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000003532843<i class="fa fa-external-link-alt"></i></span></em></p>
+<h2 id="推荐阅读"><a href="#推荐阅读" class="headerlink" title="推荐阅读"></a>推荐阅读</h2><ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NDY3MyZpZHg9MSZzbj0yYWQ4NDk4NTkwYTQ1YmViNDhhMzQxMWU0YjYyMmI5ZiZ0b2tlbj0xODcwMDY1MzA0JnNjZW5lPTIxI3dlY2hhdF9yZWRpcmVjdA==">《浅入了解向量数据库》<i class="fa fa-external-link-alt"></i></span></li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NDkyOCZpZHg9MSZzbj1iYWU3NDYwMGNlOGFlMjA2NTc0MmI0YjMxNDgwZjZhOCZ0b2tlbj0xODcwMDY1MzA0Jmxhbmc9emhfQ04mc2NlbmU9MjEjd2VjaGF0X3JlZGlyZWN0">《非算法同学的 AI 极速入门手册（一）—— 机器学习》<i class="fa fa-external-link-alt"></i></span></li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTA1NSZpZHg9MSZzbj0zNmI5ODZhODlkZGI0OGM4NmM1MjFlMWNlMzA5MmE2MCZ0b2tlbj0xODcwMDY1MzA0Jmxhbmc9emhfQ04mc2NlbmU9MjEjd2VjaGF0X3JlZGlyZWN0">《非算法同学的 AI 极速入门手册（二）—— 深度学习》<i class="fa fa-external-link-alt"></i></span></li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTUyNyZpZHg9MSZzbj03MmIwNGFhZDY2MzFhNTM2NjE0OWRhM2M0MTE0YmU1ZiZ0b2tlbj0xODcwMDY1MzA0Jmxhbmc9emhfQ04mc2NlbmU9MjEjd2VjaGF0X3JlZGlyZWN0">《非算法同学的 AI 极速入门手册（三）—— 预训练模型》<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95/" rel="tag"># 向量索引</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" rel="tag"># 性能调优</a>
+              <a href="/tags/IVF/" rel="tag"># IVF</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-19-ubuntu-vm-deploy-oceanbase/" rel="prev" title="在 Ubuntu 虚拟机中部署 OceanBase 数据库">
+                  <i class="fa fa-angle-left"></i> 在 Ubuntu 虚拟机中部署 OceanBase 数据库
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-25-netease-music-cdc-migration-oceanbase/" rel="next" title="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案">
+                  分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

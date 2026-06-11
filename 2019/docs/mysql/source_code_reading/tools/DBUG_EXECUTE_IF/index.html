@@ -201,18 +201,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-count">207</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">271</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -353,7 +353,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 工具之DBUG_EXECUTE_IF","description":"MySQL 源码解读 -- 工具之DBUG_EXECUTE_IF","image":"https://ilongda.com/img/my.jpg","wordCount":283,"datePublished":"2019-08-01T11:42:57.000Z","dateModified":"2024-02-02T13:25:04.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/DBUG_EXECUTE_IF/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/DBUG_EXECUTE_IF/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 工具之DBUG_EXECUTE_IF","description":"MySQL 源码解读 -- 工具之DBUG_EXECUTE_IF","image":"https://ilongda.com/img/my.jpg","wordCount":283,"datePublished":"2019-08-01T11:42:57.000Z","dateModified":"2024-02-02T13:25:04.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/DBUG_EXECUTE_IF/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/DBUG_EXECUTE_IF/","inLanguage":"zh-CN","keywords":["MySQL","Database","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 工具之DBUG_EXECUTE_IF","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/tools/DBUG_EXECUTE_IF/"}]}</script>
 <h1 id="MySQL-调试-DBUG-EXECUTE-IF简介"><a href="#MySQL-调试-DBUG-EXECUTE-IF简介" class="headerlink" title="[MySQL 调试]DBUG_EXECUTE_IF简介"></a>[MySQL 调试]DBUG_EXECUTE_IF简介</h1><p>DEBUG_EXECUTE_IF主要用于当设置了某个关键字key时，执行后面的代码，<br><br>可以简单的表示为：<br><br>DEBUG_EXECUTE_IF(key,  code)<br><br>例如在open_and_lock_tables函数中.<br><br><code>&lt;br /&gt;5527 if (open_tables(thd, &amp;tables, &amp;counter, flags, prelocking_strategy))&lt;br /&gt;5528 goto err;&lt;br /&gt;5529&lt;br /&gt;5530 DBUG_EXECUTE_IF(&quot;sleep_open_and_lock_after_open&quot;, {&lt;br /&gt;5531 const char *old_proc_info= thd-&gt;proc_info;&lt;br /&gt;5532 thd-&gt;proc_info= &quot;DBUG sleep&quot;;&lt;br /&gt;5533 my_sleep(6000000);&lt;br /&gt;5534 thd-&gt;proc_info= old_proc_info;});&lt;br /&gt;5535&lt;br /&gt;5536 if (lock_tables(thd, tables, counter, flags))&lt;br /&gt;5537 goto err;&lt;br /&gt; </code><br><br>那么如何让其生效呢，执行如下语句即可：<br><br>set session debug&#x3D;”+d, sleep_open_and_lock_after_open”<br> <br><br><br>这时候当进入这个函数时，在执行完open_tables语句后，就会设置thd的状态为DBUG sleep，再sleep 6秒钟，然后再调用lock_tables函数<br> <br>—————-<br>另外我们在写test case时，也可能用到用户层的锁，使用SQL FUNCTION的方法实现：<br>GET_LOCK(str, timeout)<br>—尝试获取一个名为str的锁，等待timeout，返回1表示获取锁成功<br>IS_FREE_LOCK(str)<br>—检查名为str的锁是否已经被释放<br>IS_USED_LOCK(str)<br>—检查名为str的锁是否已经被占用，如果是，返回占有该锁的线程ID，否则返回NULL<br>RELEASE_LOCK(str)<br>—释放名为str的锁</p>
 
@@ -382,8 +382,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" rel="tag"># MySQL 源码解读</a>
           </div>
 
@@ -439,14 +439,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">197k</span>
+    <span title="Word count total">483k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:57</span>
+    <span title="Reading time total">29:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

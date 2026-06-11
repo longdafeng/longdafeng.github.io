@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 开源生态总经理封仲淹（老纪）系统回答 seekdb 为什么开源、与 OceanBase 的定位差异及开源长期性三个问题，并解读 AI 原生混合搜索数据库 seekdb 在数据融合、AI Inside 与轻量化上的设计思路。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 开源生态总经理封仲淹（老纪）系统回答 seekdb 为什么开源、与 OceanBase 的定位差异及开源长期性三个问题，并解读 AI 原生混合搜索数据库 seekdb 在数据融合、AI Inside 与轻量化上的设计思路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/01.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/02.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/03.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/04.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/05.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/06.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/07.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/08.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/09.png">
+<meta property="og:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/10.png">
+<meta property="article:published_time" content="2025-11-25T18:56:51.000Z">
+<meta property="article:modified_time" content="2025-11-25T18:56:51.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 原生数据库">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="PowerRAG">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="开源">
+<meta property="article:tag" content="混合搜索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/why-oceanbase-opensource-seekdb/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/","path":"2025/2025-11-26-why-oceanbase-opensource-seekdb/","title":"AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？ | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9E%E6%9C%9B%EF%BC%9AOceanBase-%E7%9A%84%E5%BC%80%E6%BA%90%E4%B9%8B%E6%97%85"><span class="nav-number">1.</span> <span class="nav-text">回望：OceanBase 的开源之旅</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E6%BA%90%E6%98%AF%E6%88%98%E7%95%A5%E9%80%89%E6%8B%A9%EF%BC%8C%E8%80%8C%E9%9D%9E%E6%88%98%E6%9C%AF%E5%8A%A8%E4%BD%9C"><span class="nav-number">1.1.</span> <span class="nav-text">开源是战略选择，而非战术动作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E5%86%85%E6%A0%B8%E5%88%B0%E5%AE%8C%E6%95%B4%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.2.</span> <span class="nav-text">从内核到完整解决方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E6%BA%90%E6%88%98%E7%95%A5%E7%9A%84%E5%85%B3%E9%94%AE%E6%BC%94%E8%BF%9B%EF%BC%9A%E4%BB%A3%E7%A0%81%E5%88%86%E6%94%AF%E7%9A%84%E7%BB%9F%E4%B8%80"><span class="nav-number">1.3.</span> <span class="nav-text">开源战略的关键演进：代码分支的统一</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E5%B9%B4%E6%88%90%E7%BB%A9%EF%BC%9A%E8%A7%84%E6%A8%A1%E5%8C%96%E9%AA%8C%E8%AF%81"><span class="nav-number">1.4.</span> <span class="nav-text">四年成绩：规模化验证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E9%87%8D%E6%9E%84%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD%E7%9A%84%E5%BA%95%E5%B1%82%E9%80%BB%E8%BE%91"><span class="nav-number">2.</span> <span class="nav-text">AI 重构基础设施的底层逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#GenAI%EF%BC%9A%E4%B8%8D%E6%98%AF%E5%B7%A5%E5%85%B7%E5%8D%87%E7%BA%A7%EF%BC%8C%E8%80%8C%E6%98%AF%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD%E7%9A%84%E4%BB%A3%E9%99%85%E6%9B%B4%E6%9B%BF"><span class="nav-number">2.1.</span> <span class="nav-text">GenAI：不是工具升级，而是基础设施的代际更替</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E5%BA%94%E7%94%A8%EF%BC%9A%E4%BB%8E%E6%A6%82%E5%BF%B5%E9%AA%8C%E8%AF%81%E5%88%B0%E8%A7%84%E6%A8%A1%E8%90%BD%E5%9C%B0"><span class="nav-number">2.2.</span> <span class="nav-text">AI 应用：从概念验证到规模落地</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E6%97%B6%E4%BB%A3%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%89%E9%87%8D%E6%8C%91%E6%88%98"><span class="nav-number">2.3.</span> <span class="nav-text">AI 时代对数据库的三重挑战</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-%E5%BA%94%E5%AF%B9-AI-%E6%97%B6%E4%BB%A3%E6%95%B0%E6%8D%AE%E6%8C%91%E6%88%98%E7%9A%84%E8%A7%A3%E6%B3%95%EF%BC%9Aseekdb"><span class="nav-number">3.</span> <span class="nav-text">OceanBase 应对 AI 时代数据挑战的解法：seekdb</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E8%9E%8D%E5%90%88%EF%BC%9A%E5%A4%9A%E6%A8%A1%E6%80%81%E5%AD%98%E5%82%A8%E4%B8%8E%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2"><span class="nav-number">3.1.</span> <span class="nav-text">数据融合：多模态存储与混合搜索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E8%9E%8D%E5%90%88%EF%BC%9AAI-Inside-%E7%9A%84%E6%8A%80%E6%9C%AF%E8%B7%AF%E5%BE%84"><span class="nav-number">3.2.</span> <span class="nav-text">模型融合：AI Inside 的技术路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%BB%E9%87%8F%E5%8C%96%EF%BC%9A%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E5%BC%80%E5%8F%91%E8%80%85%E4%BD%93%E9%AA%8C"><span class="nav-number">3.3.</span> <span class="nav-text">轻量化：重新定义开发者体验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E6%94%BE%E5%8D%8F%E8%AE%AE%E4%B8%8E%E7%94%9F%E6%80%81%E6%88%98%E7%95%A5"><span class="nav-number">3.4.</span> <span class="nav-text">开放协议与生态战略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#seekdb-%E4%B8%8E-OceanBase-%E7%9A%84%E5%AE%9A%E4%BD%8D%E5%8C%BA%E5%88%86"><span class="nav-number">3.5.</span> <span class="nav-text">seekdb 与 OceanBase 的定位区分</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb-%E4%B9%8B%E5%A4%96%EF%BC%9A%E6%9E%84%E5%BB%BA%E5%AE%8C%E6%95%B4%E7%9A%84-AI-%E5%BC%80%E5%8F%91%E8%80%85%E6%94%AF%E6%8C%81%E4%BD%93%E7%B3%BB"><span class="nav-number">4.</span> <span class="nav-text">seekdb 之外：构建完整的 AI 开发者支持体系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E5%BA%94%E7%94%A8%E7%9A%84%E4%B8%89%E5%A4%A7%E7%83%AD%E7%82%B9%E6%96%B9%E5%90%91"><span class="nav-number">4.1.</span> <span class="nav-text">AI 应用的三大热点方向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PowerRAG%EF%BC%9A%E7%AB%99%E5%9C%A8%E5%B7%A8%E4%BA%BA%E8%82%A9%E8%86%80%E4%B8%8A%E7%9A%84%E5%88%9B%E6%96%B0"><span class="nav-number">4.2.</span> <span class="nav-text">PowerRAG：站在巨人肩膀上的创新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PowerMem%EF%BC%9A%E8%AE%A9-AI-%E5%BA%94%E7%94%A8%E6%9B%B4%E7%9C%81-Token"><span class="nav-number">4.3.</span> <span class="nav-text">PowerMem：让 AI 应用更省 Token</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#seekdb-Roadmap%EF%BC%9A%E5%BC%80%E5%8F%91%E8%80%85%E4%B8%8E%E7%94%9F%E6%80%81%E4%B8%BA%E6%A0%B8%E5%BF%83"><span class="nav-number">4.4.</span> <span class="nav-text">seekdb Roadmap：开发者与生态为核心</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%EF%BC%9Aseekdb-%E7%9A%84%E6%88%90%E9%95%BF%E7%A9%BA%E9%97%B4"><span class="nav-number">5.</span> <span class="nav-text">未来：seekdb 的成长空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">6.</span> <span class="nav-text">结语</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？ | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 开源生态总经理封仲淹（老纪）系统回答 seekdb 为什么开源、与 OceanBase 的定位差异及开源长期性三个问题，并解读 AI 原生混合搜索数据库 seekdb 在数据融合、AI Inside 与轻量化上的设计思路。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-26 02:56:51" itemprop="dateCreated datePublished" datetime="2025-11-26T02:56:51+08:00">2025-11-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">封仲淹（老纪）</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BA%A7%E5%93%81%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">产品详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>19 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 开源生态总经理封仲淹（老纪）系统回答 seekdb 为什么开源、与 OceanBase 的定位差异及开源长期性三个问题，并解读 AI 原生混合搜索数据库 seekdb 在数据融合、AI Inside 与轻量化上的设计思路。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？","description":"OceanBase 开源生态总经理封仲淹（老纪）系统回答 seekdb 为什么开源、与 OceanBase 的定位差异及开源长期性三个问题，并解读 AI 原生混合搜索数据库 seekdb 在数据融合、AI Inside 与轻量化上的设计思路。","image":"https://ilongda.com/img/why-oceanbase-opensource-seekdb/01.png","wordCount":5090,"datePublished":"2025-11-25T18:56:51.000Z","dateModified":"2025-11-25T18:56:51.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/"},"url":"https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/","inLanguage":"zh-CN","keywords":["OceanBase","向量检索","seekdb","开源","AI 原生数据库","混合搜索","PowerRAG","PowerMem"],"articleSection":["产品详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"产品详解","item":"https://ilongda.com/categories/产品详解/"},{"@type":"ListItem","position":3,"name":"AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？","item":"https://ilongda.com/2025/2025-11-26-why-oceanbase-opensource-seekdb/"}]}</script>
+<blockquote>
+<p>编者按：</p>
+<p>11 月 18 日，2025 OceanBase 年度发布会在北京举行，现场发布并开源了 OceanBase 首款 AI 原生混合搜索数据库 seekdb（简称 seekdb）。</p>
+<p>OceanBase 开源生态总经理封仲淹（花名：纪君祥，就是公众号 “老纪的技术唠嗑局” 里的话事人——老纪）会在这篇文章中，为大家介绍 OceanBase 开源 seekdb 的初衷。</p>
+</blockquote>
+<blockquote>
+<p>如果你对文中提到的 seekdb（AI Native Database）感兴趣，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 进行体验，相信会给你的 AI 应用开发带来新的启发！</p>
+</blockquote>
+<p>在 2025 OceanBase 年度发布会上，我们正式发布并开源了 OceanBase 首款 AI 原生混合搜索数据库 OceanBase seekdb（简称 seekdb）。</p>
+<p>发布之后，社区里很多朋友都在问三个问题：</p>
+<p><strong>1. seekdb 为什么要开源？</strong></p>
+<p><strong>2. 它和 OceanBase 的定位有什么区别？</strong></p>
+<p><strong>3. 这个开源是否具有长期性？</strong></p>
+<p>我想借这篇文章系统性地回答这三个问题。但在此之前，有必要先回顾一个更根本的问题：OceanBase 为什么要走开源这条路？</p>
+<span id="more"></span>
+
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/01.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="回望：OceanBase-的开源之旅"><a href="#回望：OceanBase-的开源之旅" class="headerlink" title="回望：OceanBase 的开源之旅"></a>回望：OceanBase 的开源之旅</h2><h3 id="开源是战略选择，而非战术动作"><a href="#开源是战略选择，而非战术动作" class="headerlink" title="开源是战略选择，而非战术动作"></a>开源是战略选择，而非战术动作</h3><p>2021 年 6 月 OceanBase 宣布开源时，外界最普遍的疑问是：一个商业上已经取得成功的数据库产品，为什么要选择开源？</p>
+<p>我们当时的判断是：数据库是基础设施，基础设施的发展必须与用户和生态共同演进。这不是一句空话。基础设施软件的特殊性在于，它的价值不仅取决于技术本身的先进性，更取决于生态的完整性和用户的信任度。而开源，是构建这种信任最直接、最有效的方式。</p>
+<p>所以从开源的第一天，就把 OceanBase 开源作为一个公司级战略。从资源投入来看，OceanBase 的开源项目投入是非常大的，从研发到运营，都是给到最好的资源配置。</p>
+<h3 id="从内核到完整解决方案"><a href="#从内核到完整解决方案" class="headerlink" title="从内核到完整解决方案"></a>从内核到完整解决方案</h3><p>开源初期，我们只开放了内核和安装器。用户很快给出了反馈：他们需要的是完整的解决方案，而非单一的技术组件。</p>
+<p>这个反馈促使我们在开源后的半年内，相继开放了 OMS、OCP、ODC 等核心工具。这些努力的目标只有一个：降低用户的使用门槛，让更多人能够真正用起来。</p>
+<p>易用性的提升是一个持续性的工程。与数据库内核的优化一样，它没有终点，只有不断逼近用户期望的过程。</p>
+<h3 id="开源战略的关键演进：代码分支的统一"><a href="#开源战略的关键演进：代码分支的统一" class="headerlink" title="开源战略的关键演进：代码分支的统一"></a>开源战略的关键演进：代码分支的统一</h3><p>开源大约一年后，我们遇到了一个严峻的工程问题：社区版与企业版的代码同步。</p>
+<p>在 OceanBase 3.X 时代，两个版本分属不同的代码分支，由不同的团队维护。这种架构导致了大量的同步成本和潜在的功能差异。用户时常会遇到社区版已修复的问题在企业版中依然存在的情况。</p>
+<p>到了 4.X 时代，我们做出了一个重要的技术决策：将社区版与企业版合并到同一个代码分支，通过编译宏来区分不同的发行版本。为了达到这个目标，我们投入了大量的研发资源对代码进行模块化改造，虽然投入的资源比较大，但它向社区传递了一个明确的信号——我们对开源的承诺是真实的、长期的。</p>
+<h3 id="四年成绩：规模化验证"><a href="#四年成绩：规模化验证" class="headerlink" title="四年成绩：规模化验证"></a>四年成绩：规模化验证</h3><p>截至目前，OceanBase 开源已经四年，部署量突破 10 万套，企业用户超过 2000 家。从增长曲线来看，前年 6000 套，去年 3 万套，今年突破 10 万套——这是一个指数级的增长态势。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/02.jpeg" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<p>在国产数据库领域，除 PostgreSQL 和 MySQL 生态外，OceanBase 社区的规模是最大的。这组数据说明，开源策略得到了市场的验证。</p>
+<p>但规模的增长并不意味着挑战的消失。恰恰相反，最大的挑战正在到来。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/03.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="AI-重构基础设施的底层逻辑"><a href="#AI-重构基础设施的底层逻辑" class="headerlink" title="AI 重构基础设施的底层逻辑"></a>AI 重构基础设施的底层逻辑</h2><h3 id="GenAI：不是工具升级，而是基础设施的代际更替"><a href="#GenAI：不是工具升级，而是基础设施的代际更替" class="headerlink" title="GenAI：不是工具升级，而是基础设施的代际更替"></a>GenAI：不是工具升级，而是基础设施的代际更替</h3><p>观察一组数据：ChatGPT 发布 17 个月后，月活用户突破 8 亿，年搜索量达到谷歌的 5.5 倍。</p>
+<p>这组数据的意义不在于某个产品的成功，而在于它揭示了一个趋势：GenAI 正在成为新一代基础设施的核心。这不是工具层面的迭代升级，而是整个技术栈的代际更替。</p>
+<p>对于数据库而言，这意味着什么？意味着我们必须重新思考数据库的核心价值主张。</p>
+<h3 id="AI-应用：从概念验证到规模落地"><a href="#AI-应用：从概念验证到规模落地" class="headerlink" title="AI 应用：从概念验证到规模落地"></a>AI 应用：从概念验证到规模落地</h3><p>AI 的大规模落地，最终要通过应用来实现。只有应用才能将 AI 的能力转化为端到端的生产力提升。</p>
+<p>以 AI Coding 为例。使用过这类工具的开发者会有一个共同的感受：这是两个完全不同的世界。这种体验上的断层，正是 AI 应用价值的直观体现。</p>
+<h3 id="AI-时代对数据库的三重挑战"><a href="#AI-时代对数据库的三重挑战" class="headerlink" title="AI 时代对数据库的三重挑战"></a>AI 时代对数据库的三重挑战</h3><p>纵观全球 AI 数据库领域的技术领先者，会发现他们都在回应三个共同的挑战：数据的融合、模型的融合、对开发者的快速响应。</p>
+<p>这三个方向，构成了 AI 时代数据库演进的核心命题。OceanBase 的回应，就是 seekdb。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/04.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="OceanBase-应对-AI-时代数据挑战的解法：seekdb"><a href="#OceanBase-应对-AI-时代数据挑战的解法：seekdb" class="headerlink" title="OceanBase 应对 AI 时代数据挑战的解法：seekdb"></a>OceanBase 应对 AI 时代数据挑战的解法：seekdb</h2><p>seekdb 的定位是 AI 原生混合搜索数据库。理解这个定位，需要从三个维度展开。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/05.jpeg" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h3 id="数据融合：多模态存储与混合搜索"><a href="#数据融合：多模态存储与混合搜索" class="headerlink" title="数据融合：多模态存储与混合搜索"></a>数据融合：多模态存储与混合搜索</h3><p><strong>需求的真实来源</strong></p>
+<p>数据融合的需求，源于业务场景的真实演变，而非技术团队的自我想象。</p>
+<p>我们与内部多个大规模业务团队进行过深入交流——钉钉、飞猪等日活过亿、数据量达 PB 级别的业务。这些业务处于技术应用的最前沿，他们遇到的问题往往预示着整个行业即将面临的挑战。</p>
+<p>以飞猪为例，他们在向量搜索场景中遇到了一个典型问题：单纯的向量相似度检索无法满足业务需求。他们需要对标量数据的每一行设置权重，需要实现复杂的 Trigger 逻辑来动态调整搜索策略。换言之，向量检索必须与结构化数据的精确过滤深度结合，才能产出真正有业务价值的结果。</p>
+<p>这不是个案。当 RAG 和搜索场景进入深水区，几乎所有团队都会遇到类似的问题。</p>
+<p><strong>从单一索引到混合检索</strong></p>
+<p>传统数据库的设计假设是：不同类型的数据使用不同的索引，彼此相对独立。全文索引处理文本，B+ 树索引处理结构化数据，它们各司其职。</p>
+<p>但 AI 时代的数据使用方式打破了这个假设。一个典型的 AI 应用查询可能同时涉及：向量相似度匹配（语义理解）、全文检索（关键词匹配）、结构化过滤（时间、地点、类别等约束）、JSON 字段的嵌套查询、GIS 空间计算。这些不同类型的检索需要在一个查询中协同工作，并且需要统一的相关性排序。</p>
+<p>这就是混合搜索的本质：不是简单地把多种索引堆叠在一起，而是让它们在查询层面实现真正的融合，产出统一的、业务可用的结果。</p>
+<p><strong>深水区的技术挑战</strong></p>
+<p>混合搜索带来的技术挑战是多维度的。</p>
+<p>首先是数据理解的深度。当底层数据的使用方式发生变化，编程接口也必须随之演进。开发者需要新的表达方式来描述复杂的混合查询意图，这对 API 设计提出了很高的要求。</p>
+<p>其次是性能优化的复杂度。不同类型的索引有不同的性能特征，如何在混合查询中找到最优的执行路径，是一个复杂的优化问题。</p>
+<p>最后是一致性保障。多模态数据的事务一致性如何保证？当向量索引和结构化索引需要同时更新时，如何确保数据的完整性？</p>
+<p><strong>这只是起点</strong></p>
+<p>今天我们看到的全文索引、向量索引、JSON、GIS 的混合检索，只是这个演进过程的起点。</p>
+<p>未来的数据融合会更深度、更灵活。我们可以预见的方向包括：更多模态数据的支持（音频、视频的原生理解）、更智能的查询理解（自然语言到混合查询的自动转换）、更动态的索引策略（根据查询模式自动优化）。</p>
+<p>这是 AI 时代对数据库的内在要求，也是 seekdb 持续演进的方向。</p>
+<h3 id="模型融合：AI-Inside-的技术路径"><a href="#模型融合：AI-Inside-的技术路径" class="headerlink" title="模型融合：AI Inside 的技术路径"></a>模型融合：AI Inside 的技术路径</h3><p><strong>行业趋势的观察</strong></p>
+<p>观察 Oracle、Snowflake、Databricks 等企业的技术路线图，会发现 AI Inside 正在成为数据库基础设施的重要方向。</p>
+<p>所谓 AI Inside，核心理念是将 AI 能力内置到数据库引擎中，而非作为外部服务调用。这意味着数据库不再仅仅是数据的存储和检索系统，而是具备了理解数据、生成数据、推理数据的能力。</p>
+<p>坦率地说，这个领域目前还处于早期探索阶段。包括上述巨头在内，都还在寻找最优的技术路径。OceanBase 也是如此，seekdb 的 AI Inside 能力刚刚起步。</p>
+<p>但方向的确定性是清晰的。这不是”要不要做”的问题，而是”如何做好”的问题。</p>
+<p><strong>用户视角的终极体验</strong></p>
+<p>理解 AI Inside 的价值，最好的方式是从用户视角出发。</p>
+<p>用户真正需要的体验是什么？是 “Document in, Data out”——输入自然语言描述的需求，直接获得可用的数据结果。用户不应该需要理解底层的数据模型，不应该需要编写复杂的查询语句，不应该需要手动组合多个 API 调用。</p>
+<p>举一个具体的例子。假设用户想要查询”过去一个月销售额增长最快的产品类别，排除季节性因素的影响”。在传统模式下，这个查询需要：编写 SQL 聚合查询、实现季节性调整的统计算法、可能还需要调用外部的时间序列分析服务。</p>
+<p>在 AI Inside 的理想状态下，用户只需要用自然语言描述这个需求，数据库内置的 AI 能力会自动完成：理解查询意图、生成执行计划、调用内置的统计分析能力、返回最终结果。</p>
+<p>这是三句话完成数据查询的愿景背后的技术含义。</p>
+<p><strong>AI Inside 的技术内涵</strong></p>
+<p>实现 AI Inside 需要在多个技术层面进行深度整合。</p>
+<p>第一是自然语言理解与查询生成。数据库需要理解用户的自然语言输入，并将其转换为可执行的查询计划。这不是简单的 Text-to-SQL，而是需要理解业务语境、处理模糊表达、支持多轮交互。</p>
+<p>第二是内置的向量计算能力。向量是 AI 时代数据的核心表示形式。数据库需要原生支持向量的存储、索引、计算，而非依赖外部的向量数据库。</p>
+<p>第三是模型推理的本地化。将模型推理能力集成到数据库引擎中，可以避免数据在数据库和 AI 服务之间的频繁传输，大幅降低延迟并提高安全性。</p>
+<p>第四是智能化的查询优化。利用 AI 能力来优化查询执行计划，根据数据分布和查询模式动态调整策略。</p>
+<p>第五是数据增强与生成。数据库具备对数据进行自动标注、增强、甚至生成的能力，为下游 AI 应用提供更高质量的数据。</p>
+<p><strong>seekdb 的技术布局</strong></p>
+<p>与模型的深度融合，是我们做 seekdb 的核心技术方向之一。</p>
+<p>在当前版本中，seekdb 已经具备了基础的 AI Inside 能力：原生的向量数据类型和索引、内置的 Embedding 生成、简化的自然语言查询接口。</p>
+<p>在未来的路线图中，我们会持续强化这个方向：更强大的自然语言理解、更多预置的 AI 函数、更深度的模型集成、更智能的自动优化。</p>
+<p>这是一个需要长期投入的方向，但也是数据库在 AI 时代必须具备的核心能力。竞争的焦点在于谁能更早、更好地实现它。</p>
+<h3 id="轻量化：重新定义开发者体验"><a href="#轻量化：重新定义开发者体验" class="headerlink" title="轻量化：重新定义开发者体验"></a>轻量化：重新定义开发者体验</h3><p><strong>应用开发者决定数据库的未来</strong></p>
+<p>回顾历史，20 年前 LAMP 架构的出现，让 MySQL 占据了中国互联网几乎全部的数据库市场份额。这个现象的本质是：应用开发者决定了数据库的选型走向。</p>
+<p>传统场景下，DBA 选择数据库的核心标准是成熟稳定。但在 AI 时代，如果要赢得开发者，就必须满足他们的核心诉求：更快的迭代速度、更低的使用门槛、更轻的资源占用。</p>
+<p><strong>架构层面的彻底重构</strong></p>
+<p>OceanBase 长期以来的一个目标是实现 1C 几 G 资源下的运行。过去 2 年，我们投入了大量努力，不断给 OceanBase 瘦身，但这个目标始终没有彻底实现。</p>
+<p>seekdb 选择了一条更彻底的路径：完全抛开历史包袱，大刀阔斧进行设计，我们裁掉了分布式架构、多租户、RS 部分模块（集群管理）、分布式事务等复杂组件，大幅精简了代码量。</p>
+<p>最终的结果是：OceanBase 最小需要 2C6G 资源，seekdb 最小只需要 1C2G（实际可以把资源占用配置成更小，大家不妨一试），支持秒级启动和嵌入式部署。嵌入式能力将打开端云一体的场景空间，这在 IoT 等领域有广阔的应用前景。</p>
+<p><strong>开发体验的重新设计</strong></p>
+<p>我们为 seekdb 设计了全新的 SDK，相比原有的 Python SDK 更加简洁——三行代码即可完成一个基础应用。安装流程也进行了全面简化。</p>
+<p><strong>迭代速度的根本性提升</strong></p>
+<p>上述所有改进，最终指向一个核心目标：更快地响应开发者需求。</p>
+<p>OceanBase 的分布式版本承载了金融级的高可用、强一致性等要求。这些要求决定了它的架构复杂度。数据库中最复杂的模块是事务管理，分布式事务更是复杂性的顶峰——它涉及 RPC、大事务恢复等一系列技术难题。</p>
+<p>seekdb 裁掉这些模块后，可以实现真正的轻装迭代，快速响应开发者的反馈和需求。</p>
+<h3 id="开放协议与生态战略"><a href="#开放协议与生态战略" class="headerlink" title="开放协议与生态战略"></a>开放协议与生态战略</h3><p>seekdb 采用 Apache 2.0 协议。相比其他开源协议，Apache 2.0 对所有用户更加友好，尤其有利于海外市场的拓展。生态建设是 seekdb 的核心战略方向。</p>
+<h3 id="seekdb-与-OceanBase-的定位区分"><a href="#seekdb-与-OceanBase-的定位区分" class="headerlink" title="seekdb 与 OceanBase 的定位区分"></a>seekdb 与 OceanBase 的定位区分</h3><p>seekdb 的定位可以用两个关键词概括：更 AI Native、更轻量。</p>
+<p>具体的选型建议是：数据量大、需要分布式能力的场景，推荐 OceanBase；数据量轻量或者更偏 AI 类需求的场景，推荐 seekdb。seekdb 会在 AI 方向上保持更快的迭代节奏，更快地满足这一领域的用户需求。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/06.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="seekdb-之外：构建完整的-AI-开发者支持体系"><a href="#seekdb-之外：构建完整的-AI-开发者支持体系" class="headerlink" title="seekdb 之外：构建完整的 AI 开发者支持体系"></a>seekdb 之外：构建完整的 AI 开发者支持体系</h2><h3 id="AI-应用的三大热点方向"><a href="#AI-应用的三大热点方向" class="headerlink" title="AI 应用的三大热点方向"></a>AI 应用的三大热点方向</h3><p>当前 AI 领域最活跃的三个方向是 Agent、RAG 和 Memory。几乎所有主要厂商都在这三个方向上进行布局。对于 OceanBase 而言，除了 seekdb 本身，我们也在这些领域进行了系统性的投入。</p>
+<h3 id="PowerRAG：站在巨人肩膀上的创新"><a href="#PowerRAG：站在巨人肩膀上的创新" class="headerlink" title="PowerRAG：站在巨人肩膀上的创新"></a>PowerRAG：站在巨人肩膀上的创新</h3><p>PowerRAG 是基于 RAGFlow 的二次开发项目。PowerRAG 的价值在于在此基础上进行企业级的增强。</p>
+<p>主要的增强方向包括：更好的企业级适配（高可用、权限管理等特性）、丰富的组件和插件支持（如 DeepSeek OCR、MinerU），这些能力在企业级 RAG 场景中非常关键。</p>
+<h3 id="PowerMem：让-AI-应用更省-Token"><a href="#PowerMem：让-AI-应用更省-Token" class="headerlink" title="PowerMem：让 AI 应用更省 Token"></a>PowerMem：让 AI 应用更省 Token</h3><p>PowerMem 是我们同期开源的 Memory 项目。它的核心价值是显著降低 AI 应用的 Token 消耗——相比 OpenAI 的 Memory 方案，可以节省 96% 的 Token。</p>
+<p>这个效果是如何实现的？主要有以下几个技术手段：智能记忆管理、分层记忆架构、基于 seekdb 内核的混合检索、Prompt 层面的深度优化、多模态支持。此外，我们也在探索 Graph 能力，以支持 AI Inside、千人千面等新型业务场景。</p>
+<h3 id="seekdb-Roadmap：开发者与生态为核心"><a href="#seekdb-Roadmap：开发者与生态为核心" class="headerlink" title="seekdb Roadmap：开发者与生态为核心"></a>seekdb Roadmap：开发者与生态为核心</h3><p>相比 OceanBase，seekdb 会更聚焦于开发者和生态。我们将积极与上下游生态伙伴合作，尤其期望能与 AI 开源项目、国内头部开源项目和全球顶级开源项目建立深度合作。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/07.jpeg" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<p>社区很多朋友已经了解，今年我已经在海外工作过一段时间，明年预计会有更多时间在全球化上。这不意味着国内支持的减少——社区团队会一如既往地服务好大家。同时，我们会投入更多资源去拓展和打通全球化开发者生态，让 OceanBase 更开发者友好。</p>
+<p>我一直有一个判断：能够走出国门的中国数据库，必然是经过严苛市场考验的优秀产品。在中国这样竞争激烈的市场环境中存活并发展起来的数据库，到全球市场往往更具有显著的竞争优势。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/08.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="未来：seekdb-的成长空间"><a href="#未来：seekdb-的成长空间" class="headerlink" title="未来：seekdb 的成长空间"></a>未来：seekdb 的成长空间</h2><p>今天的 seekdb，可以理解为 OceanBase 生态中的一个新生成员。OceanBase 积累了 15 年，已经具备了相当的规模和影响力。seekdb 则刚刚起步。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/09.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<p>但我们对未来的判断是：seekdb 的成长空间将充满想象。</p>
+<p>这个判断基于两个基本事实。第一，在数据库市场中，集中数据库市场还是很大的，这将帮助我们拓展一个更大的市场空间的可能性。第二，AI 是下一个时代的分水岭，而 seekdb 继承了 OceanBase 的可靠性、稳定性和强一致的 15 年的基础能力，在 AI 这个方向上具有先天优势。</p>
+<p>未来，seekdb 将在 AI 的赛道上不断快速迭代，然后不断把沉淀的 AI 能力反哺给 OceanBase，更好地满足更多企业级客户在关键业务负载、实时分析和 AI 搜索上的多元需求。</p>
+<p><img data-src="/img/why-oceanbase-opensource-seekdb/10.png" alt="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？"></p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回到开篇的三个问题。</p>
+<p><strong>seekdb 为什么开源？</strong> 因为开源是 OceanBase 的核心战略，数据库作为基础设施必须与用户和生态共同成长。</p>
+<p><strong>seekdb 与 OceanBase 的定位有何区别？</strong> seekdb 更 AI Native、更轻量，更面向 AI 时代的开发者；OceanBase 则主要通过一体化的能力，全方位满足企业级客户在关键业务负载、数据实时分析和 AI 搜索上的多元需求。</p>
+<p><strong>seekdb 的开源是否具有长期性？</strong> 是的，它是战略级的投入。正如 OceanBase 开源四年后依然在持续成长，seekdb 也将获得长期、持续的投入。</p>
+<p>开源不是终点，而是起点。seekdb 的开源，是 OceanBase 面向 AI 时代的战略选择。我们期待与社区一起，见证 seekdb 从起步走向成熟。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E5%BC%80%E6%BA%90/" rel="tag"># 开源</a>
+              <a href="/tags/AI-%E5%8E%9F%E7%94%9F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI 原生数据库</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/PowerRAG/" rel="tag"># PowerRAG</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-21-oceanbase-session-id-mystery/" rel="prev" title="OceanBase Session ID 之谜">
+                  <i class="fa fa-angle-left"></i> OceanBase Session ID 之谜
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-28-oceanbase-handson-ai-workshop/" rel="next" title="OceanBase 年度发布会 Hands-on AI Workshop 回顾">
+                  OceanBase 年度发布会 Hands-on AI Workshop 回顾 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

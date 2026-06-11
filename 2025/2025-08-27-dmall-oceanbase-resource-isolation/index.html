@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="多点DMALL分享零售SaaS场景下从MySQL迁移到OceanBase的实践：借助多租户资源隔离、透明扩缩容与高压缩比，存储成本节省超80%，实现降本提效与低成本系统升级。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级">
+<meta property="og:url" content="https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="多点DMALL分享零售SaaS场景下从MySQL迁移到OceanBase的实践：借助多租户资源隔离、透明扩缩容与高压缩比，存储成本节省超80%，实现降本提效与低成本系统升级。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/01.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/02.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/03.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/04.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/05.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/06.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/07.png">
+<meta property="og:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/08.png">
+<meta property="article:published_time" content="2025-08-27T00:28:35.000Z">
+<meta property="article:modified_time" content="2025-08-27T01:17:07.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL迁移">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="多点DMALL">
+<meta property="article:tag" content="多租户">
+<meta property="article:tag" content="资源隔离">
+<meta property="article:tag" content="降本增效">
+<meta property="article:tag" content="零售SaaS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/","path":"2025/2025-08-27-dmall-oceanbase-resource-isolation/","title":"多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%A4%9A%E7%82%B9DMALL%E9%9D%A2%E4%B8%B4%E7%9A%84%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">一、多点DMALL面临的挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E7%B3%BB%E7%BB%9F%E5%A4%8D%E6%9D%82%E5%BA%A6%E9%AB%98"><span class="nav-number">1.1.</span> <span class="nav-text">（一）系统复杂度高</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E4%B8%9A%E5%8A%A1%E5%A2%9E%E9%95%BF%E5%BF%AB%EF%BC%8C%E6%B0%B4%E5%B9%B3%E6%89%A9%E5%B1%95%E9%9C%80%E6%B1%82%E5%A2%9E%E5%A4%9A"><span class="nav-number">1.2.</span> <span class="nav-text">（二）业务增长快，水平扩展需求增多</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E9%9C%80%E8%A6%81%E5%9C%A8%E5%90%8C%E4%B8%80%E4%B8%AA%E9%9B%86%E7%BE%A4%E4%B8%AD%E6%9C%8D%E5%8A%A1%E5%A4%A7%E9%87%8F%E5%95%86%E5%AE%B6"><span class="nav-number">1.3.</span> <span class="nav-text">（三）需要在同一个集群中服务大量商家</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E8%B5%84%E6%BA%90%E6%88%90%E6%9C%AC%E9%AB%98%E6%98%82"><span class="nav-number">1.4.</span> <span class="nav-text">（四）资源成本高昂</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E8%BF%90%E7%BB%B4%E6%88%90%E6%9C%AC%E5%B1%85%E9%AB%98%E4%B8%8D%E4%B8%8B"><span class="nav-number">1.5.</span> <span class="nav-text">（五）运维成本居高不下</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81OceanBase%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%BC%98%E5%8A%BF%E4%B8%8E%E9%80%89%E6%8B%A9"><span class="nav-number">2.</span> <span class="nav-text">二、OceanBase数据库的优势与选择</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">2.1.</span> <span class="nav-text">（一）分布式数据库的优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%9F%BA%E4%BA%8E%E4%B8%9A%E5%8A%A1%E7%9A%84%E9%80%89%E5%9E%8B%E8%80%83%E8%99%91%E5%9B%A0%E7%B4%A0"><span class="nav-number">2.2.</span> <span class="nav-text">（二）基于业务的选型考虑因素</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E4%BA%A7%E5%93%81%E9%80%89%E5%9E%8B%E6%B5%8B%E8%AF%95%E6%95%B0%E6%8D%AE"><span class="nav-number">2.3.</span> <span class="nav-text">（三）产品选型测试数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89OceanBase-%E4%B8%8E-MySQL-%E8%A1%A8%E7%A9%BA%E9%97%B4%E5%AF%B9%E6%AF%94"><span class="nav-number">2.4.</span> <span class="nav-text">（三）OceanBase 与 MySQL 表空间对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89-OceanBase%E9%80%89%E7%94%A8%E5%8E%9F%E5%9B%A0"><span class="nav-number">2.5.</span> <span class="nav-text">（四） OceanBase选用原因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89-OceanBase%E9%80%89%E7%94%A8%E6%80%A7%E8%83%BD"><span class="nav-number">2.6.</span> <span class="nav-text">（五） OceanBase选用性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%85%AD%EF%BC%89OceanBase%E9%80%89%E7%94%A8%E6%88%90%E6%9C%AC"><span class="nav-number">2.7.</span> <span class="nav-text">（六）OceanBase选用成本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%A4%9A%E7%82%B9DMALL%E5%BA%94%E7%94%A8OceanBase%E7%9A%84%E5%AE%9E%E8%B7%B5"><span class="nav-number">3.</span> <span class="nav-text">三、多点DMALL应用OceanBase的实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89OceanBase%E5%9C%A8%E5%A4%9A%E7%82%B9DMALL%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E4%B8%AD%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">3.1.</span> <span class="nav-text">（一）OceanBase在多点DMALL业务场景中的优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E4%BB%8EMySQL%E5%88%B0OceanBase%E7%9A%84%E8%BF%81%E7%A7%BB%E5%AE%9E%E8%B7%B5"><span class="nav-number">3.2.</span> <span class="nav-text">（二）从MySQL到OceanBase的迁移实践</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89OceanBase%E7%9A%84%E6%8C%81%E7%BB%AD%E8%BF%9B%E5%8C%96%E4%B8%8E%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="nav-number">3.3.</span> <span class="nav-text">（三）OceanBase的持续进化与未来展望</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81OceanBase%E5%9C%A8%E5%A4%9A%E7%A7%9F%E6%88%B7%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB%E5%AE%9E%E8%B7%B5"><span class="nav-number">4.</span> <span class="nav-text">四、OceanBase在多租户架构下的资源隔离实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E7%A7%9F%E6%88%B7%E4%B9%8B%E9%97%B4%E7%9A%84%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB%E8%83%BD%E5%8A%9B"><span class="nav-number">4.1.</span> <span class="nav-text">（一）租户之间的资源隔离能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%A7%9F%E6%88%B7%E7%9A%84%E5%BF%AB%E9%80%9F%E5%BC%B9%E6%80%A7%E4%BC%B8%E7%BC%A9%E8%83%BD%E5%8A%9B"><span class="nav-number">4.2.</span> <span class="nav-text">（二）租户的快速弹性伸缩能力</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">五、总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级 | Longda's Interesting World">
+      <meta itemprop="description" content="多点DMALL分享零售SaaS场景下从MySQL迁移到OceanBase的实践：借助多租户资源隔离、透明扩缩容与高压缩比，存储成本节省超80%，实现降本提效与低成本系统升级。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-27 08:28:35" itemprop="dateCreated datePublished" datetime="2025-08-27T08:28:35+08:00">2025-08-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">杨家鑫</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>6.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>24 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">多点DMALL分享零售SaaS场景下从MySQL迁移到OceanBase的实践：借助多租户资源隔离、透明扩缩容与高压缩比，存储成本节省超80%，实现降本提效与低成本系统升级。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级","description":"多点DMALL分享零售SaaS场景下从MySQL迁移到OceanBase的实践：借助多租户资源隔离、透明扩缩容与高压缩比，存储成本节省超80%，实现降本提效与低成本系统升级。","image":"https://ilongda.com/img/8-27-dmall-oceanbase-resource-isolation/01.png","wordCount":6618,"datePublished":"2025-08-27T00:28:35.000Z","dateModified":"2025-08-27T01:17:07.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/"},"url":"https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","多租户","降本增效","多点DMALL","资源隔离","零售SaaS","MySQL迁移"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级","item":"https://ilongda.com/2025/2025-08-27-dmall-oceanbase-resource-isolation/"}]}</script>
+<p>本文摘自<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vbGVhcm5pbmc/c2Vzc2lvbmlkPSNlYm9vaw==">《OceanBase社区版在泛互场景的应用案例研究》电子书<i class="fa fa-external-link-alt"></i></span>，点击链接获取完整版内容。</p>
+<p>在当今数字化转型的大潮中，企业面临着诸多挑战，尤其是在零售SaaS场景下，数据处理的复杂性和成本问题尤为突出。作为零售数字化领域的先锋，我们不仅是国内顶尖的全局数字化解决方案提供商，更在亚洲市场上占据领先地位。我们拥有上百个全渠道系统，涵盖会员管理、商品、营销、O2O、POS系统、WMS物流、AI出清、AI导购等多个关键环节，为零售企业提供全方位的数字化支持。我们的客户遍布国内、东南亚及欧洲等地，其中包括知名网红商家、全国性头部连锁便利店、合资连锁商超等。在业务高速增长的背后，我们也面临着来自零售SaaS场景和业务系统瓶颈的挑战。</p>
+<p>本文将结合多点DMALL面临的挑战、OceanBase数据库的优势与选择、多点DMALL应用OceanBase的实践、OceanBase在多租户架构下的资源隔离实践等内容，分享我们借助OceanBase升级数据库架构、简化技术栈，从而实现降本提效的实践经验。</p>
+<span id="more"></span>
+
+<h2 id="一、多点DMALL面临的挑战"><a href="#一、多点DMALL面临的挑战" class="headerlink" title="一、多点DMALL面临的挑战"></a>一、多点DMALL面临的挑战</h2><h3 id="（一）系统复杂度高"><a href="#（一）系统复杂度高" class="headerlink" title="（一）系统复杂度高"></a>（一）系统复杂度高</h3><p>多点 DMALL 采用了微服务架构，其全流程业务环节繁多，系统应用规模庞大。与之对应的是，数据库数量已然超过 500 个。此外，随着系统持续迭代升级，数据规模呈现出不断增长的态势，这使得运维管理的难度日益增大。就如同在一张庞大而复杂的网络中，每一个节点都承载着关键业务，牵一发而动全身，运维人员需要时刻保持警惕，以应对可能出现的各种问题。</p>
+<h3 id="（二）业务增长快，水平扩展需求增多"><a href="#（二）业务增长快，水平扩展需求增多" class="headerlink" title="（二）业务增长快，水平扩展需求增多"></a>（二）业务增长快，水平扩展需求增多</h3><p>随着业务的蓬勃发展，我们积极制定了出海战略，旨在海外开拓新的业务版图。然而，基于地区数据安全法的严格要求，必须独立部署一整套全新的系统来承接海外业务流量。在初始部署阶段，由于难以精准预估后期业务规模以及数据增长速度，数据库资源在初始阶段的分配成为了一大难题。为了有效控制成本，常见的做法是先分配较少的部署资源。但很快，业务的快速增长带来了数据的迅猛增长，此时如何快速实现扩容，成为了摆在面前的一道棘手难题。这就好比在高速行驶的列车上，突然发现前方轨道需要紧急拓宽，而时间却十分紧迫。</p>
+<h3 id="（三）需要在同一个集群中服务大量商家"><a href="#（三）需要在同一个集群中服务大量商家" class="headerlink" title="（三）需要在同一个集群中服务大量商家"></a>（三）需要在同一个集群中服务大量商家</h3><p>便利店和连锁商超的 SKU（最小存货单位）规模差异较大，从几千到几万不等。在这种情况下，很难为每个商家独立部署一套系统。因此，我们的SaaS系统需要支持上百个中小商家客户，所有商家产生的数据在底层共享数据库资源。这就如同在一个大仓库中，不同商家的货物需要合理存放和管理，既要保证各自的独立性，又要充分利用仓库的空间，实现资源的高效共享。</p>
+<h3 id="（四）资源成本高昂"><a href="#（四）资源成本高昂" class="headerlink" title="（四）资源成本高昂"></a>（四）资源成本高昂</h3><p>零售作为与民生息息相关的行业，其业务系统必须保持全天候运行。无论是供应链的采购、销售、物流环节，还是电商业务，除白天正常作业外，夜间乃至凌晨也依然活跃。这导致大量数据源源不断地涌入数据库，使得资源成本如同一条不断上升的斜线，呈现出无限制增长的态势。多点 DMALL 主要使用六种开源数据库，在整个生产环境中，数据库实例已超过一万个，数据空间规模也接近 10PB 级别。如此庞大的数据量和复杂的数据库环境，无疑给资源成本控制带来了巨大挑战。</p>
+<h3 id="（五）运维成本居高不下"><a href="#（五）运维成本居高不下" class="headerlink" title="（五）运维成本居高不下"></a>（五）运维成本居高不下</h3><p>在使用多种数据库的过程中，我们遭遇了一系列棘手问题，包括技术复杂性带来的难题、高昂的运维成本、烦琐的管理成本、巨大的学习成本以及复杂的交付成本。一套私有化环境的交付涉及上百个系统，以及上百套数据库集群和数百个数据库实例。这就好比搭建一座宏伟的建筑，每一个部件都需要精心安装和调试，任何一个环节出现问题都可能影响整个系统的正常运行，因此运维成本始终居高不下。</p>
+<h2 id="二、OceanBase数据库的优势与选择"><a href="#二、OceanBase数据库的优势与选择" class="headerlink" title="二、OceanBase数据库的优势与选择"></a>二、OceanBase数据库的优势与选择</h2><h3 id="（一）分布式数据库的优势"><a href="#（一）分布式数据库的优势" class="headerlink" title="（一）分布式数据库的优势"></a>（一）分布式数据库的优势</h3><p>为了应对上述挑战，我们开始了数据库选型。由于分布式数据库支持更大的容量规模，具备透明扩展的能力，提供金融级数据安全，并且可以提高开发效率以及降低运维成本，能够更好地支撑业务发展。因此，我们坚定地认为它是数据库未来的趋势，此次选型仅调研了分布式数据库产品。</p>
+<h3 id="（二）基于业务的选型考虑因素"><a href="#（二）基于业务的选型考虑因素" class="headerlink" title="（二）基于业务的选型考虑因素"></a>（二）基于业务的选型考虑因素</h3><p>首先，从扩展性角度考虑，我们面临诸多挑战。目前，多个 MySQL 单库的数据量已超过 4 TB，并且仍在快速增长。当我们将最大的 MySQL 库切换到分布式数据库后，数据量已增长至 29 TB。面对数据的快速增长及 MySQL 容量瓶颈，DBA （数据库管理员）深感忧虑：</p>
+<ul>
+<li>一方面，我们不断敦促研发团队进行数据清理和归档，但效果往往不佳，因为他们的主要工作是业务需求迭代，难以兼顾数据清理。</li>
+<li>另一方面，考虑继续扩展磁盘空间。在云环境下，扩展空间相对容易，云厂商提供的块存储单盘容量可达 32 TB 或更大。然而，数据持续增长，仅通过扩展磁盘空间只是将问题延后，无法从根本上解决问题，未来可能会面临更大的困境。</li>
+<li>此外，我们还可以选择分库分表的方案，但这操作烦琐、风险较高，且需要耗时数月。因为该方案会损害 SQL 能力，代码改造不可避免。</li>
+</ul>
+<p>因此，我们期望利用分布式数据库透明且可扩展的能力，平稳支撑业务的快速增长。</p>
+<p>其次，从运维成本角度考虑，在保证系统稳定性的前提下，我们致力于降低运维复杂度。以 MySQL 为例，假设一个数据库（database）是一个“蛋”，一个 MySQL 实例是一个“篮子”，那么部署 1000 个数据库时，应该如何合理分配到多个 MySQL 实例中？哪些数据库应该放在同一个实例中？如果将两个对资源要求都很高的重要数据库放在同一个实例中，可能会导致资源抢占。另外，如支付类数据库，虽然数据量不大，但对业务要求极高，也不宜与其他数据库放在同一个实例中。由于业务差异、优先级不同、数据增长速度各异以及 QPS（每秒查询数） 要求不同，DBA 经常需要调整数据库分布。即便不考虑资源成本，仅运维挑战就已相当大。我们期望分布式数据库能够解决这一问题，帮助 DBA 自动调整数据库分布（见图1）。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/01.png" alt="图1 使用分布式数据库实现“自动挪蛋”示意图"></p>
+<p>图1 使用分布式数据库实现“自动挪蛋”示意图</p>
+<p>最后，从高可用角度考虑，我们期望保证集群的高可用能力。在运维 MySQL 集群时，我们通常采用 MHA、Orchestrator 等工具实现高可用，但它们都是“外挂”形式，本质上无法解决网络分区导致的脑裂问题（见图2）。因为数据库和 MHA 组件是两个独立的软件，不在同一个进程内，缺乏一致性协同控制。相比之下，MySQL 的 Group Replication 这类高可用架构更为可靠，它与 OceanBase 或 TiDB 等分布式数据库一样，基于 Paxos 或 Raft 分布式一致性协议，可以实现 RPO&#x3D;0（数据丢失为零），RTO&lt;30s（恢复时间目标小于30s）的高可用目标。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/02.png" alt="图2 使用分布式数据库实现“金融级高可用”示意图"></p>
+<p>图2 使用分布式数据库实现“金融级高可用”示意图</p>
+<h3 id="（三）产品选型测试数据"><a href="#（三）产品选型测试数据" class="headerlink" title="（三）产品选型测试数据"></a>（三）产品选型测试数据</h3><p>基于上述选型因素，我们选择了原生分布式数据库 OceanBase，并进一步对比了 OceanBase 与 MySQL 在表读写、表只读、表只写等方面 QPS的表现，以及二者在存储成本方面的差异。表1为此次产品选型测试的相关配置。</p>
+<p>表1 产品选型测试的相关配置</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>OceanBase</th>
+<th>MySQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>社区版本</td>
+<td>v4.1.0</td>
+<td>v5.7.16</td>
+</tr>
+<tr>
+<td>内存配置</td>
+<td>租户 memory_size 16GB</td>
+<td>innodb_buffer_pool_size 16GB</td>
+</tr>
+<tr>
+<td>单机器配置</td>
+<td>32C RAID10 SSD</td>
+<td>32C RAID10 SSD</td>
+</tr>
+<tr>
+<td>刷盘配置</td>
+<td>默认强制刷盘（无额外刷盘配置参数）</td>
+<td>sync_binlog&#x3D;1, innodb_flush_log_at_trx_commit&#x3D;2</td>
+</tr>
+<tr>
+<td>并发数</td>
+<td>5, 10, 20, 30, 60, 120</td>
+<td>5, 10, 20, 30, 60, 120</td>
+</tr>
+<tr>
+<td>测试模式</td>
+<td>read_write, read_only, write_only</td>
+<td>read_write, read_only, write_only</td>
+</tr>
+<tr>
+<td>单次测试时间</td>
+<td>300秒，共18种测试（并发数x测试模式）</td>
+<td>300秒，共18种测试（并发数x测试模式）</td>
+</tr>
+<tr>
+<td>测试方法</td>
+<td>使用 obd test sysbench（obd自带），包括prepare、run、cleanup步骤</td>
+<td>使用 sysbench，包括prepare、run、cleanup步骤</td>
+</tr>
+</tbody></table>
+<p>在 OceanBase 与 MySQL 配置相同的情况下，对比了包含10张3000万条记录的sysbench表，我们发现：当并发数小于20时，MySQL的表现略好于OceanBase。但无论是QPS还是延迟，随着并发数的增加，OceanBase的性能都会逐渐接近并可能超过MySQL。关于OceanBase不同配置的对比如下（见图3）。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/03.png" alt="图3 测试结果1"></p>
+<p>图3 测试结果1</p>
+<p>对于单机部署的模式，选择通过连接OBProxy访问OBServer还是直接连接OBServer，会影响其在10张3000万条记录的sysbench表读写QPS的表现。测试结果显示，直接连接OBServer的性能比通过OBProxy连接的性能高30%~50%。因此，对于单机部署的模式，我们建议直接连接OBServer，以避免通过OBProxy访问OBServer时产生的额外网络开销。</p>
+<p>在不同租户内存配置下，性能也会有所不同。测试结果显示，32GB租户内存相比16GB租户内存，性能提升约14%（见图4）。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/04.png" alt="图4 测试结果2"></p>
+<p>图4 测试结果2</p>
+<h3 id="（三）OceanBase-与-MySQL-表空间对比"><a href="#（三）OceanBase-与-MySQL-表空间对比" class="headerlink" title="（三）OceanBase 与 MySQL 表空间对比"></a>（三）OceanBase 与 MySQL 表空间对比</h3><p>在生产环境监控快照场景中，我们将20张表共计5亿数据量从MySQL迁移到OceanBase，发现表空间占用降低了60%（见图5）。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/05.png" alt="图5 表空间对比结果"></p>
+<p>图5 表空间对比结果</p>
+<p>基于上述迁移过程中的测试数据，我们最终决定在生产环境中上线OceanBase。总的来说：</p>
+<ul>
+<li>在生产环境监控快照场景中，对比MySQL存储（单副本）和OceanBase存储（单副本），我们发现OceanBase的数据压缩率达到了6:1，显示出OceanBase优秀的数据压缩能力。</li>
+<li>在单机部署并且连接OBProxy的情况下，当并发度较低时，OceanBase的QPS和平均延迟表现略逊于MySQL（但值得注意的是，OceanBase的最低QPS也过万，且租户内存越高，QPS性能越好；最低平均延迟为3ms）。然而，随着并发度的逐渐上升，OceanBase各项性能的提升比例高于MySQL。具体来说，当并发度超过200之后，OceanBase的各项性能会逼近甚至超过MySQL。</li>
+<li>MySQL采用一层架构，而OceanBase采用两层架构（由OBProxy和OBServer组成）。在单机部署时，直接连接OBServer相比通过OBProxy连接，性能会提升30%~50%。这主要是因为每多一层架构，网络层面的延迟消耗就会相应增加。</li>
+</ul>
+<h3 id="（四）-OceanBase选用原因"><a href="#（四）-OceanBase选用原因" class="headerlink" title="（四） OceanBase选用原因"></a>（四） OceanBase选用原因</h3><p>OceanBase的选用原因如下。</p>
+<p>(1)	OceanBase是单机分布式一体化数据库。这意味着它在两个方面具有显著优势：一方面，单机性能可以像MySQL单机一样实现低延迟、高性能，满足业务初期数据量较小时的极致性能需求；另一方面，分布式特性使得我们在业务高速增长期可以轻松扩展，几乎不受容量限制。这两个特性共同解决了业务在全生命周期内对性能和扩展性的需求，无需改代码、不停机即可迁移，并保证高性能。</p>
+<p>(2)	作为原生的分布式数据库，OceanBase天然具备分片自动迁移和负载均衡的可扩展能力，能够在业务无感知的情况下实现透明扩缩容。基于Paxos协议的极致优化，OceanBase 4.x版本进一步提升了系统可用性，可以做到RPO&#x3D;0，RTO&lt;8s。</p>
+<p>(3)	OceanBase通过最小化分布式开销的架构设计，保证了数据库的高性能。同时，其高压缩比相比MySQL可节省成本6倍以上。此外，OceanBase的多租户特性十分契合SaaS客户的业务场景，资源隔离和扩缩容操作非常容易。</p>
+<p>关于分布式数据库的数据处理延迟和吞吐能力，我们需要明确以下几点：内存中读写数据的延迟在0.1μs级别，SSD延迟约为0.1ms，机房内网络延迟约为0.1ms，同城机房间延迟约3ms。内存的读写延迟与SSD、网络之间相差了100~1000倍。在吞吐方面，内存读写可达到100GB&#x2F;s，而SSD约为1～2GB&#x2F;s，万兆网络约为1.2GB&#x2F;s，内存与SSD、网络之间的吞吐能力相差约100倍。</p>
+<p>值得注意的是，MySQL作为单机数据库，其InnoDB和Server层在同一进程中，数据交互非常高效，因此在性能和延迟方面表现出色。然而，对于分布式数据库而言，计算存储分离架构往往带来网络I&#x2F;O开销，这是设计上的性能瓶颈。OceanBase的独特之处在于其架构设计，将SQL引擎、存储引擎和事务引擎实现在一个进程里，OBServer既做计算又做存储。应用通过OBProxy连接OBServer集群，OBServer节点会把数据路由信息上报给OBProxy。OBProxy在接收到应用层SQL后，根据路由信息直接转发SQL到最合适的OBServer上去执行（见图6）。如果数据都在同一个OBServer节点上，那么SQL执行过程就是单机的，类似于MySQL，从而最大程度减少了网络I&#x2F;O开销。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/06.png" alt="图6 OceanBase的架构设计"></p>
+<p>图6 OceanBase的架构设计</p>
+<h3 id="（五）-OceanBase选用性能"><a href="#（五）-OceanBase选用性能" class="headerlink" title="（五） OceanBase选用性能"></a>（五） OceanBase选用性能</h3><p>当数据量较大或并发更高时，OceanBase的性能明显优于MySQL。为了理解这一现象，我们对OceanBase的架构进行了深入研究。</p>
+<p>(1)	OceanBase同时兼具单机低延时和分布式高吞吐的特性。在生产业务数据中，OceanBase的单机事务占比可以达到80%以上。这是因为OceanBase中数据分片的粒度是一个表或分区。因此，当更新的只是一张非分区表，或者分区表的单个分区时，该事务必定是单机事务。更进一步，如果事务中涉及的多个表都在同一台机器中，那么该事务也会是单机事务。</p>
+<p>(2)	通过Table group机制优化跨机join，可以将部分跨机事务优化成单机事务。分区粒度的设计保证了大部分事务是单机的。再通过Table group机制优化高频的跨机join后，单机事务占比可以进一步提升。如果整个业务中有90%以上的事务都是单机事务，那么性能自然会非常好。</p>
+<p>(3)	OceanBase系统通过区分查询的优先级，使得小查询优先执行。大查询最多只能占用30%的工作线程，这一比例可以通过large_query_worker_percentage配置进行调整。在没有小查询时，大查询可以使用到100%的工作线程。这一机制类似于高速公路的通行规则。例如，如果高速公路有三条车道，并且三条车道都有车行驶，那么后车很难超车。如果制定一个规则，让大车（大查询）只能走最右侧车道，而小车（小查询）还有两个车道可以通行，那么这样的运行机制就能有效地预防慢SQL或大查询堵塞或拖垮系统。</p>
+<p>以上三点，源于OceanBase的架构设计以及在实践中的不断优化，这些是保证其高性能的关键因素。那么，为何OceanBase能在拥有更高性能的同时，还能实现更低的成本呢？</p>
+<h3 id="（六）OceanBase选用成本"><a href="#（六）OceanBase选用成本" class="headerlink" title="（六）OceanBase选用成本"></a>（六）OceanBase选用成本</h3><p>OceanBase采用了LSM-Tree存储引擎，这一引擎同时支持编码压缩和通用压缩，因此具有极高的压缩比。根据我们的测试数据（见图7），OceanBase的集群存储空间相比MySQL可节省高达75%，从而实现了更低的成本。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/07.png" alt="图7 OceanBase与MySQL表空间与集群总存储空间测试数据"></p>
+<p>图7 OceanBase与MySQL表空间与集群总存储空间测试数据</p>
+<p>随着多点DMALL服务业务的快速发展，数据量急剧增加，节点数也呈现指数级增长。在这种情况下，MySQL的成本很快就会超过OceanBase。我们在真实生产环境中得到的测试数据显示，OceanBase的压缩比高达6倍（见图8）。未来，随着业务数据的持续增长，OceanBase可以不断地添加新节点，而其存储成本的增长速度将远远慢于MySQL。</p>
+<p><img data-src="/img/8-27-dmall-oceanbase-resource-isolation/08.png" alt="图8 OceanBase与MySQL成本测试数据"></p>
+<p>图8 OceanBase与MySQL成本测试数据</p>
+<h2 id="三、多点DMALL应用OceanBase的实践"><a href="#三、多点DMALL应用OceanBase的实践" class="headerlink" title="三、多点DMALL应用OceanBase的实践"></a>三、多点DMALL应用OceanBase的实践</h2><h3 id="（一）OceanBase在多点DMALL业务场景中的优势"><a href="#（一）OceanBase在多点DMALL业务场景中的优势" class="headerlink" title="（一）OceanBase在多点DMALL业务场景中的优势"></a>（一）OceanBase在多点DMALL业务场景中的优势</h3><p>总结而言，OceanBase数据库主要有四大优势。</p>
+<p>(1)	存储成本更低。OceanBase之所以存储成本更低，是因为它不仅采用了通用的压缩算法，还应用了先进的数据编码技术。根据我们的实践经验，将MySQL数据库迁移至OceanBase后，单副本的压缩率可接近90%，这一数据表现极为出色。</p>
+<p>(2)	混合部署更稳定。OceanBase之所以在混合部署方面表现更稳定，是因为它不仅能实现租户间的资源隔离，还能在租户内部进一步设置隔离措施，有效限制用户或库级别的I&#x2F;O和CPU消耗，从而确保系统的稳定运行。</p>
+<p>(3)	兼具低延迟和高并发的特性。OceanBase之所以能同时支持低延迟和高并发，其中一个重要原因是其可配置Primary Zone的功能。通过将主副本集中在一个OBServer节点上进行读写操作，类似于单机MySQL的读写模式，从而能够提供更低的延迟和更优的性能。而当需要应对高并发场景时，OceanBase可以灵活配置副本在多个Server节点间进行负载均衡，以支持更高的并发量。</p>
+<p>(4)	周边工具更加完善。我们广泛利用多台服务器的I&#x2F;O和CPU资源，其中OCP管理平台发挥了至关重要的作用。OCP管理平台集成了监控告警、备份恢复等丰富功能，无论是常见的还是复杂的需求，都能一应俱全地满足。在问题排查过程中，它提供的Top SQL、Slow SQL和可疑SQL分析功能尤为实用。此外，OMS数据同步功能也非常强大，支持将多种数据源的数据轻松同步至我们的OceanBase数据库。</p>
+<h3 id="（二）从MySQL到OceanBase的迁移实践"><a href="#（二）从MySQL到OceanBase的迁移实践" class="headerlink" title="（二）从MySQL到OceanBase的迁移实践"></a>（二）从MySQL到OceanBase的迁移实践</h3><p>截至目前，我们已在OceanBase上成功部署了五个业务库，总数据量达到20TB。这些业务对商家至关重要，特别是对于大型客户而言，他们的仓库与门店紧密相连，需要24小时不间断运营，包括凌晨时段。这些只是当前的部分应用场景，未来我们将继续扩大OceanBase的应用范围，将更多业务迁移到OceanBase平台上。</p>
+<p>(1)	存储成本收益显著。当我们将业务从MySQL迁移到OceanBase时，MySQL中原本2.1TB的单副本数据量，在OceanBase中锐减至252GB。这一显著变化得益于OceanBase的通用压缩和数据编码技术，使得压缩率接近惊人的90%。考虑到MySQL采用一主两副本架构，而OceanBase采用三副本架构，综合计算下来，OceanBase的整体压缩率为我们带来了超过80%的成本节省。这不仅体现在存储成本上，还显著降低了运维成本。</p>
+<p>(2)	运维更加便捷。首先，分布式数据库的扩展能力相比集中式数据库在运维上更为简单。对于DBA来说，维护并迁移一个20TB规模的数据库，在MySQL环境下至少需要40套每套1TB的MySQL实例，且迁移过程会有损，导致现有数据库连接全部中断，需要至少一名DBA全程参与。然而，在OceanBase中，由于其支持动态扩缩容和无损变更，我们只需扩容OBServer存储节点，并将域名解析到新的OBProxy上，即可实现无损迁移。此外，OceanBase基于Paxos协议，确保了数据的强一致性和安全性。其次，借助可视化管控工具，运维工作更加便利。OCP提供了备份、告警的可视化管理，以及良好的可观测性，包括Top SQL、Slow SQL的监控，并且原生支持高可用架构。为了确保管理的独立性和数据的清晰性，我们额外建立了一套与业务数据库分离的元数据数据库来支持OCP管理平台。</p>
+<p>目前，OceanBase中的TPS已达到近1500，而QPS的最高值也接近3000，表现出卓越的性能。</p>
+<h3 id="（三）OceanBase的持续进化与未来展望"><a href="#（三）OceanBase的持续进化与未来展望" class="headerlink" title="（三）OceanBase的持续进化与未来展望"></a>（三）OceanBase的持续进化与未来展望</h3><p>OceanBase自4.0版本起，已支持单机与分布式一体化架构。4.2版本正式引入了OBKV Redis支持，进一步丰富了其功能。而最新的4.3版本，更是新增了对向量化引擎和列存的支持，这一引擎正是构建AI大模型的重要基石。OceanBase正不断进化，符合未来数据库的设想。</p>
+<p>未来，我们将积极探索在更多业务场景中应用OceanBase，包括将关系型MySQL与非关系型Redis数据库迁移到OceanBase平台。通过这一迁移，我们可以有效控制资源成本的持续增长，优化资源配置，进而直接提升利润空间。</p>
+<h2 id="四、OceanBase在多租户架构下的资源隔离实践"><a href="#四、OceanBase在多租户架构下的资源隔离实践" class="headerlink" title="四、OceanBase在多租户架构下的资源隔离实践"></a>四、OceanBase在多租户架构下的资源隔离实践</h2><h3 id="（一）租户之间的资源隔离能力"><a href="#（一）租户之间的资源隔离能力" class="headerlink" title="（一）租户之间的资源隔离能力"></a>（一）租户之间的资源隔离能力</h3><p>OceanBase的多租户架构在CPU、内存、I&#x2F;O等资源上实现了物理级别的隔离。这一特性至关重要，它确保了不同租户之间的业务不会因资源争抢而相互影响，从而避免了因单个业务的问题而波及到其他租户的风险。</p>
+<h3 id="（二）租户的快速弹性伸缩能力"><a href="#（二）租户的快速弹性伸缩能力" class="headerlink" title="（二）租户的快速弹性伸缩能力"></a>（二）租户的快速弹性伸缩能力</h3><p>在OceanBase中，租户的扩容操作极为便捷。以拥有3个Zone、每个Zone包含2台机器（共6台机器）、每台机器含有1个资源单元的租户为例，若需进行水平扩容，仅需执行一条SQL语句，即可轻松添加Zone 4和Zone 5，使资源单元从6个增加至10个。同样，垂直扩容也简单易行，如初期配置的资源为2C8G，随着业务增长，若不想增加机器，只需将资源单元从2C8G升级为6C12G。这些扩容操作都是动态且无损的，业务运行完全不受影响。对于DBA而言，整个扩容过程仅需一条SQL语句即可完成，极大地减轻了工作量。因此，OceanBase的多租户能力完美契合了SaaS场景下的需求，既节省了成本，又方便了后期的扩容操作。</p>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><p>在面对零售SaaS场景下的诸多挑战时，我们选择了OceanBase数据库作为解决方案。OceanBase凭借其分布式架构、高扩展性、低运维成本、高可用性以及优秀的存储压缩能力等优势，成功帮助我们实现了租户间资源的完全隔离与低成本系统升级。通过从MySQL到OceanBase的迁移实践，我们不仅大幅降低了存储成本和运维成本，还提高了系统的稳定性和性能。同时，OceanBase在多租户架构下的资源隔离实践的应用，为我们的未来发展提供了有力的支撑。随着技术的不断发展，我们将继续与OceanBase携手共进，推动新零售行业的数字化转型和升级。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E5%A4%9A%E7%A7%9F%E6%88%B7/" rel="tag"># 多租户</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E5%A4%9A%E7%82%B9DMALL/" rel="tag"># 多点DMALL</a>
+              <a href="/tags/%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB/" rel="tag"># 资源隔离</a>
+              <a href="/tags/%E9%9B%B6%E5%94%AESaaS/" rel="tag"># 零售SaaS</a>
+              <a href="/tags/MySQL%E8%BF%81%E7%A7%BB/" rel="tag"># MySQL迁移</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-26-oceanbase-high-concurrency-performance/" rel="prev" title="OceanBase高并发场景下的性能保障">
+                  <i class="fa fa-angle-left"></i> OceanBase高并发场景下的性能保障
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-01-ash-database-monitoring/" rel="next" title="初识 ASH —— 打开数据库的「月光宝盒」">
+                  初识 ASH —— 打开数据库的「月光宝盒」 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

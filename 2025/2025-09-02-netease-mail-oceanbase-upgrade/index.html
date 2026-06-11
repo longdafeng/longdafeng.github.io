@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="网易个人邮箱将分库分表与MySQL架构升级至OceanBase,经选型对比、唯一键治理、分区索引优化及OBKV-Redis实践,实现存储成本节省72%、QPS显著提升与实时分析升级。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破">
+<meta property="og:url" content="https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="网易个人邮箱将分库分表与MySQL架构升级至OceanBase,经选型对比、唯一键治理、分区索引优化及OBKV-Redis实践,实现存储成本节省72%、QPS显著提升与实时分析升级。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/06.png">
+<meta property="article:published_time" content="2025-09-02T02:03:44.000Z">
+<meta property="article:modified_time" content="2025-09-05T02:03:44.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OBKV-Redis">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="多租户">
+<meta property="article:tag" content="数据库迁移">
+<meta property="article:tag" content="网易邮箱">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/","path":"2025/2025-09-02-netease-mail-oceanbase-upgrade/","title":"网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F%E7%8E%B0%E7%8A%B6"><span class="nav-number">2.</span> <span class="nav-text">一、数据系统现状</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%BC%95%E5%85%A5-OceanBase-%E7%9A%84%E5%8E%9F%E5%9B%A0%E4%B8%8E%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">二、引入 OceanBase 的原因与对比分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80-%E7%BD%91%E6%98%93%E4%B8%AA%E4%BA%BA%E9%82%AE%E7%AE%B1%E9%80%89%E5%9E%8B%E9%9C%80%E6%B1%82%E7%9A%84%E8%B0%83%E7%A0%94%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">(一)网易个人邮箱选型需求的调研分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C-Sysbench%E6%B5%8B%E8%AF%95%E4%B8%8E%E4%B8%A4%E6%AC%BE%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%A7%E5%93%81%E5%AF%B9%E6%AF%94"><span class="nav-number">3.2.</span> <span class="nav-text">(二)Sysbench测试与两款数据库产品对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AE%9E%E8%B7%B5"><span class="nav-number">4.</span> <span class="nav-text">三、应用场景的技术实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80-%E4%BB%8E%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E5%88%B0OceanBase%E7%9A%84%E8%BF%81%E7%A7%BB%E7%BB%8F%E9%AA%8C"><span class="nav-number">4.1.</span> <span class="nav-text">(一)从分库分表到OceanBase的迁移经验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C-OBKV%E8%90%BD%E5%9C%B0%E5%AE%9E%E8%B7%B5%E5%8F%8A%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">4.2.</span> <span class="nav-text">(二)OBKV落地实践及注意事项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8D%87%E7%BA%A7%E6%95%88%E6%9E%9C-%E7%A8%B3%E5%AE%9A%E5%8F%AF%E9%9D%A0-%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88"><span class="nav-number">5.</span> <span class="nav-text">四、数据库升级效果:稳定可靠,降本增效</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破 | Longda's Interesting World">
+      <meta itemprop="description" content="网易个人邮箱将分库分表与MySQL架构升级至OceanBase,经选型对比、唯一键治理、分区索引优化及OBKV-Redis实践,实现存储成本节省72%、QPS显著提升与实时分析升级。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-02 10:03:44" itemprop="dateCreated datePublished" datetime="2025-09-02T10:03:44+08:00">2025-09-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">佐菲、长乐</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.8k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>17 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">网易个人邮箱将分库分表与MySQL架构升级至OceanBase,经选型对比、唯一键治理、分区索引优化及OBKV-Redis实践,实现存储成本节省72%、QPS显著提升与实时分析升级。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破","description":"网易个人邮箱将分库分表与MySQL架构升级至OceanBase,经选型对比、唯一键治理、分区索引优化及OBKV-Redis实践,实现存储成本节省72%、QPS显著提升与实时分析升级。","image":"https://ilongda.com/img/2025-09-02-netease-mail-oceanbase-upgrade/01.png","wordCount":4760,"datePublished":"2025-09-02T02:03:44.000Z","dateModified":"2025-09-05T02:03:44.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/"},"url":"https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/","inLanguage":"zh-CN","keywords":["OceanBase","多租户","数据库迁移","分库分表","降本增效","网易邮箱","OBKV-Redis"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"网易个人邮箱数据库升级 OceanBase:可靠性与稳定性双突破","item":"https://ilongda.com/2025/2025-09-02-netease-mail-oceanbase-upgrade/"}]}</script>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>自1997年诞生至今,网易个人邮箱已在互联网的浪潮中走过了二十余载,凭借着卓越的服务与技术实力,发展成为国内乃至全球极具影响力的邮箱品牌。网易旗下拥有六个独具特色的邮箱域,分别为163、126、yeah、vip163、vip126和vip188,每个邮箱域都精准定位不同的用户群体,满足多样化的需求。</p>
+<p>经过多年的积累与拓展,网易个人邮箱积累了庞大的用户量,用户遍布全球各个角落。其业务场景丰富且复杂,涵盖了个人日常通信、商务往来、营销推广、信息通知等诸多领域。在如此庞大且复杂的业务体系下,对数据库的性能、稳定性、扩展性等方面都提出了极高的要求。本文分享网易个人邮箱数据库方案从分库分表数据库和MySQL升级到OceanBase的解决思路与技术实践经验。</p>
+<span id="more"></span>
+
+<h2 id="一、数据系统现状"><a href="#一、数据系统现状" class="headerlink" title="一、数据系统现状"></a>一、数据系统现状</h2><p>上文提到网易个人邮箱包括163,126,yeah,vip163,vip126,vip188六个核心邮箱域,各域均构建了独立的数据系统,支撑邮件收发,用户管理等OLTP业务及日志分析,流量统计等 OLAP 场景。在多年高速发展过程中,数据规模持续增长,为充分挖掘技术演进潜力、构建更高效的数据架构,我们积极探索分布式数据库的创新实践。原有系统在以下方面存在优化空间。</p>
+<p><strong>1. 存储资源效率提升需求。</strong></p>
+<p>随着业务数据规模突破 TB 级并保持高速增长,传统数据库在存储资源优化上面临新挑战。尤其在实现高可用架构(如主从复制)时,资源复用能力需进一步增强。</p>
+<p><strong>2. 全局资源动态调度能力构建。</strong></p>
+<p>各邮箱域业务特性差异显著,资源分配需兼顾安全隔离与弹性调度。如何实现跨域资源灵活调配,提升整体资源池利用率,成为架构升级的重要方向。</p>
+<p><strong>3. 水平扩展能力升级。</strong></p>
+<p>传统架构在应对数据量激增时,单机垂直扩容效率面临瓶颈。TB级库表迁移需要较长时间窗口,亟需更敏捷的扩缩容机制保障业务连续性。</p>
+<p><strong>4. 高可用与容灾自动化演进。</strong></p>
+<p>为满足更高等级的系统可靠性要求,需构建秒级故障切换能力,并消除主从资源差异导致的切换风险。拓扑自动发现与连接无缝迁移能力也成为架构演进的关键目标。</p>
+<p><strong>5. 实时分析能力建设。</strong></p>
+<p>当前数据分析链路存在时效性分层现象,部分场景需依赖 T+1 数据同步。构建业务库与分析库的实时数据通道,对提升决策敏捷性至关重要。</p>
+<p><strong>6. 运维自动化升级。</strong></p>
+<p>面对亿级数据表的元数据变更需求,需突破 DDL 操作效率瓶颈。同时,多版本数据库的统一管理、自动化变更流程的建设,对提升运维敏捷性具有重要意义。</p>
+<h2 id="二、引入-OceanBase-的原因与对比分析"><a href="#二、引入-OceanBase-的原因与对比分析" class="headerlink" title="二、引入 OceanBase 的原因与对比分析"></a>二、引入 OceanBase 的原因与对比分析</h2><h3 id="一-网易个人邮箱选型需求的调研分析"><a href="#一-网易个人邮箱选型需求的调研分析" class="headerlink" title="(一)网易个人邮箱选型需求的调研分析"></a>(一)网易个人邮箱选型需求的调研分析</h3><p>在调研选型阶段,我们分析了 OceanBase 和某同类型数据库两款分布式数据库解决方案,并根据网易个人邮箱的业务特点评估其在多个关键特性上的表现。最终选择 OceanBase 作为数据库升级的主要解决方案,以下是结合业务实际需求分析其符合选型预期的原因。</p>
+<p><strong>1. 数据可靠性与高可用设计。</strong></p>
+<ul>
+<li>数据强一致:OceanBase 基于分布式共识协议(如 Paxos),确保多副本数据的一致性,可有效解决传统数据库主从同步中的潜在不一致问题,对于需要高可靠性和金融级数据安全的场景,符合需求。</li>
+<li>智能容灾:OceanBase 提供自动故障切换机制,在单点故障场景下能够保障业务持续可用,这对支撑网易邮箱复杂、高并发的业务场景具有重要意义。</li>
+</ul>
+<p><strong>2. 多租户资源隔离能力。</strong></p>
+<ul>
+<li>资源精细管控:OceanBase 支持 CPU、内存和 I&#x2F;O 的租户级别资源隔离,符合多业务域安全性和独立性要求。</li>
+<li>弹性资源调度:根据业务负载动态调整资源分配,提升资源利用率并保障系统稳定性,尤其适用于邮箱业务流量周期性波动的场景。</li>
+</ul>
+<p><strong>3. 数据存储效率优化。</strong></p>
+<ul>
+<li>智能压缩引擎:OceanBase 的存储结构设计显著降低了数据存储空间占用。实测结果显示压缩效率优于传统架构,在 TB 级数据规模下有效减少存储资源投入。</li>
+<li>降本增效:通过压缩技术和存储结构优化,OceanBase 有效缓解业务数据规模增长导致的资源成本压力。</li>
+</ul>
+<p><strong>4. 扩展性与弹性设计。</strong></p>
+<ul>
+<li>在线无感扩缩容:OceanBase 支持节点的增减与数据均衡过程完全在线化,能够保障迁移操作对业务透明化,减少扩展过程中可能的停机风险。</li>
+<li>自动负载均衡:业务扩容后,数据流量可以智能分布到新增节点,确保服务质量和业务连续性。</li>
+</ul>
+<p><strong>5. 一体化智能运维平台。</strong></p>
+<ul>
+<li>开箱即用的管理能力:OceanBase 提供全链路集群管理平台(OCP),支持监控告警、备份恢复和部署管理的可视化操作。</li>
+<li>运维范式升级:运维过程中复杂的人工操作可实现标准化管理,有助于提升网易邮箱在多业务场景下的维护效率。</li>
+</ul>
+<p><strong>6. 完整的MySQL生态兼容。</strong></p>
+<ul>
+<li>业务迁移成本低:OceanBase 兼容 MySQL 协议及语法,网易邮箱业务无需进行大规模应用改造即可完成平滑迁移。</li>
+<li>生态无缝集成:原生支持 MySQL 生态工具链(如 Flink CDC),便于原有的工具链在新平台的无缝运行,从而提升分析链路的连通性和时效性。</li>
+</ul>
+<p><strong>7. 技术生态与服务支持。</strong></p>
+<ul>
+<li>活跃的技术生态:OceanBase 拥有由企业和开源社区共同推动的快速迭代能力,可持续增强其关键技术功能,确保长期的技术支持。</li>
+<li>服务保障:开源社区响应与企业级服务结合,为关键业务提供了更全面的支持。</li>
+</ul>
+<h3 id="二-Sysbench测试与两款数据库产品对比"><a href="#二-Sysbench测试与两款数据库产品对比" class="headerlink" title="(二)Sysbench测试与两款数据库产品对比"></a>(二)Sysbench测试与两款数据库产品对比</h3><p>为进一步验证数据库解决方案在网易个人邮箱场景中的适用性,我们分别针对 OceanBase 和某同类型数据库的不同版本进行了性能测试,并结合行业内其他数据库产品进行对比分析。部分测试结论如下:</p>
+<ul>
+<li>测试结果显示,在纯插入和纯查询场景下,OceanBase v4.3 的性能表现优于其他测试方案,适用于 AP 业务。在综合增删改操作场景中,OceanBase v4.2.5 的性能表现更为突出,适用于 TP 业务。</li>
+<li>在多租户场景下,通过测试验证了 OceanBase 在资源隔离能力方面的表现。在高并发写入时,我们观察到磁盘 IOPS 的限制与性能波动之间的相关性。</li>
+<li>测试结果表明,OceanBase 在数据压缩能力上具有显著优势。</li>
+</ul>
+<p>具体测试过程及环境配置如下文所述。</p>
+<p><strong>1. 性能对比。</strong></p>
+<p>我们选择对比某同类型数据库v8.1、OceanBase v4.3、OceanBase v4.2.5,测试环境配置3个48核384G的SSD,对比二者在select、insert、update index、update non index的性能表现。</p>
+<ul>
+<li>select:两款数据库峰值均出现在1200<del>1500线程范围内,对比QPS和TPS,OceanBase v4.3是OceanBase v4.2.5的1.3倍;是某同类型数据库v8.1的 1.7</del>1.9 倍。</li>
+<li>insert:OceanBase峰值出现在 1800 线程,某同类型数据库峰值出现在 1200 线程。对比QPS和TPS,OceanBase v4.3是OceanBase v4.2.5的1.3倍;是某同类型数据库v8.1的2.27 倍。</li>
+<li>update index:两款数据库峰值均出现在 2100 线程,对比索引字段更新下的QPS&#x2F;TPS,OceanBase v4.2.5是某同类型数据库v8.1的2.7倍;是OceanBase v4.3的3倍。</li>
+<li>update non index:两款数据库峰值均出现在 2100 线程,对比非索引更新QPS&#x2F;TPS,OceanBase v4.2.5是某同类型数据库v8.1的1.66倍;是OceanBase v4.3的3.04倍。</li>
+</ul>
+<p><strong>2. 资源隔离能力。</strong></p>
+<p>为了评估OceanBase在多租户场景下的资源隔离效果,避免租户间互相干扰,我们进行了关键对比测试。</p>
+<p>首先,单双租户压测对比如下。</p>
+<ul>
+<li>测试设计:同一集群中,先后进行两次同等条件的性能压测:<ul>
+<li>场景A:单一租户(配置:12核40GB)</li>
+<li>场景B:两个租户(各配置:12核40GB)</li>
+</ul>
+</li>
+<li>验证目标:观察双租户压测时,单个租户性能是否因资源竞争而显著低于单租户场景,从而判断资源隔离有效性。</li>
+<li>结论:对比结果显示,在相同资源配置下,单个租户的压测性能在多租户并行运行时未出现明显下降。这证明了OceanBase对计算与内存资源的有效隔离能力。</li>
+</ul>
+<p>其次,集群资源极限分配压测如下。</p>
+<ul>
+<li>测试设计:将3节点集群的资源全部分配给3个业务租户。同时对这些租户施加不同线程数(24~2400+)的多场景混合读写压力。</li>
+<li>验证目标:<ul>
+<li>探测租户在资源极限分配下的性能边界(QPS&#x2F;TPS)及资源使用饱和度。</li>
+<li>评估高负载下OBProxy的稳定性。</li>
+<li>监控系统租户(sys)在高负载下的受影响情况。</li>
+</ul>
+</li>
+<li>结论:<ul>
+<li>租户性能饱和。所有租户的QPS&#x2F;TPS在并发线程数达到1500~2400区间后趋于稳定,表明达到性能峰值。继续提升并发则导致延迟上升,资源已被充分利用。</li>
+<li>OBProxy稳定。OBProxy CPU使用率随压力提升平滑增长(峰值约75%),内存占用启动后即到高位并保持平稳,未见异常。</li>
+<li>sys租户无干扰。系统租户(sys)的CPU和内存资源使用率在全局高压下保持稳定,未出现明显波动,证明了关键系统服务的隔离保障。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 数据压缩能力。</strong></p>
+<p>同样对比OceanBase与某同类型数据库这两款数据库。使用Sysbench录入测试数据,参数:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--time=60 --threads=16 --report-interval=10 --db-driver=mysql --rand-type=uniform --tables=16 --table-size=10000000 oltp_common prepare</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>产品</th>
+<th>写入完成时</th>
+<th>5小时后</th>
+<th>24小时后</th>
+<th>稳定后数据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>某同类型数据库v8.1.1</td>
+<td>51.3G</td>
+<td>51.3G</td>
+<td>51.3G</td>
+<td>51.3G</td>
+</tr>
+<tr>
+<td>OceanBase v4.2.5</td>
+<td>104.59G</td>
+<td>77.46G</td>
+<td>37.34G</td>
+<td>37.34G</td>
+</tr>
+</tbody></table>
+<h2 id="三、应用场景的技术实践"><a href="#三、应用场景的技术实践" class="headerlink" title="三、应用场景的技术实践"></a>三、应用场景的技术实践</h2><h3 id="一-从分库分表到OceanBase的迁移经验"><a href="#一-从分库分表到OceanBase的迁移经验" class="headerlink" title="(一)从分库分表到OceanBase的迁移经验"></a>(一)从分库分表到OceanBase的迁移经验</h3><p>目前,网易个人邮箱已在多个业务中试点OceanBase,在迁移过程中,我们总结了几点经验供参考。</p>
+<p><strong>1. 分布式环境下唯一键约束的迁移治理。</strong></p>
+<p><strong>背景:</strong> 在基于MySQL的分库分表架构中,由于历史多次迁移扩容,部分表存在跨MySQL实例的重复主键数据(如pid&#x3D;1同时存在于不同实例)。数据接口的路由机制仅访问Hash匹配实例,导致重复数据长期隐匿,但迁移至OceanBase时触发唯一键冲突。</p>
+<p><strong>解决方案:</strong> 首先在迁移前执行分布式重复扫描:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pk <span class="keyword">FROM</span> tb <span class="keyword">GROUP</span> <span class="keyword">BY</span> pk <span class="keyword">HAVING</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="operator">&gt;</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>其次,依据业务规则修复数据:</p>
+<ul>
+<li>保留最新版本数据;</li>
+<li>对无效冗余数据执行安全删除;</li>
+<li>特殊场景改造主键结构(如增加业务前缀)。</li>
+</ul>
+<p><strong>成效:</strong> 保障OceanBase强约束环境平稳迁移,奠定数据质量基石。</p>
+<p><strong>2. 多语言字符集兼容性实践。</strong></p>
+<p><strong>背景:</strong> 网易个人邮箱的用户遍布全球,存储数据的文字语言多样,部分比较老旧的程序依旧使用GBK,其字符集仅支持中、日、韩等有限语种,旧业务系统采用GBK字符集处理邮件地址,存储泰文等非GBK字符集字符时,使用MySQL 5.7会静默截断至首字节有效字符,导致数据丢失。</p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/01.png" alt="MySQL 5.7 静默截断非GBK字符"></p>
+<p>而使用OceanBase时,严格执行字符集规范,却抛出错误。</p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/02.png" alt="OceanBase 严格执行字符集规范抛出错误"></p>
+<p><strong>解决方案:</strong> 应用层对不兼容的文字进行转码;统一升级为UTF-8字符集存储。<strong>成效:</strong> 消除双写系统字符集兼容风险,支持全球邮箱地址规范存储。</p>
+<p><strong>3. 海量表分区与索引优化策略。</strong></p>
+<p>在迁移数据量较大且读写大的表时,我们会考虑将其改为分区表,合理规划分区和索引能发挥数据库的最大性能。</p>
+<p>我们在规划分区时,会尽量让高频sql走分区键,而部分无法走分区键的sql则选择加上索引。OceanBase的分区索引也分为局部索引和全局索引,根据网易其他同事的压测结果发现全局索引会导致写操作性能下降,最大QPS会降低约20~50%。因此,一般情况下对全局索引尽可能不用或者少用。</p>
+<h3 id="二-OBKV落地实践及注意事项"><a href="#二-OBKV落地实践及注意事项" class="headerlink" title="(二)OBKV落地实践及注意事项"></a>(二)OBKV落地实践及注意事项</h3><p>在KV存储场景,网易个人邮箱主要使用Redis,对于一些冷数据也会采用Tendis和Pika进行存储。我们计划探索将 OBKV-Redis 作为持久化缓存数据库的备选方案,以满足业务对数据存储的高压缩和高可用需求,原因是:</p>
+<ul>
+<li>兼容Redis协议。支持大部分业务Redis命令(cluster模式暂未支持)。</li>
+<li>可有效释放磁盘存储空间。OBKV-Redis底层存储架构压缩能力较强,能够释放磁盘存储空间,节省很多内存资源。</li>
+<li>高可用。业务的连接方式和Redis单节点一致,且OBKV-Redis底层已经做好多副本容灾。</li>
+<li>一体化运维。由OceanBase的运维平台OCP进行统一管理。</li>
+</ul>
+<p>目前,OBKV-Redis已经在一个业务中稳定运行了一段时间,数量达百亿个key,整体延迟不超过 10ms,在业务高峰期 QPS 达到 2w 时实际业务延迟仍旧保持在 10ms 以下。</p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/03.png" alt="OBKV-Redis 业务延迟监控"></p>
+<p>待改进两部分:其一根据我们的观察,OBKV-Redis并不会对所有Redis命令都兼容,特别是遍历类的基本不支持(如key、scan),部分支持的命令可能会有问题,如执行monitor时可能会出现中断。上线业务前需要进行严格测试;其二,OBKV-Redis的监控依赖于OCP平台。因为OCP正处于快速迭代阶段,对QPS命令的监控支持只包含主要的set、get……如果业务执行setex则无法监控到。</p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/04.png" alt="OCP 平台 QPS 命令监控"></p>
+<p>此外,当业务写入string类型key时,表行数跟key数量一一对应,而当写入hash key时,会发现占用的空间非常高,并且在OCP平台显示统计的表行数超出了key的数量。</p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/05.png" alt="hash key 占用空间情况"></p>
+<p><img data-src="/img/2025-09-02-netease-mail-oceanbase-upgrade/06.png" alt="OCP 平台表行数统计"></p>
+<p>通过MySQL连接进入查看表数据时会发现hash key会将key放大,key名会填充到固定长度的字符串,并且每个field占用一行。进而在OCP平台最终显示的数据是将以上key统计成2行,因此,key数量不能完全参考OCP的表统计。</p>
+<p>基于上述经验,我们认为OBKV-Redis处于高速迭代阶段,将其应用于线上业务前应该对每个操作进行充分的测试验证。</p>
+<h2 id="四、数据库升级效果-稳定可靠-降本增效"><a href="#四、数据库升级效果-稳定可靠-降本增效" class="headerlink" title="四、数据库升级效果:稳定可靠,降本增效"></a>四、数据库升级效果:稳定可靠,降本增效</h2><p>本次数据库升级后,网易个人邮箱解决了传统架构中的部分问题,同时在性能优化、成本控制和数据可靠性方面取得了相应的成效。</p>
+<p>其一,性能与稳定性突破瓶颈。通过OceanBase的单机分布式一体化架构,在高并发场景下QPS显著超越单实例MySQL。吞吐量大幅提升,且连续多月运行无抖动。</p>
+<p>其二,存储成本优化。OceanBase 基于 LSM-Tree 的存储架构,通过压缩技术有效降低了数据存储空间需求。实际业务中,原MySQL主从两副本3.2T数据迁移至OceanBase三副本后,总存储空间降至900G,存储成本节省72%,单副本压缩能力高达80%。</p>
+<p>其三,实时数据处理革新。基于OceanBase对MySQL生态的完整兼容性,数据分析体系实现从T+1到实时集成的跨越式升级。配合4.3.5版本原生HTAP特性,分析型负载在执行复杂查询时可复用OLTP数据副本,在保证事务处理性能的同时,将分析时效性压缩至亚秒级。</p>
+<p>其四,数据可靠性升级。通过多副本强一致性机制消除主从架构数据不一致风险。故障转移与快速恢复能力,保障服务连续性,较传统架构容灾能力实现质的飞跃。</p>
+<p>其五,实现智能化运维。OCP平台支持租户资源动态调整和在线扩缩容能力,配合全链路追踪、诊断等能力,运维敏捷性显著提升。</p>
+<p>通过数据库升级实践,网易个人邮箱在系统性能优化和业务能力提升方面取得了初步成效。后续将继续探索更多技术方向,包括向量索引和全文索引的应用,并尝试在部分分析处理(AP)类业务场景中进行落地,以进一步推动业务发展。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」,会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注!</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享,也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可,点亮一颗小星星✨吧!你的每一个 Star,都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%A4%9A%E7%A7%9F%E6%88%B7/" rel="tag"># 多租户</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%81%E7%A7%BB/" rel="tag"># 数据库迁移</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" rel="tag"># 分库分表</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E7%BD%91%E6%98%93%E9%82%AE%E7%AE%B1/" rel="tag"># 网易邮箱</a>
+              <a href="/tags/OBKV-Redis/" rel="tag"># OBKV-Redis</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-01-ash-database-monitoring/" rel="prev" title="初识 ASH —— 打开数据库的「月光宝盒」">
+                  <i class="fa fa-angle-left"></i> 初识 ASH —— 打开数据库的「月光宝盒」
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-11-game-vector-search-oceanbase/" rel="next" title="向量检索技术优化步骤详解——游戏公司智能客服与推荐系统落地OceanBase">
+                  向量检索技术优化步骤详解——游戏公司智能客服与推荐系统落地OceanBase <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

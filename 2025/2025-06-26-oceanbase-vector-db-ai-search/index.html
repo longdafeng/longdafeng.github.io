@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="全面解读OceanBase 4.3向量数据库能力，支持HNSW索引、混合检索、多模态向量，AI检索效率提升45倍，开发成本降低50%。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半">
+<meta property="og:url" content="https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="全面解读OceanBase 4.3向量数据库能力，支持HNSW索引、混合检索、多模态向量，AI检索效率提升45倍，开发成本降低50%。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/6-26-oceanbase-vector-db-ai-search/01.png">
+<meta property="og:image" content="https://ilongda.com/img/6-26-oceanbase-vector-db-ai-search/02.png">
+<meta property="article:published_time" content="2025-06-26T07:04:05.000Z">
+<meta property="article:modified_time" content="2025-06-26T07:04:05.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="ANN搜索">
+<meta property="article:tag" content="HNSW">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="多模态">
+<meta property="article:tag" content="混合检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/6-26-oceanbase-vector-db-ai-search/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/","path":"2025/2025-06-26-oceanbase-vector-db-ai-search/","title":"OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">为什么需要向量数据库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E6%A0%B8%E5%BF%83%E8%83%BD%E5%8A%9B"><span class="nav-number">2.</span> <span class="nav-text">OceanBase向量数据库的核心能力</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-HNSW%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95"><span class="nav-number">2.1.</span> <span class="nav-text">1. HNSW向量索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%A4%9A%E6%A8%A1%E6%80%81%E5%90%91%E9%87%8F%E6%94%AF%E6%8C%81"><span class="nav-number">2.2.</span> <span class="nav-text">2. 多模态向量支持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E8%83%BD%E5%8A%9B"><span class="nav-number">2.3.</span> <span class="nav-text">3. 混合检索能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%88%86%E5%B8%83%E5%BC%8F%E6%9E%B6%E6%9E%84"><span class="nav-number">2.4.</span> <span class="nav-text">4. 分布式架构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E8%A1%A8%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">性能表现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B8%E5%9E%8B%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">4.</span> <span class="nav-text">典型应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-RAG%E5%BA%94%E7%94%A8"><span class="nav-number">4.1.</span> <span class="nav-text">1. RAG应用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%AF%AD%E4%B9%89%E6%90%9C%E7%B4%A2"><span class="nav-number">4.2.</span> <span class="nav-text">2. 语义搜索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F"><span class="nav-number">4.3.</span> <span class="nav-text">3. 推荐系统</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI%E6%A3%80%E7%B4%A2%E6%95%88%E7%8E%87%E6%9A%B4%E5%A2%9E45%E5%80%8D"><span class="nav-number">5.</span> <span class="nav-text">AI检索效率暴增45倍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="nav-number">6.</span> <span class="nav-text">未来展望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半 | Longda's Interesting World">
+      <meta itemprop="description" content="全面解读OceanBase 4.3向量数据库能力，支持HNSW索引、混合检索、多模态向量，AI检索效率提升45倍，开发成本降低50%。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-26 15:04:05" itemprop="dateCreated datePublished" datetime="2025-06-26T15:04:05+08:00">2025-06-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">全面解读OceanBase 4.3向量数据库能力，支持HNSW索引、混合检索、多模态向量，AI检索效率提升45倍，开发成本降低50%。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半","description":"全面解读OceanBase 4.3向量数据库能力，支持HNSW索引、混合检索、多模态向量，AI检索效率提升45倍，开发成本降低50%。","image":"https://ilongda.com/img/6-26-oceanbase-vector-db-ai-search/01.png","wordCount":1211,"datePublished":"2025-06-26T07:04:05.000Z","dateModified":"2025-06-26T07:04:05.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/"},"url":"https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","HNSW","AI","RAG","混合检索","ANN搜索","多模态"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半","item":"https://ilongda.com/2025/2025-06-26-oceanbase-vector-db-ai-search/"}]}</script>
+<p>在AI大模型时代，向量数据库已经成为AI应用的核心基础设施。随着RAG（Retrieval-Augmented Generation）技术的普及，越来越多的企业需要在数据库中存储和检索向量数据。</p>
+<p>OceanBase 4.3版本全面支持了向量数据库能力，为AI应用提供了强大的底层支持。</p>
+<span id="more"></span>
+
+<h2 id="为什么需要向量数据库？"><a href="#为什么需要向量数据库？" class="headerlink" title="为什么需要向量数据库？"></a>为什么需要向量数据库？</h2><p>在传统的关系型数据库中，我们主要通过精确匹配或模糊匹配来检索数据。但在AI场景下，我们经常需要进行语义搜索、相似度匹配等操作，这就需要向量数据库的支持。</p>
+<p>向量数据库的核心能力包括：</p>
+<ul>
+<li><strong>向量存储</strong> — 存储高维向量数据</li>
+<li><strong>向量索引</strong> — 构建高效的向量索引（如HNSW、IVF等）</li>
+<li><strong>向量检索</strong> — 支持ANN（Approximate Nearest Neighbor）搜索</li>
+<li><strong>混合检索</strong> — 结合向量检索和传统检索（全文检索、条件过滤等）</li>
+</ul>
+<h2 id="OceanBase向量数据库的核心能力"><a href="#OceanBase向量数据库的核心能力" class="headerlink" title="OceanBase向量数据库的核心能力"></a>OceanBase向量数据库的核心能力</h2><h3 id="1-HNSW向量索引"><a href="#1-HNSW向量索引" class="headerlink" title="1. HNSW向量索引"></a>1. HNSW向量索引</h3><p>OceanBase 4.3支持HNSW（Hierarchical Navigable Small World）向量索引，这是一种高效的近似最近邻搜索算法。</p>
+<p>HNSW索引的特点：</p>
+<ul>
+<li><strong>层次化结构</strong> — 通过多层图结构加速搜索</li>
+<li><strong>高召回率</strong> — 在合理参数配置下，召回率可达95%以上</li>
+<li><strong>低延迟</strong> — 在大规模数据下仍能保持毫秒级检索延迟</li>
+</ul>
+<h3 id="2-多模态向量支持"><a href="#2-多模态向量支持" class="headerlink" title="2. 多模态向量支持"></a>2. 多模态向量支持</h3><p>OceanBase支持多种向量类型：</p>
+<ul>
+<li><strong>稠密向量</strong> — 支持float类型的稠密向量</li>
+<li><strong>稀疏向量</strong> — 支持稀疏向量存储和检索</li>
+<li><strong>多模态向量</strong> — 支持文本、图像、音频等多模态向量</li>
+</ul>
+<h3 id="3-混合检索能力"><a href="#3-混合检索能力" class="headerlink" title="3. 混合检索能力"></a>3. 混合检索能力</h3><p>OceanBase的混合检索能力是其核心优势之一：</p>
+<ul>
+<li><strong>向量+全文检索</strong> — 支持向量检索和全文检索的融合查询</li>
+<li><strong>向量+条件过滤</strong> — 支持在向量检索的基础上进行条件过滤</li>
+<li><strong>多路召回</strong> — 支持多种检索策略的组合</li>
+</ul>
+<p><img data-src="/img/6-26-oceanbase-vector-db-ai-search/01.png" alt="混合检索架构"></p>
+<h3 id="4-分布式架构"><a href="#4-分布式架构" class="headerlink" title="4. 分布式架构"></a>4. 分布式架构</h3><p>OceanBase的分布式架构为向量数据库带来了以下优势：</p>
+<ul>
+<li><strong>水平扩展</strong> — 支持分布式部署，可以灵活扩展</li>
+<li><strong>高可用</strong> — 通过Paxos协议保证数据一致性</li>
+<li><strong>多租户</strong> — 支持多租户隔离，适合SaaS场景</li>
+</ul>
+<h2 id="性能表现"><a href="#性能表现" class="headerlink" title="性能表现"></a>性能表现</h2><p>根据官方测试数据，OceanBase向量数据库的性能表现优异：</p>
+<ul>
+<li><strong>索引构建性能</strong> — 支持大规模数据的快速索引构建</li>
+<li><strong>检索性能</strong> — 在高并发场景下，P99延迟控制在毫秒级</li>
+<li><strong>召回率</strong> — 在合理参数配置下，召回率达到95%以上</li>
+<li><strong>存储效率</strong> — 相比专用向量数据库，存储成本更低</li>
+</ul>
+<p><img data-src="/img/6-26-oceanbase-vector-db-ai-search/02.png" alt="性能对比"></p>
+<h2 id="典型应用场景"><a href="#典型应用场景" class="headerlink" title="典型应用场景"></a>典型应用场景</h2><h3 id="1-RAG应用"><a href="#1-RAG应用" class="headerlink" title="1. RAG应用"></a>1. RAG应用</h3><p>在RAG（检索增强生成）场景中，OceanBase向量数据库可以作为知识库的底层存储：</p>
+<ul>
+<li>将文档、知识库向量化后存储到OceanBase</li>
+<li>用户提问时，通过向量检索找到最相关的文档片段</li>
+<li>将检索结果传递给大模型，生成准确的回答</li>
+</ul>
+<h3 id="2-语义搜索"><a href="#2-语义搜索" class="headerlink" title="2. 语义搜索"></a>2. 语义搜索</h3><p>在电商、内容平台等场景中，可以通过向量检索实现语义搜索：</p>
+<ul>
+<li>将商品、内容的描述信息向量化</li>
+<li>用户搜索时，通过语义匹配找到最相关的结果</li>
+<li>结合传统检索条件（价格、类别等）进行过滤</li>
+</ul>
+<h3 id="3-推荐系统"><a href="#3-推荐系统" class="headerlink" title="3. 推荐系统"></a>3. 推荐系统</h3><p>在推荐系统中，可以通过向量检索实现相似物品推荐：</p>
+<ul>
+<li>将用户、物品的特征向量化</li>
+<li>通过向量检索找到最相似的用户或物品</li>
+<li>结合业务规则生成推荐结果</li>
+</ul>
+<h2 id="AI检索效率暴增45倍"><a href="#AI检索效率暴增45倍" class="headerlink" title="AI检索效率暴增45倍"></a>AI检索效率暴增45倍</h2><p>根据实际测试数据，使用OceanBase向量数据库后：</p>
+<ul>
+<li><strong>检索效率提升45倍</strong> — 相比传统的精确匹配方式，向量检索效率大幅提升</li>
+<li><strong>开发成本降低50%</strong> — 一体化的数据库方案，无需额外维护向量数据库</li>
+<li><strong>运维复杂度降低</strong> — 统一的数据库平台，降低运维成本</li>
+</ul>
+<h2 id="未来展望"><a href="#未来展望" class="headerlink" title="未来展望"></a>未来展望</h2><p>随着AI技术的不断发展，向量数据库将在以下方向持续演进：</p>
+<ul>
+<li><strong>更高效的索引算法</strong> — 支持更多的索引类型，如IVF、PQ等</li>
+<li><strong>更智能的检索策略</strong> — 结合AI技术实现自适应检索</li>
+<li><strong>更好的生态集成</strong> — 与主流AI框架和工具链深度集成</li>
+<li><strong>多模态融合</strong> — 支持更多模态的向量检索</li>
+</ul>
+<p>OceanBase向量数据库为AI应用提供了强大的底层支持，让AI检索效率暴增45倍，开发成本砍半。未来，OceanBase将继续深耕向量数据库领域，为AI应用提供更好的支持。</p>
+<blockquote>
+<p>了解更多OceanBase向量数据库技术细节，请访问：<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20v">https://open.oceanbase.com<i class="fa fa-external-link-alt"></i></span></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/AI/" rel="tag"># AI</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/ANN%E6%90%9C%E7%B4%A2/" rel="tag"># ANN搜索</a>
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81/" rel="tag"># 多模态</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-25-huolala-oceanbase-vector-search/" rel="prev" title="OceanBase向量检索在货拉拉的探索和实践">
+                  <i class="fa fa-angle-left"></i> OceanBase向量检索在货拉拉的探索和实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-27-openmanus-diagnostic-agent/" rel="next" title="巧用OpenManus开发自动诊断Agent：30分钟定位数据库异常">
+                  巧用OpenManus开发自动诊断Agent：30分钟定位数据库异常 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

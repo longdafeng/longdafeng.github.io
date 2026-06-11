@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="好未来集团面对分库分表、资源隔离与资源碎片三大困境，引入OceanBase并深耕学习机、多机房容灾、AI业务、网校报表、内容审核五大场景。借助分区表、列存、多租户与云盘弹性扩容，AI业务存储成本每月节省86%，报表性能较MySQL提升60%。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="好未来集团面对分库分表、资源隔离与资源碎片三大困境，引入OceanBase并深耕学习机、多机房容灾、AI业务、网校报表、内容审核五大场景。借助分区表、列存、多租户与云盘弹性扩容，AI业务存储成本每月节省86%，报表性能较MySQL提升60%。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/07.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/08.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/09.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/10.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/11.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/12.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/13.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/14.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/15.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/16.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/17.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/18.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/19.png">
+<meta property="og:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/20.png">
+<meta property="article:published_time" content="2025-07-30T06:03:16.000Z">
+<meta property="article:modified_time" content="2025-07-30T07:10:17.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OBKV">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="列存">
+<meta property="article:tag" content="多机房容灾">
+<meta property="article:tag" content="好未来">
+<meta property="article:tag" content="教育科技">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/","path":"2025/2025-07-30-tal-ai-oceanbase-cost-reduction/","title":"走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86% | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E9%80%89%E5%9E%8B%E5%89%8D%E7%9A%84%E4%B8%89%E4%B8%AA%E5%9B%B0%E5%A2%83%E4%B8%8E%E5%9B%9B%E9%A1%B9%E9%80%89%E5%9E%8B%E5%9B%A0%E7%B4%A0"><span class="nav-number">1.</span> <span class="nav-text">一、选型前的三个困境与四项选型因素</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%EF%BC%8C%E5%86%B3%E5%AE%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E6%80%A7%E8%83%BD%E5%92%8C%E5%AE%B9%E7%81%BE%E8%83%BD%E5%8A%9B"><span class="nav-number">1.1.</span> <span class="nav-text">（一）架构设计，决定数据库的性能和容灾能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%A4%9A%E7%A7%9F%E6%88%B7%E8%83%BD%E5%8A%9B%EF%BC%8C%E5%AE%9E%E7%8E%B0%E8%B5%84%E6%BA%90%E9%9A%94%E7%A6%BB%E5%8F%8A%E7%81%B5%E6%B4%BB%E9%85%8D%E7%BD%AE"><span class="nav-number">1.2.</span> <span class="nav-text">（二）多租户能力，实现资源隔离及灵活配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E5%AD%98%E5%82%A8%E5%8E%8B%E7%BC%A9%E6%8A%80%E6%9C%AF%EF%BC%8C%E8%8E%B7%E5%BE%97%E9%A2%9D%E5%A4%96%E7%9A%84%E6%88%90%E6%9C%AC%E6%94%B6%E7%9B%8A"><span class="nav-number">1.3.</span> <span class="nav-text">（三）存储压缩技术，获得额外的成本收益</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E7%94%9F%E6%80%81%E5%B7%A5%E5%85%B7%EF%BC%8C%E4%BB%A5%E6%9C%80%E5%B0%8F%E7%9A%84%E6%88%90%E6%9C%AC%E6%9E%84%E5%BB%BA%E6%96%B0%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4%E4%BD%93%E7%B3%BB"><span class="nav-number">1.4.</span> <span class="nav-text">（四）生态工具，以最小的成本构建新的数据库运维体系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E8%A7%A3%E5%86%B3%E4%BA%94%E5%A4%A7%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%97%9B%E7%82%B9%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">二、解决五大业务场景中的数据库痛点问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%AD%A6%E4%B9%A0%E6%9C%BA%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%EF%BC%9A%E7%A0%94%E5%8F%91%E6%88%90%E6%9C%AC%E9%99%8D%E4%BD%8E%EF%BC%8C%E7%A8%B3%E5%AE%9A%E6%80%A7%E6%8F%90%E5%8D%87"><span class="nav-number">2.1.</span> <span class="nav-text">（一）学习机业务场景：研发成本降低，稳定性提升</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%A4%9A%E6%9C%BA%E6%88%BF%E5%AE%B9%E7%81%BE%E5%9C%BA%E6%99%AF%EF%BC%9A%E8%A7%A3%E5%86%B3%E6%95%B0%E6%8D%AE%E8%84%91%E8%A3%82%E9%97%AE%E9%A2%98%EF%BC%8C%E6%95%B0%E6%8D%AE%E9%9B%B6%E4%B8%A2%E5%A4%B1"><span class="nav-number">2.2.</span> <span class="nav-text">（二）多机房容灾场景：解决数据脑裂问题，数据零丢失</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89AI%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%EF%BC%9A%E5%AD%98%E5%82%A8%E6%88%90%E6%9C%AC%E6%AF%8F%E6%9C%88%E8%8A%82%E7%9C%8186"><span class="nav-number">2.3.</span> <span class="nav-text">（三）AI业务场景：存储成本每月节省86%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E7%BD%91%E6%A0%A1%E6%8A%A5%E8%A1%A8%EF%BC%9A%E6%80%A7%E8%83%BD%E8%BE%83MySQL%E6%8F%90%E5%8D%8760"><span class="nav-number">2.4.</span> <span class="nav-text">（四）网校报表：性能较MySQL提升60%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E5%86%85%E5%AE%B9%E5%AE%A1%E6%A0%B8%EF%BC%9A%E7%A1%AE%E4%BF%9D%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%89%E5%85%A8%E4%B8%8E%E9%AB%98%E6%95%88%E7%AE%A1%E7%90%86"><span class="nav-number">2.5.</span> <span class="nav-text">（五）内容审核：确保数据的安全与高效管理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%B8%9A%E5%8A%A1%E6%8E%A2%E7%B4%A2%EF%BC%8C%E7%94%A8OceanBase%E6%9B%BF%E6%8D%A2%E6%9B%B4%E5%A4%9A%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">3.</span> <span class="nav-text">三、业务探索，用OceanBase替换更多数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89OceanBase%E5%88%97%E5%AD%98%E6%9B%BF%E6%8D%A2ClickHouse"><span class="nav-number">3.1.</span> <span class="nav-text">（一）OceanBase列存替换ClickHouse</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89OBKV%E6%9B%BF%E6%8D%A2Pika"><span class="nav-number">3.2.</span> <span class="nav-text">（二）OBKV替换Pika</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%9C%AA%E6%9D%A5%E6%9C%9F%E6%9C%9B"><span class="nav-number">4.</span> <span class="nav-text">四、未来期望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86% | Longda's Interesting World">
+      <meta itemprop="description" content="好未来集团面对分库分表、资源隔离与资源碎片三大困境，引入OceanBase并深耕学习机、多机房容灾、AI业务、网校报表、内容审核五大场景。借助分区表、列存、多租户与云盘弹性扩容，AI业务存储成本每月节省86%，报表性能较MySQL提升60%。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-30 14:03:16" itemprop="dateCreated datePublished" datetime="2025-07-30T14:03:16+08:00">2025-07-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">王新然</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>9.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>36 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">好未来集团面对分库分表、资源隔离与资源碎片三大困境，引入OceanBase并深耕学习机、多机房容灾、AI业务、网校报表、内容审核五大场景。借助分区表、列存、多租户与云盘弹性扩容，AI业务存储成本每月节省86%，报表性能较MySQL提升60%。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%","description":"好未来集团面对分库分表、资源隔离与资源碎片三大困境，引入OceanBase并深耕学习机、多机房容灾、AI业务、网校报表、内容审核五大场景。借助分区表、列存、多租户与云盘弹性扩容，AI业务存储成本每月节省86%，报表性能较MySQL提升60%。","image":"https://ilongda.com/img/7-30-tal-ai-oceanbase-cost-reduction/01.png","wordCount":9747,"datePublished":"2025-07-30T06:03:16.000Z","dateModified":"2025-07-30T07:10:17.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/"},"url":"https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","列存","OBKV","降本增效","好未来","多机房容灾","教育科技"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%","item":"https://ilongda.com/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/"}]}</script>
+<p>本文摘自<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vbGVhcm5pbmcjZWJvb2s=">《OceanBase社区版在泛互场景的应用案例研究》<i class="fa fa-external-link-alt"></i></span>电子书，点击链接即可获取完整版内容。</p>
+<p>好未来集团围绕教育开展传统素质教育和数字教育，知名品牌包括学而思素养、学而思网校、彼芯等。公司业务覆盖线下面授课程、线上网络课程以及课后托管服务。我们提供一系列人文美育和科学制造课程，旨在促进孩子的全面发展。公司目前正积极推动智能硬件业务，在市场上均获得了良好反响。</p>
+<p>同时，公司在大型模型领域也进行了深度投入。2023年，我们发布了国内首款数学领域的大模型——MaathGPT；2024年又推出了基于该大模型的App”随时问”，不仅能直接给出答案，更能对用户提出的问题进行知识点梳理，通过逐步引导帮助用户解决问题，重点在于培养用户的解题思路。</p>
+<p>作为国内领先的教育科技企业，旗下业务众多、数据海量，底层数据系统涉猎MySQL、Redis、MongoDB、Pika、RDS、PolarDB、CDB、TDSQL-C等，以及采用阿里云、腾讯云、百度云等多云架构。迫于分库分表的困境，以及受资源隔离与资源碎片等问题困扰，新增OceanBase技术栈以解决问题。试点后不仅提升了可用性与资源利用率，还降低了运维复杂度并带来额外的成本效益。</p>
+<span id="more"></span>
+
+<h2 id="一、选型前的三个困境与四项选型因素"><a href="#一、选型前的三个困境与四项选型因素" class="headerlink" title="一、选型前的三个困境与四项选型因素"></a>一、选型前的三个困境与四项选型因素</h2><p>作为一家业务多元化的企业，选择一款适合的数据库对于公司业务发展至关重要。由于集团业务线丰富，每个业务线会根据自己的实际业务场景做数据库选型，集团的数据库服务是以混合云的模式对内部业务提供的。我们既在IDC内自建了大量的数据库服务，也使用了多家云厂商提供的各类数据库产品，涉猎的数据库种类比较广泛。<strong>在使用了如此多的数据库产品之后，我们为什么还会继续考虑选型OceanBase？</strong> 有以下三个方面的原因。</p>
+<p>第一，自建服务中有大量MySQL服务，作为传统的单机数据库，MySQL性能和容量很容易达到瓶颈。同时，传统基于中间件的分库分表解决方案对分布式事务的支持不友好，还会增加运维侧的复杂度。</p>
+<p>第二，传统数据库主要通过单机多实例方式部署，缺少资源隔离能力，会为线上业务的稳定运行埋下隐患。同时，由于管控面对的是非常零散的物理机资源，且对资源的申请和回收只是在元信息层面修改，势必会产生大量的资源碎片。</p>
+<p>第三，目前资源部署模式不具备可弹扩能力，资源在分配时都会留有较大冗余，导致整体数据库服务资源利用率较低，资源浪费严重。</p>
+<p><strong>基于以上困境，我们在选型一个新的数据库时，主要关注四个方面的能力。</strong></p>
+<h3 id="（一）架构设计，决定数据库的性能和容灾能力"><a href="#（一）架构设计，决定数据库的性能和容灾能力" class="headerlink" title="（一）架构设计，决定数据库的性能和容灾能力"></a>（一）架构设计，决定数据库的性能和容灾能力</h3><p>图1是OceanBase4.x版本的架构图，具备以下特点。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/01.png" alt="OceanBase4.x版本架构"></p>
+<p>图1 OceanBase4.x版本架构</p>
+<p>（1）多副本：一般部署为3 Zone或5Zone，每个Zone由多个服务器节点（OBServer）组成；</p>
+<p>（2）对等节点：每个节点均有自己的SQL引擎和存储引擎，自主管理各自承载的数据分区，TCP&#x2F;IP互通，协同服务；</p>
+<p>（3）无需存储设备共享：数据分布在各个节点上，不基于任何设备级共享存储技术，不需要SAN网络；</p>
+<p>（4）分区级可用性：分区是可靠性与扩展性的基本单元，自动实现访问路由、策略驱动负载均衡和自主故障恢复。</p>
+<p>（5）高可用+强一致：多副本+Paxos分布式协议的高效、高可靠工程实现，确保数据（日志）持久化在多数派节点成功。</p>
+<p>OceanBase v4.x的单机分布式一体化架构能够让业务的大部分请求在本地作为单机事务来执行，避免分布式事务带来的消耗。同时，如果对可用区或Zone设置优先级，甚至能让一个租户所有的请求都转变为单机事务在本地执行。这种性能上的优势对于业务来说非常有吸引力。</p>
+<h3 id="（二）多租户能力，实现资源隔离及灵活配置"><a href="#（二）多租户能力，实现资源隔离及灵活配置" class="headerlink" title="（二）多租户能力，实现资源隔离及灵活配置"></a>（二）多租户能力，实现资源隔离及灵活配置</h3><p>如图2所示，OceanBase提供了原生多租户能力，支持租户单独配置数据副本数量、副本类型、存储位置及计算资源等。同时，OceanBase支持单个租户的动态扩缩容，可在线扩展和调整配置。在集群内部提供自动化的运维手段，保证了租户之间的资源完全隔离，租户之间数据也相对安全，能够帮助我们解决线上资源混合的风险。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/02.png" alt="OceanBase提供原生多租户能力"></p>
+<p>图2 OceanBase提供原生多租户能力</p>
+<h3 id="（三）存储压缩技术，获得额外的成本收益"><a href="#（三）存储压缩技术，获得额外的成本收益" class="headerlink" title="（三）存储压缩技术，获得额外的成本收益"></a>（三）存储压缩技术，获得额外的成本收益</h3><p>OceanBase提供了非常高级的数据压缩技术，除了能够解决性能和可用性的相关问题，还能获得不错的成本效益，这主要得益于以下三个关键技术。</p>
+<p><strong>（1）基于数据变长-定长的存储压缩技术：</strong> 通过使用压缩率较高且解压缩较快的压缩算法对数据进行压缩，提高数据压缩倍率，减少数据的存储成本。同时由于LSM-Tree的结构特性，采用读写分离设计和行级细粒度记录更新，变更数据保存在内存中，并批量写入磁盘。因此能达到内存数据库级写入性能和磁盘数据库的存储成本，并消除了传统B+Tree的磁盘随机写瓶颈和存储空间碎片化问题，使得数据写入性能比传统的实时更新数据块的方式更高。</p>
+<p><strong>（2）基于数据编码的存储压缩技术：</strong> 采用行列混合存储格式，磁盘数据块按列组织，自研一套对数据进行行列混存编码的压缩方法（encoding），使用行列的字典、差值、前缀等编码算法，在通用压缩算法之前对数据做了编码压缩，从而带来更大的压缩率。</p>
+<p><strong>（3）基于数据日志分离的低成本存储技术：</strong> 传统的Paxos协议中，系统需要三个副本（或五副本），OceanBase数据库将用户数据和日志数据分离，比如日志数据基于Paxos协议使用三副本（或五副本）存储，而用户数据本身可以使用两副本（或三副本、四副本）进行存储。在保障相同可用性前提下，数据日志分离可节省20%-40%的用户数据存储成本。</p>
+<p>此外，OceanBase还具备以下优秀特性：动态修改写内存、静态数据无修改、支持高压缩数据的批量写、数据强一致性校验、对SSD十分友好的无随机写等。</p>
+<h3 id="（四）生态工具，以最小的成本构建新的数据库运维体系"><a href="#（四）生态工具，以最小的成本构建新的数据库运维体系" class="headerlink" title="（四）生态工具，以最小的成本构建新的数据库运维体系"></a>（四）生态工具，以最小的成本构建新的数据库运维体系</h3><p>除了内核能力十分强悍外，OceanBase还提供了非常丰富的生态工具（见图3），涵盖了服务运维的全生命周期，比如评估改造、实时迁移、开发管理、生产运维、复制订阅、安全管控、诊断自治。借助这些强大的工具，可以让我们以非常低的成本完成OceanBase运维体系的搭建。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/03.png" alt="OceanBase运维体系"></p>
+<p>图3 OceanBase运维体系</p>
+<p>其中，我们使用最多的工具是OCP（OceanBase Cloud Platform）。通过OCP，我们日常运维的大部分操作能够实现白屏化，比如创建集群、新增可用区、新增租户等操作，只需在OCP的页面上通过点击按钮即可完成，整个过程十分简便且可靠。同时，OCP还提供了监控报警、性能分析以及数据备份等功能，使得OceanBase的运维可以变成一件简单而愉快的事情。</p>
+<p>此外，我们也关注到OceanBase对MySQL生态也提供了良好的支持，在MySQL 兼容模式下，通过Binlog Service可以将OceanBase的日志转换成 MySQL Binlog的格式，实现对MySQL Binlog协议的全面兼容。业务可以继续使用MySQL生态下的数据同步工具完成相关数据的订阅任务，极大降低了业务的改造成本。</p>
+<h2 id="二、解决五大业务场景中的数据库痛点问题"><a href="#二、解决五大业务场景中的数据库痛点问题" class="headerlink" title="二、解决五大业务场景中的数据库痛点问题"></a>二、解决五大业务场景中的数据库痛点问题</h2><p>自2022年底至2023年初，好未来集团开始搭建OceanBase基础架构，随后首个业务便开始在OceanBase上试点运行，落地情况如图4所示。至今OceanBase已经稳定运行了两年多，期间展现出了极高的稳定性，线上未发生任何故障或问题。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/04.png" alt="OceanBase在好未来集团的应用"></p>
+<p>图4 OceanBase在好未来集团的应用</p>
+<p>基于OceanBase的稳定表现，我们计划深入探讨其独特且优秀的特性，将更多业务从其他数据库迁移至OceanBase。接下来，将通过列举OceanBase在好未来五大业务场景中的使用情况，阐述好未来的数据库升级方案。</p>
+<h3 id="（一）学习机业务场景：研发成本降低，稳定性提升"><a href="#（一）学习机业务场景：研发成本降低，稳定性提升" class="headerlink" title="（一）学习机业务场景：研发成本降低，稳定性提升"></a>（一）学习机业务场景：研发成本降低，稳定性提升</h3><p>“学习机业务”是好未来集团目前较为重要的数据库应用场景。在推出仅两年的时间里，学习机业务经历了用户量的迅猛增长。然而，与一般的互联网业务不同，学习机的用户几乎都是付费用户，且客单价相对较高。因此，该业务目前面临两大挑战：一是数据增长量迅速；二是对数据可靠性要求极高。</p>
+<p>针对学习机这一重要场景，我们在进行新的数据库选型时，主要考虑了三个选型要点：</p>
+<ul>
+<li>一是鉴于业务正处于快速发展阶段，要求数据库容量能够进行水平扩展，包括集群的吞吐量和数据量，同时我们也希望性能不会因为数据量的增加而显著下降；</li>
+<li>二是新的数据库必须具备良好的容灾能力，以确保在机房故障等极端场景下不会发生数据丢失；</li>
+<li>三是由于学习机业务除了销售硬件和课程外，还涉及大量的产品运营，因此我们有众多大数据分析的需求，这就要求数据库能够兼容MySQL binlog生态。</li>
+</ul>
+<p>基于这三点要求，我们经过调研发现，阿里云提供的PolarDB-X（见图5，下文简称”PolarDB”）和蚂蚁集团自研的OceanBase均符合我们的需求，且都是开源产品，均支持分布式存储，均有较高的数据可用性和可靠性。为了做出更明智的选择，我们内部对这两个产品进行了功能比较。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/05.png" alt="PolarDB-X架构"></p>
+<p>图5 PolarDB-X架构</p>
+<p>两款数据库的功能表现如图6所示。具体而言：</p>
+<ul>
+<li>二者的RTO（故障恢复时间）都小于8秒，且能够做到数据零丢失；</li>
+<li>二者都采用了多副本底层架构，并通过Paxos协议确保了数据的一致性，从而避免了脑裂问题的发生；</li>
+<li>由于目前二者都尚未具备Serverless技术，因此自动弹性扩展能力均有所欠缺；而二者的横向弹性扩展都能够通过增加节点来实现；</li>
+<li>二者都支持渗流控制和Kubernetes容器编排技术；</li>
+<li>OceanBase的原生分布式架构得益于其租户特性，资源隔离优势凸出；</li>
+<li>成本也是我们关注的一方面，OceanBase的研发、运维成本都相对更低。</li>
+</ul>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/06.png" alt="PolarDB-X和OceanBase的功能对比"></p>
+<p>图6 PolharDB-X和OceanBase的功能对比</p>
+<p>在性能方面，我们采用8核64G&#x2F;64 threads，且三机房部署的压测环境对MySQL、PolarDB和OceanBase进行了对比，结果如图7所示。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/07.png" alt="MySQL、PolarDB和OceanBase性能对比"></p>
+<p>图7 MySQL、PolarDB和OceanBasex性能对比</p>
+<p>最终，我们选择OceanBase作为数据库的主要原因在于其生态系统。尽管PolarDB的数据库内核非常强大，但其周边平台却相对匮乏。目前，PolarDB主要提供黑屏命令行和Kubernetes Operate等部署方式，这可能对我们的研发投入成本构成较大压力。因此，<strong>在可用性和内核能力相当，且性能相近的情况下，我们更倾向于选择一个投入产出比更高的方案。</strong></p>
+<p>选择OceanBase后，我们的下一步计划是针对学习机业务制定一个高可用方案，该方案将充分利用OceanBase 4.2.5版本提供的主力租户功能。值得注意的是，虽然主力租户功能在之前的版本中可能已经存在，但4.2.5版本可能提供了针对业务一致性的访问方式。这意味着在主备切换后，业务侧无需感知到任何变化，从而确保了业务的高可用性。</p>
+<p>为了确保在极端情况下业务仍能持续运行，我们保留了原有的MySQL集群，并通过OMS的反向同步机制，将实时数据回流到OceanBase集群，以防出现故障时主备集群都无法使用的情况。一旦出现故障，即可切回MySQL继续为业务提供服务。虽然这一架构从成本角度来看可能不是最优的，甚至相比原方案成本有所增加，但考虑到业务对高可用性的严格要求，这些投入是值得的，架构如图8所示。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/08.png" alt="主、备集群和回滚集群架构"></p>
+<p>图8 主、备集群和回滚集群架构</p>
+<p>此外，我们的学习机业务对MySQL的binlog有强依赖。一方面，业务依赖于binlog数据的实时生成来进行实时报表的计算，帮助用户查看学习报告等场景；另一方面，我们也通过这些数据来进行运营层面的决策，如为学生推荐合适的课程或调整运营方向。因此，我们需要数仓类的解决方案来满足这些需求。</p>
+<p>为此，我们采用了OceanBase提供的binlog service方案。如图9所示，该方案完全兼容MySQL 5.7的binlog格式，并且天然支持像Canal、Flink等成熟的MSL生态工具。这样，我们就能够利用这些工具来处理和分析binlog数据，满足学习机业务在实时报表计算和运营决策方面的需求。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/09.png" alt="binlog service方案"></p>
+<p>图9 binlog service方案</p>
+<p>在这套方案中，我们的业务几乎无感地从MySQL切换到了OceanBase，满足我们对数据订阅的需求。</p>
+<p>在这项业务上，OceanBase给我们带来的收益有哪些？</p>
+<p>借助OceanBase的分区表能力，业务团队无需再关注分库分表的逻辑，很大程度上节省了研发成本。过去每当遇到容量问题，都需要进行拆库操作，但现在只需不断增加OBServer就能满足数据存储需求，节省大约10个人力&#x2F;天&#x2F;次。另外，OceanBase的跨计算能力使得RTO小于8秒，RPO等于零，这极大地提高了系统稳定性。</p>
+<p>此外，OceanBase在大数据订阅binlog方面也做得很好。它统一收敛了binlog的订阅入口，使得大数据和数据库之间可以实现高可用能力。</p>
+<p>然而，在使用过程中，我们也发现了一些注意事项。</p>
+<p>（1）在创建分区表时，不建议一次性把未来的表都建出来，因为数据存在热点问题，可能会导致某些OceanBase server的存储过高（最新版本针对数据均衡有所改进，暂未体验），而其他server的存储则很低。为了解决这个问题，我们可以利用OceanBase提供的分区管理能力，每次只多建一个或两个表。</p>
+<p>（2）在部署OceanBase log process时，最好指定binlog的存放目录，否则默认会放在根目录下，这可能会导致根目录空间不足。如果之后再更换目录，过程会比较麻烦，而且需要重启OceanBase log process，可能会对业务造成损失。另外，OceanBase当前不支持flash log with vlog命令，这使得我们不能直接使用MySQL dump工具进行全量数据拉取，需要业务端进行一些改造。</p>
+<p>（3）当使用OMS进行分区表和增量同步时，需要注意设置相应的参数和调整GVM的内存大小，否则可能会导致全量校验不通过或增量同步失败。截至2025年2月，我们已经部署了五个OceanBase集群，并有31个租户正在运行。</p>
+<h3 id="（二）多机房容灾场景：解决数据脑裂问题，数据零丢失"><a href="#（二）多机房容灾场景：解决数据脑裂问题，数据零丢失" class="headerlink" title="（二）多机房容灾场景：解决数据脑裂问题，数据零丢失"></a>（二）多机房容灾场景：解决数据脑裂问题，数据零丢失</h3><p>在使用MySQL数据库时，我们面临重大的容灾限制。例如主机房故障时，导致数据脑裂。过程如图10所示，在T1时刻，若A机房出现网络隔离，高可用组件检测到后会主动将主库切换到B机房。然而，若此后A机房网络恢复，就会出现双写问题，从系统整体来看，这将导致数据脑裂。对于我们的业务而言，数据不可用或丢失或许还能勉强接受，但数据脑裂的问题却是最棘手的。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/10.png" alt="MySQL主机房故障过程"></p>
+<p>图10 MySQL主机房故障过程</p>
+<p>因此，容灾问题是我们迫切需要解决的难题。</p>
+<p>在引入OceanBase之前，我们的应对方案是：在机房发生故障时，不采取自动化的止损措施。而是先等待业务将流量切换到B机房后，再手动将数据库迁移至B机房。然而，这种方案的问题在于：整个集群的故障止损时间大幅延长，因为这是一个非全自动化的流程，又因为数据同步采用的是主从同步方式，并且存在跨机房的网络延迟，所以无法保证数据不丢失。尽管该方案能够从机房外部调度业务流量，但机房内部的定时任务等流量却无法被有效调度，这仍然可能导致数据脑裂的问题。</p>
+<p>针对这些待解痛点，OceanBase提供了两种容灾方案。</p>
+<p>第一种方案是”同城三中心”（见图11），OceanBase的数据以多副本形式存在，且副本间通过Paxos协议确保数据一致性，只需将集群部署在三个机房中，即可解决机房级别的故障问题。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/11.png" alt="同城三中心"></p>
+<p>图11 同城三中心</p>
+<p>其中任意一个机房发生故障后，其余机房中的多数派副本仍能继续提供服务。这样一来，整个集群依然能够对外提供服务，业务只需将流量从故障机房切换走，即可完成止损动作。通过OceanBase提供的同城三中心能力，我们能够确保集群的故障恢复时间小于8秒，且数据零丢失。</p>
+<p>然而，此方案有一个局限，即对三个机房间的网络质量要求极高。由于业务请求可能涉及跨机房调用，若机房间网络不稳定或业务对网络延迟极为敏感时，可能不宜采用。</p>
+<p>第二种容灾方案名为主备租户，见图12。简而言之，就是在机房一和机房二分别部署两套独立的OceanBase集群。在机房一创建租户的主副本，在机房二创建该租户的副本。OceanBase内部配备了一个名为日志传输服务的组件，能够实时将主副本的变更操作同步到副本上。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/12.png" alt="主备租户"></p>
+<p>图12 主备租户</p>
+<p>在这一容灾方案下，主备租户的数据一致性得到了保障。从容灾范围来看，此方案相较于第一个方案更为优越，因为它能够应对集群级别的故障。例如，若集群A发生故障，我们可以将业务无缝切换至集群B继续服务。然而，该方案也存在一些不足。</p>
+<ul>
+<li>止损过程需要人工干预。当机房A出现问题时，我们需要手动将备租户升级为主租户，这一过程非自动化。</li>
+<li>无法完全解决之前提到的数据脑裂问题，但相较于MySQL的同步性能和同步延迟，问题已大幅减少。</li>
+</ul>
+<p>因此，经过综合考虑机房间的网络质量和延迟后，我们最终决定采用方案一。</p>
+<p>确定容量方案后，下一步就是制定从MySQL迁移到OceanBase集群的方案，整体架构图如图13所示。得益于OceanBase丰富的配套工具，其中OMS具备双向同步能力，极大地简化了迁移过程，只需在三个机房中搭建一套新的OceanBase集群，然后利用OMS进行双向数据同步，即可完成整个集群的迁移和搭建工作。迁移过程非常顺利，且对业务影响较小。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/13.png" alt="业务迁移架构图"></p>
+<p>图13 业务迁移架构图</p>
+<h3 id="（三）AI业务场景：存储成本每月节省86"><a href="#（三）AI业务场景：存储成本每月节省86" class="headerlink" title="（三）AI业务场景：存储成本每月节省86%"></a>（三）AI业务场景：存储成本每月节省86%</h3><p>随着AI浪潮的到来，我们面临着海量多模态数据存储的挑战。好未来自身在AI领域的投入显著增加。为了支持各业务线快速接入AI的能力，我们部门推出了一项AI基础服务，旨在加速业务与AI技术的融合，提升整体业务效能。</p>
+<p>然而，随着接入服务的增多和业务的发展，我们遇到了一个显著问题：需要留存的数据量急剧增加，且数据增量异常庞大（见图14）。具体而言，我们服务的数据每月增长量接近10TB。如果使用传统MySQL服务器来承载这些增量数据，一套标准的服务器甚至难以存储一周的数据量。这不仅限制了数据的存储能力，也对业务的持续发展和数据利用构成了障碍。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/14.png" alt="数据量增长趋势"></p>
+<p>图14 数据量增长趋势</p>
+<p>此外，传统的数据库方案还要求业务进行复杂的分库分表操作，这不仅增加了技术实现的难度，也显著提升了整体的成本。面对这一痛点，我们结合OceanBase的海量数据存储能力加上云的极致弹性，探索出一条新的解决方案。</p>
+<p>我们利用OceanBase的分区表功能（见图15），使每个OBServer能够承载单个表的部分容量，从而分散数据存储压力。同时，通过OceanBase的高级压缩技术有效控制数据的增长速度，确保数据存储处于可控范围。此外，添加云上ECS购买与节点，在OceanBase分析表能够存储增量数据的基础上，我们每季度购买云上的ECS（弹性计算服务），并手动将新分区的日志流量切换到新的ECS上，以满足数据增长的需求。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/15.png" alt="OceanBase分区表功能"></p>
+<p>图15 OceanBase分区表功能</p>
+<p>但这种解决方案面临两个问题：一是成本不可控，随着数据量的快速增长，我们发现需要购买的ECS数量越来越多，甚至可能每月都需要购买三台，导致成本难以控制；二是数据迁移挑战，虽然我们将ECS添加到节点中，但数据迁移不能由OceanBase自动触发，需要在业务低峰期进行，这对运维工作带来了挑战。</p>
+<p>为了解决上述问题，我们制定了以下改进方案。</p>
+<p>首先，购买小规格ECS并挂接云盘：我们购买了三台小规格ECS，并在其下挂接了云盘。阿里云单个云盘最高可支持60TB的存储空间，因此我们每次先购买一个4TB的云盘。</p>
+<p>其次，云盘升配与OceanBase自动识别：当4TB云盘空间不足时，我们直接在ECS上对云盘进行升配，且此操作无需重启ECS，对OceanBase服务无影响。OceanBase在一段时间后会自动识别新增的硬盘空间，无需我们进行额外操作。</p>
+<p>然后，简化运维流程：现在的运维工作大大简化，只需在磁盘报警时对相应的ECS进行云盘扩容即可。这一改进方案为我们带来了极大便利。</p>
+<p>当前实施的方案带来了多方面的显著收益。一方面，该方案无需业务方进行任何改造，这使得业务团队能够完全专注于业务的整体发展，而无需分心于数据处理或存储方案的细节。这不仅提高了业务发展的效率，还确保了业务团队能够充分利用其资源和精力；另一方面，该方案成功应对了当前数据量急剧增长的问题。通过高效的存储和处理能力，确保了数据的稳定存储和管理，满足了业务对数据增长的需求。这些优势使我们得以更好地支持业务的发展，并确保数据的可靠性和完整性。</p>
+<p>此外，结合OceanBase与云的弹性方案，好未来实现了成本的显著降低。改进后，我们每个月新增的成本仅为原来传统方案的14%，相当于每个月可以节省86%的成本。使我们能够以更低的成本实现更高的数据存储和处理能力，从而提高整体经济效益。</p>
+<p>然而，我们同时意识到当前单个实例的最高存储上限为650TB，这一限制早晚会达到瓶颈，因此制定了未来规划以应对这一挑战。我们计划将历史数据迁移到对象存储服务（OSS）上，以突破存储限制。OSS提供几乎无限存储空间，能够满足我们长期的数据存储需求。同时，我们将利用OceanBase提供的外表能力，对存储在OSS上的数据进行查询和处理。这一结合将确保我们能够满足整个业务对存储和数据处理的需求，同时保持成本效益。</p>
+<h3 id="（四）网校报表：性能较MySQL提升60"><a href="#（四）网校报表：性能较MySQL提升60" class="headerlink" title="（四）网校报表：性能较MySQL提升60%"></a>（四）网校报表：性能较MySQL提升60%</h3><p>当前，我们的网上推广活动正通过短视频等热门方式进行投放。为了有效运营这些活动，业务团队需要将广告投放、营收数据等相关数据存放到数据库中，以便运营、投手等人员能够实时查看，并根据数据及时调整投放策略。因此，这个平台对数据响应速度的要求非常高。</p>
+<p>具体来说，这些报表相关的数据表属于OLAP业务范畴，主要是宽表结构，且数据量级都在千万级。业务团队希望这些宽表的千万级查询能够在秒级内返回结果，否则将严重影响用户的使用体验。在接到需求后，我们考虑到OceanBase 4.3版本提供的列存能力，预期可以给OLAP性能带来显著提升。于是，我们将该租户从OceanBase 4.2迁移到OceanBase 4.3，并将业务使用的所有表都转换成了列存格式。</p>
+<p>然而，在初步转换完成后，我们发现仅依靠内存的能力在某些场景下仍然不够，因此又进行了一些性能优化，以确保在所有业务场景下性能都不会出现退化。我们选取了一些业务较为复杂的实例进行测试，从效果来看，OceanBase大部分实例都能在一秒左右返回结果。与MySQL相比，整体性能提升了60%。</p>
+<p>在内存使用的过程中，我们也探索出一些有效方案。这些方案不仅提升了性能，还优化了内存使用效率。个人认为这些方案值得与大家分享，或许对团队和个人都有所启发。</p>
+<p>在使用列存技术时，我们初期可能会遇到一些不确定性和挑战，尤其是关于何种查询最适合列存。通过实践，我们得出了一些经验。首先，当查询的过滤条件仅涉及少量列（如单列或几个列）时，即使表中没有其他索引，列存也能表现出良好的性能。然而，如果过滤条件涉及的列很多且没有索引，使用列存可能效果不佳，因为每次扫描列的代价较高。</p>
+<p>OceanBase官方也给出了一些建议。由于优化原因，当查询中的聚合函数包含多列表达式运算时，列存可能不太适用。这是因为目前列存对于这类聚合计算中的表达式向量优化尚未及时完成，但后续版本将会有所改进。</p>
+<p>另一个特别重要的点是列存技术最适合读多写少的场景。在使用过程中，我们发现频繁更新数据会导致内存性能下降，需要及时进行数据合并以恢复性能（见图16）。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/16.png" alt="数据合并"></p>
+<p>图16 数据合并</p>
+<p>总结来说，使用列存表需要满足三个要素：表越宽，列存优势越大；”where”条件最好是单列检索，以提高查询效率；以及场景应该”读多写少”。对于频繁更新的场景，使用列存可能效果不佳。</p>
+<p>针对上述优化点，我们给出以下建议：</p>
+<ul>
+<li>对于OLAP场景，业务在建表时应指定列存标志，或设置租户参数为column，以便后续创建的表都是列存表，从而简化表创建过程。</li>
+<li>如果业务有批量导入数据的场景，每次导入后应及时执行合并操作，以避免性能大幅下降。</li>
+<li>OCP本身具有合并管理的存储策略，我们可以调整相关参数以实现自动存储性能优化。</li>
+</ul>
+<h3 id="（五）内容审核：确保数据的安全与高效管理"><a href="#（五）内容审核：确保数据的安全与高效管理" class="headerlink" title="（五）内容审核：确保数据的安全与高效管理"></a>（五）内容审核：确保数据的安全与高效管理</h3><p>我们的内容审核服务也将机器审核的原始数据及审核结果存储在OceanBase中，确保数据的安全与高效管理。</p>
+<p>内容审核这项业务主要围绕课程教学展开，在此过程中，老师与学生间存在大量实时互动。同时，用户还可能通过我们的应用与大型模型进行交互，这三者之间互动频繁。根据当前政策要求，所有实时互动均需经过审核。因此，我们的内容审核服务旨在全面覆盖集团各项业务，对所有互动信息进行实时审核，这让传统数据库面临诸多挑战：</p>
+<ul>
+<li>由于集团所有业务都需要内容审核，且学生上课时间集中，因此对数据库集群的吞吐量要求极高。</li>
+<li>业务要求保存所有审核的原始内容及结果，既用于监管，也可能用于后续的人工审核，因此所需存储的数据量巨大。</li>
+<li>机审数据还需与人工审核及运维平台对接，以便进行运营工作，这涉及复杂的业务逻辑处理。</li>
+</ul>
+<p>当我们迁移至OceanBase后，上述挑战得以解决，如图17所示。</p>
+<ul>
+<li>OceanBase凭借其卓越的高可扩展性能，实现了吞吐和容量的按需扩容，一举解决了业务在数据库使用中遇到的核心难题。</li>
+<li>OceanBase内置的并行查询与向量化引擎大幅提升了查询性能，为用户带来了更加流畅的体验。</li>
+</ul>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/17.png" alt="迁移至OceanBase后的情况"></p>
+<p>图17 迁移至OceanBase后的情况</p>
+<h2 id="三、业务探索，用OceanBase替换更多数据库"><a href="#三、业务探索，用OceanBase替换更多数据库" class="headerlink" title="三、业务探索，用OceanBase替换更多数据库"></a>三、业务探索，用OceanBase替换更多数据库</h2><p>随着OceanBase深入到好未来更多的业务场景中，我们发现其可以做的事还有很多，甚至能更好地完成不少传统数据库在做的工作。因此，为了进一步简化技术栈，提高系统稳定性，我们尝试用OceanBase替换更多数据库。</p>
+<h3 id="（一）OceanBase列存替换ClickHouse"><a href="#（一）OceanBase列存替换ClickHouse" class="headerlink" title="（一）OceanBase列存替换ClickHouse"></a>（一）OceanBase列存替换ClickHouse</h3><p>OceanBase在2024年发布的4.3版本主打列存功能，可替代当前的ClickHouse服务。集团目前仅用ClickHouse存储日志中心清洗后的数据，这些数据经实时聚合后用于监控大盘和业务高峰的盯盘。为节省人力成本，我们选择用OceanBase的列存功能来替换ClickHouse（见图18）。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/18.png" alt="通过OceanBase的列存功能替换ClickHouse"></p>
+<p>图18 通过OceanBase的列存功能替换ClickHouse</p>
+<p>之所以替换掉ClickHouse，是因为相较而言OceanBase列存具备几大显著优势。</p>
+<p>（1）OceanBase4.3版本引入了全新的列式存储及限量化功能，大幅提升了其AP能力，官方数据显示其性能已与ClickHouse相媲美。</p>
+<p>（2）OceanBase列存还兼容行式存储。这意味着在同一个集群中，既可以存在列存表以满足AP业务需求，也可以存在行存表以支持TP业务，从而实现了业务场景的灵活覆盖。</p>
+<p>（3）OceanBase列存允许对列存表或行存表添加多种索引，如行存索引或列存索引，这使得单张表能够应对多种业务访问场景，提高了数据访问的灵活性和效率。</p>
+<p>（4）OceanBase还支持物化视图、旁路导入等高级功能，这些功能为业务开发提供了更多AP使用场景的应用可能性，进一步拓展了其应用范围。</p>
+<p>（5）OceanBase对复杂查询的支持能力明显优于ClickHouse，由于后者擅长做单表操作，对于复杂的查询如join操作，常常局限于内存大小，导致其能力捉襟见肘。</p>
+<h3 id="（二）OBKV替换Pika"><a href="#（二）OBKV替换Pika" class="headerlink" title="（二）OBKV替换Pika"></a>（二）OBKV替换Pika</h3><p>由于业务场景涉及在线教学，老师和学生之间的互动频繁，包括老师的涂鸦信息和学生的提问等，都以消息形式存储。最初我们选择将信息存放在Redis中，架构如图19所示，但由于数据量迅速增长导致了成本过高，难以承受。因此，我们转而选择了Pika作为替代方案。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/19.png" alt="消息存储架构"></p>
+<p>图19 消息存储架构</p>
+<p>然而，在使用Pika的过程中，我们遭遇了几个关键问题：</p>
+<ul>
+<li>Pika偶尔会出现性能抖动，导致服务短暂卡顿；</li>
+<li>在进行数据库运维操作如主动切换时，会触发全量同步。鉴于Pika的数据量庞大，达到数千GB，一次全量同步对业务构成的风险相当高；</li>
+<li>当前我们使用的Pika版本较旧，而新版本3.5虽已发布，但缺乏平滑的升级方案，这给我们运维Pika带来了不小的困境。</li>
+</ul>
+<p>在调研OBKV时，我们意外发现它是替换Pika的极佳选项。</p>
+<ul>
+<li>OBKV与OceanBase共享相同的底层架构，确保了其存储性能稳定，能够实现RTO小于8秒且RPO为零；</li>
+<li>OBKV推出了Redis模式，该模式完全兼容我们现有的Redis协议，意味着业务迁移到OBKV时，无需对业务层进行任何改造；</li>
+<li>OBKV具备出色的数据压缩比，鉴于我们消息体量大，这一特性将显著降低成本。</li>
+</ul>
+<p>性能优势，如图20所示。</p>
+<p><img data-src="/img/7-30-tal-ai-oceanbase-cost-reduction/20.png" alt="OBKV与Pika性能对比"></p>
+<p>图20 OBKV与Pika性能对比</p>
+<h2 id="四、未来期望"><a href="#四、未来期望" class="headerlink" title="四、未来期望"></a>四、未来期望</h2><p>以上是好未来集团升级数据库方案的一些经验，虽然，OceanBase带来的收益满足我们的预期，但在使用OceanBase过程中，我们也希望它能够更加完美。</p>
+<p>首先，是对OMS的需求。正如之前提及，OceanBase不仅数据库内核强大，其周边的生态工具也极为出色，尤其是OMS，集数据传输、数据订阅、数据校验等多功能于一体，功能全面。我们期望未来OceanBase能将OMS作为一个独立且核心的产品来持续发展和完善，以更好地支持我们的业务。例如，在数据同步方面，无论是MySQL到OceanBase，还是与其他数据库之间的数据迁移，OMS都能助力解决我们日常运维中遇到的数据同步难题。</p>
+<p>其次，在内核层面，我们期望OceanBase能增添两项关键能力。</p>
+<p>一是期待推出存算分离架构。鉴于OceanBase当前采用的是单机分布式一体化架构，即CPU、内存与存储集成于一体，我们希望OceanBase能设计出一种存储与计算分离的架构。从当前线上集群的分布状况来看，OceanBase集群的存储资源已使用了约70%，而CPU资源仅利用了10%。这种不均衡的分配常因磁盘容量限制，导致CPU资源无法有效扩展。若采用存储与计算分离的架构，将极大提升资源调度的灵活性。</p>
+<p>二是期待用OceanBase来做数据湖。该需求是由我们的大数据团队提出，希望将OceanBase作为数据湖场景来使用，以支持外表查询和联邦查询的需求。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E5%88%97%E5%AD%98/" rel="tag"># 列存</a>
+              <a href="/tags/OBKV/" rel="tag"># OBKV</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E5%A5%BD%E6%9C%AA%E6%9D%A5/" rel="tag"># 好未来</a>
+              <a href="/tags/%E5%A4%9A%E6%9C%BA%E6%88%BF%E5%AE%B9%E7%81%BE/" rel="tag"># 多机房容灾</a>
+              <a href="/tags/%E6%95%99%E8%82%B2%E7%A7%91%E6%8A%80/" rel="tag"># 教育科技</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-29-extreme-cost-reduction-analysis/" rel="prev" title="OceanBase：如何做到从硬件到存储再到运维的极致降本？">
+                  <i class="fa fa-angle-left"></i> OceanBase：如何做到从硬件到存储再到运维的极致降本？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-01-agentic-ai-dify-oceanbase/" rel="next" title="Agentic AI，基于 Dify x OceanBase 的实践">
+                  Agentic AI，基于 Dify x OceanBase 的实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

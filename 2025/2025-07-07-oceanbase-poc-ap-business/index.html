@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase PoC 经验总结（二）—— AP 业务">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/05.png">
+<meta property="article:published_time" content="2025-07-07T07:42:37.000Z">
+<meta property="article:modified_time" content="2025-07-07T10:51:02.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OLAP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PoC">
+<meta property="article:tag" content="分区设计">
+<meta property="article:tag" content="列存">
+<meta property="article:tag" content="数据库迁移">
+<meta property="article:tag" content="表结构设计">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-7-oceanbase-poc-ap-business/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/","path":"2025/2025-07-07-oceanbase-poc-ap-business/","title":"OceanBase PoC 经验总结（二）—— AP 业务"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase PoC 经验总结（二）—— AP 业务 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B9%B3%E8%BF%81%E7%AD%96%E7%95%A5"><span class="nav-number">2.</span> <span class="nav-text">平迁策略</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A1%A8%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">表结构设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E8%81%9A%E9%9B%86"><span class="nav-number">3.1.</span> <span class="nav-text">数据聚集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83"><span class="nav-number">3.2.</span> <span class="nav-text">数据分布</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%88%E5%B9%B6%E7%AD%96%E7%95%A5"><span class="nav-number">3.3.</span> <span class="nav-text">合并策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E7%AE%A1%E7%90%86"><span class="nav-number">3.4.</span> <span class="nav-text">分区管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99"><span class="nav-number">3.5.</span> <span class="nav-text">排序规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95"><span class="nav-number">3.6.</span> <span class="nav-text">索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#colocate-tablegroup"><span class="nav-number">3.7.</span> <span class="nav-text">colocate &#x2F; tablegroup</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%8D%E6%9D%82%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.8.</span> <span class="nav-text">复杂数据类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%81%9A%E5%90%88%E8%A1%A8"><span class="nav-number">3.9.</span> <span class="nav-text">聚合表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%B0%8F%E8%BF%81%E7%A7%BB%E5%8D%95%E4%BD%8D"><span class="nav-number">3.10.</span> <span class="nav-text">最小迁移单位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AP-%E5%9C%BA%E6%99%AF%E8%A1%A8%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1%E6%80%BB%E7%BB%93"><span class="nav-number">3.11.</span> <span class="nav-text">AP 场景表结构设计总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A1%8C%E5%AD%98-%E5%88%97%E5%AD%98%E5%90%84%E8%87%AA%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">4.</span> <span class="nav-text">行存 &#x2F; 列存各自的优势</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A2%9E%E9%87%8F%E6%95%B0%E6%8D%AE%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">5.</span> <span class="nav-text">增量数据常见问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OceanBase-AP-%E5%9C%BA%E6%99%AF-PoC-%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">OceanBase AP 场景 PoC 总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase PoC 经验总结（二）—— AP 业务 | Longda's Interesting World">
+      <meta itemprop="description" content="本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase PoC 经验总结（二）—— AP 业务
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-07 15:42:37" itemprop="dateCreated datePublished" datetime="2025-07-07T15:42:37+08:00">2025-07-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">兹拉坦</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>15 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase PoC 经验总结（二）—— AP 业务","description":"本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。","image":"https://ilongda.com/img/7-7-oceanbase-poc-ap-business/01.png","wordCount":3917,"datePublished":"2025-07-07T07:42:37.000Z","dateModified":"2025-07-07T10:51:02.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"},"url":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/","inLanguage":"zh-CN","keywords":["OceanBase","列存","PoC","OLAP","分区设计","表结构设计","数据库迁移"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase PoC 经验总结（二）—— AP 业务","item":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"}]}</script>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>前段时间，OceanBase 社区公众号转载了庆涛大佬的一篇<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTU3MCZpZHg9MSZzbj04YzRjZWM1OWVjMzY1OGNlMWI0NzQ4MmQ2Nzg2MWEzYiZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《OceanBase PoC 经验总结（一）》<i class="fa fa-external-link-alt"></i></span>，为大家介绍了他积累的大量 OceanBase PoC 经验。不过庆涛日理万机，之前预告的一篇和 SQL 有关的 PoC 文章还在持续打磨中。</p>
+<p>虽说好饭不怕晚，但我还是先替庆涛给大家提前加个餐，拿自己的狗尾续个貂。</p>
+<p>这篇 OceanBase AP 业务的 PoC 经验总结，是我在白华大佬做相关技术分享时记录的一个笔记，主要是业务平迁和数据库对象设计，不会涉及太多运维。</p>
+<p><img data-src="/img/7-7-oceanbase-poc-ap-business/01.png" alt="PoC 经验总结"></p>
+<blockquote>
+<p>PoC（Proof of Concept）的含义是：</p>
+<p>概念验证，是一种验证某个理论或解决方案是否可行的过程或实践。</p>
+<p>它的主要目的是：通过一个简单、快速且低成本的实现方式来展示某个框架、技术、方案或项目是否能够达到预期目标，确认可行性或者探讨潜在的应用场景。</p>
+</blockquote>
+<p>今天把学习笔记在社区公众号中共享出来，希望能够帮助 OceanBase 社区版的用户们在 PoC 的过程中少踩一些坑。话不多说，正文开始。</p>
+<span id="more"></span>
+
+<h1 id="平迁策略"><a href="#平迁策略" class="headerlink" title="平迁策略"></a>平迁策略</h1><p>我们这次讨论的 OceanBase AP 场景 PoC，是替换原有 AP 系统。也就是说，前提是：默认原有业务数据库的 schema 模型等都已经是被验证过的，而不是重新为新业务设计。</p>
+<p><strong>整体来看，可以采用平迁策略。即原系统是行存，用 OB 替换之后也是行存；原系统是列存，替换之后也是列存。聚集键、分区键等也保持和原系统保持一致即可。识别出特殊场景后，再做不一致设计。</strong></p>
+<p>这里只有索引比较特殊，不是完全平替。一些 AP 数据库，索引创建的可能会比较随意，数量极大。在 OceanBase 中，索引尽量按业务需求来创建，在替换时应该只保留需要的索引。</p>
+<h1 id="表结构设计"><a href="#表结构设计" class="headerlink" title="表结构设计"></a>表结构设计</h1><p>这里有一个在表格，列举了主流 AP 数据库中，表结构设计时需要关注的一些要点。</p>
+<p>表格中的内容不全，可能会在后面的学习笔记中继续完善和修改。表格中只罗列一些信息，主要是为了在不同数据库间进行术语转换。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>OceanBase</th>
+<th>Other AP DataBases</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据聚集<br>(Data Clustering)</td>
+<td>- 堆表: 插入序<br>- 索引组织表: 主键序</td>
+<td>- CLUSTERED KEY<br>- ORDER BY<br>- CLUSTER ON</td>
+</tr>
+<tr>
+<td>数据分布<br>(Data Distribution)</td>
+<td>- 分区<br>&nbsp;&nbsp;- 通常一级时间维度 range 分区<br>&nbsp;&nbsp;- 二级 hash 分区<br>- tablegroup sharding<br>- primary zone<br>- 复制表</td>
+<td>- DISTRIBUTED BY<br>&nbsp;&nbsp;- HASH &#x2F; RANDOM &#x2F; ROUNDROBIN &#x2F; REPLICATED<br>- BROADCAST</td>
+</tr>
+<tr>
+<td>合并策略</td>
+<td>- 手动合并<br>- table_mode：<br>&nbsp;&nbsp;- normal<br>&nbsp;&nbsp;- queuing<br>&nbsp;&nbsp;- moderate<br>&nbsp;&nbsp;- super<br>&nbsp;&nbsp;- extreme</td>
+<td>- None<br>- 手动合并</td>
+</tr>
+<tr>
+<td>分区管理</td>
+<td>- 手动分区<br>- ODC 设置分区计划<br>- 435 BP2 自动分区分裂<br>- 435 BP2 动态分区管理</td>
+<td>- LIFECYCLE<br>- TTL（partition_retention_condition）<br>- 动态分区管理</td>
+</tr>
+<tr>
+<td>colocate</td>
+<td>tablegroup</td>
+<td>colocate_with</td>
+</tr>
+<tr>
+<td>聚合表</td>
+<td>Alternative MV</td>
+<td>- Aggregation Table<br>- Alternative MV</td>
+</tr>
+<tr>
+<td>最小迁移单位</td>
+<td>partition &#x2F; tablet</td>
+<td>- shard<br>- tablet<br>- share storage<br>- segment</td>
+</tr>
+</tbody></table>
+<p>上面这个表格太大，不适合在手机上阅读，接下来就通过文字来简单记录下这张表格中的要点。</p>
+<h2 id="数据聚集"><a href="#数据聚集" class="headerlink" title="数据聚集"></a>数据聚集</h2><p><strong>大多 AP 数据库都是按时间维度（由老到新）做聚集的堆表，对应 OceanBase 中的堆表。如果其他 AP 数据库用到了 CLUSTERED KEY，对应的则是 OceanBase 的索引组织表（默认）。</strong> 在 OceanBase 中，可以通过 default_table_organization 配置项来控制创建的表类型默认是堆表还是索引组织表。</p>
+<p>附上一个堆表和索引组织表的示意图（图中蓝色表示同属于具体一个用户的数据，红色表示同属于一天的数据）。</p>
+<ul>
+<li>按时间聚集（堆表默认）：</li>
+</ul>
+<p><img data-src="/img/7-7-oceanbase-poc-ap-business/02.png" alt="按时间聚集（堆表默认）"></p>
+<ul>
+<li>按用户聚集（索引组织表，主键为 user）：</li>
+</ul>
+<p><img data-src="/img/7-7-oceanbase-poc-ap-business/03.png" alt="按用户聚集（索引组织表）"></p>
+<ul>
+<li>按时间聚集 + 分区:</li>
+</ul>
+<p><img data-src="/img/7-7-oceanbase-poc-ap-business/04.png" alt="按时间聚集 + 分区"></p>
+<p>在常见的 AP 数据库中，有一些是通过 clustered key 进行数据聚集，还有个别的数据库数据聚集方式相对复杂，会分成很多层次。因为不同数据库的数据聚集方式可能都有一些出入，所以把某些 AP 数据库里的索引直接平迁到 OceanBase 里作为主键，可能并不合适。需要先理解原数据库的数据聚集方式，以及分片是怎么拆到多个机器上的，否则可能会出问题。</p>
+<h2 id="数据分布"><a href="#数据分布" class="headerlink" title="数据分布"></a>数据分布</h2><p>数据分布这里，可以简单理解成怎么把数据分布到多台机器上去。除了 share storage 的数据库，其他都是要考虑数据分布的。</p>
+<p>很多 AP 数据库都有分区（partition）+ 数据分布（distributed key）。其中分区（partition）是用于做数据管理的，例如可以把用于存放三年之前旧数据的分区给 drop 掉。而数据分布式单独设计的。<strong>当原数据库的表有 partition + distributed key 的时候，就需要在 OceanBase 中的对应表中设计分区键了。数据分区方式参考原数据库即可，例如 partition by 对应一级分区，distributed by 对应二级分区。</strong></p>
+<p>这里再介绍一个 AP 场景非常典型的表结构设计：堆表 (4.3.5.1 OLAP 模式默认为堆表) + 时间纬度一级 range 分区 + 业务纬度二级 hash 分区。</p>
+<p>在 OceanBase 中，除了分区，还有 tablegroup、复制表、primary zone 等概念，这里不再一一解析。</p>
+<h2 id="合并策略"><a href="#合并策略" class="headerlink" title="合并策略"></a>合并策略</h2><p>这里需要了解的就是 OceanBase 中 buffer 表的自适应合并优化配置，详见：<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTQ1OCZpZHg9MSZzbj1jZDJmYzYxN2EyNDA2ZDAxODkxZDgyNzM0OGY1MGZjYSZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《在 OceanBase 中，如何应对存储引擎的读放大问题？》<i class="fa fa-external-link-alt"></i></span></p>
+<p>我上面这篇公众号文章的标题起的不好，有点儿文不对题，但想改的时候已经晚了，实际就是在介绍表级配置项 table mode 五种不同档位的合并策略。</p>
+<h2 id="分区管理"><a href="#分区管理" class="headerlink" title="分区管理"></a>分区管理</h2><p>OceanBase 的分区管理这里，最常见的一般都是手动设置分区。在 AP 场景中最最常见的一般是上面提到过的一级 range 分区（时间维度），二级 hash 分区。</p>
+<p>除此以外，OceanBase 还有一些自动分区的能力：</p>
+<ul>
+<li>ODC 设置分区计划</li>
+<li>435 BP2 自动分区分裂</li>
+<li>435 BP2 动态分区管理</li>
+</ul>
+<p>之前比较常见的是通过 ODC 设置自动创建和清理分区。</p>
+<p>现在 435 BP2 及以上版本，内核就会直接支持自动分区分裂和动态分区管理（后续内核研发同学会继续在这个公众号上发布自动分区分裂等相关的技术内容，也会通过在线体验和线上直播等社区活动为大家详细介绍这些功能）。</p>
+<h2 id="排序规则"><a href="#排序规则" class="headerlink" title="排序规则"></a>排序规则</h2><p><strong>AP 场景中，建议是尽量把业务中字符串类型的排序规则设置成 binary，例如 COLLATE &#x3D; utf8mb4_bin。</strong> 因为直接比较二进制的，不用在比较时还去考虑大小写是否敏感等问题，效率会比其他 collation 中的比较方式高很多，这很好理解。</p>
+<p>我之前也写过 OceanBase 中一些字符串表达式的优化代码，所以知道内核中很多和字符串相关的操作，都会有仅对 binary 生效的各种短路优化，还可以进一步提升性能。</p>
+<p>在上面的表格中也可以看到，很多主流的纯 AP 数据库，都只支持 utf8 binary，因为逻辑简单，效率高，还容易通过各种奇技淫巧进行优化。如果支持了其他的 collation，默认一般也都是忽略大小写的。</p>
+<p>这个点虽然又小又老生常谈，但是很重要。OceanBase 有一些 AP 用户，collation 本来可以用 binary，但还是设置成了其他的，例如 xxx_general_ci 等。上线之后改起来就会很麻烦，重排数据一般都是 Offline DDL，而且重排要花费的时间也和数据量相关，耗时不可控，只能避开业务窗口来调整。所以要尽量一开始就把 collation 给设置对。</p>
+<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p>OceanBase 里的索引和纯 AP 数据库的索引可能还不太一样，在一个 table scan 算子里，对同一张表进行谓词过滤，只能用到一个索引。<strong>所以建议就是按需建索引，尽量别像其他纯 AP 数据库一样，大量创建（不必要的）索引。</strong></p>
+<p>OB 正在支持 index merge 的能力，这个能力会对查询谓词进行拆分，将每部分谓词使用不同的索引进行 index range scan，随后合并各个索引表的扫描结果，再统一进行回表。当查询中各个索引的过滤性不强，但联合过滤性强时，会有较大的性能优势。</p>
+<p>其实现在的版本已经支持通过 UNION_MERGE Hint 来进行 index merge 了，不过随着 AP 业务的不断拓展，马上还会支持更常用的多个全文索引和二级索引的 index merge。</p>
+<h2 id="colocate-tablegroup"><a href="#colocate-tablegroup" class="headerlink" title="colocate &#x2F; tablegroup"></a>colocate &#x2F; tablegroup</h2><p>一些 AP 数据库在打散数据时，支持更细粒度地去调整数据在不同节点的分布情况。例如 StarRocks 支持通过 colocate_with，可以将两张或多张表的分区分布规则设置为一致，从而在分布式查询中显著减少数据重分布的开销，提升 Join 查询性能。</p>
+<p>另一些纯 AP 数据库，并不支持这个能力，大多都是非常简单的 distributed by 分布键，不过只要能保持 hash 分区规则和分片数一致，基本都能保证分布规则是一样的。</p>
+<p>在 OceanBase 中，可以通过 <strong>tablegroup</strong> 来替换类似于 colocate_with 的能力。tablegroup 也是用来调整一批表的分区分布规则，让查询中尽量少一些数据在网络中的重分布，使得计划中出现更多的 partition wise join。</p>
+<h2 id="复杂数据类型"><a href="#复杂数据类型" class="headerlink" title="复杂数据类型"></a>复杂数据类型</h2><p>AP 场景常用的复杂数据类型是 json、bitmap、array、string，这些 OceanBase 都支持了，直接平迁就行，所以先略过不提。</p>
+<h2 id="聚合表"><a href="#聚合表" class="headerlink" title="聚合表"></a>聚合表</h2><p>目前只有 StarRocks 有这个 Aggregation Table，在 OceanBase 中，可以用物化视图来代替。</p>
+<h2 id="最小迁移单位"><a href="#最小迁移单位" class="headerlink" title="最小迁移单位"></a>最小迁移单位</h2><p>各家数据库在这里一般都只是名字不同，有的叫 shard，有的叫 segment，有的叫 share storage，其实不必细究。OceanBase 中的最小迁移单位，在逻辑上叫 partition，partition 对应的物理分片叫 tablet，了解即可。</p>
+<h2 id="AP-场景表结构设计总结"><a href="#AP-场景表结构设计总结" class="headerlink" title="AP 场景表结构设计总结"></a>AP 场景表结构设计总结</h2><p>OceanBase AP 场景的表结构设计考虑项：</p>
+<ol>
+<li>数据聚集纬度：通常按时间，部分场景按用户 ID。个别场景还得考虑增量数据对合并的影响，例如可以通过设置时间维度的聚集，尽量将增量数据聚集到一起，这样可以增加查询效率和提升合并速度。</li>
+<li>行存 &#x2F; 列存：尽量与原系统保持一致，识别出特殊场景再做不一致设计。</li>
+<li>增量数据：如果是按照时间维度进行分区，并且主要更新最近的数据，那么应该尽量将增量数据聚集到一起。如果原表没有分区，还可通过 hash 分区将增量打散到多机，充分利用多机性能。</li>
+<li>分区：列存会增加分区内数据管理的复杂度，相比行存更应采用更少的分区数。AP 场景建议：hash 分区数设置为单 zone cpu 数的一半，单机分区数不宜超过 10 万，单分区行数不宜小于 100 万。</li>
+<li>table mode：识别出来的 buffer 表采用 queue 表模式。</li>
+<li>collation：尽量使用 utf8mb4_binary，替换后性能一般可提升 20% ~ 30%。</li>
+<li>索引：AP 场景尽量不使用建索引优化，根据原系统已有的索引，可按需创建少量必要的索引。</li>
+<li>复制表：会影响写入性能，按需来。</li>
+</ol>
+<h1 id="行存-列存各自的优势"><a href="#行存-列存各自的优势" class="headerlink" title="行存 &#x2F; 列存各自的优势"></a>行存 &#x2F; 列存各自的优势</h1><p><img data-src="/img/7-7-oceanbase-poc-ap-business/05.png" alt="行存 &#x2F; 列存"></p>
+<p>列存的实现只要知道这两点：</p>
+<ul>
+<li>只有基线数据（major sstable）是列存。增量数据 memtable、转储的 sstable 都是行存。</li>
+<li>行列混存时，会共用行存增量数据。</li>
+</ul>
+<p>列存优势：</p>
+<ul>
+<li>大宽表只扫描部分列，省了 IO。</li>
+<li>压缩率高 (相比行存)。</li>
+<li>默认就有 skip index，可以快速过滤（行存需要手动去创建）。</li>
+</ul>
+<p>行存优势:</p>
+<ul>
+<li>适合点查 &#x2F; 小范围扫描 (insert on duplicate update、索引回表、NLJ 等需要拿到完整行数据的操作)</li>
+<li>可以通过 row cache 加速查询。</li>
+<li>合并快（合并时不需要对增量数据和基线数据进行行列格式互转）。列存可适当调大合并线程数 merge_thread_count。同时也需关注 IO，例如可以考虑把 _io_read_batch_size 调大，把 _io_read_redundant_limit_percentage 调小。</li>
+</ul>
+<blockquote>
+<p>To be continue：</p>
+<p>行存 &#x2F; 列存这个话题太大了，这次就先说几个最基础的点，其他会专门放在下一篇 PoC 学习笔记里来细说。</p>
+</blockquote>
+<h1 id="增量数据常见问题"><a href="#增量数据常见问题" class="headerlink" title="增量数据常见问题"></a>增量数据常见问题</h1><p>常见问题：</p>
+<ol>
+<li>如果增量数据分布很散，导致所有基线数据都要跟着改，就会造成比较严重的写入放大问题。叠加列存合并慢问题，会导致合并时间过长。如果是时间维度组织和更新的表，一般不会有问题。</li>
+<li>增量数据本身查询慢：单行，无下压，无编码。如果增量数据都是内存里的还好，如果增量数据有转储的 sstable，因为是行存，可能会有行列互转的开销，而且还会有额外的 IO 开销。</li>
+<li>查询 “拖累”：这个是影响最大的。例如一行增量可能会拖累前后 100 ~ 1000 行的查询性能。因为微块里只要有一行数据做了修改，整个微块的查询可能就会退化成单行迭代的方式，性能会受到影响。这个问题很快会被优化掉。</li>
+</ol>
+<p>解决方式：</p>
+<ol>
+<li>通过选择 range 分区大小，控制写入放大范围。比如原来按月分区，在 OceanBase 中，可能可以通过调整成按周分区，来减少写放大的影响。</li>
+<li>原来没有分区的表，在 OceanBase 中可以考虑通过 hash 分区将增量数据打散到多机，充分利用多机的硬件资源。</li>
+<li>调整 table mode 加快合并，增量数据尽量在合并完成之后再查询。</li>
+<li>调整数据聚集方式，将增量数据聚集到一起，避免查询处处被”拖累”。</li>
+</ol>
+<h1 id="OceanBase-AP-场景-PoC-总结"><a href="#OceanBase-AP-场景-PoC-总结" class="headerlink" title="OceanBase AP 场景 PoC 总结"></a>OceanBase AP 场景 PoC 总结</h1><blockquote>
+<p>以下内容适用于 OceanBase 435 bp2 版本</p>
+</blockquote>
+<ul>
+<li>选择 OLAP 租户模板，默认：列存，堆表，auto dop，ubf8mb4_binary，关 NLJ 等。</li>
+<li>原库中有 clustered key &#x2F; clustering_key &#x2F; ordery by 等聚集索引时，通常来说，就不是以时间维度聚集的了。需要使用索引组织表（不能用堆表），设计主键达到类似效果。</li>
+<li>行存 &#x2F; 列存与原系统保持一致，例如 MySQL 迁过来用行存，某某纯 AP 数据库迁过来用列存，MySQL + 某某 AP 数据库迁过来用行列混存（后面的 PoC 学习笔记里会细说）。</li>
+<li>分区优先考虑：堆表 + 时间列 range 一级分区 + 业务 hash 二级分区。否则要根据数据聚集维度和常用查询语句来设计分区。</li>
+<li>collation 尽量用 utf8mb4_bin。</li>
+<li>增量问题：将增量数据聚集到一起 + table mode 调整。</li>
+<li>空间换时间：按需少量索引 + 物化视图。</li>
+<li>旁路导入: 旁路导入会加表锁，会影响 DML 操作（后面的 PoC 学习笔记里会细说）。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%97%E5%AD%98/" rel="tag"># 列存</a>
+              <a href="/tags/PoC/" rel="tag"># PoC</a>
+              <a href="/tags/OLAP/" rel="tag"># OLAP</a>
+              <a href="/tags/%E5%88%86%E5%8C%BA%E8%AE%BE%E8%AE%A1/" rel="tag"># 分区设计</a>
+              <a href="/tags/%E8%A1%A8%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag"># 表结构设计</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%81%E7%A7%BB/" rel="tag"># 数据库迁移</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-04-ai-app-unstructured-document-analysis/" rel="prev" title="AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性">
+                  <i class="fa fa-angle-left"></i> AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-08-standalone-distributed-integrated-database/" rel="next" title="OceanBase 单机分布式一体化数据库的架构设计与优化">
+                  OceanBase 单机分布式一体化数据库的架构设计与优化 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

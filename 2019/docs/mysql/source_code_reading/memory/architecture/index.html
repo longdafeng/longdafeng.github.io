@@ -207,18 +207,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-count">207</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">271</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -359,7 +359,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 内存概述","description":"MySQL 内存管理概述：梳理 Server 层与 InnoDB 引擎各自的内存使用方式与接口划分，更多细节与示例见正文。","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1567585352721-537a9700-e92a-46e3-9122-98a3cc65217f.png#align=left&display=inline&height=269&name=image.png&originHeight=269&originWidth=811&size=66114&status=done&width=811","wordCount":19,"datePublished":"2019-06-21T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.955Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/architecture/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/architecture/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- 内存概述","description":"MySQL 内存管理概述：梳理 Server 层与 InnoDB 引擎各自的内存使用方式与接口划分，更多细节与示例见正文。","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1567585352721-537a9700-e92a-46e3-9122-98a3cc65217f.png#align=left&display=inline&height=269&name=image.png&originHeight=269&originWidth=811&size=66114&status=done&width=811","wordCount":19,"datePublished":"2019-06-21T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.955Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/architecture/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/architecture/","inLanguage":"zh-CN","keywords":["MySQL","Database","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- 内存概述","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/architecture/"}]}</script>
 <h1 id="内存概述"><a href="#内存概述" class="headerlink" title="内存概述"></a>内存概述</h1><p><a name="RZZhu"></a></p>
 <h1 id="内存使用"><a href="#内存使用" class="headerlink" title="内存使用"></a>内存使用</h1><p><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567585352721-537a9700-e92a-46e3-9122-98a3cc65217f.png#align=left&display=inline&height=269&name=image.png&originHeight=269&originWidth=811&size=66114&status=done&width=811" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567585366599-eea21d89-cb48-439b-a92d-5c5480a47163.png#align=left&display=inline&height=85&name=image.png&originHeight=85&originWidth=201&size=5047&status=done&width=201" alt="image.png"><br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1568949772191-fdbb2727-b546-4a44-af02-b7e1c38dd078.png#align=left&display=inline&height=381&name=image.png&originHeight=381&originWidth=944&size=57930&status=done&width=944" alt="image.png"><br>server层使用方式</p>
@@ -392,8 +392,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" rel="tag"># MySQL 源码解读</a>
           </div>
 
@@ -411,8 +411,8 @@
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2019/docs/mysql/source_code_reading/memory/index/" rel="next" title="MySQL 源码解读 -- 内存管理">
-                  MySQL 源码解读 -- 内存管理 <i class="fa fa-angle-right"></i>
+                <a href="/2019/docs/mysql/source_code_reading/memory/buffer_pool/" rel="next" title="MySQL 源码解读 -- Buffer Pool">
+                  MySQL 源码解读 -- Buffer Pool <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -449,14 +449,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">197k</span>
+    <span title="Word count total">483k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:57</span>
+    <span title="Reading time total">29:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

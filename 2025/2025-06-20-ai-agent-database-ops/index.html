@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="探讨如何用小模型替代满血大模型实现国产数据库智能运维，通过上下文增强推理能力，构建告警分析、SQL优化、巡检三种AI Agent。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="大模型VS小模型：论国产数据库运维AI Agent的正确打开方式">
+<meta property="og:url" content="https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="探讨如何用小模型替代满血大模型实现国产数据库智能运维，通过上下文增强推理能力，构建告警分析、SQL优化、巡检三种AI Agent。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/01.png">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/02.png">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/03.png">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/04.png">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/05.png">
+<meta property="og:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/06.png">
+<meta property="article:published_time" content="2025-06-19T22:24:14.000Z">
+<meta property="article:modified_time" content="2025-06-19T22:24:14.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="SQL优化">
+<meta property="article:tag" content="大模型">
+<meta property="article:tag" content="小模型">
+<meta property="article:tag" content="数据库诊断">
+<meta property="article:tag" content="智能运维">
+<meta property="article:tag" content="知识图谱">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/6-20-ai-agent-database-ops/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/","path":"2025/2025-06-20-ai-agent-database-ops/","title":"大模型VS小模型：论国产数据库运维AI Agent的正确打开方式"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>大模型VS小模型：论国产数据库运维AI Agent的正确打开方式 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9A%B4%E8%AE%BA%EF%BC%9A%E9%80%9A%E7%94%A8%E6%BB%A1%E8%A1%80%E5%A4%A7%E6%A8%A1%E5%9E%8B%E2%80%9D%E4%B8%8D%E9%80%82%E5%90%88%E2%80%9D%E7%94%A8%E4%BA%8E%E8%B5%8B%E8%83%BD%E5%9B%BD%E4%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%99%BA%E8%83%BD%E8%AF%8A%E6%96%AD%E8%BF%90%E7%BB%B4"><span class="nav-number">1.</span> <span class="nav-text">暴论：通用满血大模型”不适合”用于赋能国产数据库智能诊断运维</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A5%E5%B0%8F%E6%A8%A1%E5%9E%8B%E5%8F%96%E4%BB%A3%E6%BB%A1%E8%A1%80%E5%A4%A7%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%80%A7%E6%8E%A2%E7%B4%A2"><span class="nav-number">2.</span> <span class="nav-text">以小模型取代满血大模型的可行性探索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E9%AB%98%E8%B4%A8%E9%87%8F%E6%95%B0%E6%8D%AE%E6%98%AF%E5%B0%8F%E6%A8%A1%E5%9E%8B%E8%90%BD%E5%9C%B0%E7%9A%84%E6%A0%B8%E5%BF%83%E5%9F%BA%E7%A1%80"><span class="nav-number">2.1.</span> <span class="nav-text">（一）高质量数据是小模型落地的核心基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%99%BA%E8%83%BD%E5%8C%96%E6%8C%87%E6%A0%87%E5%8A%A0%E5%B7%A5%EF%BC%8C%E4%B8%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%84%E5%BB%BA%E5%BC%BA%E5%A4%A7%E7%9A%84%E5%8F%AF%E8%A7%82%E6%B5%8B%E8%83%BD%E5%8A%9B"><span class="nav-number">2.2.</span> <span class="nav-text">（二）智能化指标加工，为数据库构建强大的可观测能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E8%AF%8A%E6%96%AD%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.3.</span> <span class="nav-text">（三）数据库智能运维诊断架构设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E8%B7%B5%E8%A1%A8%E6%98%8E%EF%BC%9AAI-Agent%E8%AF%8A%E6%96%AD%E6%8E%A8%E7%90%86%E6%B0%B4%E5%B9%B3%E5%B7%B2%E5%85%B7%E5%A4%87%E5%AE%9E%E6%88%98%E8%83%BD%E5%8A%9B"><span class="nav-number">3.</span> <span class="nav-text">实践表明：AI Agent诊断推理水平已具备实战能力</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="大模型VS小模型：论国产数据库运维AI Agent的正确打开方式 | Longda's Interesting World">
+      <meta itemprop="description" content="探讨如何用小模型替代满血大模型实现国产数据库智能运维，通过上下文增强推理能力，构建告警分析、SQL优化、巡检三种AI Agent。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          大模型VS小模型：论国产数据库运维AI Agent的正确打开方式
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-20 06:24:14" itemprop="dateCreated datePublished" datetime="2025-06-20T06:24:14+08:00">2025-06-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">孙鹏</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">探讨如何用小模型替代满血大模型实现国产数据库智能运维，通过上下文增强推理能力，构建告警分析、SQL优化、巡检三种AI Agent。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"大模型VS小模型：论国产数据库运维AI Agent的正确打开方式","description":"探讨如何用小模型替代满血大模型实现国产数据库智能运维，通过上下文增强推理能力，构建告警分析、SQL优化、巡检三种AI Agent。","image":"https://ilongda.com/img/6-20-ai-agent-database-ops/01.png","wordCount":2811,"datePublished":"2025-06-19T22:24:14.000Z","dateModified":"2025-06-19T22:24:14.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/"},"url":"https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/","inLanguage":"zh-CN","keywords":["OceanBase","智能运维","AI Agent","小模型","大模型","SQL优化","知识图谱","数据库诊断"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"大模型VS小模型：论国产数据库运维AI Agent的正确打开方式","item":"https://ilongda.com/2025/2025-06-20-ai-agent-database-ops/"}]}</script>
+<p>作者：孙鹏，大衍（北京）科技有限公司研发工程师</p>
+<h2 id="暴论：通用满血大模型”不适合”用于赋能国产数据库智能诊断运维"><a href="#暴论：通用满血大模型”不适合”用于赋能国产数据库智能诊断运维" class="headerlink" title="暴论：通用满血大模型”不适合”用于赋能国产数据库智能诊断运维"></a>暴论：通用满血大模型”不适合”用于赋能国产数据库智能诊断运维</h2><p>在传统数据库运维领域，长期面临三大核心挑战：</p>
+<ul>
+<li><strong>数据量的迅猛增长</strong>：随着现代应用程序的数据量迅速增加，数据库实例的数量也随之增多，监控指标变得更为复杂。面对海量的数据库实例，人工进行运维诊断变得越发吃力。</li>
+<li><strong>过度依赖经验</strong>：数据库类型的多样化导致专家的经验难以迅速普及与传承，在故障定位上平均需要耗费数十分钟的时间。</li>
+<li><strong>传统技术的局限性</strong>：基于规则（RBO）或成本（CBO）的静态优化器难以适应复杂的查询场景变化，同时处理非结构化数据的能力也较为薄弱。</li>
+</ul>
+<p>随着AI大模型的应用，这些问题得到了全新的解决方案。AI大模型通过其动态优化能力，突破了传统静态优化器的限制，能够实时生成高效的执行计划；借助自然语言交互能力，大大降低了复杂查询的技术门槛；并且具备多模态分析能力，可以统一处理如日志、性能指标等异构数据。这些进步促使数据库运维模式实现了质的飞跃，从以往的被动响应转向主动防御，由依赖经验转变为依靠智能决策。</p>
+<p>但是在使用大模型赋能数据库运维的过程中，却发现两个问题：</p>
+<p><strong>1. 通用大模型对国产数据库的认知不足，生产环境难利用。</strong></p>
+<p>在使用大模型对传统数据库（如Oracle、MySQL）进行问题诊断时，通常能够取得较好的效果。然而，当将同样的技术应用于国产数据库时，诊断结果往往不尽如人意。这主要源于当前通用大模型在训练过程中所接触的国产数据库相关知识相对匮乏。</p>
+<p>此外，出于企业数据安全与合规性的考虑，生产环境中的运维数据无法上传至外部网络，也就无法为”满血版”大模型提供实时参考。</p>
+<p><strong>2. 数据库运维数据的可观测性、准确性不足。</strong></p>
+<p>即便使用的是功能完备的”满血版”大模型，其产生幻觉的概率依然较高。例如，在分析数据库负载问题时，如果仅提供总数据量等粗粒度信息，大模型往往难以准确还原特定时间段内的负载变化趋势。</p>
+<span id="more"></span>
+
+<h2 id="以小模型取代满血大模型的可行性探索"><a href="#以小模型取代满血大模型的可行性探索" class="headerlink" title="以小模型取代满血大模型的可行性探索"></a>以小模型取代满血大模型的可行性探索</h2><p>许多企业在落地AI能力时面临现实挑战：受限于高端显卡难以获取或高昂的算力成本，无法在内网部署功能完整的”满血版”大模型。出于成本和部署条件的考量，企业往往只能选择更为经济的私有化小模型方案。</p>
+<p>那么，我们是否可以在资源受限的生产环境中，部署一个成本更低的小模型，却使其具备接近大模型的能力呢？</p>
+<p>这一设想面临两个关键挑战：</p>
+<ul>
+<li>一是如何使小模型复现大模型强大的推理与泛化能力；</li>
+<li>二是如何弥补大模型在国产数据库知识覆盖不足的问题。</li>
+</ul>
+<p>回溯到2020年发表的重要论文《Language Models are Few-Shot Learners》，文中提出了一种”上下文学习”（in-context learning）机制，表明大模型可以通过输入上下文信息，在不更新参数的前提下实现在线学习。</p>
+<p>受此启发，在使用小模型进行具体问题分析时，尝试将该问题相关的背景知识、指标数据、实时运行状态以及精心设计的提示词（prompt）一并输入模型，借助上下文增强其推理能力。经过多轮测试验证，小模型的回答准确率已接近”满血版”大模型的表现。</p>
+<h3 id="（一）高质量数据是小模型落地的核心基础"><a href="#（一）高质量数据是小模型落地的核心基础" class="headerlink" title="（一）高质量数据是小模型落地的核心基础"></a>（一）高质量数据是小模型落地的核心基础</h3><p>将小模型应用于数据库智能运维，通常需要满足三个关键前提：</p>
+<p><strong>第一，具备强大的系统可观测能力。</strong> 包括提供丰富且准确的运行指标与统计信息，如系统性能指标、等待事件分析、完整的日志记录与TRACE数据，以及宏观层面的AWR报告与微观层面的ASH信息。</p>
+<p><strong>第二，沉淀高质量的运维知识体系。</strong> 该体系涵盖两个维度：</p>
+<ul>
+<li>运维理论知识主要来源于权威的原厂文档、第三方技术书籍等结构化知识资源；</li>
+<li>运维实践经验则包括专家经验总结、用户故障案例库等非结构化或半结构化经验资产。</li>
+</ul>
+<p>相比理论知识，大模型更容易理解和吸收来自实际场景的运维经验。因此，在小模型训练和推理过程中，注入真实业务场景下的经验数据尤为重要。</p>
+<p><strong>第三，依托强大的推理模型能力。</strong> 当高质量的数据与强大的推理能力相结合时，即使是在资源受限的私有化部署环境下，小模型也能够实现接近大模型的准确性和稳定性。</p>
+<h3 id="（二）智能化指标加工，为数据库构建强大的可观测能力"><a href="#（二）智能化指标加工，为数据库构建强大的可观测能力" class="headerlink" title="（二）智能化指标加工，为数据库构建强大的可观测能力"></a>（二）智能化指标加工，为数据库构建强大的可观测能力</h3><p>通过智能化指标加工可以为数据库构建强大的可观测能力。首先从数据库、中间件等各种IT运维对象中采集数据，比如运行数据、日志数据，以及从数据中台获取加工数据等，从而得到指标集。其次基于原始数值进行二次加工，得到时间段的增量差值、平均值、单次平均值等统计分析值。然后在统计分析值的基础上再进行加工，可以得到平均值、稳定性、趋势评估值、风险评估值等相关数值。</p>
+<p><img data-src="/img/6-20-ai-agent-database-ops/01.png" alt="指标加工流程"></p>
+<p>与此同时，还需构建知识图谱。因为运维知识图谱建设是数字化能力的基础，通过知识梳理形成了初始化的运维知识图谱，并根据实际应用案例不断提炼和丰富知识图谱，使其分析能力不断提升。</p>
+<p><img data-src="/img/6-20-ai-agent-database-ops/02.png" alt="知识图谱"></p>
+<h3 id="（三）数据库智能运维诊断架构设计"><a href="#（三）数据库智能运维诊断架构设计" class="headerlink" title="（三）数据库智能运维诊断架构设计"></a>（三）数据库智能运维诊断架构设计</h3><p>数据库智能诊断分析流程主要包括以下关键步骤：</p>
+<ol>
+<li><strong>数据采集与加工</strong> — 从OceanBase数据库中采集并加工关键性能指标，构建全面、细粒度的可观测能力</li>
+<li><strong>数据存储</strong> — 将采集和加工后的指标数据统一存储至数据仓库</li>
+<li><strong>故障模型触发与分析</strong> — 当某一故障模型被触发时，系统将自动启动异常检测智能体（AI Agent）：<ul>
+<li>从知识图谱中提取与该故障模型相关的背景知识</li>
+<li>同步从数据仓库中获取当前数据库的实时运行指标</li>
+<li>结合预设提示词模板，将上述信息整合后输入大模型</li>
+<li>大模型进一步从向量数据库中检索相关案例、专家经验及场景化信息，最终输出一份逻辑清晰、内容准确的诊断分析报告</li>
+</ul>
+</li>
+</ol>
+<p><img data-src="/img/6-20-ai-agent-database-ops/03.png" alt="数据库智能运维诊断架构"></p>
+<p>目前，已成功构建并部署了三类智能体（AI Agent）：</p>
+<p><strong>一是告警分析智能体：</strong></p>
+<ul>
+<li>当数据库产生告警时，该智能体可自动调用大模型进行深度分析</li>
+<li>分析完成后生成结构化的诊断报告，并通过邮件等方式推送给相关人员</li>
+</ul>
+<p><strong>二是SQL优化智能体：</strong></p>
+<ul>
+<li>可自动识别数据库中的Top SQL（如高频执行或资源消耗高的语句）</li>
+<li>借助小模型对这些SQL进行智能优化，生成优化建议及诊断报告</li>
+</ul>
+<p><strong>三是巡检智能体：</strong></p>
+<ul>
+<li>用户可根据需要设定特定时间段，由巡检智能体对该时段内的数据库健康状态进行全面检查</li>
+<li>智能体根据巡检结果生成详尽的健康报告</li>
+</ul>
+<p>以下面两个场景为例，说明上述智能体的工作原理及效果：</p>
+<p><strong>1. 小模型分析锁冲突场景。</strong></p>
+<p>首先需要把OceanBase的锁冲突的阻塞数据和被阻塞数据的背景知识一起发给小模型，小模型就可以通过阻塞数据和背景知识找到每个根阻塞，提示终止相关会话以解决阻塞场景，同时给出原因分析，并提出诊断建议。</p>
+<p><img data-src="/img/6-20-ai-agent-database-ops/04.png" alt="锁冲突分析"></p>
+<p><strong>2. 小模型SQL优化。</strong></p>
+<p>在小模型进行SQL性能优化的过程中，首先会深入分析SQL的执行计划，识别其中最主要的性能瓶颈，并结合具体执行路径给出判断依据。</p>
+<p><img data-src="/img/6-20-ai-agent-database-ops/05.png" alt="SQL优化分析"></p>
+<p>例如，在执行计划中若发现某张分区表作为驱动表，使用了Nested Loop连接方式，且该连接过程包含两个层级的循环，这意味着part表中的每一条记录都会触发一次对被驱动表的完整扫描或查找操作，造成数据访问次数成倍增长。优化建议包括：将Nested Loop改为Hash Join或Merge Join；考虑对被驱动表的相关字段建立索引，或调整分区策略以减少扫描范围。</p>
+<h2 id="实践表明：AI-Agent诊断推理水平已具备实战能力"><a href="#实践表明：AI-Agent诊断推理水平已具备实战能力" class="headerlink" title="实践表明：AI Agent诊断推理水平已具备实战能力"></a>实践表明：AI Agent诊断推理水平已具备实战能力</h2><p>为了验证AI Agent的诊断推理能力，选择了实验室环境中的四个典型故障模型进行了测试，包括Oracle数据库的日志同步延时异常和热块冲突问题，以及OceanBase数据库的阻塞会话数过多和活跃会话数过多问题。</p>
+<p><img data-src="/img/6-20-ai-agent-database-ops/06.png" alt="测试结果对比"></p>
+<p>测试结果令人鼓舞：无论是使用满血大模型还是私有化部署的小模型，其分析准确率均达到了90%以上，这一成绩超越了当前内部专业运维人员结合专家工具所能达到的准确率水平。</p>
+<p>在实验室环境中，不管使用满血大模型还是用私有化部署的小模型分析，包括分析SQL、优化SQL、分析告警，耗时一般在3～5分钟之内（通义千问Qwen 3系列的模型分析速度在两分钟左右）。而传统的专家分析，经过收集指标数据、根据诊断路径分析原因，时间已经消耗3小时左右，甚至可能达到半天或一天。相较之下，基于AI的智能诊断效率远远高于运维专家，提升了50倍以上。</p>
+<blockquote>
+<p>本文内容来源于OceanBase “Data✖️AI”黑客松大赛，欢迎查看更多精彩作品：<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYWktaGFja2F0aG9u">https://open.oceanbase.com/ai-hackathon<i class="fa fa-external-link-alt"></i></span></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4/" rel="tag"># 智能运维</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/%E5%B0%8F%E6%A8%A1%E5%9E%8B/" rel="tag"># 小模型</a>
+              <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" rel="tag"># 大模型</a>
+              <a href="/tags/SQL%E4%BC%98%E5%8C%96/" rel="tag"># SQL优化</a>
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1/" rel="tag"># 知识图谱</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%8A%E6%96%AD/" rel="tag"># 数据库诊断</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-18-zhihu-oceanbase-practice/" rel="prev" title="知乎规模化落地OceanBase实践与技术生态共建">
+                  <i class="fa fa-angle-left"></i> 知乎规模化落地OceanBase实践与技术生态共建
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-23-360-oceanbase-vector-technology/" rel="next" title="OceanBase向量技术直击360商业化三大痛点，业务分析AI化进程加速80%">
+                  OceanBase向量技术直击360商业化三大痛点，业务分析AI化进程加速80% <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

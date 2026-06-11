@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="vivo 互联网业务引入 OceanBase 替代 MySQL，覆盖数据归档、水平分库分表、高并发与 HTAP 四大场景，实现高并发更新效率提升60%、复杂查询性能提升80%、存储成本降低50%，并自建统一运维平台。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-13-vivo-database-technology/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="vivo 互联网业务引入 OceanBase 替代 MySQL，覆盖数据归档、水平分库分表、高并发与 HTAP 四大场景，实现高并发更新效率提升60%、复杂查询性能提升80%、存储成本降低50%，并自建统一运维平台。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/vivo-database-technology/01.png">
+<meta property="og:image" content="https://ilongda.com/img/vivo-database-technology/02.png">
+<meta property="og:image" content="https://ilongda.com/img/vivo-database-technology/03.png">
+<meta property="og:image" content="https://ilongda.com/img/vivo-database-technology/04.png">
+<meta property="article:published_time" content="2025-11-12T23:37:51.000Z">
+<meta property="article:modified_time" content="2025-11-12T23:37:51.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="MySQL迁移">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="vivo">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="国产数据库">
+<meta property="article:tag" content="数据归档">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/vivo-database-technology/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-13-vivo-database-technology/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-13-vivo-database-technology/","path":"2025/2025-11-13-vivo-database-technology/","title":"vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-13-vivo-database-technology/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%BE%E6%94%AF%E6%92%91%E6%95%B0%E5%8D%83%E5%A5%97-MySQL-%E9%9B%86%E7%BE%A4%E7%A8%B3%E5%AE%9A%E8%BF%90%E8%A1%8C%E7%9A%84%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84%E9%81%AD%E9%81%87%E7%93%B6%E9%A2%88"><span class="nav-number">1.</span> <span class="nav-text">曾支撑数千套 MySQL 集群稳定运行的技术架构遭遇瓶颈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E4%B8%AA%E6%8A%80%E6%9C%AF%E5%9C%BA%E6%99%AF%E5%BA%94%E7%94%A8OceanBase%EF%BC%8C%E6%94%B6%E7%9B%8A%E5%8F%AF%E8%A7%82"><span class="nav-number">2.</span> <span class="nav-text">四个技术场景应用OceanBase，收益可观</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase%E8%A7%A3%E5%86%B3%E4%BA%86%E5%93%AA%E4%BA%9B%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">OceanBase解决了哪些问题？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%BB%BA%E8%BF%90%E7%BB%B4%E5%B9%B3%E5%8F%B0%EF%BC%8C%E7%BB%9F%E4%B8%80%E8%BF%90%E7%BB%B4%E4%BD%93%E7%B3%BB"><span class="nav-number">2.2.</span> <span class="nav-text">自建运维平台，统一运维体系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase%E5%B8%A6%E6%9D%A5%E4%BA%86%E5%93%AA%E4%BA%9B%E6%94%B6%E7%9B%8A%EF%BC%9F"><span class="nav-number">2.3.</span> <span class="nav-text">OceanBase带来了哪些收益？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%82%A8%E5%A4%87%E5%9B%BD%E4%BA%A7%E6%8A%80%E6%9C%AF%E6%A0%88%EF%BC%8C%E5%AE%8C%E5%96%84%E8%BF%90%E7%BB%B4%E7%94%9F%E6%80%81"><span class="nav-number">3.</span> <span class="nav-text">储备国产技术栈，完善运维生态</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-13-vivo-database-technology/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈 | Longda's Interesting World">
+      <meta itemprop="description" content="vivo 互联网业务引入 OceanBase 替代 MySQL，覆盖数据归档、水平分库分表、高并发与 HTAP 四大场景，实现高并发更新效率提升60%、复杂查询性能提升80%、存储成本降低50%，并自建统一运维平台。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-13 07:37:51" itemprop="dateCreated datePublished" datetime="2025-11-13T07:37:51+08:00">2025-11-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">杜霆</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">vivo 互联网业务引入 OceanBase 替代 MySQL，覆盖数据归档、水平分库分表、高并发与 HTAP 四大场景，实现高并发更新效率提升60%、复杂查询性能提升80%、存储成本降低50%，并自建统一运维平台。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈","description":"vivo 互联网业务引入 OceanBase 替代 MySQL，覆盖数据归档、水平分库分表、高并发与 HTAP 四大场景，实现高并发更新效率提升60%、复杂查询性能提升80%、存储成本降低50%，并自建统一运维平台。","image":"https://ilongda.com/img/vivo-database-technology/01.png","wordCount":2655,"datePublished":"2025-11-12T23:37:51.000Z","dateModified":"2025-11-12T23:37:51.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-13-vivo-database-technology/"},"url":"https://ilongda.com/2025/2025-11-13-vivo-database-technology/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","HTAP","分库分表","国产数据库","MySQL迁移","vivo","数据归档"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈","item":"https://ilongda.com/2025/2025-11-13-vivo-database-technology/"}]}</script>
+<p>作者：杜霆，vivo互联网存储运维负责人</p>
+<p>vivo 是一家以智能终端和智慧服务为核心的科技公司，服务全球 5亿+ 用户，公司内分设多条业务线，其中vivo互联网业务在近两年内完成底层数据库方案的升级以更好地支撑业务发展。业务使用OceanBase后，解决了原本的MySQL在大规模数据场景下的存储与性能使用瓶颈，高并发数据更新效率提升60%，复杂查询性能提升80%，存储成本降低50%。</p>
+<h2 id="曾支撑数千套-MySQL-集群稳定运行的技术架构遭遇瓶颈"><a href="#曾支撑数千套-MySQL-集群稳定运行的技术架构遭遇瓶颈" class="headerlink" title="曾支撑数千套 MySQL 集群稳定运行的技术架构遭遇瓶颈"></a>曾支撑数千套 MySQL 集群稳定运行的技术架构遭遇瓶颈</h2><p>在过去十多年，vivo一直使用MySQL作为底层数据库。如图1所示，vivo的 MySQL 集群使用双层异步复制架构：上层通过自研代理服务 Proxy 实现加解密、审计、连接池等能力，并通过运维平台对 Proxy 进行完全自动的运维管理，实现了探活、自动切换、自动部署等能力；最下层的 Agent 用于故障切换，通过 Raft 实现了多节点高可用部署；中间的Zookeeper 用于同步 MySQL元数据信息，保证 MySQL 集群间的数据一致性。</p>
+<p><img data-src="/img/vivo-database-technology/01.png" alt="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈"></p>
+<p>图1 MySQL 集群的双层异步复制架构</p>
+<span id="more"></span>
+
+<p>这套架构及管理方案具备自定义高可用切换能力、探活能力，已支撑数千套 MySQL 集群的稳定运行。然而，在业务发展的过程中，该方案逐渐面临数据存储、读写性能的瓶颈。</p>
+<p><strong>数据存储：</strong> MySQL 使用单机多实例部署架构，数据存储在物理机中，当业务发展到一定规模后，存储容量受到单机磁盘的限制，需要进行分表。而分库分表的扩展性较差，导致业务、研发、运维等方面的投入成本越来越高。目前总存储规模已经达到 PB 级别，面临较高的存储成本。</p>
+<p><strong>读写性能：</strong> vivo 庞大的业务规模中涉及大量复杂查询，但 MySQL 的复杂查询性能较低，无法满足业务需求。而且在大批量高并发写场景的效率低，上下游同步和离线查询的从库延迟较大，相关业务都会受到影响。</p>
+<p>基于上述原因，vivo 开始调研能够解决当前问题的数据库产品。经过调研对比，最终选择了具备水平扩展、资源隔离、低成本、强容灾、高度兼容MySQL、HTAP等特性的OceanBase，并引进业务环境。</p>
+<p>具体而言，自 2023 年第四季度起，存储运维团队开始启动系统化调研，对部署架构、功能特性、性能指标、应用场景、成功案例、安全规范等方面进行调研评估。调研完成后，经部门级评审，正式决定引入 OceanBase 进行平台建设（见图2）。</p>
+<p><img data-src="/img/vivo-database-technology/02.png" alt="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈"></p>
+<p>图2 OceanBase的引入流程</p>
+<p>2024 年，项目正式进入落地实施：</p>
+<ul>
+<li>完成规范制定，开展性能压测、高可用验证、备份恢复与监控报警等验证，确保满足业务上线条件；</li>
+<li>同步建设配套生态，部署 OCP、OMS、OBLoproxy 等核心组件，并集成下游 Binlog 消费链路，形成完整的上下游生态体系。</li>
+</ul>
+<p>2024 年 7 月，首个边缘业务完成试点接入。同时，存储运维团队将 OceanBase 的基础能力（元数据管理、数据查询、数据变更、集群管理）逐步集成到现有运维平台。截至 2024 年底，已有十余个业务、数十套集群正式投产，规模持续扩大。</p>
+<h2 id="四个技术场景应用OceanBase，收益可观"><a href="#四个技术场景应用OceanBase，收益可观" class="headerlink" title="四个技术场景应用OceanBase，收益可观"></a>四个技术场景应用OceanBase，收益可观</h2><p>目前，在vivo互联网业务线，已有四个数据库场景使用OceanBase，并且运维体系已经开始逐步替换为OceanBase。</p>
+<h3 id="OceanBase解决了哪些问题？"><a href="#OceanBase解决了哪些问题？" class="headerlink" title="OceanBase解决了哪些问题？"></a>OceanBase解决了哪些问题？</h3><h4 id="1-数据归档"><a href="#1-数据归档" class="headerlink" title="1. 数据归档"></a>1. 数据归档</h4><p>因为MySQL 存量数据庞大，部分业务的历史数据已无需在线访问，所以现阶段冷数据归档采用 TokuDB 压缩方案，压缩比约 3–4 倍，并挂载大容量磁盘存储。随着数据持续增长，面对磁盘容量不足的问题，存储运维团队已多次拆分归档集群，但拆分操作的运维成本高、扩展性差。引入 OceanBase ，利用其数据压缩能力与分布式扩展能力，可按业务粒度部署独立集群，实现横向扩容与在线压缩。一方面解决了业务侧需要基于 MySQL 进行分库分表的改造问题，另一方面降低了业务复杂度和运维成本，并显著降低了历史数据存储空间。</p>
+<h4 id="2-水平分库分表"><a href="#2-水平分库分表" class="headerlink" title="2. 水平分库分表"></a>2. 水平分库分表</h4><p>在业务初期，业务团队并没有设计分库分表，当集群规模扩大后单实例容量受限，传统 MySQL 需要人工实施分库分表，投入大、周期长。引入 OceanBase 后，由于其原生支持分区表以及自动分区能力，可以自动水平拆分，减少了应用改造及人力成本等的投入，而且多租户资源隔离特性，可以减少原本单机多实例架构的资源争用情况。</p>
+<h4 id="3-高并发"><a href="#3-高并发" class="headerlink" title="3. 高并发"></a>3. 高并发</h4><p>对于部分并发极高的业务，MySQL 容易出现写延迟、吞吐下降等问题，而OceanBase 多节点并行处理，可有效分散写压力，保证低延迟与高吞吐。</p>
+<h4 id="4-HTAP-混合负载"><a href="#4-HTAP-混合负载" class="headerlink" title="4. HTAP 混合负载"></a>4. HTAP 混合负载</h4><p>vivo互联网业务线存在大量既有交易又有实时分析需求的混合型业务。引入 OceanBase 后，可同时满足 TP 与 AP 查询，显著简化整体架构。</p>
+<h3 id="自建运维平台，统一运维体系"><a href="#自建运维平台，统一运维体系" class="headerlink" title="自建运维平台，统一运维体系"></a>自建运维平台，统一运维体系</h3><p>使用 OceanBase 初期，vivo 互联网业务的运维主要依赖开源平台，比如OceanBase 的运维管理平台 OCP。OCP 具备资源管理、性能监控、集群管理、租户管理、备份恢复等完整的数据全生命周期管理能力，可以满足基本的运维需求。但 vivo 互联网业务内部有自建的 DaaS、PaaS 平台，于是存储运维团队启动了将 OCP 的能力集成到自建平台的计划，目前已在业务研发和 DBA 运维两方面实现了一些必要能力。</p>
+<ul>
+<li>面向业务研发：实现了应用详情查询、数据查询、数据变更等能力。</li>
+<li>面向 DBA 运维：实现了实例管理、域名管理、账号管理等管理能力。</li>
+</ul>
+<p>如图3所示，蓝色背景白色字体对应的功能是已经建设完成的功能；蓝色背景黑色字体是正在建设的功能；白色背景对应的功能为后续规划。通过平台整合，最终形成统一的内部自建运营平台，实现对开源平台的全面替代。</p>
+<p><img data-src="/img/vivo-database-technology/03.png" alt="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈"></p>
+<p>图3 运营平台建设进度</p>
+<h3 id="OceanBase带来了哪些收益？"><a href="#OceanBase带来了哪些收益？" class="headerlink" title="OceanBase带来了哪些收益？"></a>OceanBase带来了哪些收益？</h3><h4 id="高并发场景，性能提升60-以上"><a href="#高并发场景，性能提升60-以上" class="headerlink" title="高并发场景，性能提升60%以上"></a>高并发场景，性能提升60%以上</h4><p>某业务因 MySQL 批量写入过大，每秒40万行的数据操作，导致 MySQL 主从延迟一直居高不下，存在数据丢失风险，同时离线业务无法查询业务数据。该业务切换到 OceanBase 后，延迟问题得到解决，实现了上下游生态产品的数据实时同步。同时，得益于分布式的特性，业务的写入性能得到提升，整体的更新性能也提升了60%以上（见图4）。</p>
+<p><img data-src="/img/vivo-database-technology/04.png" alt="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈"></p>
+<p>图4 某业务切换到OceanBase后的性能提升</p>
+<h4 id="大规模数据变更效能翻倍，复杂查询性能提升80"><a href="#大规模数据变更效能翻倍，复杂查询性能提升80" class="headerlink" title="大规模数据变更效能翻倍，复杂查询性能提升80%"></a>大规模数据变更效能翻倍，复杂查询性能提升80%</h4><p>业务归档库原本使用 TokuDB 存储引擎，数据容量可压缩4倍，虽然缓解了物理机磁盘容量问题，但400亿+的数据量，无法支持 DDL 变更。迁移到 OceanBase 数据库后，不仅数据的存储压缩率和 TokuDB 基本一致，还<strong>支持对400亿+数据量的大表做 DDL，仅用时2小时18分钟就能完成，</strong> 性能相较于 TokuDB 提升多倍。OceanBase不仅解决了超大规模 MySQL 数据不能变更问题，还实现了与原业务表同步变更，彻底解决了原来大规模归档数据的在线变更难题。</p>
+<p>此外，大规模数据量查询业务切换至OceanBase后，<strong>整体时延降低了30%以上，实现TP、AP共存复杂业务查询，性能提升80%。</strong></p>
+<h4 id="硬件、运维等成本显著降低"><a href="#硬件、运维等成本显著降低" class="headerlink" title="硬件、运维等成本显著降低"></a>硬件、运维等成本显著降低</h4><p>得益于 OceanBase 的高压缩特性，数百TB的数据压缩了60%，存储成本节省50%，硬件成本得到显著降低。此外，相较于运维人员对分库分表的投入，OceanBase 原生支持的分区表、自动分区能力及在线扩缩容能力极大地释放了运维人员的双手，使运维成本和业务研发的开发成本大幅降低。</p>
+<h2 id="储备国产技术栈，完善运维生态"><a href="#储备国产技术栈，完善运维生态" class="headerlink" title="储备国产技术栈，完善运维生态"></a>储备国产技术栈，完善运维生态</h2><p>后续vivo互联网业务计划从如下四个方面陆续落地 OceanBase 并逐步完善运维生态及体系建设。</p>
+<p><strong>1. 将分布式关系型数据库长期纳入技术栈。</strong></p>
+<p>公司现有数据库产品已覆盖多种类型的数据库，如 MySQL、TiDB、Redis、Elasticsearch、KV存储 等，但缺少一款经过大规模验证的分布式关系型数据库。经评估，OceanBase 可作为应对海量数据和高并发场景的分布式数据库产品补充，纳入长期产品规划。</p>
+<p><strong>2. 国产数据库技术储备。</strong></p>
+<p>在国际供应链不确定性增加的背景下，MySQL、Redis 等开源产品存在潜在受限风险。OceanBase 属国产自研数据库，可将其作为关键备用技术栈，持续投入并完善其能力，以保障业务连续性。</p>
+<p><strong>3. 运维生态建设。</strong></p>
+<p>结合OceanBase的生态工具产品，完善上下游运维生态工具，打造完整的上下游生态，涵盖同步、备份、监控、审计、数据订阅等全部环节，确保业务可无缝接入。</p>
+<p><strong>4. 运维体系建设。</strong></p>
+<p>持续进行运维体系建设，逐步把 OceanBase 的元数据管理、集群管理、监控告警、自动运维等能力集成至现有统一运维平台，实现与既有体系的风格一致、体验一致。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" rel="tag"># 分库分表</a>
+              <a href="/tags/%E5%9B%BD%E4%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 国产数据库</a>
+              <a href="/tags/MySQL%E8%BF%81%E7%A7%BB/" rel="tag"># MySQL迁移</a>
+              <a href="/tags/vivo/" rel="tag"># vivo</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BD%92%E6%A1%A3/" rel="tag"># 数据归档</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-07-database-evolution-vector-hybrid-search/" rel="prev" title="AI 时代的数据库进化论 —— 从向量到混合检索">
+                  <i class="fa fa-angle-left"></i> AI 时代的数据库进化论 —— 从向量到混合检索
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-14-oceanbase-partition-basics/" rel="next" title="OceanBase 分区基础知识">
+                  OceanBase 分区基础知识 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

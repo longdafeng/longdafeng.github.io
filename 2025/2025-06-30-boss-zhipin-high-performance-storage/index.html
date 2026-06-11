@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BOSS直聘面对日增亿级的聊天记录数据，对比MySQL、ClickHouse等产品后选择OceanBase构建历史归档库，存储资源节省超70%，并逐步扩展至聊天消息等核心业务，实现成本、效能与稳定性三重收益。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案">
+<meta property="og:url" content="https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="BOSS直聘面对日增亿级的聊天记录数据，对比MySQL、ClickHouse等产品后选择OceanBase构建历史归档库，存储资源节省超70%，并逐步扩展至聊天消息等核心业务，实现成本、效能与稳定性三重收益。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/01.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/02.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/03.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/04.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/05.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/06.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/07.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/08.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/09.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/10.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/11.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/12.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/13.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/14.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/15.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/16.png">
+<meta property="og:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/17.png">
+<meta property="article:published_time" content="2025-06-30T00:09:47.000Z">
+<meta property="article:modified_time" content="2025-06-30T00:09:47.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="BOSS直聘">
+<meta property="article:tag" content="ClickHouse">
+<meta property="article:tag" content="OCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="冷热分离">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="历史归档库">
+<meta property="article:tag" content="数据压缩">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/","path":"2025/2025-06-30-boss-zhipin-high-performance-storage/","title":"面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81BOSS%E7%9B%B4%E8%81%98%E8%B6%85%E5%A4%A7%E8%A7%84%E6%A8%A1%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E9%9D%A2%E4%B8%B4%E7%9A%84%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">一、BOSS直聘超大规模数据处理面临的挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81BOSS%E7%9B%B4%E8%81%98%E5%8E%86%E5%8F%B2%E5%BD%92%E6%A1%A3%E5%BA%93%E6%8A%80%E6%9C%AF%E9%80%89%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">二、BOSS直聘历史归档库技术选型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B%EF%BC%9A%E5%AD%98%E5%82%A8%E6%88%90%E6%9C%AC%E5%AF%B9%E6%AF%94"><span class="nav-number">2.1.</span> <span class="nav-text">（一）数据库选型：存储成本对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B%EF%BC%9A%E9%AB%98%E5%8F%AF%E7%94%A8%E5%92%8C%E7%A8%B3%E5%AE%9A%E6%80%A7%E5%AF%B9%E6%AF%94"><span class="nav-number">2.2.</span> <span class="nav-text">（二）数据库选型：高可用和稳定性对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B%E5%B0%8F%E7%BB%93"><span class="nav-number">2.3.</span> <span class="nav-text">（三）数据库选型小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81OceanBase%E5%9C%A8BOSS%E7%9B%B4%E8%81%98%E5%8E%86%E5%8F%B2%E5%BD%92%E6%A1%A3%E5%BA%93%E4%B8%9A%E5%8A%A1%E7%9A%84%E8%90%BD%E5%9C%B0%E5%AE%9E%E8%B7%B5"><span class="nav-number">3.</span> <span class="nav-text">三、OceanBase在BOSS直聘历史归档库业务的落地实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89OceanBase%E5%8E%86%E5%8F%B2%E5%BD%92%E6%A1%A3%E5%BA%93%E6%9E%B6%E6%9E%84"><span class="nav-number">3.1.</span> <span class="nav-text">（一）OceanBase历史归档库架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89OceanBase%E7%94%A8%E4%BD%9C%E5%BD%92%E6%A1%A3%E5%BA%93%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%94%B6%E7%9B%8A"><span class="nav-number">3.2.</span> <span class="nav-text">（二）OceanBase用作归档库的业务收益</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%BB%8E%E9%9D%9E%E6%A0%B8%E5%BF%83%E4%B8%9A%E5%8A%A1%E8%B5%B0%E5%90%91%E8%A7%84%E6%A8%A1%E5%8C%96%E4%B8%8A%E7%BA%BF%EF%BC%9AOceanBase%E5%9C%A8BOSS%E7%9B%B4%E8%81%98%E7%9A%84%E8%90%BD%E5%9C%B0%E5%8E%86%E7%A8%8B%E4%B8%8E%E5%BA%94%E7%94%A8%E6%A1%88%E4%BE%8B"><span class="nav-number">4.</span> <span class="nav-text">四、从非核心业务走向规模化上线：OceanBase在BOSS直聘的落地历程与应用案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89OceanBase%E5%9C%A8BOSS%E7%9B%B4%E8%81%98%E7%9A%84%E8%90%BD%E5%9C%B0%E5%8E%86%E7%A8%8B"><span class="nav-number">4.1.</span> <span class="nav-text">（一）OceanBase在BOSS直聘的落地历程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89OceanBase%E5%9C%A8BOSS%E7%9B%B4%E8%81%98%E6%A0%B8%E5%BF%83%E4%B8%9A%E5%8A%A1%E7%9A%84%E5%BA%94%E7%94%A8%EF%BC%9A%E8%81%8A%E5%A4%A9%E6%B6%88%E6%81%AF%E5%A4%84%E7%90%86"><span class="nav-number">4.2.</span> <span class="nav-text">（二）OceanBase在BOSS直聘核心业务的应用：聊天消息处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%88%90%E6%9C%AC%E3%80%81%E6%95%88%E8%83%BD%E5%92%8C%E7%A8%B3%E5%AE%9A%E6%80%A7%EF%BC%9AOceanBase%E4%B8%BABOSS%E7%9B%B4%E8%81%98%E5%B8%A6%E6%9D%A5%E4%B8%89%E9%87%8D%E6%94%B6%E7%9B%8A"><span class="nav-number">5.</span> <span class="nav-text">五、成本、效能和稳定性：OceanBase为BOSS直聘带来三重收益</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%88%90%E6%9C%AC%E6%94%B6%E7%9B%8A"><span class="nav-number">5.1.</span> <span class="nav-text">（一）成本收益</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%95%88%E8%83%BD%E6%94%B6%E7%9B%8A"><span class="nav-number">5.2.</span> <span class="nav-text">（二）效能收益</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E7%A8%B3%E5%AE%9A%E6%80%A7%E6%94%B6%E7%9B%8A"><span class="nav-number">5.3.</span> <span class="nav-text">（三）稳定性收益</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%9C%AA%E6%9D%A5%E8%A7%84%E5%88%92%EF%BC%9A%E6%8C%81%E7%BB%AD%E6%89%A9%E5%A4%A7OceanBase%E7%9A%84%E5%BA%94%E7%94%A8%E8%8C%83%E5%9B%B4"><span class="nav-number">6.</span> <span class="nav-text">六、未来规划：持续扩大OceanBase的应用范围</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案 | Longda's Interesting World">
+      <meta itemprop="description" content="BOSS直聘面对日增亿级的聊天记录数据，对比MySQL、ClickHouse等产品后选择OceanBase构建历史归档库，存储资源节省超70%，并逐步扩展至聊天消息等核心业务，实现成本、效能与稳定性三重收益。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-30 08:09:47" itemprop="dateCreated datePublished" datetime="2025-06-30T08:09:47+08:00">2025-06-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">张煜杰、王占全</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>8.3k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>30 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">BOSS直聘面对日增亿级的聊天记录数据，对比MySQL、ClickHouse等产品后选择OceanBase构建历史归档库，存储资源节省超70%，并逐步扩展至聊天消息等核心业务，实现成本、效能与稳定性三重收益。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案","description":"BOSS直聘面对日增亿级的聊天记录数据，对比MySQL、ClickHouse等产品后选择OceanBase构建历史归档库，存储资源节省超70%，并逐步扩展至聊天消息等核心业务，实现成本、效能与稳定性三重收益。","image":"https://ilongda.com/img/6-30-boss-zhipin-high-performance-storage/01.png","wordCount":8071,"datePublished":"2025-06-30T00:09:47.000Z","dateModified":"2025-06-30T00:09:47.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/"},"url":"https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","OCP","BOSS直聘","历史归档库","数据压缩","冷热分离","ClickHouse"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案","item":"https://ilongda.com/2025/2025-06-30-boss-zhipin-high-performance-storage/"}]}</script>
+<p>本文摘自《OceanBase社区版在泛互场景的应用案例研究》电子书，欢迎获取完整版内容。</p>
+<p>作者：张煜杰，BOSS直聘数据库工程师；王占全，BOSS直聘资深DBA</p>
+<h2 id="一、BOSS直聘超大规模数据处理面临的挑战"><a href="#一、BOSS直聘超大规模数据处理面临的挑战" class="headerlink" title="一、BOSS直聘超大规模数据处理面临的挑战"></a>一、BOSS直聘超大规模数据处理面临的挑战</h2><p>BOSS直聘是在全球范围内首创互联网”直聘”模式的在线招聘产品，目前已成为中国最大的招聘平台。我们负责的BOSS直聘业务场景主要是通过数据库来存储招聘过程中的聊天记录信息，数据量极大，每天都有亿级的增量数据，存储成本高昂，且对查询、分析等业务带来了巨大压力。</p>
+<span id="more"></span>
+
+<p>受制于传统集中式数据库特性，在BOSS直聘业务持续扩展和数据量飞速增长的过程中，数据存储、处理分析等方面的挑战逐渐放大。每当新业务需求上线之际，我们常常面临一个挑战：由于难以精确预估未来一段时间内的数据量或业务增长趋势，为了确保业务能够迅速投入运行并规避过度设计的风险，我们往往采取较为灵活的初期方案。然而，随着业务的逐步扩张，当数据量增长到一定规模时，数据拆分的问题便凸显出来。这一过程不仅复杂繁琐，还涉及数据库管理员（DBA）、中间件团队以及业务团队的多方紧密协作。各方需要共同努力，以确保数据拆分的顺利进行，这无疑耗费了大量的精力和时间。</p>
+<p>为解决上述挑战，同时全面提升业务的稳定性和性能，在2023年年底，我们开始对包括OceanBase在内的分布式数据库产品进行调研。调研内容不仅涵盖了OceanBase的整体架构设计，还包括其功能特性和相关性能指标，并与MySQL进行了特性对比分析。</p>
+<p>在国内，传统数据库市场目前仍以MySQL为主流。而MySQL的数据存储存在单节点存储容量受限的问题。这不仅指单机容量有限，还会影响大数据量时的集群备份、恢复及扩容能力。若对时效性有要求，MySQL数据库单节点容量不能过大。根据我们的经验，多数公司的单节点容量上限基本在3T左右，6T的较少，超过3T可能就需要考虑数据拆分。数据拆分通常包括一拆多和多拆多两种场景。若采用一拆多，业务可能需要进行较大的改造。而OceanBase在这方面具有显著优势。不仅在理论上没有容量限制，扩展性更佳，在集群扩容时，更是对业务几乎无影响。</p>
+<p>在性能方面，传统数据库也存在不足。一方面，其复杂查询的效率不高；另一方面，单表读写存在性能瓶颈。如果单表写数据量很大，单机无法支撑；同时，在高并发情况下，会有较严重的主从延迟问题，某些业务场景可能无法接受较高的数据延迟。相比之下，OceanBase在复杂查询方面的效率较高，且单表读写不存在性能瓶颈。</p>
+<p>在运维体系方面，以某开源数据库为例，其使用不仅限于数据库本身，还需关注周边工具，这往往涉及大量定制修改工作。而若进行数据拆分，不仅业务投入大，DBA的投入也很大。但OceanBase在扩展性方面表现优秀，节点扩容后可自动进行rebalance，人工介入很少。此外，OceanBase的高可用性做得非常好，能达到金融级标准，保证数据零流失，且切换时间控制在8秒以内。</p>
+<p>对OceanBase有了初步了解后，我们决定在公司内寻找合适的非核心业务进行试点，对比OceanBase与MySQL和竞品数据库的综合能力。经过研究，我们选择了聊天记录历史归档库作为试点业务场景。</p>
+<h2 id="二、BOSS直聘历史归档库技术选型"><a href="#二、BOSS直聘历史归档库技术选型" class="headerlink" title="二、BOSS直聘历史归档库技术选型"></a>二、BOSS直聘历史归档库技术选型</h2><p>和招聘相关的聊天记录往往呈现流水型特征，记录写入一段时间后即不会再次访问或更新，写多读少。面对快速增长的在线数据，尤其是访问频率很低甚至为0的历史聊天记录，其占用的在线业务库的存储空间达到PB级别，造成了大量硬件资源浪费，推高了企业IT成本。同时，随着数据量增加，在线数据库查询效率逐步降低，给后续数据变更、扩展造成阻碍。为了解决这些问题，我们需要对历史聊天记录进行冷热数据分离。热数据所在的在线库是多个MySQL集群，采用分库分表的方式，每月定期清理过期数据，滚动写入历史归档库。</p>
+<p>作为试点业务场景，我们决定对超大容量的归档库进行数据库选型，参加选型的数据库产品为：MySQL、ClickHouse、OceanBase、某开源分布式数据库（以下简称为DB-U）。我们主要从存储成本与高可用性这两个方面来评估各个产品。</p>
+<h3 id="（一）数据库选型：存储成本对比"><a href="#（一）数据库选型：存储成本对比" class="headerlink" title="（一）数据库选型：存储成本对比"></a>（一）数据库选型：存储成本对比</h3><p>我们的归档库需要保留三到五年的历史聊天数据，必须解决大容量存储的成本问题。首先我们对MySQL、ClickHouse、OceanBase、DB-U分别创建一张相同的用于存储用户历史消息的表，表结构如图1所示。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/01.png" alt="用于测试的历史消息表"></p>
+<p>图1 用于测试的历史消息表</p>
+<p>然后分别写入1亿行相同的单副本数据，并对比其磁盘使用情况，如图2。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/02.png" alt="参测数据库的磁盘使用情况对比"></p>
+<p>图2 参测数据库的磁盘使用情况对比</p>
+<p>可以清楚地看到，基于列存进行存储的ClickHouse和拥有超高压缩率的OceanBase这两款数据库的存储成本明显低于MySQL和DB-U，所以我们分别对ClickHouse和OceanBase的存储引擎进行了调研。</p>
+<h4 id="1-ClickHouse存储引擎调研"><a href="#1-ClickHouse存储引擎调研" class="headerlink" title="1.ClickHouse存储引擎调研"></a>1.ClickHouse存储引擎调研</h4><p>ClickHouse的存储引擎是基于列存的。相比行存存储引擎，ClickHouse同一列中的数据属于同一类型，压缩效果显著。列存往往有着高达十倍甚至更高的压缩比，节省了大量的存储空间，降低了存储成本。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/03.png" alt="列存相比行存存储引擎的成本优势"></p>
+<p>图3 列存相比行存存储引擎的成本优势</p>
+<p>不过历史归档库一般都是写多读少的场景，像ClickHouse这种纯列存的存储引擎在这里并不能发挥出查询性能好的优势，相反列存引擎写入性能差的劣势还被放大了。</p>
+<h4 id="2-OceanBase存储引擎调研"><a href="#2-OceanBase存储引擎调研" class="headerlink" title="2.OceanBase存储引擎调研"></a>2.OceanBase存储引擎调研</h4><p><strong>（1）OceanBase存储引擎架构</strong></p>
+<p>OceanBase的存储引擎基于LSM-Tree架构（如图4所示），将数据分为基线数据（放在SSTable中）和增量数据（放在MemTable&#x2F;SSTable中）两部分，其中基线数据是只读的，一旦生成就不再被修改；增量数据支持读写。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/04.png" alt="OceanBase的LSM-Tree存储引擎架构"></p>
+<p>图4 OceanBase的LSM-Tree存储引擎架构</p>
+<p>OceanBase数据库DML操作插入、更新、删除等动作时会首先写入内存里的MemTable，所以在写入性能上就相当于内存数据库的写入性能，正好适合我们历史归档库写多读少的场景。MemTable达到一定大小时会转储到磁盘成为增量的SSTable（图4中红色箭头部分），转储到磁盘上的过程是批量的顺序写，相比B+Tree离散的随机写，会大大提高写盘性能。</p>
+<p>当增量的SSTable达到一定规模的时候，会触发增量数据和基线数据的合并，把增量数据和基线数据做一次整合，基线数据在合并完成之后就不会发生变化，直到下一次合并。同时每天凌晨的业务低峰期，系统也会自动进行每日合并。</p>
+<p>但LSM-Tree的架构也存在一个问题，就是读放大（图4中绿色箭头部分）。查询时需要分别对SSTable和MemTable进行查询，并将查询结果进行一次归并，再将归并后的查询结果返回SQL层。OceanBase为了减小读放大带来的影响，在内存实现了多级缓存，例如BlockCache和RowCache，来避免对基线数据频繁随机读取。</p>
+<p><strong>（2）OceanBase数据压缩技术</strong></p>
+<p>在这样的存储架构下，OceanBase的数据压缩集中发生在compaction过程中SSTable的写入时，数据的在线更新与压缩得到了解耦。</p>
+<p>OceanBase支持不感知数据特征的通用压缩（compression）和感知数据特征并按列进行压缩的数据编码（encoding）。这两种压缩方式是正交的，也就是说可以对一个数据块先进行编码，然后再进行通用压缩，来实现更高的压缩率。</p>
+<p>OceanBase批量落盘的特性使其采用更激进的压缩策略，如图5所示。OceanBase是行列混存的微块存储格式（PAX），充分利用了同一列数据的局部性和类型特征，在微块内部对一组行以列存的方式存储，并针对数据特征按列进行编码。变长的数据块和连续批量压缩的数据也可以让OceanBase通过同一个SSTable中已经完成压缩的数据块的先验知识，指导下一个数据块的压缩过程，从而在数据块中压缩尽量多的数据行，并选择更优的编码算法。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/05.png" alt="OceanBase的压缩策略示意"></p>
+<p>图5 OceanBase的压缩策略示意</p>
+<p>与部分在schema上指定数据编码的数据库实现不同，OceanBase选择了用户不感知的数据自适应编码，在给用户带来更小负担的同时降低了存储成本。从历史归档库角度而言，我们也不需要针对数据做出过多与压缩和编码相关的配置调整。</p>
+<h3 id="（二）数据库选型：高可用和稳定性对比"><a href="#（二）数据库选型：高可用和稳定性对比" class="headerlink" title="（二）数据库选型：高可用和稳定性对比"></a>（二）数据库选型：高可用和稳定性对比</h3><p>除存储成本以外，我们还对比了ClickHouse和OceanBase的高可用能力和稳定性。</p>
+<h4 id="1-ClickHouse"><a href="#1-ClickHouse" class="headerlink" title="1.ClickHouse"></a>1.ClickHouse</h4><p>我们将ClickHouse拟作历史库，对其进行了充分测试：通过Replication（复制）来实现集群中不同服务器之间自动同步数据的功能，以确保数据的高可用性和容错性；使用ZooKeeper来协调复制过程，跟踪所有副本的状态，并确保它们保持一致。Replication和ZooKeeper保证了在不同的物理设备上有多个数据副本，减少了数据丢失的风险。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/06.png" alt="ClickHouse高可用架构"></p>
+<p>图6 ClickHouse高可用架构</p>
+<p>不过在使用ClickHouse的过程中，我们发现它的高可用方案在大数据量的场景下会存在一些问题。主要由于原生的Replication方案有太多信息存在ZooKeeper上，而为了保证服务，一般会有一个或几个副本。但ZooKeeper不支持线性扩展，受单机服务能力限制，当归档库集群的数据量持续增长时，整个服务很快会不可用。</p>
+<p>实际上在ClickHouse使用时，大家往往都把ZooKeeper当成多种服务的结合，而不仅仅把它当作一个Coordinate service。例如常见做法中，还会把它当作Log service，很多行为日志等数字的信息也会存在ZooKeeper上；还会作为表的catalog service，表的一些schema信息也会在ZooKeeper上做校验，这就会导致ZooKeeper上接入的数量与数据总量会成线性关系。按照我们归档库的数据增长速度做预估，ClickHouse搭配ZooKeeper无法支撑三到五年全量归档数据需求。</p>
+<p>此外，ClickHouse的复制功能高度依赖ZooKeeper。但ZooKeeper是一个外部的协调服务，本身的配置和维护增加了额外的复杂性，且如果ZooKeeper自身出现问题，可能会影响ClickHouse的复制过程。同时，这种高可用方案还增加了问题排查的链路长度和定位问题的难度，恢复过程也变得比较复杂，需要手动干预。我们在使用ClickHouse的过程中很容易出现丢数据的情况。</p>
+<h4 id="2-OceanBase"><a href="#2-OceanBase" class="headerlink" title="2.OceanBase"></a>2.OceanBase</h4><p>OceanBase是原生的分布式数据库，原生就可以保证多个数据副本之间的一致性，它们利用了基于Paxos的分布式一致性协议保证了在任一时刻，只有当多数派副本达成一致时，才能推选一个Leader，保证主副本的唯一性来对外提供数据服务。也就是说，OceanBase通过多副本和Paxos协议来保证数据库的高可用。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/07.png" alt="OceanBase高可用架构"></p>
+<p>图7 OceanBase高可用架构</p>
+<p>相比MySQL和ClickHouse的高可用方案，OceanBase的高可用方案降低了我们的运维难度和业务变更难度。且OceanBase的多地多副本架构和Paxos一致性协议，还能够支持数据副本分别存储在同城和异地，实现异地容灾。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/08.png" alt="OceanBase多地多副本架构"></p>
+<p>图8 OceanBase多地多副本架构</p>
+<p>因为OceanBase具备分布式特性，所以数据存储原生就具备了动态扩容的能力。当归档库的数据量持续增长时，只需要我们的DBA执行几条命令，就可以对机器的硬件或者整个集群的节点数进行扩容。在集群增加新节点之后，数据会自动在新、老节点之间完成负载均衡的过程，可以做到业务无感知的平滑扩容，保证业务扩容时不停机。同时这还节省了业务量猛增后的数据库扩容和迁移成本，极大降低了数据库容量不足造成的各种风险。</p>
+<p>对OceanBase进行扩容时，无论是增加单机的容量，还是增加Zone内的节点数，亦或是为了保证更高的可用性而增加新的Zone，都可以直接通过白屏化的OCP工具来完成。图9就是我们把一个单副本的集群扩展成三Zone三副本时的一张OCP截图。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/09.png" alt="通过OCP将OceanBase单副本集群扩展为三Zone三副本"></p>
+<p>图9 通过OCP将OceanBase单副本集群扩展为三Zone三副本</p>
+<p>相较黑屏执行命令的方式，我们的DBA同学反馈使用OCP来进行OceanBase的部署和运维会更加方便，推荐大家使用。</p>
+<h3 id="（三）数据库选型小结"><a href="#（三）数据库选型小结" class="headerlink" title="（三）数据库选型小结"></a>（三）数据库选型小结</h3><p>综上所述：相比MySQL和ClickHouse，在一致性方面，OceanBase原生就有着强一致的存储保证，而不是去用最终一致性的妥协换取其他方面的能力，而且也不需要通过配置各种复杂的周边组件来保障一致性。在高可用方面，OceanBase的多副本容灾技术面向单个集群，事务日志持久化并在多个副本之间同步日志数据，基于Paxos协议保证日志数据在多数派副本持久化成功，整体上对用户提供了少数派故障时RPO&#x3D;0，RTO&lt;8s的高可用能力。在整个测试过程中，OceanBase的表现相比MySQL、ClickHouse和DB-U也更加稳定。</p>
+<p>综合考量各种数据库的存储成本、高可用能力、运维难度等方面之后，我们最终选择了OceanBase作为我们的历史归档库。</p>
+<h2 id="三、OceanBase在BOSS直聘历史归档库业务的落地实践"><a href="#三、OceanBase在BOSS直聘历史归档库业务的落地实践" class="headerlink" title="三、OceanBase在BOSS直聘历史归档库业务的落地实践"></a>三、OceanBase在BOSS直聘历史归档库业务的落地实践</h2><h3 id="（一）OceanBase历史归档库架构"><a href="#（一）OceanBase历史归档库架构" class="headerlink" title="（一）OceanBase历史归档库架构"></a>（一）OceanBase历史归档库架构</h3><p>我们目前的在线库是主从结构的MySQL，用于存储热数据，一般是最近一个月内的用户聊天记录；历史归档库是几个由OCP接管的OceanBase集群。每个月我们都会通过一个自研的DTS工具，从MySQL在线库定期归档过期数据到通过OceanBase搭建的历史库，整体架构如图10所示。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/10.png" alt="BOSS直聘在线与历史库的架构示意"></p>
+<p>图10 BOSS直聘在线与历史库的架构示意</p>
+<p>至2024年初，我们用OCP接管了8个OceanBase归档业务集群，超过20个租户。在线库MySQL分表超过万张，仍然在源源不断地通过App按照用户的ID hash向MySQL写入数据，过期的历史数据现在会直接新导入到归档库OceanBase中。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/11.png" alt="OceanBase历史归档库管理界面"></p>
+<p>图11 OceanBase历史归档库管理界面</p>
+<p>我们曾用过的一个旧ClickHouse归档库集群目前仍提供部分历史数据的读取功能，不过考虑到ClickHouse的稳定性和数据安全问题，该归档集群会逐步被OceanBase替换掉。</p>
+<h3 id="（二）OceanBase用作归档库的业务收益"><a href="#（二）OceanBase用作归档库的业务收益" class="headerlink" title="（二）OceanBase用作归档库的业务收益"></a>（二）OceanBase用作归档库的业务收益</h3><p>首先，OceanBase通过数据库内核的高压缩能力，帮助我们轻松完成冷数据归档，且节省了超过70%的存储资源。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/12.png" alt="OceanBase高压缩特性示意"></p>
+<p>图12 OceanBase高压缩特性示意</p>
+<p>其次，OceanBase是原生的分布式系统，有着良好的扩展性，还可以对用户提供少数派故障时RPO&#x3D;0，RTO&lt;8s的高可用能力，让数据库在使用过程中更加稳定。</p>
+<p>最后，OceanBase自带一个智能化的白屏OCP平台工具，降低了我们DBA同学的部署和运维的门槛。OCP对集群、租户、主机、软件包等资源对象进行全生命周期管理，包括管理、安装、运维、性能监控、配置、升级等功能。并且除了默认的监控告警之外，现在OCP还支持自定义告警，比如我们可以定制磁盘、内存使用率的报警阈值，满足了定制化的告警需求。此外OCP还支持备份恢复，且在运维过程中可以支持一些自动化的诊断功能。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/13.png" alt="OceanBase的OCP白屏工具大大降低了运维难度"></p>
+<p>图13 OceanBase的OCP白屏工具大大降低了运维难度</p>
+<h2 id="四、从非核心业务走向规模化上线：OceanBase在BOSS直聘的落地历程与应用案例"><a href="#四、从非核心业务走向规模化上线：OceanBase在BOSS直聘的落地历程与应用案例" class="headerlink" title="四、从非核心业务走向规模化上线：OceanBase在BOSS直聘的落地历程与应用案例"></a>四、从非核心业务走向规模化上线：OceanBase在BOSS直聘的落地历程与应用案例</h2><h3 id="（一）OceanBase在BOSS直聘的落地历程"><a href="#（一）OceanBase在BOSS直聘的落地历程" class="headerlink" title="（一）OceanBase在BOSS直聘的落地历程"></a>（一）OceanBase在BOSS直聘的落地历程</h3><p>自2023年末开始对OceanBase进行项目调研以来，OceanBase在BOSS直聘的落地过程经过了四个阶段，分别是调研与适配、非核心业务（前文提到的历史归档库）试点、核心业务接入和业务规模化上线，如图14所示。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/14.png" alt="OceanBase在BOSS直聘的落地里程碑"></p>
+<p>图14 OceanBase在BOSS直聘的落地里程碑</p>
+<p>调研阶段结束后，项目进入第二阶段，即内部中间件的适配，包括DTS以及读写分离的中间件等，以及归档库的试点。随后，经过在历史归档库业务的试点部署，我们便计划在公司内部大面积接入OceanBase，其中包括一些相对重要的业务场景，如招聘时的聊天场景，其数据量非常庞大（经过一次增加表存储的二级分区改造，打散写入压力后，整体响应时间更平稳）。</p>
+<p>业务接入OceanBase后，我们投入了大量工作来应对业务在使用过程中可能遇到的问题。从2024年10月起，我们将重心转移到OceanBase元数据管理和内部管控平台对接，完善内部监控告警体系，提升运维自动化效率与内部运维体验。</p>
+<p>图15展现了BOSS直聘内部关系数据库的整体架构布局。前端流量首先由内部代理软件OneDB接收，随后OneDB智能地将流量分发至主或从数据库，确保数据处理的高效与灵活。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/15.png" alt="BOSS直聘内部关系数据库的整体架构"></p>
+<p>图15 BOSS直聘内部关系数据库的整体架构</p>
+<p>对于OceanBase的应用，目前我们采取了两种主要策略：归档与数据冷热分离。</p>
+<p>归档方式操作简便。如前文所述，我们将日常关联数据库中的部分数据定期归档至OceanBase，实现数据的长期保存与管理。而冷热分离方式则更为精细，我们将最新的一部分数据同时存储在MySQL和OceanBase中。其中，MySQL负责存储最近一段时间内的热数据，确保快速访问；而OceanBase则存储全量数据，包括热数据和冷数据，为数据查询和分析提供全面支持。此外，我们还在系统底层部署了一个日志订阅服务。这一服务的主要职责是将数据实时同步至数据仓库，为后续的数据分析和应用提供有力支撑。</p>
+<p>目前，我们已部署20+ OceanBase集群，线上节点数100+。所使用的物理机的存储容量分为3T、7T和15T等多种规格，确保每一套集群使用的存储容量一致，以便后续管理。在上线的业务中，可以分为四个主要的应用场景。</p>
+<ul>
+<li>数据归档场景。我们会定期归档MySQL中的冷数据以释放搜索存储空间。</li>
+<li>聊天消息处理场景。在这个场景中，我们采用双写机制来存储消息。MySQL中存储最近一个月的数据，而OceanBase中则存储所有数据。</li>
+<li>分析类场景。它与聊天功能紧密相关。在这个场景中，我们主要存储聊天过程中的行为数据，并对这些数据进行相关分析。</li>
+<li>该场景涉及我们内部的管控平台，用于存储元数据。目前，我们将cmdb和配置中心的一些元数据存储在OceanBase中。选择其存储的主要原因是，当计算机发生故障时，我们可以利用OceanBase的高可用性来消除切换过程中的循环依赖，确保在机房故障发生时，管理平台能够迅速恢复。</li>
+</ul>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/16.png" alt="OceanBase在BOSS直聘的四大应用场景"></p>
+<p>图16 OceanBase在BOSS直聘的四大应用场景</p>
+<p>下面以聊天消息处理业务为例，讲述OceanBase在BOSS直聘核心业务的应用情况。</p>
+<h3 id="（二）OceanBase在BOSS直聘核心业务的应用：聊天消息处理"><a href="#（二）OceanBase在BOSS直聘核心业务的应用：聊天消息处理" class="headerlink" title="（二）OceanBase在BOSS直聘核心业务的应用：聊天消息处理"></a>（二）OceanBase在BOSS直聘核心业务的应用：聊天消息处理</h3><p>聊天消息场景的集群有数十个节点，每个节点使用的存储都是单盘15T。机器配置方面，32核和48核配置不等。整体来看，我们的数据增长很快，基本上每个月都会向集群中增加机器，以应对存储容量的增加。在高峰期，写入量可达数万级别的QPS，我们能保证90%的请求在4毫秒左右完成。</p>
+<p>我们最初的消息存储按照单分区设计，主要基于时间维度进行分区。这样做导致了一个问题，即某一天的消息都会写入同一个分片，使得主分片在一天中的写入量非常大，从而产生了性能瓶颈。由于写入量过大，在高峰期或某些时间段，业务响应时间会出现波动，导致业务体验较差。</p>
+<p>对此，我们的优化策略是在按天分区的基础上，根据ID进行二级哈希分区。这样可以将单点的写入流量分散到多个节点，消除写入瓶颈。同时，我们将单条写操作改为批量处理，减少了应用与数据库的交互次数，降低了网络和IO开销。通过这两种方式，我们一方面消除了单点写入的瓶颈问题，另一方面也解决了响应时间波动的问题。虽然改造后由单条写变为批量写，响应时间有所上升，但上升幅度在可接受范围内，并且抖动问题得到了完美解决。</p>
+<p>此外，在使用OceanBase的过程中，我们还进行了其他方面的优化。</p>
+<p>其一，当少量Join从MySQL迁移到OceanBase后，性能有所下降。特别是小表之间的关联查询出现了跨节点的情况。为解决这个问题，我们利用了现有的tablegroup机制，将需要关联的表放置在同一个节点上，以避免跨节点的开销。在节点重新均衡后，我们再次测试了产品性能，发现相比迁移前有了显著提升。</p>
+<p>其二，频繁更新的小表查询缓慢。这个表的数据量不大，但增删改操作非常频繁，在OceanBase中被称为”Queuing表”。查询缓慢的主要原因是，在删除数据时，OceanBase并不会立即在物理层面删除，导致查询时需要扫描过多的物理行，从而降低性能。为解决这个问题，我们提高了表的转储频率，并迅速清理已删除的记录。这样在查询时就能扫描较少的物理行，从而提高整体性能。</p>
+<h2 id="五、成本、效能和稳定性：OceanBase为BOSS直聘带来三重收益"><a href="#五、成本、效能和稳定性：OceanBase为BOSS直聘带来三重收益" class="headerlink" title="五、成本、效能和稳定性：OceanBase为BOSS直聘带来三重收益"></a>五、成本、效能和稳定性：OceanBase为BOSS直聘带来三重收益</h2><p>目前，OceanBase已在BOSS直聘稳定运行一段时间，在成本、效能和稳定性方面均满足我们的预期。</p>
+<h3 id="（一）成本收益"><a href="#（一）成本收益" class="headerlink" title="（一）成本收益"></a>（一）成本收益</h3><p>使用OceanBase后，我们的存储成本显著降低，粗略估算至少降低60%。具体来看，一是归档集群，原本4T+的容量，在OceanBase中单副本可达500G左右，压缩率高达8倍；二是聊天消息数据的存储压缩比例在4倍左右，压缩效果令人惊喜。综合来看，使用OceanBase后我们预计能节省50+台物理机，直接降低2025年的硬件采购成本。</p>
+<h3 id="（二）效能收益"><a href="#（二）效能收益" class="headerlink" title="（二）效能收益"></a>（二）效能收益</h3><p>效能收益体现在两方面，一是查询性能的提升，另一方面是运维效率的提升。</p>
+<p>对于查询性能提升，我们最直观的感受是复杂查询的响应时间大幅缩短。同时，从原有系统迁移到OceanBase后，尽管具体数据难以精确计算，但我们能够感受到机器使用率有所降低。</p>
+<p>得益于OceanBase的架构优势，其并发处理能力相比传统单机数据库更强。尤其是其灵活扩展的能力，只需将机器加入集群，即可自动扩容。这一能力使我们业务高峰期的弹性扩缩容变得十分方便，直接缩短查询耗时。例如，我们将财务相关查询迁移到OceanBase后，对比迁移前后的平均耗时，发现性能有了显著提升，部分SQL性能提升近20倍，如图17。</p>
+<p><img data-src="/img/6-30-boss-zhipin-high-performance-storage/17.png" alt="财务相关查询迁移到OceanBase后带来的性能提升"></p>
+<p>图17 财务相关查询迁移到OceanBase后带来的性能提升</p>
+<p>另外，OceanBase显著提升了运维效率。引入OceanBase后，线上运维操作变得相对简单。例如，扩缩容过程非常快速，极大地节省了运维人力成本。此外，在排查OceanBase相关问题时，由于OceanBase的工具提供了丰富的监控指标，我们可以依赖这些监控指标快速定位问题。</p>
+<h3 id="（三）稳定性收益"><a href="#（三）稳定性收益" class="headerlink" title="（三）稳定性收益"></a>（三）稳定性收益</h3><p>使用OceanBase的过程中几乎没有发生稳定性问题（主动运维除外），系统非常健壮。以聊天消息存储场景为例，之前由于表存储为一级分区（时间），存在一定的写入压力，业务在高峰期由于单点瓶颈会存在一定的响应抖动。在改造为二级分区（时间分区的基础上增加了二级hash分区）之后，总体响应时间内再无抖动明显的情况。在运行期间，OceanBase的故障率很低。我们进行了相关宕机演练（宕掉某个节点的情况），其恢复的RTO小于8秒，符合预期。此外，运维操作对业务的影响非常小。</p>
+<h2 id="六、未来规划：持续扩大OceanBase的应用范围"><a href="#六、未来规划：持续扩大OceanBase的应用范围" class="headerlink" title="六、未来规划：持续扩大OceanBase的应用范围"></a>六、未来规划：持续扩大OceanBase的应用范围</h2><p>由于本次数据库替换项目较为顺利，且取得了多重令人满意的收益，我们计划持续扩大OceanBase的应用范围。具体而言包含几个方面。</p>
+<p>第一，对于在线库场景，我们的在线库目前依旧使用MySQL，在MySQL中进行分库分表明显比在分布式数据库中使用单表的业务复杂度要高很多，且数据一致性难以保证，当多个数据表或数据库之间的数据关联较为复杂时，维护数据的一致性难度也会增加很多。在线库的运维难度也很高，需要对多个数据库或数据表进行管理和维护，增加了系统的故障排查和维护的难度。且在分库分表的场景下，历史问题数据追溯问题是一个普遍存在的问题，由于数据被分散存储在多个数据库或数据表中，导致历史数据的追溯变得困难。</p>
+<p>现在我们依然有很多上层业务都依赖在线库MySQL，这些上层业务很多都是根据MySQL分库分表进行的设计和实现，所以在线库从MySQL替换成OceanBase还需要花一些时间。但引入OceanBase数据库后，完善了DB侧对原生分布式库表的支持能力，对于大存储量、改造分库分表逻辑难度比较大的业务提供了更便捷的可行方案。</p>
+<p>另外，由于在线业务的逐步接入，下游数据仓库等业务也提出了基于Binlog订阅等需求，OceanBase 4.2.1版本提供了Binlog服务，对于分库分表类业务的下游接入可以直接通过该服务来提供，降低了下游需要逐个MySQL集群订阅Binlog的复杂度。</p>
+<p>第二，在技术演进方面，我们首要的任务是架构优化。目前，我们正深入调研AP特性，旨在探索用OceanBase替代内部纯AP数据库产品的可行性。在备份方面，我们已顺利完成OceanBase与内部S3存储的备份验证工作。下一步，我们将把OceanBase的备份功能具体对接到公司的备份平台，以进一步完善和优化备份体系。</p>
+<p>第三，在业务支撑方面，我们计划进一步扩大OceanBase在内部业务的应用范围，并编制相关文档，详细介绍OceanBase的特性，以便业务团队在选型时能够迅速做出决策。同时，我们还将不断努力，提升OceanBase在业务中的使用体验。</p>
+<p>第四，在团队建设方面，我们将使用两个方式开展：一是定期组织内部团队分模块研究OceanBase的机制，并开展分享活动，以提升团队对OceanBase技术的整体掌握水平；二是构建知识体系，针对使用OceanBase过程中遇到的问题，进行总结和沉淀，形成宝贵的知识资源。</p>
+<p>第五，在完善工具平台方面，我们将继续研究ODC与Binlog服务等工具的更多能力，并持续优化OceanBase与内部管控平台的连接，优化OceanBase生命周期的管理和自动化流程，提高其精细化管理程度。同时，我们还将接入内部告警平台，完善相关流程，实现更高效的协同工作。</p>
+<p>第六，在最佳实践探索方面，新数据库的引入对于DBA的考验也有所增加。在保证数据库稳定的前提下，也要充分对硬件、服务配置等维度进行合理的选型和持续优化，以便更好地挖掘OceanBase潜力。我们将持续与OceanBase团队一起实践和探讨，找到OceanBase最有效率和最具成本效益的使用方式，为业务的快速和稳定发展提供强有力的支撑。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/OCP/" rel="tag"># OCP</a>
+              <a href="/tags/BOSS%E7%9B%B4%E8%81%98/" rel="tag"># BOSS直聘</a>
+              <a href="/tags/%E5%8E%86%E5%8F%B2%E5%BD%92%E6%A1%A3%E5%BA%93/" rel="tag"># 历史归档库</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%8E%8B%E7%BC%A9/" rel="tag"># 数据压缩</a>
+              <a href="/tags/%E5%86%B7%E7%83%AD%E5%88%86%E7%A6%BB/" rel="tag"># 冷热分离</a>
+              <a href="/tags/ClickHouse/" rel="tag"># ClickHouse</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-27-openmanus-diagnostic-agent/" rel="prev" title="巧用OpenManus开发自动诊断Agent：30分钟定位数据库异常">
+                  <i class="fa fa-angle-left"></i> 巧用OpenManus开发自动诊断Agent：30分钟定位数据库异常
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-04-ai-app-unstructured-document-analysis/" rel="next" title="AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性">
+                  AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

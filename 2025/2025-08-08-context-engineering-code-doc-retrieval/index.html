@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Doc2Dev 基于 OceanBase 向量数据库构建代码文档检索引擎，通过语义搜索与 MCP 集成为 AI 编程助手提供最新文档，有效消除代码幻觉。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Context Engineering：基于 OceanBase 的代码文档检索引擎">
+<meta property="og:url" content="https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Doc2Dev 基于 OceanBase 向量数据库构建代码文档检索引擎，通过语义搜索与 MCP 集成为 AI 编程助手提供最新文档，有效消除代码幻觉。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/01.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/02.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/03.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/04.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/05.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/06.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/07.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/08.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/09.png">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/10.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/11.png">
+<meta property="article:published_time" content="2025-08-08T00:10:59.000Z">
+<meta property="article:modified_time" content="2025-08-08T00:43:26.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 编程助手">
+<meta property="article:tag" content="Context Engineering">
+<meta property="article:tag" content="LangChain">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="向量检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/","path":"2025/2025-08-08-context-engineering-code-doc-retrieval/","title":"Context Engineering：基于 OceanBase 的代码文档检索引擎"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Context Engineering：基于 OceanBase 的代码文档检索引擎 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#01-%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">01 项目背景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E8%80%85%E9%9D%A2%E4%B8%B4%E7%9A%84%E6%96%87%E6%A1%A3%E6%8C%91%E6%88%98"><span class="nav-number">1.1.</span> <span class="nav-text">开发者面临的文档挑战</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%B0%E6%9C%89%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">1.2.</span> <span class="nav-text">现有解决方案的局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E4%BB%A3%E7%A0%81%E5%B9%BB%E8%A7%89%E9%97%AE%E9%A2%98%E4%B8%BE%E4%BE%8B"><span class="nav-number">1.3.</span> <span class="nav-text">AI 代码幻觉问题举例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-Doc2Dev-%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">02 Doc2Dev 介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD"><span class="nav-number">2.1.</span> <span class="nav-text">核心功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="nav-number">2.2.</span> <span class="nav-text">整体架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="nav-number">2.3.</span> <span class="nav-text">技术栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B"><span class="nav-number">2.4.</span> <span class="nav-text">数据处理流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-%E7%94%A8%E6%88%B7%E7%95%8C%E9%9D%A2%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">03 用户界面设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E9%A1%B5"><span class="nav-number">3.1.</span> <span class="nav-text">首页</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95-Git-%E4%BB%93%E5%BA%93"><span class="nav-number">3.2.</span> <span class="nav-text">索引 Git 仓库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2"><span class="nav-number">3.3.</span> <span class="nav-text">查询</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-MCP-%E9%9B%86%E6%88%90"><span class="nav-number">4.</span> <span class="nav-text">04 MCP 集成</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Context Engineering：基于 OceanBase 的代码文档检索引擎 | Longda's Interesting World">
+      <meta itemprop="description" content="Doc2Dev 基于 OceanBase 向量数据库构建代码文档检索引擎，通过语义搜索与 MCP 集成为 AI 编程助手提供最新文档，有效消除代码幻觉。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Context Engineering：基于 OceanBase 的代码文档检索引擎
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-08 08:10:59" itemprop="dateCreated datePublished" datetime="2025-08-08T08:10:59+08:00">2025-08-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">程治玮</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Doc2Dev 基于 OceanBase 向量数据库构建代码文档检索引擎，通过语义搜索与 MCP 集成为 AI 编程助手提供最新文档，有效消除代码幻觉。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Context Engineering：基于 OceanBase 的代码文档检索引擎","description":"Doc2Dev 基于 OceanBase 向量数据库构建代码文档检索引擎，通过语义搜索与 MCP 集成为 AI 编程助手提供最新文档，有效消除代码幻觉。","image":"https://ilongda.com/img/8-8-context-engineering-code-doc-retrieval/01.png","wordCount":2020,"datePublished":"2025-08-08T00:10:59.000Z","dateModified":"2025-08-08T00:43:26.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/"},"url":"https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","向量检索","MCP","Context Engineering","AI 编程助手","LangChain"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"Context Engineering：基于 OceanBase 的代码文档检索引擎","item":"https://ilongda.com/2025/2025-08-08-context-engineering-code-doc-retrieval/"}]}</script>
+<h2 id="01-项目背景"><a href="#01-项目背景" class="headerlink" title="01 项目背景"></a>01 项目背景</h2><p>近两年 AI 技术渗透到各行各业，随之诞生了 AI 编程助手，AI 编程助手生成的代码速度非常快，但生成质量并不一定很好，因此日常我们在使用 AI 编程助手生成代码的过程中会遇到很多问题。</p>
+<h3 id="开发者面临的文档挑战"><a href="#开发者面临的文档挑战" class="headerlink" title="开发者面临的文档挑战"></a>开发者面临的文档挑战</h3><p><strong>1. 编造根本不存在的 API 接口</strong></p>
+<p>由于大语言模型存在代码幻觉，有时候会编造一些不存在的 API 接口，导致使用 AI 编程助手生成的代码可能存在很大问题。</p>
+<span id="more"></span>
+
+<p><strong>2. 大语言模型的训练数据往往滞后于技术的更新，导致生成的代码常常基于已经废弃的旧版 API</strong></p>
+<p>大语言模型语料库仅包含了训练时导入的代码文档，通过大语言模型生成代码时，技术已经迭代更新，且文档也已经更新，然而大语言模型在生成代码时可能还是会基于语料库废弃的旧版 API，从而降低了代码生成的准确性。</p>
+<p><strong>3. AI 可以快速生成代码，但往往不是官方的最佳实践</strong></p>
+<p>大语言模型虽然能够快速生成代码，但是通常并不是官方的最佳实践，对开发的效率也会有影响。</p>
+<h3 id="现有解决方案的局限性"><a href="#现有解决方案的局限性" class="headerlink" title="现有解决方案的局限性"></a>现有解决方案的局限性</h3><p><strong>1. 传统文档查询方式的效率低下</strong></p>
+<p>在代码文档生成的模拟代码质量不高的情况下，我们需要去自行搜索代码文档，将代码文档链接或直接复制文档内容导入大语言模型，作为参考生成代码，效率比较低下。</p>
+<p><strong>2. AI 编程助手与文档系统的割裂</strong></p>
+<p>AI 编程助手有时会调用谷歌或获取 API 进行搜索，但由于代码文档可能在官方文档内部并不易查找，或者文档中没有提供导览功能，因此 AI 编程助手无法找到合适的参考文档，不能很好地基于官方文档进行集成。</p>
+<p><strong>3. 缺乏语义理解的关键词搜索</strong></p>
+<p>调用模型在调用搜索引擎类 API 时，一般通过关键字方式进行搜索，由于关键字搜索缺乏语义理解，可能搜索结果准确度并不高，此时将搜索结果作为参考文档，会导致生成代码的质量并不理想。</p>
+<h3 id="AI-代码幻觉问题举例"><a href="#AI-代码幻觉问题举例" class="headerlink" title="AI 代码幻觉问题举例"></a>AI 代码幻觉问题举例</h3><p>由于 AI 不熟悉文档可能会导致传入参数不正确，例如向 AI 编程助手发出如下命令：使用 elasticsearch-rs 编写代码和 elasticsearch 进行交互，创建一个索引，并写入几条文档。但可能由于 elasticsearch-rs 的已有使用经验较少，我们在训练 AI 的过程中可参考资料有限，可能导致生成结果存在幻觉。从下图可以看到生成的代码参数并不准确，直接爆红，代码无法满足运行要求。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/01.png" alt="图片"></p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/02.png" alt="图片"></p>
+<h2 id="02-Doc2Dev-介绍"><a href="#02-Doc2Dev-介绍" class="headerlink" title="02 Doc2Dev 介绍"></a>02 Doc2Dev 介绍</h2><h3 id="核心功能"><a href="#核心功能" class="headerlink" title="核心功能"></a>核心功能</h3><p>那么我们看一下 Doc2Dev 项目是如何解决上述问题和挑战的。</p>
+<ul>
+<li><strong>最新、最准确的代码</strong>：通过提供 Git 仓库 URL 地址，可以让搜索引擎获取最新库版本和最佳实践的建议。</li>
+<li><strong>减少调试时间</strong>：减少因过时的 AI 知识导致的错误修复时间。</li>
+<li><strong>拒绝代码幻觉</strong>：依赖于已记录的、存在的函数和 API。</li>
+<li><strong>无缝工作流程</strong>：直接集成到现有的 AI 编程助手中，无需频繁切换到文档网站。</li>
+<li><strong>语义理解</strong>：基于向量嵌入的搜索超越了传统的关键词匹配，能够理解查询的语义内容。</li>
+</ul>
+<p>项目 Github 地址：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2NyNzI1OC9kb2MyZGV2">https://github.com/cr7258/doc2dev<i class="fa fa-external-link-alt"></i></span></p>
+<p>在线体验：<span class="exturl" data-url="aHR0cHM6Ly9kb2MyZGV2LnRvcC8=">https://doc2dev.top<i class="fa fa-external-link-alt"></i></span></p>
+<h3 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h3><p>项目的整体架构主要包括前端、后端、OceanBase 数据存储、AI 编程助手集成四部分。其中设计最为复杂的是后端 API 服务层，如下图所示，最右侧是索引服务，当用户提供了一个 Github 或 Gitlab 仓库地址时，Doc2Dev 会获取 Git 仓库中的文档内容，并进行解析和预处理，然后调用 Embedding 服务将文档转化为向量，最后将数据存储到 OceanBase 中。中间的查询服务，用户提出的问题同样会被进行 Embedding，然后和 OceanBase 的内容进行匹配，匹配内容会同步给大语言模型生成摘要后返回，便于 Agent 参考代码结构。最左侧是 MCP 服务器，提供 MCP 服务器便于和 Cursor、Windsurf 进行集成。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/03.png" alt="图片"></p>
+<h3 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h3><p>上文提到的各部分的技术栈如下：</p>
+<ul>
+<li>前端：Next.js, React, TypeScript, Tailwind CSS, shadcn&#x2F;ui</li>
+<li>后端：Python, FastAPI, WebSockets</li>
+<li>AI 模型：<ul>
+<li>嵌入模型：用于生成文档的向量表示</li>
+<li>LLM：用于生成搜索结果摘要</li>
+</ul>
+</li>
+<li>数据库：使用 OceanBase 处理向量存储、元数据管理和相似度检索</li>
+<li>MCP：通过 MCP Server 的方式向 AI 编程助手提供查询文档的接口</li>
+</ul>
+<h3 id="数据处理流程"><a href="#数据处理流程" class="headerlink" title="数据处理流程"></a>数据处理流程</h3><p>数据处理流程是整个项目最为关键的一部分，共分为如下 5 个步骤：</p>
+<ol>
+<li>文档获取：通过 GitHub&#x2F;Gitlab API 下载指定公有&#x2F;私有仓库的 Markdown 文件</li>
+<li>文档分割：将文档分割成适合嵌入的片段，使用 LangChain 的 MarkdownHeaderTextSplitter</li>
+<li>向量嵌入：使用嵌入模型将文本片段转换为高维向量</li>
+<li>向量存储：将向量和原始文本存储到 OceanBase 向量数据库中</li>
+</ol>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/04.png" alt="图片"></p>
+<ol start="5">
+<li>查询处理：<br> a. 将用户查询转换为向量<br> b. 在 OceanBase 中进行相似度搜索<br> c. 使用 LLM 生成搜索结果的摘要</li>
+</ol>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/05.png" alt="图片"></p>
+<h2 id="03-用户界面设计"><a href="#03-用户界面设计" class="headerlink" title="03 用户界面设计"></a>03 用户界面设计</h2><h3 id="首页"><a href="#首页" class="headerlink" title="首页"></a>首页</h3><p>Doc2Dev 的首页展示了索引的仓库总数、列表、占用的 Tokens 数量、代码片段数量等全局信息。点击 + 添加 Git 仓库，即进入索引 Git 仓库页面。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/06.png" alt="图片"></p>
+<h3 id="索引-Git-仓库"><a href="#索引-Git-仓库" class="headerlink" title="索引 Git 仓库"></a>索引 Git 仓库</h3><p>用户可以在索引 Git 仓库页面提供 Git 仓库 URL，并指定具体的 Git 平台，然后点击下载并索引，系统会开始索引，首先下载对应 Markdown 文件，然后进行 Embedding 存入 OceanBase。操作可以异步完成，即提交任务后可以直接在后台进行处理，然后直接更新进度状态。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/07.png" alt="图片"></p>
+<h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><p>用户可以在查询页面基于已经索引的代码仓库进行查询，例如提问：如何创建索引？系统会进行一个语义化搜索，然后让代理模型进行总结输出，查询结果展示了代码片段描述，以及如何使用 elasticsearch-rs 库来编写这段代码。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/08.png" alt="图片"></p>
+<h2 id="04-MCP-集成"><a href="#04-MCP-集成" class="headerlink" title="04 MCP 集成"></a>04 MCP 集成</h2><p>通过 MCP 方式集成也相对比较简单，Doc2Dev 为每位用户提供了唯一的 MCP URL，用户可通过 MCP Streamable HTTP 方式完成配置。</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/09.png" alt="图片"></p>
+<p>例如，在 Cursor 中可以通过以下配置文件进行设置：</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/10.jpeg" alt="图片"></p>
+<p>例如提问：先用 Doc2Dev 查询文档，使用 elasticsearch-rs 编写代码和 elasticsearch 进行交互，创建一个索引。可以看到系统首先会查询相关代码库，由于存在多个代码库，需要先根据具体关键字查找相关内容，然后选择某个相关内容询问对应问题，最后得到相应代码片段提示。演示：</p>
+<p><img data-src="/img/8-8-context-engineering-code-doc-retrieval/11.png" alt="图片"></p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 <strong>数据库</strong>、<strong>AI</strong>、<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个 Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/Context-Engineering/" rel="tag"># Context Engineering</a>
+              <a href="/tags/AI-%E7%BC%96%E7%A8%8B%E5%8A%A9%E6%89%8B/" rel="tag"># AI 编程助手</a>
+              <a href="/tags/LangChain/" rel="tag"># LangChain</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-06-kuaishou-oceanbase-pb-scale/" rel="prev" title="从v3.1到v4.3，OceanBase稳定支撑快手PB级核心业务场景">
+                  <i class="fa fa-angle-left"></i> 从v3.1到v4.3，OceanBase稳定支撑快手PB级核心业务场景
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-11-oceanbase-auto-partition-split/" rel="next" title="自动分区分裂 —— OceanBase 易用性史诗级增强">
+                  自动分区分裂 —— OceanBase 易用性史诗级增强 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

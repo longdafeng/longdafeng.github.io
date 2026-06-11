@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文以智能搜书应用为例，手把手演示如何基于 seekdb 完成数据导入、向量嵌入、HNSW 索引创建，并实现语义搜索、元数据过滤与 RRF 混合搜索，体验 AI-Native 数据库的一体化能力。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="基于 seekdb，教你从零开始构建智能搜书应用">
+<meta property="og:url" content="https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文以智能搜书应用为例，手把手演示如何基于 seekdb 完成数据导入、向量嵌入、HNSW 索引创建，并实现语义搜索、元数据过滤与 RRF 混合搜索，体验 AI-Native 数据库的一体化能力。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/01.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/02.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/03.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/04.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/05.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-book-search-app/06.png">
+<meta property="article:published_time" content="2025-12-10T01:09:05.000Z">
+<meta property="article:modified_time" content="2025-12-10T01:09:05.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HNSW">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="pyseekdb">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="混合搜索">
+<meta property="article:tag" content="语义搜索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-book-search-app/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/","path":"2025/2025-12-10-seekdb-book-search-app/","title":"基于 seekdb，教你从零开始构建智能搜书应用"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>基于 seekdb，教你从零开始构建智能搜书应用 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb-%E6%98%AF%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">seekdb 是什么样的数据库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%99%E7%A8%8B%EF%BC%9A%E5%9F%BA%E4%BA%8E-seekdb-%E5%AE%9E%E7%8E%B0%E6%99%BA%E8%83%BD%E6%90%9C%E4%B9%A6%E5%BA%94%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">教程：基于 seekdb 实现智能搜书应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">准备工作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%89%E8%A3%85-OrbStack"><span class="nav-number">3.1.</span> <span class="nav-text">1. 安装 OrbStack</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%83%A8%E7%BD%B2-seekdb-%E9%95%9C%E5%83%8F"><span class="nav-number">3.2.</span> <span class="nav-text">2. 部署 seekdb 镜像</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%8B%E8%BD%BD%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">3.3.</span> <span class="nav-text">3. 下载数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E4%B8%8B%E8%BD%BD%E6%95%99%E7%A8%8B%E4%BB%A3%E7%A0%81"><span class="nav-number">3.4.</span> <span class="nav-text">4. 下载教程代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E6%95%88%E6%9E%9C"><span class="nav-number">4.</span> <span class="nav-text">执行效果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Vibe-Coding-%E5%8F%8B%E5%A5%BD"><span class="nav-number">5.</span> <span class="nav-text">Vibe Coding 友好</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="基于 seekdb，教你从零开始构建智能搜书应用 | Longda's Interesting World">
+      <meta itemprop="description" content="本文以智能搜书应用为例，手把手演示如何基于 seekdb 完成数据导入、向量嵌入、HNSW 索引创建，并实现语义搜索、元数据过滤与 RRF 混合搜索，体验 AI-Native 数据库的一体化能力。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          基于 seekdb，教你从零开始构建智能搜书应用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-10 09:09:05" itemprop="dateCreated datePublished" datetime="2025-12-10T09:09:05+08:00">2025-12-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>9 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文以智能搜书应用为例，手把手演示如何基于 seekdb 完成数据导入、向量嵌入、HNSW 索引创建，并实现语义搜索、元数据过滤与 RRF 混合搜索，体验 AI-Native 数据库的一体化能力。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"基于 seekdb，教你从零开始构建智能搜书应用","description":"本文以智能搜书应用为例，手把手演示如何基于 seekdb 完成数据导入、向量嵌入、HNSW 索引创建，并实现语义搜索、元数据过滤与 RRF 混合搜索，体验 AI-Native 数据库的一体化能力。","image":"https://ilongda.com/img/seekdb-book-search-app/01.png","wordCount":2895,"datePublished":"2025-12-10T01:09:05.000Z","dateModified":"2025-12-10T01:09:05.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/"},"url":"https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/","inLanguage":"zh-CN","keywords":["HNSW","RAG","向量检索","seekdb","混合搜索","语义搜索","pyseekdb"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"基于 seekdb，教你从零开始构建智能搜书应用","item":"https://ilongda.com/2025/2025-12-10-seekdb-book-search-app/"}]}</script>
+<blockquote>
+<p>🌟 温馨提示：seekdb 是一款轻量级的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，从零开始构建你的第一个智能应用～</p>
+</blockquote>
+<h2 id="seekdb-是什么样的数据库？"><a href="#seekdb-是什么样的数据库？" class="headerlink" title="seekdb 是什么样的数据库？"></a>seekdb 是什么样的数据库？</h2><p>最近体验了一下 seekdb，先说几点感受。</p>
+<p>第一，是单节点轻量化设计，在我的 macbook 上通过 docker 桌面端部署可以轻松跑起来，在 Linux 环境下直接用 pip 安装，据说不久就会支持 macOS&#x2F;windows 系统，连 docker 都省了，直接通过命令安装。</p>
+<p>第二，它是一体化设计，原生融合关系型、向量、全文、JSON、GIS 五种类型的数据，所有索引在同一事务内原子更新，这意味着 Zero Data Lag 和严格的 ACID，彻底规避传统 CDC 同步导致的延迟与不一致问题。</p>
+<p>第三，它是一个 AI-Native 数据库，体现在它内置有 embedding 模型和 AI Function，单条 SQL 实现向量 + 全文 + 标量过滤的联合查询，不需要再写大量的复杂的胶水层逻辑拼合各种技术栈，直接驱动 RAG 流程（如图）。</p>
+<p>第四，它的 API 是 Schema-free 的设计，也就是直接写入，不要求预先定义严格的表结构。</p>
+<p>第五，它完全兼容 MySQL，意味着传统数据库可以轻松进行 AI 化升级。</p>
+<p>第六点同样很重要，它是在 Apache 2.0 协议许可下开源，同时它有 OceanBase 的基因。长期发展有保障，只会越来越成熟。</p>
+<p><img data-src="/img/seekdb-book-search-app/01.png" alt="seekdb 一体化架构驱动 RAG 流程"></p>
+<span id="more"></span>
+
+<h2 id="教程：基于-seekdb-实现智能搜书应用"><a href="#教程：基于-seekdb-实现智能搜书应用" class="headerlink" title="教程：基于 seekdb 实现智能搜书应用"></a>教程：基于 seekdb 实现智能搜书应用</h2><p><strong>本教程将带你从零开始，基于 seekdb 实现一个「智能搜书」的程序，演示如何实现语义搜索和混合搜索等 seekdb 的主要能力。</strong></p>
+<p>教程具体做的事情包括：</p>
+<ol>
+<li>数据导入<ul>
+<li>从 csv 文件导入 seekdb</li>
+<li>支持数据分批导入</li>
+<li>自动将书籍的文本信息转换为 384 维向量嵌入</li>
+</ul>
+</li>
+<li>用到三种搜索能力<ul>
+<li>语义搜索：基于向量相似度，用自然语言查询找到语义相关的书籍。</li>
+<li>元数据过滤：按评分、类型、年份、价格等字段精确过滤。</li>
+<li>混合搜索：结合语义搜索 + 元数据过滤，使用 RRF 算法融合排序。</li>
+</ul>
+</li>
+<li>索引优化<ul>
+<li>创建 HNSW 向量索引提升语义搜索性能。</li>
+<li>元数据生成列索引（从 JSON 提取字段创建索引）</li>
+</ul>
+</li>
+<li>技术栈<ul>
+<li>数据库: seekdb，pyseekdb（seekdb 的 Python SDK），pymysql</li>
+<li>数据处理工具：pandas</li>
+</ul>
+</li>
+</ol>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="1-安装-OrbStack"><a href="#1-安装-OrbStack" class="headerlink" title="1. 安装 OrbStack"></a>1. 安装 OrbStack</h3><p>OrbStack 是一个轻量级的 Docker 替代品，专为 Mac 优化，启动速度快且资源占用低。用它本地部署 seekdb。</p>
+<p>第一步，使用 Homebrew 安装（推荐）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install orbstack</span><br></pre></td></tr></table></figure>
+
+<p>或从官网下载：访问 <span class="exturl" data-url="aHR0cHM6Ly9vcmJzdGFjay5kZXYv">https://orbstack.dev<i class="fa fa-external-link-alt"></i></span> 下载安装包。</p>
+<p>第二步，启动 OrbStack：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动 OrbStack</span></span><br><span class="line">open -a OrbStack</span><br><span class="line"></span><br><span class="line"><span class="comment"># 验证安装</span></span><br><span class="line">orb version</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-部署-seekdb-镜像"><a href="#2-部署-seekdb-镜像" class="headerlink" title="2. 部署 seekdb 镜像"></a>2. 部署 seekdb 镜像</h3><p>如果卡住，先去 orbstack 配置 docker 国内镜像源。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 拉取 SeekDB 镜像</span></span><br><span class="line">docker pull oceanbase/seekdb:latest</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动 SeekDB 容器</span></span><br><span class="line">docker run -d \</span><br><span class="line">  --name seekdb \</span><br><span class="line">  -p 2881:2881 \</span><br><span class="line">  -e MODE=slim \</span><br><span class="line">  oceanbase/seekdb:latest</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看容器状态</span></span><br><span class="line">docker ps | grep seekdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看日志（确保服务启动成功）</span></span><br><span class="line">docker logs seekdb</span><br></pre></td></tr></table></figure>
+
+<p>等待约 30 秒让 seekdb 完全启动。你可以通过 <code>docker logs -f seekdb</code> 查看启动日志，看到 “boot success” 表示启动完成。</p>
+<h3 id="3-下载数据集"><a href="#3-下载数据集" class="headerlink" title="3. 下载数据集"></a>3. 下载数据集</h3><p>下载数据集：<span class="exturl" data-url="aHR0cHM6Ly93d3cua2FnZ2xlLmNvbS9kYXRhc2V0cy9zb290ZXJzYWFsdS9hbWF6b24tdG9wLTUwLWJlc3RzZWxsaW5nLWJvb2tzLTIwMDktMjAxOQ==">https://www.kaggle.com/datasets/sootersaalu/amazon-top-50-bestselling-books-2009-2019<i class="fa fa-external-link-alt"></i></span></p>
+<p>将数据集命名为：bestsellers_with_categories.csv，有 550 条 amazon 历史畅销书的记录，内容如图：</p>
+<p><img data-src="/img/seekdb-book-search-app/02.png" alt="数据集内容预览"></p>
+<h3 id="4-下载教程代码"><a href="#4-下载教程代码" class="headerlink" title="4. 下载教程代码"></a>4. 下载教程代码</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/kejun/demo-seekdb-hybridsearch.git</span><br></pre></td></tr></table></figure>
+
+<p>项目结构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">demo-seekdb-books-hybrid-search/</span><br><span class="line">├── database/</span><br><span class="line">│   ├── db_client.py      # 数据库客户端封装</span><br><span class="line">│   └── index_manager.py  # 索引管理器</span><br><span class="line">├── data/</span><br><span class="line">│   └── processor.py      # 数据处理器</span><br><span class="line">├── models/</span><br><span class="line">│   └── book_metadata.py  # 书籍元数据模型</span><br><span class="line">├── utils/</span><br><span class="line">│   └── text_utils.py     # 文本处理工具</span><br><span class="line">├── import_data.py        # 数据导入脚本</span><br><span class="line">├── hybrid_search.py      # 混合搜索演示</span><br><span class="line">└── bestsellers_with_categories.csv  # 数据文件</span><br></pre></td></tr></table></figure>
+
+<p>创建 Python 虚拟环境：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建虚拟环境</span></span><br><span class="line">python3 -m venv venv</span><br><span class="line"></span><br><span class="line"><span class="comment"># 激活虚拟环境</span></span><br><span class="line"><span class="built_in">source</span> venv/bin/activate   <span class="comment"># macOS/Linux</span></span><br><span class="line"><span class="comment"># 或</span></span><br><span class="line">.\venv\Scripts\activate    <span class="comment"># Windows</span></span><br></pre></td></tr></table></figure>
+
+<p>安装依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+
+<h2 id="执行效果"><a href="#执行效果" class="headerlink" title="执行效果"></a>执行效果</h2><p>执行 <code>python import_data.py</code> 导入数据。可以看到整个过程：加载数据文件 → 连接数据库 → 创建数据库 → 创建集合 → 分批导入数据 → 创建元数据索引（注：seekdb 目前只支持对 embedding 列创建 HNSW 索引，对 document 列创建全文索引，对元数据字段创建暂不支持，据介绍在计划中）。</p>
+<p><img data-src="/img/seekdb-book-search-app/03.png" alt="数据导入流程"></p>
+<p>seekdb 采用的是 schema-free 的接口设计，比如在 data&#x2F;processor.py 中，调用 collection.add() 时直接传入任意字典：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">collection.add(</span><br><span class="line">    ids=valid_ids,</span><br><span class="line">    documents=valid_documents,</span><br><span class="line">    metadatas=valid_metadatas  <span class="comment"># 直接传入字典列表，无需预定义 schema</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>完整结果（有所精简）如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">正在加载数据文件: bestsellers_with_categories.csv</span><br><span class="line">数据加载完成!</span><br><span class="line">- 总行数: 550</span><br><span class="line">- 总列数: 7</span><br><span class="line">- 列名: Name, Author, User Rating, Reviews, Price, Year, Genre</span><br><span class="line">- 加载耗时: 0.01 秒</span><br><span class="line"></span><br><span class="line">正在连接数据库...</span><br><span class="line">主机: 127.0.0.1:2881</span><br><span class="line">数据库: demo_books</span><br><span class="line">集合: book_info</span><br><span class="line">数据库已就绪</span><br><span class="line">数据库连接成功</span><br><span class="line"></span><br><span class="line">正在创建/重建集合...</span><br><span class="line">集合名称: book_info</span><br><span class="line">向量维度: 384</span><br><span class="line">距离度量: cosine</span><br><span class="line">集合创建成功</span><br><span class="line"></span><br><span class="line">正在处理数据...</span><br><span class="line">数据预处理完成!</span><br><span class="line">- 总记录数: 550</span><br><span class="line">- 验证错误数: 0</span><br><span class="line">- 处理耗时: 0.05 秒</span><br><span class="line"></span><br><span class="line">正在导入数据到集合...</span><br><span class="line">- 批次大小: 100</span><br><span class="line">- 总批次数: 6</span><br><span class="line">- 开始导入...</span><br><span class="line"></span><br><span class="line">导入进度: 100%|█████████████████████████████████████| 6/6 [00:53&lt;00:00,  8.97s/批次]</span><br><span class="line"></span><br><span class="line">数据导入完成!</span><br><span class="line">- 导入耗时: 53.83 秒</span><br><span class="line">- 平均速度: 10 条/秒</span><br><span class="line"></span><br><span class="line">正在创建元数据索引...</span><br><span class="line">- 索引字段: genre, year, user_rating, author, reviews, price</span><br><span class="line">索引创建完成!</span><br><span class="line">- 创建耗时: 3.81 秒</span><br><span class="line"></span><br><span class="line">数据导入流程完成!</span><br><span class="line">总耗时: 59.64 秒</span><br><span class="line">导入记录数: 550</span><br><span class="line">数据库: demo_books</span><br><span class="line">集合: book_info</span><br></pre></td></tr></table></figure>
+
+<p>导完数据，可以直接用 mysql client 或安装 obclient 在终端上查询数据库。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进入 SeekDB 容器</span></span><br><span class="line">docker <span class="built_in">exec</span> -it seekdb bash</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用 MySQL 客户端连接（SeekDB 兼容 MySQL 协议）</span></span><br><span class="line">mysql -h127.0.0.1 -P2881 -uroot</span><br></pre></td></tr></table></figure>
+
+<p><code>book_info</code> 是 seekdb 的 <code>collection</code>，对应底层的表名是 <code>c$v1$book_info</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看所有数据库</span></span><br><span class="line"><span class="keyword">SHOW</span> DATABASES;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 切换到 demo 数据库</span></span><br><span class="line">USE demo;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看所有表（集合）</span></span><br><span class="line"><span class="keyword">SHOW</span> TABLES;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查看集合结构</span></span><br><span class="line"><span class="keyword">DESC</span> c$v1$articles;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查询集合数据</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> c$v1$articles LIMIT <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 统计记录数</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> c$v1$articles;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 退出</span></span><br><span class="line">EXIT;</span><br></pre></td></tr></table></figure>
+
+<p>看一下表结构 <code>DESC c$v1$book_info</code>：</p>
+<p><img data-src="/img/seekdb-book-search-app/04.png" alt="book_info 集合表结构"></p>
+<p>看一下创建的索引：</p>
+<p>（注意：pyseekdb 目前不直接支持对元数据列创建索引，所以项目通过 pymysql + SQL DDL 来实现元数据索引功能。据说在下个 pyseekdb 版本中将会支持自动对元数据字段进行索引）</p>
+<p><img data-src="/img/seekdb-book-search-app/05.png" alt="创建的索引列表"></p>
+<p>接下来，执行搜索 <code>python hybrid_search.py</code>。seekdb 内置的 embedding 模型是 sentence-transformers&#x2F;all-MiniLM-L6-v2，向量维度最大 384，要想获得更好的效果还是要配置外部的模型服务。</p>
+<p>混合搜索是 seekdb 的 killer feature。它同时执行全文检索和向量检索，然后使用 RRF (倒数排名融合) 算法合并。</p>
+<p><img data-src="/img/seekdb-book-search-app/06.png" alt="混合搜索原理示意"></p>
+<p>看具体代码示例，query_params 定义的是全文搜索”励志”（”inspirational”），同时用元数据中的用户评分（user_rating）过滤（评分大于等于 4.5）。knn_params 是语义搜索，query_texts 是句鸡汤”励志人生忠告”（”inspirational life advice”），用同样的用户评分做过滤。</p>
+<p>代码片断：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">query_params = &#123;</span><br><span class="line">    <span class="string">&quot;where_document&quot;</span>: &#123;<span class="string">&quot;$contains&quot;</span>: <span class="string">&quot;inspirational&quot;</span>&#125;,</span><br><span class="line">    <span class="string">&quot;where&quot;</span>: &#123;<span class="string">&quot;user_rating&quot;</span>: &#123;<span class="string">&quot;$gte&quot;</span>: <span class="number">4.5</span>&#125;&#125;,</span><br><span class="line">    <span class="string">&quot;n_results&quot;</span>: <span class="number">5</span></span><br><span class="line">&#125;</span><br><span class="line">knn_params = &#123;</span><br><span class="line">    <span class="string">&quot;query_texts&quot;</span>: [<span class="string">&quot;inspirational life advice&quot;</span>],</span><br><span class="line">    <span class="string">&quot;where&quot;</span>: &#123;<span class="string">&quot;user_rating&quot;</span>: &#123;<span class="string">&quot;$gte&quot;</span>: <span class="number">4.5</span>&#125;&#125;,</span><br><span class="line">    <span class="string">&quot;n_results&quot;</span>: <span class="number">5</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">results = collection.hybrid_search(</span><br><span class="line">    query=query_params,</span><br><span class="line">    knn=knn_params,</span><br><span class="line">    rank=&#123;<span class="string">&quot;rrf&quot;</span>: &#123;&#125;&#125;,</span><br><span class="line">    n_results=<span class="number">5</span>,</span><br><span class="line">    include=[<span class="string">&quot;metadatas&quot;</span>, <span class="string">&quot;documents&quot;</span>, <span class="string">&quot;distances&quot;</span>]</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>可以 vibe-eval 一下结果，感觉是挺准的。完整执行结果（有所精简）如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line">=== 语义搜索 ===</span><br><span class="line">Query: [&#x27;self improvement motivation success&#x27;]</span><br><span class="line"></span><br><span class="line">语义搜索 - 找到 5 条结果:</span><br><span class="line"></span><br><span class="line">[1] The 7 Habits of Highly Effective People: Powerful Lessons in Personal Change</span><br><span class="line">    作者: Stephen R. Covey</span><br><span class="line">    评分: 4.6</span><br><span class="line">    评论数: 9325</span><br><span class="line">    价格: $24.0</span><br><span class="line">    年份: 2011</span><br><span class="line">    类型: Non Fiction</span><br><span class="line">    相似度距离: 0.5358</span><br><span class="line">    相似度: 0.4642</span><br><span class="line"></span><br><span class="line">（省略其它......）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">=== 混合搜索 (评分≥4.5) ===</span><br><span class="line">Query: &#123;&#x27;where_document&#x27;: &#123;&#x27;$contains&#x27;: &#x27;inspirational&#x27;&#125;, &#x27;where&#x27;: &#123;&#x27;user_rating&#x27;: &#123;&#x27;$gte&#x27;: 4.5&#125;&#125;, &#x27;n_results&#x27;: 5&#125;</span><br><span class="line">KNN Query Texts: [&#x27;inspirational life advice&#x27;]</span><br><span class="line"></span><br><span class="line">混合搜索 (评分≥4.5) - 找到 5 条结果:</span><br><span class="line"></span><br><span class="line">[1] Mindset: The New Psychology of Success</span><br><span class="line">    作者: Carol S. Dweck</span><br><span class="line">    评分: 4.6</span><br><span class="line">    评论数: 5542</span><br><span class="line">    价格: $10.0</span><br><span class="line">    年份: 2014</span><br><span class="line">    类型: Non Fiction</span><br><span class="line">    相似度距离: 0.0159</span><br><span class="line">    相似度: 0.9841</span><br><span class="line"></span><br><span class="line">（省略其它......）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">=== 混合搜索 (Non Fiction) ===</span><br><span class="line">Query: &#123;&#x27;where_document&#x27;: &#123;&#x27;$contains&#x27;: &#x27;business&#x27;&#125;, &#x27;where&#x27;: &#123;&#x27;genre&#x27;: &#x27;Non Fiction&#x27;&#125;, &#x27;n_results&#x27;: 5&#125;</span><br><span class="line">KNN Query Texts: [&#x27;business entrepreneurship leadership&#x27;]</span><br><span class="line"></span><br><span class="line">混合搜索 (Non Fiction) - 找到 5 条结果:</span><br><span class="line"></span><br><span class="line">[1] The Five Dysfunctions of a Team: A Leadership Fable</span><br><span class="line">    作者: Patrick Lencioni</span><br><span class="line">    评分: 4.6</span><br><span class="line">    评论数: 3207</span><br><span class="line">    价格: $6.0</span><br><span class="line">    年份: 2009</span><br><span class="line">    类型: Non Fiction</span><br><span class="line">    相似度距离: 0.0164</span><br><span class="line">    相似度: 0.9836</span><br><span class="line"></span><br><span class="line">（省略其它......）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">=== 混合搜索 (Fiction, 2015年后, 评分≥4.0) ===</span><br><span class="line">Query: &#123;&#x27;where_document&#x27;: &#123;&#x27;$contains&#x27;: &#x27;fiction&#x27;&#125;, &#x27;where&#x27;: &#123;&#x27;$and&#x27;: [&#123;&#x27;year&#x27;: &#123;&#x27;$gte&#x27;: 2015&#125;&#125;, &#123;&#x27;user_rating&#x27;: &#123;&#x27;$gte&#x27;: 4.0&#125;&#125;, &#123;&#x27;genre&#x27;: &#x27;Fiction&#x27;&#125;]&#125;, &#x27;n_results&#x27;: 5&#125;</span><br><span class="line">KNN Query Texts: [&#x27;fiction story novel&#x27;]</span><br><span class="line"></span><br><span class="line">混合搜索 (Fiction, 2015年后, 评分≥4.0) - 找到 5 条结果:</span><br><span class="line"></span><br><span class="line">[1] A Gentleman in Moscow: A Novel</span><br><span class="line">    作者: Amor Towles</span><br><span class="line">    评分: 4.7</span><br><span class="line">    评论数: 19699</span><br><span class="line">    价格: $15.0</span><br><span class="line">    年份: 2017</span><br><span class="line">    类型: Fiction</span><br><span class="line">    相似度距离: 0.0154</span><br><span class="line">    相似度: 0.9846</span><br><span class="line"></span><br><span class="line">（省略其它......）</span><br><span class="line"></span><br><span class="line">=== 混合搜索 (评论数≥10000) ===</span><br><span class="line">Query: &#123;&#x27;where_document&#x27;: &#123;&#x27;$contains&#x27;: &#x27;popular&#x27;&#125;, &#x27;where&#x27;: &#123;&#x27;reviews&#x27;: &#123;&#x27;$gte&#x27;: 10000&#125;&#125;, &#x27;n_results&#x27;: 10&#125;</span><br><span class="line">KNN Query Texts: [&#x27;popular bestseller&#x27;]</span><br><span class="line"></span><br><span class="line">混合搜索 (评论数≥10000) - 找到 10 条结果:</span><br><span class="line"></span><br><span class="line">[1] Twilight (The Twilight Saga, Book 1)</span><br><span class="line">    作者: Stephenie Meyer</span><br><span class="line">    评分: 4.7</span><br><span class="line">    评论数: 11676</span><br><span class="line">    价格: $9.0</span><br><span class="line">    年份: 2009</span><br><span class="line">    类型: Fiction</span><br><span class="line">    相似度距离: 0.0143</span><br><span class="line">    相似度: 0.9857</span><br><span class="line"></span><br><span class="line">[2] 1984 (Signet Classics)</span><br><span class="line">    作者: George Orwell</span><br><span class="line">    评分: 4.7</span><br><span class="line">    评论数: 21424</span><br><span class="line">    价格: $6.0</span><br><span class="line">    年份: 2017</span><br><span class="line">    类型: Fiction</span><br><span class="line">    相似度距离: 0.0145</span><br><span class="line">    相似度: 0.9855</span><br><span class="line"></span><br><span class="line">[3] Last Week Tonight with John Oliver Presents A Day in the Life of Marlon Bundo (Better Bundo Book, LGBT Childrens Book)</span><br><span class="line">    作者: Jill Twiss</span><br><span class="line">    评分: 4.9</span><br><span class="line">    评论数: 11881</span><br><span class="line">    价格: $13.0</span><br><span class="line">    年份: 2018</span><br><span class="line">    类型: Fiction</span><br><span class="line">    相似度距离: 0.0147</span><br><span class="line">    相似度: 0.9853</span><br><span class="line"></span><br><span class="line">（省略其它......）</span><br></pre></td></tr></table></figure>
+
+<h2 id="Vibe-Coding-友好"><a href="#Vibe-Coding-友好" class="headerlink" title="Vibe Coding 友好"></a>Vibe Coding 友好</h2><p>如果你用 Cursor 或 Claude Code 开发一定装了 context7-mcp，它会查询最新的 API 文档、代码示例等，是 #Vibecoding 的最佳伴侣。我看到 seekdb 也被添加到 Context7 中：</p>
+<ul>
+<li>seekdb: <span class="exturl" data-url="aHR0cHM6Ly9jb250ZXh0Ny5jb20vb2NlYW5iYXNlL3NlZWtkYg==">https://context7.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span></li>
+<li>pyseekdb: <span class="exturl" data-url="aHR0cHM6Ly9jb250ZXh0Ny5jb20vb2NlYW5iYXNlL3B5c2Vla2Ri">https://context7.com/oceanbase/pyseekdb<i class="fa fa-external-link-alt"></i></span> 如果还没装墙裂推荐安装：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;context7&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;npx&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;-y&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;@upstash/context7-mcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;--api-key&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;&lt;你在context7上创建的apiKey&gt;&quot;</span></span><br><span class="line">      <span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>装完之后，你就可以边学边用了。</p>
+<p>希望这篇教程有助于你更顺利的上手 #seekdb。Enjoy!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/%E8%AF%AD%E4%B9%89%E6%90%9C%E7%B4%A2/" rel="tag"># 语义搜索</a>
+              <a href="/tags/pyseekdb/" rel="tag"># pyseekdb</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-05-seekdb-rag-tutorial/" rel="prev" title="喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用">
+                  <i class="fa fa-angle-left"></i> 喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-11-dify-oceanbase-seekdb-guide/" rel="next" title="喂饭级教程 II —— Dify x OceanBase seekdb 使用指南">
+                  喂饭级教程 II —— Dify x OceanBase seekdb 使用指南 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

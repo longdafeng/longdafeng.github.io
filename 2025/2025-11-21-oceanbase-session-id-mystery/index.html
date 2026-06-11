@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文系统梳理 OceanBase 中 Session ID 的设计逻辑：C 连接与 S 连接两类连接背后对应 cs_id、proxy_sessid、server_sessid、ss_id 四种编码，并结合多种查询命令示例与 kill 命令的透传&#x2F;不透传行为，搭建理解与排查会话问题的知识框架。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase Session ID 之谜">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文系统梳理 OceanBase 中 Session ID 的设计逻辑：C 连接与 S 连接两类连接背后对应 cs_id、proxy_sessid、server_sessid、ss_id 四种编码，并结合多种查询命令示例与 kill 命令的透传&#x2F;不透传行为，搭建理解与排查会话问题的知识框架。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/01.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/02.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/03.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/04.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/05.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/06.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/07.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/08.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/09.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/10.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/11.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/12.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/13.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/14.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/15.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/16.png">
+<meta property="article:published_time" content="2025-11-20T22:49:19.000Z">
+<meta property="article:modified_time" content="2025-11-20T22:49:19.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OBProxy">
+<meta property="article:tag" content="ODP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="Session ID">
+<meta property="article:tag" content="kill 命令">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="数据库连接">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-session-id-mystery/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/","path":"2025/2025-11-21-oceanbase-session-id-mystery/","title":"OceanBase Session ID 之谜"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase Session ID 之谜 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80-%E5%86%99%E4%BD%9C%E5%8E%9F%E5%9B%A0"><span class="nav-number">1.</span> <span class="nav-text">一. 写作原因</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#session-id-%E6%A6%82%E8%BF%B0"><span class="nav-number">1.1.</span> <span class="nav-text">session id 概述</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C-%E5%86%99%E4%BD%9C%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">二. 写作思路</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89-session-id-%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.</span> <span class="nav-text">三. session id 介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B-%E6%9F%A5%E8%AF%A2-session-id-%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="nav-number">4.</span> <span class="nav-text">四. 查询 session id 的例子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94-session-id-%E4%B8%8E-kill-%E5%91%BD%E4%BB%A4"><span class="nav-number">5.</span> <span class="nav-text">五. session id 与 kill 命令</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD-%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">六. 总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83-%E5%90%8E%E7%BB%AD"><span class="nav-number">7.</span> <span class="nav-text">七. 后续</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase Session ID 之谜 | Longda's Interesting World">
+      <meta itemprop="description" content="本文系统梳理 OceanBase 中 Session ID 的设计逻辑：C 连接与 S 连接两类连接背后对应 cs_id、proxy_sessid、server_sessid、ss_id 四种编码，并结合多种查询命令示例与 kill 命令的透传&#x2F;不透传行为，搭建理解与排查会话问题的知识框架。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase Session ID 之谜
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-21 06:49:19" itemprop="dateCreated datePublished" datetime="2025-11-21T06:49:19+08:00">2025-11-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">今川</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>14 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文系统梳理 OceanBase 中 Session ID 的设计逻辑：C 连接与 S 连接两类连接背后对应 cs_id、proxy_sessid、server_sessid、ss_id 四种编码，并结合多种查询命令示例与 kill 命令的透传/不透传行为，搭建理解与排查会话问题的知识框架。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase Session ID 之谜","description":"本文系统梳理 OceanBase 中 Session ID 的设计逻辑：C 连接与 S 连接两类连接背后对应 cs_id、proxy_sessid、server_sessid、ss_id 四种编码，并结合多种查询命令示例与 kill 命令的透传/不透传行为，搭建理解与排查会话问题的知识框架。","image":"https://ilongda.com/img/oceanbase-session-id-mystery/01.png","wordCount":3916,"datePublished":"2025-11-20T22:49:19.000Z","dateModified":"2025-11-20T22:49:19.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/"},"url":"https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","ODP","Session ID","OBProxy","kill 命令","数据库连接"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase Session ID 之谜","item":"https://ilongda.com/2025/2025-11-21-oceanbase-session-id-mystery/"}]}</script>
+<h1 id="一-写作原因"><a href="#一-写作原因" class="headerlink" title="一. 写作原因"></a>一. 写作原因</h1><p>遇到了 3 个事情，让我想到要好好梳理一下 session id 的相关知识。</p>
+<ol>
+<li>发现一个事务中查到的 OceanBase 的 session id 会发生变化（其实也算没有变，原因下文会说）。</li>
+<li>查到的 session id 在使用 kill 命令时候报错找不到该 ID（不是因为 ID 真的不存在或者变化了）。</li>
+<li>通过不同的查询方式，查到很多和 session id 有关的 ID 值，没法在脑中组织成知识网络，不理解部分 ID 为什么这么设计。</li>
+</ol>
+<h2 id="session-id-概述"><a href="#session-id-概述" class="headerlink" title="session id 概述"></a>session id 概述</h2><p>session id 是用于描述客户端和数据库的访问链路的，OceanBase 数据库架构中使用了 ODP（一般也称为 proxy，下文也用 proxy 指代），所以客户端对数据库的访问链路被拆成了两段，第一段是客户端和 ODP 之间的连接（Client session，下文用 C 连接指代），第二段是 ODP 和 OBServer 之间的连接（Server session，下文多用 S 连接指代）。</p>
+<p><img data-src="/img/oceanbase-session-id-mystery/01.png" alt="OceanBase Session ID 之谜"></p>
+<span id="more"></span>
+
+<p>一个客户端的连接，会使用一个 C 连接，然后对应多个 S 连接，C 连接和 S 连接的对应关系是 1 : N。值得注意的是，在执行一条 SQL 的时候，同一时间，只有一个 S 连接在服务（先不考虑远程计划或分布式计划带来的二次路由）。</p>
+<p>那么问题来了：用于定义 2 种连接的 Session id，却可以在官方文档中找到 10 种名词定义：</p>
+<ul>
+<li>ID</li>
+<li>session id</li>
+<li>client session id</li>
+<li>server session id</li>
+<li>connection id</li>
+<li>proxy_sessid</li>
+<li>cs_id</li>
+<li>server_sessid</li>
+<li>ss_id</li>
+<li>MASTER_SESSID</li>
+</ul>
+<p><strong>这是为什么呢？</strong></p>
+<h1 id="二-写作思路"><a href="#二-写作思路" class="headerlink" title="二. 写作思路"></a>二. 写作思路</h1><p>开始研究这个主题的时候，是想要写一个 Session ID 的前世今生的，但在翻文档、找人聊、自己测之后，发现问题比以前更多了……</p>
+<p>在几次草稿都被自己否了以后，我悟了 —— 追求细节和完备最终导致我无法搞定文章，一个理解框架才是我们需要的东西。通过这个框架可以串联起知识，然后遇到问题之后可以通过框架解决问题，这才是最有价值的。</p>
+<h1 id="三-session-id-介绍"><a href="#三-session-id-介绍" class="headerlink" title="三. session id 介绍"></a>三. session id 介绍</h1><p>从一张图开始：</p>
+<p><img data-src="/img/oceanbase-session-id-mystery/02.png" alt="OceanBase Session ID 之谜"></p>
+<p>图中直观的展示了客户端（client）和数据库（ODP + OBServer）之间的链路关系。</p>
+<p>为了方便下面的描述，我们把图中的 4 根连接线分别命名，client 和 ODP 之间的链路叫 C-1，ODP 分别连接 OBServer 的 3 个链路叫 S-1、S-2、S-3（下面没有特殊说明，都不考虑直连的情况）。</p>
+<p>那么有一些事情需要大家能想清楚（可能会有点儿绕）：</p>
+<ol>
+<li>C-1、S-1、S-2、S-3 都是独立的连接，背后会对应各自的 ID。而且一个连接两端的组件（比如 S-1 两端分别对应了 ODP 和 OBServer）可能对同个连接 S-1，给予不同的 ID。不同组件对 S-1 不同的 ID 编号这个事情，这么设计有很多种可能。大家能想到几种呢？</li>
+<li>一整个会话（包含 C-1、S-1、S-2、S-3），只要不断开，不结束，都是被独占的。其他的会话不可能共用里面的任何一条链路。</li>
+<li>单一个 SQL 的执行，只会使用一种组合，C-1 + S-X（这里的 S-X 就是指 3 条 S 中的其中一条）。也就是针对一个 SQL 只有一个 S 连接参与服务（这里不考虑二次路由）。</li>
+<li>同一个事务的不同 SQL，会使用到不同的连接组合，这也是 ODP 的事务内路由的功能，这样可以让更多的 SQL 使用本地执行计划。</li>
+<li>查看会话的视图，习惯是一个会话是展示一行（因为在同一时刻，一个会话中只能执行一条 SQL）。其实 OceanBase 这里有 2 种展示模式，show processlist 是一个会话 C 连接的维度，show full processlist 就是展示 S 连接的维度（会有多条）。可以想见同一个会话中，最多也只有一条在工作，其他的都是 sleep。</li>
+<li>一个客户端第一次连接上数据库，返回连接成功，说明 C-1 + S-1 的链路已经建立了，这个时候其实 S-2 和 S-3 还不存在，直到 ODP 需要连接的时候才会建立连接。</li>
+</ol>
+<p>回到上面很多的名词问题，这里给出一个初步的解释：</p>
+<ul>
+<li>连接的类型是只有 2 种，C 连接和 S 连接。</li>
+<li>描述他们的不同编码（小编理解这里的 “编码” 就是序号或者 ID 的含义）一共 4 种，其他的名词都是这 4 种的其中一种的指代。<ul>
+<li><strong>cs_id</strong>：这是由 proxy 生成的用于描述 C 连接的编码，也是我们最常见的 session id 表述之一，show processlist 里的 ID 列通常指代的就是这个 cs_id（注意是通常）。</li>
+<li><strong>proxy_sessid</strong>：这也是由 proxy 生成的用于描述 C 连接的编码，编码比较长一些，在 proxy 和 OBServer 建立连接的时候，proxy 会告诉 OBServer，我上游服务的 C 连接的编码就是这个。（注意 proxy 没有告诉下游编码是 cs_id，而是 proxy_sessid。**简单的记忆就是，同样一个 C 连接，对客户端 proxy 使用 cs_id，对 OBServer 端则使用 proxy_sessid。**挺住，别晕。</li>
+<li><strong>server_sessid</strong>：由 OBServer 生成的用于描述 S 连接的编码，在整个 OceanBase 集群内是唯一的，也是 OBServer 中用的很多的编码，比如 OB_LOCKS 视图中用的就是这个。</li>
+<li><strong>ss_id</strong>：由 proxy 生成的用于描述 S 连接的编码，用到这个编码的地方非常少，了解即可。</li>
+</ul>
+</li>
+</ul>
+<p>总结：proxy 生成了 3 个编码，包括 cs_id、proxy_sessid、ss_id。其中 cs_id 和 ss_id 偏向于 proxy 内部使用，proxy_sessid 会传递给 OBServer，在 OBServer 的日志中可能会有查询的需求。OBServer 生成了一个编码，即 server_sessid，用于定义 S 连接的 session id。<strong>如果是直连的情况，则只有 server_sessid，因为其他 3 个都是在 proxy 体系下使用的。</strong></p>
+<p>如果你能绕清楚，那就继续来到下一关，先和这些 session 相关名词混个脸熟：</p>
+<ul>
+<li><strong>ID</strong>：在不同的查询场景下，这个列有时显示的是 cs_id 值，有时是 server_sessid 值。</li>
+<li><strong>session id</strong>：泛指 session 的编码，出现在 OceanBase 官方文档各处，一般查表中没有这个字段。</li>
+<li><strong>client session id</strong>：一种新版本的 cs_id，后面会介绍为什么需要重新设计 cs_id。有时也指代 C 连接。</li>
+<li><strong>server session id</strong>：就是 server_sessid，有时也指代 S 连接。</li>
+<li><strong>connection id</strong>：MySQL 租户使用函数 connection_id() 查询获得，就是 server_sessid。需要注意的是使用 obclient 连接 proxy 时候，登陆信息中会有输出 Your Mysql connection id is xxx，这里显示的 id 是 cs_id。</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/03.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li><strong>MASTER_SESSID</strong>：这个比较特殊，指的是分布式查询中的主 server_sessid，不属于 S 连接（本文暂不讨论）。</li>
+</ul>
+<h1 id="四-查询-session-id-的例子"><a href="#四-查询-session-id-的例子" class="headerlink" title="四. 查询 session id 的例子"></a>四. 查询 session id 的例子</h1><p>下面是模拟的一个例子，大家通过这个例子可以更好的理解相关概念。</p>
+<p>架构中一个客户端连接了一个 proxy，然后 proxy 连接了后面的 2 个 OBServer。</p>
+<p>也就是 C-1，对应了后面的 S-1 和 S-2。</p>
+<p>在确保 C-1，S-1，S-2 都被启用过以后，执行下面这些命令：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> proxysession;</span><br><span class="line"></span><br><span class="line"><span class="keyword">show</span> proxysession attribute;</span><br><span class="line"></span><br><span class="line"><span class="keyword">show</span> processlist;</span><br><span class="line"></span><br><span class="line"><span class="keyword">show</span> <span class="keyword">full</span> processlist;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> connection_id();</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> gv$ob_session;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> gv$ob_processlist;</span><br></pre></td></tr></table></figure>
+
+<p>分别得到下面的结果：</p>
+<ul>
+<li>show proxysession;<ul>
+<li>这里的 id 就是 cs_id。</li>
+<li>直连是无法执行这个命令的（需要有 proxy）。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/04.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>show proxysession attribute; 这里就是查看这个 cs_id 的明细了。这个 cs_id 对应了 2 个 server_sessid，分别是 3221550874 和 3221876366，它们的区别在 info 这个列：<ul>
+<li>last used ss 指的就是我执行这个查询 SQL 是用的这个 S 连接。</li>
+<li>ss pool 就是已经建立了这个 S 连接，之前是用到过的。</li>
+</ul>
+</li>
+</ul>
+<p>同样的，这个命令在直连时候是无法执行的，因为这个命令只有 proxy 能处理。</p>
+<p><img data-src="/img/oceanbase-session-id-mystery/05.png" alt="OceanBase Session ID 之谜"></p>
+<p><img data-src="/img/oceanbase-session-id-mystery/06.png" alt="OceanBase Session ID 之谜"></p>
+<p><img data-src="/img/oceanbase-session-id-mystery/07.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>show processlist;<ul>
+<li>使用 proxy 的时候，这个 ID 是 cs_id。需要注意 show processlist 在 proxy 的语境下，就是查这个 proxy 上的 session，以 C 连接的视角（也就是一个客户端连接就显示一条）。</li>
+<li>使用直连时候，这个 ID 是 server_sessid。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/08.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>show full processlist;<ul>
+<li>这个就是查看所有的 S 连接了，这里的 ID 是 server_sessid。</li>
+<li>图中标蓝的部分都属于同一个 C 连接，可以对照 show proxysession attribute 的内容看。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/09.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>select connection_id();<ul>
+<li>查到的是执行这个 SQL 的 S 连接，是 server_sessid。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/10.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>select * from gv$ob_session;<ul>
+<li>这里标蓝的部分都属于同一个 C 连接，它们拥有同一个 proxy_sessid，按理只有 2 个 S 连接，为什么有 4 条数据对应 4 个 ID 呢？</li>
+<li>你会发现 4 个 ID 中有 2 个是前面例子中出现过的 server_sessid，而剩下的 2 个是新 server_sessid。</li>
+<li>注意看 info，PX DFO EXECUTING 意思是分布式的执行。因为 gv$ob_session 的查询需要去所有的 OBServer 上看相关信息，所以实际执行这个 proxy_sessid 的 SQL 的 OBServer，建立新的连接（S 连接背后对应的新的分布式执行连接），分别查询了 OBServer 的内部信息。</li>
+<li>我们可以通过其他列（比如 TRACE_ID，HOST 等）的信息来理解。</li>
+</ul>
+</li>
+</ul>
+<p>这也可以看到，实际上 OceanBase 数据库的访问连接是比较复杂的，这个案例中连接分了 3 段，第一段是客户端到 proxy，第二段是 proxy 到 OBServer，第三段是 OBServer 到 OBServer（自己也需要重新访问自己的）。</p>
+<p><img data-src="/img/oceanbase-session-id-mystery/11.png" alt="OceanBase Session ID 之谜"></p>
+<p><img data-src="/img/oceanbase-session-id-mystery/12.png" alt="OceanBase Session ID 之谜"></p>
+<p><img data-src="/img/oceanbase-session-id-mystery/13.png" alt="OceanBase Session ID 之谜"></p>
+<ul>
+<li>select * from gv$ob_processlist;<ul>
+<li>这里和 show full processlist 的结果是一样的。</li>
+<li>ID 代表的是 server_sessid，不会展示 S 连接后续的连接（有别于 gv$ob_session 视图）。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/oceanbase-session-id-mystery/14.png" alt="OceanBase Session ID 之谜"></p>
+<p><img data-src="/img/oceanbase-session-id-mystery/15.png" alt="OceanBase Session ID 之谜"></p>
+<p>如果能坚持看完上面这些例子，要么你已经对 session id 的情况有了全面的了解，要么你已经彻底晕菜。没关系，如果晕了，可以先收藏，后面遇到问题时再有的放矢地看。</p>
+<p>如果你能坚持看到这里的话，那我们就继续再说一个与 session id 配套的命令 —— kill。</p>
+<h1 id="五-session-id-与-kill-命令"><a href="#五-session-id-与-kill-命令" class="headerlink" title="五. session id 与 kill 命令"></a>五. session id 与 kill 命令</h1><p>kill 后面跟的是 session id，执行后这个会话就会被杀死，执行的 SQL 会停止，之前锁定的资源也将释放。</p>
+<p>但是因为 session id 本身的复杂性，kill 命令的实现，也有不同的逻辑。我们一般会使用取到的 ID 列中的值来作为 kill 后跟随的编码，那么可能是 cs_id 或者是 server_sessid。</p>
+<p>还有一些特点，大家理解一下：</p>
+<ol>
+<li>执行 kill 的 session 本身除了可以杀自己，还可以杀别的 session。</li>
+<li>kill 在 ODP 4.2.3 版本之前（以下称为不透传 kill），是由 proxy 自己执行的，直接从 proxy 侧断开相关 session 的 C 连接和 S 连接。</li>
+<li>kill 在 ODP 4.2.3 版本开始（以下称为透传 kill），会把 kill 信息转交给 OBServer 去执行，然后通过错误码告诉 proxy，proxy 再断开相关 C 连接和 S 连接。</li>
+<li>proxy 本身是无状态的，看不到其他 proxy 中的 cs_id。</li>
+<li>cs_id 是 proxy 内部对 C 连接的编码，OBServer 对 C 连接的认知是 proxy_sessid。</li>
+</ol>
+<p>不透传 kill 的情况，做了个表格：</p>
+<table>
+<thead>
+<tr>
+<th>ID(行) \ 组件(列)</th>
+<th>proxy（C 连接在此 proxy）</th>
+<th>proxy（C 连接不在此 proxy）</th>
+<th>直连（不区分 S 连接是不是在这台 OBServer 上）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>cs_id</td>
+<td>认识，可以 kill。</td>
+<td>不认识，因为 proxy 无状态，无法 kill。或者恰巧有个一样的 cs_id，kill 错。</td>
+<td>不认识，根本没有 cs_id 信息。</td>
+</tr>
+<tr>
+<td>server_sessid（主）</td>
+<td>认识，可以 kill。</td>
+<td>可以认识，但是不归这个 proxy 管，无法 kill。</td>
+<td>认识，kill 成功，proxy 感知后，后续把对应的 C 连接断开。</td>
+</tr>
+<tr>
+<td>server_sessid（非主）</td>
+<td>认识，可以 kill。</td>
+<td>可以认识，但是不归这个 proxy 管，无法 kill。</td>
+<td>多种情况，比较复杂。</td>
+</tr>
+</tbody></table>
+<p>先说建议：就是如果用的是 proxy，那就不要使用直连方式去 kill。</p>
+<p>如果遇到 kill 不掉（可能是因为 F5 这样的负载均衡把 kill 语句路由到了其他无法处理的 proxy），就多执行几遍，一般总有一次 kill 成功的（成功一次就算 kill 成功了）。虽然上面的表格中写了有可能 kill 错，但是概率很低。</p>
+<p>因为上面不透传的情况，会遇到各种的问题。后来 OceanBase 研发对 kill 进行了重新设计。主要解决了 2 个问题：</p>
+<ol>
+<li>C 连接不归 proxy 管的问题（现在统一交给后面的 OBServer 执行，然后相关的 proxy 就可以收到来自 OBServer 的返回码后，处理断开 C 连接了）。</li>
+<li>cs_id 可能在不同的 proxy 之间重复的问题（启用新设计的 client session id 替代 cs_id，通过合理编码来使其具有唯一性），另外 client session id 也将在 proxy 和 OBServer 之间建立连接的时候告诉 OBServer，这样 OBServer 就都认识了。</li>
+</ol>
+<p>透传 kill 的情况，也做了一张对应表格：</p>
+<table>
+<thead>
+<tr>
+<th>ID(行) \ 组件(列)</th>
+<th>proxy（C 连接在此 proxy）</th>
+<th>proxy（C 连接不在此 proxy）</th>
+<th>直连（不区分 S 连接是不是在这台 OBServer 上）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>client session id</td>
+<td>认识，可以 kill。</td>
+<td>可以认识（问 OBServer 嘛）然后透传给 OBServer 执行，可以 kill。不会有重复问题</td>
+<td>认识，可以 kill。</td>
+</tr>
+<tr>
+<td>server_sessid（主）</td>
+<td>认识，可以 kill。</td>
+<td>可以认识，透传，可以 kill。</td>
+<td>认识，kill 成功，效果就等于 proxy 把 kill 透传了。</td>
+</tr>
+<tr>
+<td>server_sessid（非主）</td>
+<td>认识，可以 kill。</td>
+<td>可以认识，透传，可以 kill。</td>
+<td>多种情况，比较复杂。</td>
+</tr>
+</tbody></table>
+<p>透传以后，是不是情况好多了？但我的建议依然还是建议都使用 proxy 来管理 kill（而且 2 个组件都升级到新的使用 client session id 的版本），按照常用情况来管理，问题最少。</p>
+<p>值得一提的是，透传后的情况表格漏掉了很多情况，你看出来了吗？原因就是这个时候 proxy 和 OBServer 面对 kill 命令都有 2 套逻辑，这里的例子都是新 proxy 逻辑对新 OBServer 逻辑，还有老 proxy 逻辑对新 OBServer 逻辑和新 proxy 逻辑对老 OBServer 逻辑的情况。</p>
+<p>理想中是要列出所有情况的，但这篇文章的作者今川说他偷懒不想整理其他情况了，那我们还是选择原谅吧~</p>
+<h1 id="六-总结"><a href="#六-总结" class="headerlink" title="六. 总结"></a>六. 总结</h1><p>最后返回文章开头的问题，为什么要使用这么多的名词来管理 2 种连接。</p>
+<ol>
+<li>最大的原因还是分布式的架构引入的复杂性决定的。而且 proxy 被设计成无状态的，在前面还加入 F5 这样的负载均衡组件，也增加了管理难度。</li>
+<li>数据库软件复杂度很高，多个团队协作开发，必然有一些东西是不统一的，并且存在冗余设计，否则沟通成本将被无限放大。</li>
+<li>数据库软件是一个不断演进的系统，有些东西虽然现在看来已经没有用了，但是也不能去掉，作为兼容性的一部分长久留在代码中。如同我们的 DNA，很多序列都是不表达的，没什么用处，但是是人类演进过程中的一部分也就被保存在 DNA 中了。</li>
+</ol>
+<p><img data-src="/img/oceanbase-session-id-mystery/16.png" alt="OceanBase Session ID 之谜"></p>
+<h1 id="七-后续"><a href="#七-后续" class="headerlink" title="七. 后续"></a>七. 后续</h1><p>还有一个出现在 proxy 日志中，用于指代 C 连接的代码 sm_id，相关的信息比较少。sm_id 是 proxy 中的 proxy_sm 模块对 cs_id 的指代。只在日志中出现，由于数据库里没有视图查到这个信息，我认为主要是给 proxy_sm 模块研发使用的。一般排查日志可以通过 trace_id 来过滤。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/ODP/" rel="tag"># ODP</a>
+              <a href="/tags/Session-ID/" rel="tag"># Session ID</a>
+              <a href="/tags/OBProxy/" rel="tag"># OBProxy</a>
+              <a href="/tags/kill-%E5%91%BD%E4%BB%A4/" rel="tag"># kill 命令</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5/" rel="tag"># 数据库连接</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-18-ai-memory-explained/" rel="prev" title="用最纯粹的白话，解析 AI Memory">
+                  <i class="fa fa-angle-left"></i> 用最纯粹的白话，解析 AI Memory
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-26-why-oceanbase-opensource-seekdb/" rel="next" title="AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？">
+                  AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

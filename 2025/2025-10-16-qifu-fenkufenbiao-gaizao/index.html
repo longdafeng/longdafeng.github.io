@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="奇富科技引入OceanBase替代部分MySQL与TiDB，实现代码改造成本降低90%、存储成本降低一半、服务器缩减超30台、任务执行时间缩减40%，分享多场景数据库痛点与OceanBase落地实践经验。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%">
+<meta property="og:url" content="https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="奇富科技引入OceanBase替代部分MySQL与TiDB，实现代码改造成本降低90%、存储成本降低一半、服务器缩减超30台、任务执行时间缩减40%，分享多场景数据库痛点与OceanBase落地实践经验。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-16-qifu-fenkufenbiao-gaizao/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-16-qifu-fenkufenbiao-gaizao/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-16-qifu-fenkufenbiao-gaizao/03.png">
+<meta property="article:published_time" content="2025-10-16T04:32:04.000Z">
+<meta property="article:modified_time" content="2025-10-16T04:32:04.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="OMS">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="代码改造">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="奇富科技">
+<meta property="article:tag" content="数据库迁移">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2025-10-16-qifu-fenkufenbiao-gaizao/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/","path":"2025/2025-10-16-qifu-fenkufenbiao-gaizao/","title":"怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90% | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E6%95%B0%E6%8D%AE%E5%BA%93-VS-%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.</span> <span class="nav-text">传统数据库 VS 分布式数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%90%BD%E5%9C%B0%E5%AE%9E%E8%B7%B5%EF%BC%9A%E4%BB%8E%E5%B0%8F%E5%9C%BA%E6%99%AF%E9%AA%8C%E8%AF%81%E5%88%B0%E4%B8%8A%E7%BA%BF6%E4%B8%AA%E9%9B%86%E7%BE%A4"><span class="nav-number">2.</span> <span class="nav-text">落地实践：从小场景验证到上线6个集群</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%90%BD%E5%9C%B0%E5%8E%86%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">落地历程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%8B%E6%B5%8B%E6%95%B0%E6%8D%AE"><span class="nav-number">2.2.</span> <span class="nav-text">压测数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84"><span class="nav-number">2.3.</span> <span class="nav-text">技术架构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%9A%E5%9B%9B%E7%B1%BB%E5%85%B8%E5%9E%8B%E6%8A%80%E6%9C%AF%E5%9C%BA%E6%99%AF%E4%B8%8E%E8%BF%81%E7%A7%BB%E7%BB%8F%E9%AA%8C"><span class="nav-number">3.</span> <span class="nav-text">使用场景：四类典型技术场景与迁移经验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-HTAP-%E5%9C%BA%E6%99%AF%E2%80%94%E2%80%94%E5%A4%96%E9%87%87%E5%B9%B3%E5%8F%B0%E8%BF%81%E7%A7%BB"><span class="nav-number">3.1.</span> <span class="nav-text">1.HTAP 场景——外采平台迁移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%BA%AF%E5%86%99%E5%9C%BA%E6%99%AF%E2%80%94%E2%80%94%E7%94%A8%E6%88%B7%E8%A1%8C%E4%B8%BA%E6%95%B0%E6%8D%AE%E7%9A%84%E8%BF%81%E7%A7%BB"><span class="nav-number">3.2.</span> <span class="nav-text">2.纯写场景——用户行为数据的迁移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-SQL-%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.3.</span> <span class="nav-text">3.SQL 遇到的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-OMS-%E5%B7%A5%E5%85%B7%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.4.</span> <span class="nav-text">4.OMS 工具遇到的问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%B7%E5%80%BC%E6%94%B6%E7%9B%8A%EF%BC%9A%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88%E9%9B%B6%E6%8A%96%E5%8A%A8"><span class="nav-number">4.</span> <span class="nav-text">价值收益：降本增效零抖动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%88%90%E6%9C%AC%E6%94%B6%E7%9B%8A%E2%80%94%E2%80%94%E5%A4%9A%E6%96%B9%E9%9D%A2%E7%BC%A9%E5%87%8F%E6%88%90%E6%9C%AC"><span class="nav-number">4.1.</span> <span class="nav-text">成本收益——多方面缩减成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%94%B6%E7%9B%8A%E2%80%94%E2%80%94%E6%94%AF%E6%92%91%E4%B8%9A%E5%8A%A1%E6%9B%B4%E5%8A%A0%E7%BB%99%E5%8A%9B"><span class="nav-number">4.2.</span> <span class="nav-text">技术收益——支撑业务更加给力</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E8%A7%84%E5%88%92%EF%BC%9A%E5%B9%BF%E6%B3%9B%E5%BA%94%E7%94%A8%EF%BC%8C%E7%BB%9F%E4%B8%80%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="nav-number">5.</span> <span class="nav-text">未来规划：广泛应用，统一技术栈</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90% | Longda's Interesting World">
+      <meta itemprop="description" content="奇富科技引入OceanBase替代部分MySQL与TiDB，实现代码改造成本降低90%、存储成本降低一半、服务器缩减超30台、任务执行时间缩减40%，分享多场景数据库痛点与OceanBase落地实践经验。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-10-16 12:32:04" itemprop="dateCreated datePublished" datetime="2025-10-16T12:32:04+08:00">2025-10-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">奇富科技</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>18 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">奇富科技引入OceanBase替代部分MySQL与TiDB，实现代码改造成本降低90%、存储成本降低一半、服务器缩减超30台、任务执行时间缩减40%，分享多场景数据库痛点与OceanBase落地实践经验。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%","description":"奇富科技引入OceanBase替代部分MySQL与TiDB，实现代码改造成本降低90%、存储成本降低一半、服务器缩减超30台、任务执行时间缩减40%，分享多场景数据库痛点与OceanBase落地实践经验。","image":"https://ilongda.com/img/2025-10-16-qifu-fenkufenbiao-gaizao/01.png","wordCount":4963,"datePublished":"2025-10-16T04:32:04.000Z","dateModified":"2025-10-16T04:32:04.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/"},"url":"https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/","inLanguage":"zh-CN","keywords":["OceanBase","HTAP","OMS","数据库迁移","分库分表","降本增效","奇富科技","代码改造"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%","item":"https://ilongda.com/2025/2025-10-16-qifu-fenkufenbiao-gaizao/"}]}</script>
+<p>作者：贾建龙，奇富科技数据库负责人</p>
+<p>奇富科技原名#360数科，成立于2016年，并于2018年在纳斯达克上市（QFIN）、2022年在香港挂牌上市{S(03660)}，2023年2月正式更名为”奇富科技”。公司业务规模庞大，服务金融机构165家，注册用户数2.76亿，授信用户数6020万，2024年营业净利润60多亿。在AI浪潮的席卷下，公司在2025年启动了围绕 AI 的全新战略，致力于打造 AI 驱动的金融科技平台。</p>
+<p>奇富科技的数据库种类繁多，包含 MySQL、Redis、Pika、Elasticsearch、MongoDB、InfluxDB、PostgreSQL、Oracle、TiDB等。为了简化技术栈，以及解决现有数据库使用痛点，奇富科技数据库团队在2024年引入OceanBase替代部分MySQL与TiDB，实现了代码改造成本、存储与硬件成本的大幅缩减，以及性能、稳定性、扩展性等多方面的技术升级。本文分享奇富科技在多个场景的数据库痛点，以及OceanBase落地实践。</p>
+<h2 id="传统数据库-VS-分布式数据库"><a href="#传统数据库-VS-分布式数据库" class="headerlink" title="传统数据库 VS 分布式数据库"></a><strong>传统数据库 VS 分布式数据库</strong></h2><p>随着业务的不断扩展和数据的快速增长，奇富科技使用的传统的数据库在数据存储、数据处理、数据分析方面逐渐遇到诸多挑战，其扩展性和性能也很难满足业务需求。</p>
+<p>首先，传统数据库受限于单节点存储和扩容的一些时效性，在业务数据量较大时难以满足存储需求。当前主流的传统数据库容量一般在 3TB 左右，当数据量超过数据库容量，通常会采用一拆多、多拆多的方式，导致架构变得复杂。如果是初始拆分，业务可能面临较大的改造。相较之下，分布式数据库的容量没有限制，理论上可以做到无限扩展，且扩展时无需改造业务。</p>
+<p>其次，传统数据库受限于单机资源，单表大量写入也会存在一定的瓶颈，并且超过一定阈值后，会出现严重的延迟问题。分布式数据库可以通过分区的形式，将写压力打散到不同节点，扩展写能力，解决了单机写入的瓶颈问题。</p>
+<p>此外，使用传统的开源数据库进行扩展时，往往需要适配中间件，需要DBA投入较多精力，包括事前的方案评审、验证，以及事中具体操作和事后观察。分布式数据库在扩容时，人工投入少，可以自动实现数据的重分布。</p>
+<p>目前，奇富科技部分核心系统依然依赖 #MySQL 作为主要存储，但传统单库架构逐渐暴露出一系列瓶颈和隐患。在实践中遇到的典型问题如下。</p>
+<ol>
+<li>MySQL 单库写入压力：个别消费行为业务场景的库，写入压力日益增大，MySQL 无法承担压力，负载居高不下。</li>
+<li>分库分表：当业务 MySQL 库需拆库分表时，代码改造成本高。</li>
+<li>接口限流：某些后端场景需要调用大量接口。</li>
+<li>主从同步延迟：业务写入量大时，主从同步延迟较高。</li>
+<li>数据归档需求：针对一些合规要求，需要长期存放归档数据，且偶有人为查询的需求。</li>
+<li>报表业务查询性能：针对某些报表业务查询的性能无法满足业务需求。</li>
+<li>存储成本：数据存储成本高。</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="落地实践：从小场景验证到上线6个集群"><a href="#落地实践：从小场景验证到上线6个集群" class="headerlink" title="落地实践：从小场景验证到上线6个集群"></a><strong>落地实践：从小场景验证到上线6个集群</strong></h2><p>为了突破现有瓶颈，提升系统的整体性能与稳定性，同时简化技术栈，降低 DBA 的学习和运维成本，奇富科技数据库团队决定选型一款功能较为完善的数据库，替换其他数据库。</p>
+<p>对于分布式数据库的技术选型，主要考虑如下几点：稳定性、性能、兼容性、扩展性、生态、社区活跃度、国产化支持、成本。经过深入调研和评估，奇富科技决定引入 #OceanBase。</p>
+<h3 id="落地历程"><a href="#落地历程" class="headerlink" title="落地历程"></a><strong>落地历程</strong></h3><p>如图1 所示，2023年，奇富科技开始接触 OceanBase，经过考察后，在2024年启动 OceanBase 的应用落地。在测试OceanBase 的架构设计、功能特性、性能指标等均符合需求后，先在公司内部的两个场景中开始真实环境的验证：<strong>一个场景是使用 OceanBase 替换 #TiDB，解决 TiDB 对业务监控的抖动和误告警问题，另一个场景是归档业务，实践证明 OceanBase 最高能达到80%左右的压缩率。</strong></p>
+<p><img data-src="/img/2025-10-16-qifu-fenkufenbiao-gaizao/01.png" alt="image"></p>
+<p>图1 奇富科技落地OceanBase历程</p>
+<p>在内部推广阶段取得显著成效后，公司非核心业务率先上线OceanBase，运维工作同步完成内部适配，虽尚未实现完全平台化，但必须先将原有人工操作全部脚本化、自动化，工单化亦以脚本形式提供对接能力。同时，下游数仓也需要调整同步链路，原先仅需拉取 MySQL Binlog，现在需要新增对 OceanBase 的增量数据抽取。</p>
+<p>八月，数据库团队选取了一批与实时业务相关、重要性较高却非订单核心的场景，如外购平台、行为日志等，作为第二批迁移与推广对象。迁移工作完成后，随即启动与OceanBase运维平台的对接：针对用户频繁申请实例与数据库、工单量大的情况，为避免影响其他运维工作，数据库团队已将此类需求全部转入工单化流程，实现自动化处理。</p>
+<h3 id="压测数据"><a href="#压测数据" class="headerlink" title="压测数据"></a><strong>压测数据</strong></h3><p>奇富科技内部对接各个业务使用的 MySQL 有几百多套，提供不同规格的套餐，供各业务线按需申请。为确保 OceanBase 上线后沿用同一管理模式，数据库团队预先制定了标准化租户套餐，业务侧仅需在工单系统内勾选所需套餐，即可自动完成租户创建，无需沟通租户的资源详情，若套餐外有特殊需求，可另行提交申请。</p>
+<p>数据库团队针对每一种租户套餐的资源规格进行了性能压测，详细数据见图2，当然该数据仅用于内部选型与容量规划，并非 OceanBase 的极限性能。</p>
+<p><img data-src="/img/2025-10-16-qifu-fenkufenbiao-gaizao/02.png" alt="image"></p>
+<p>图2 不同租户套餐的性能压测数据</p>
+<h3 id="技术架构"><a href="#技术架构" class="headerlink" title="技术架构"></a><strong>技术架构</strong></h3><p>奇富科技的数据库架构整体分为五层（见图3）。</p>
+<ul>
+<li>业务服务层：所有业务服务（含 App、Web 及各接口服务）均通过统一访问层接入数据库。</li>
+<li>MySQL 服务层：业务流量先抵达 LVS 集群，由 LVS 提供虚拟 VIP，再转发至 MySQL 。MySQL 采用主从架构，用 Orchestrator 实现高可用。一套 Orchestrator 可同时监控几十套 MySQL 以实现故障自动切换。</li>
+<li>DTS 服务层：数据归档同步工具使用mysqldump或其他数据迁移工具，数据实时同步工具使用 OMS。</li>
+<li>OceanBase 集群层：为兼容现有访问模式并预防 OBProxy 单点故障，OceanBase 集群层同样前置了一套 IVS 集群。</li>
+<li>数仓层：数仓通过全量拉取数据和 Binlog 订阅方式获取数据，原来通过 Binlog 从 MySQL 抽取数据；切换到 OceanBase 后，部署了 OceanBase Binlog 集群，确保下游数仓链路的正常运行。</li>
+</ul>
+<p><img data-src="/img/2025-10-16-qifu-fenkufenbiao-gaizao/03.png" alt="image"></p>
+<p>图3 奇富科技的数据库架构</p>
+<p>在该架构中，OceanBase 集群层的机型（内部使用）都以物理机为主，存储为 NVME SSD。截至2025年8月，内部共计6个 OceanBase 集群，50+节点数，总存储容量已达到 30TB+。按照业务重要性，我们规划了小集群和大集群两种 OceanBase 集群规模。</p>
+<ul>
+<li>小集群：以业务部门为集群粒度，如产品、风控、运营、催收等业务各自独立部署一套小集群，确保部门间数据与资源隔离。</li>
+<li>大集群：报表、业务监控、归档业务等对时效性要求不高、且无强业务耦合的场景，统一归入一套大集群集中部署，该集群规模可按需扩展至上百节点。</li>
+</ul>
+<h2 id="使用场景：四类典型技术场景与迁移经验"><a href="#使用场景：四类典型技术场景与迁移经验" class="headerlink" title="使用场景：四类典型技术场景与迁移经验"></a><strong>使用场景：四类典型技术场景与迁移经验</strong></h2><p>在 OceanBase 的落地过程中，数据库团队按照以下四类典型场景分批执行，现阶段均已完成上线。</p>
+<p><strong>1.数据归档。</strong></p>
+<p>基于 OceanBase 的高压缩能力，将 MySQL 中的冷数据，通过 OMS 或其他导入工具，定期归档到 OceanBase 中，释放存储空间，降低存储成本。</p>
+<p><strong>2.HTAP 场景。</strong></p>
+<p>采购平台的后端业务数据存储既有实时业务的读写操作、也有分析统计类的场景需求。该平台原本使用 TiDB，但因其稳定性与资源隔离无法满足业务月结高峰要求，采购平台整体迁移到了 OceanBase。</p>
+<p><strong>3.离线数据处理。</strong></p>
+<p>报表业务的离线数据来自 Excel、上游 MySQL 等多种数据源，大量数据滞留不好清理。并且有跑批需求，需要调用多个业务部门的数据接口，业务逻辑比较复杂，影响处理性能。</p>
+<p><strong>4.纯写场景。</strong></p>
+<p>用户行为数据写入 MySQL，写入量很大，业务侧无查询操作，少量人为查询。</p>
+<p>下文将分享奇富客户在上几类场景中的迁移经验。</p>
+<h3 id="1-HTAP-场景——外采平台迁移"><a href="#1-HTAP-场景——外采平台迁移" class="headerlink" title="1.HTAP 场景——外采平台迁移"></a><strong>1.HTAP 场景——外采平台迁移</strong></h3><h4 id="改造目的"><a href="#改造目的" class="headerlink" title="改造目的"></a><strong>改造目的</strong></h4><ul>
+<li>性能和扩展性：TiDB 迁移至 OceanBase，以实现更好的性能和扩展性。</li>
+<li>稳定性：TiDB 4.x版本经常出现性能抖动，无法满足外采平台对 HTAP 混合负载的稳定性要求。</li>
+<li>统一技术栈：内部在逐步大面积使用 OceanBase，需要统一技术栈。</li>
+<li>完善机房容灾架构：OceanBase 的金融级无损容灾及跨机房切换能力可补齐现有机房级容灾缺口。</li>
+</ul>
+<h4 id="改造方案"><a href="#改造方案" class="headerlink" title="改造方案"></a><strong>改造方案</strong></h4><ul>
+<li>超过1000万行的大表进行分区改造。</li>
+<li>对大表按月进行分区改造。</li>
+<li>通过OMS 实现 TiDB 到 OceanBase 的数据迁移。</li>
+<li>逐步切换业务读写流量至 OceanBase。</li>
+<li>下游大数据团队平台适配。</li>
+</ul>
+<h4 id="成效"><a href="#成效" class="headerlink" title="成效"></a><strong>成效</strong></h4><p>迁移完成后，整体存储成本降低25%、稳定性表现超预期，实现零抖动、统计类执行时间缩短30%。</p>
+<p>不过在迁移过程中，也遇到一些小问题。</p>
+<ol>
+<li>数据一致性问题。</li>
+</ol>
+<p><strong>问题分析：</strong> 唯一键约束导致部分数据在 OceanBase 中缺失（字段前后空格判定和 TiDB 不一致造成的）。</p>
+<p><strong>解决方案：</strong> 通过 SQL 验证确认问题，结合业务场景，变更唯一索引字段为联合字段；业务筛选可接受丢失的数据行。</p>
+<ol start="2">
+<li>字段默认值差异。</li>
+</ol>
+<p><strong>问题分析：</strong> decimal 类型字段在 OceanBase 中默认为 NULL，而在 TiDB 中默认为0.00。</p>
+<p><strong>解决方案：</strong> 对于业务无影响的话，可以忽略，有影响时可修改默认值为0.00。</p>
+<ol start="3">
+<li>性能调优问题。</li>
+</ol>
+<p><strong>问题分析：</strong> 并行度参数设置不当影响查询性能。</p>
+<p><strong>解决方案：</strong> 调整 parallel_min_scan_time_threshold参数(ms)，在业务实时查询与 AP 查询上得到最优。</p>
+<ol start="4">
+<li>参数配置问题。</li>
+</ol>
+<p><strong>问题分析：</strong> OLTP 和 OLAP 场景参数需求不同。</p>
+<p><strong>解决方案：</strong> 针对不同业务场景分别设置相应的参数配置，如分析类查询和 TP 类查询采用不同的参数组合。</p>
+<h3 id="2-纯写场景——用户行为数据的迁移"><a href="#2-纯写场景——用户行为数据的迁移" class="headerlink" title="2.纯写场景——用户行为数据的迁移"></a><strong>2.纯写场景——用户行为数据的迁移</strong></h3><h4 id="原-MySQL-环境"><a href="#原-MySQL-环境" class="headerlink" title="原 MySQL 环境"></a><strong>原 MySQL 环境</strong></h4><p>用户行为数据场景为纯写入型场景，1.6 TB 数据空间，QPS 峰值达到 2w+。原本使用的 MySQL 是一主多从架构，跨机房部署，写入量大时，I&#x2F;O 压力大，主从延迟高，且由于分库分表需要做大量的代码改造，投入成本过高。正好遇到 OceanBase 在内部推广的契机，于是用户行为数据的迁移便成为前期推广的用例。</p>
+<h4 id="迁移方案"><a href="#迁移方案" class="headerlink" title="迁移方案"></a><strong>迁移方案</strong></h4><p>前期使用 OMS 进行全量 + 增量同步，以及数据一致性校验。完成一致性校验后，业务停写，业务添加 OceanBase 写入，完成和 MySQL 的双写。持续双写一个月无异常后，业务确认 OceanBase 满足需求，于是下线 MySQL，只写入 OceanBase。OceanBase 运行至今，业务侧从未反馈存在抖动问题。</p>
+<p>需要注意的是，原 MySQL 表结构未考虑分布式特性，迁往 OceanBase 后需要对大表增加分区，尽量结合业务场景选择分区字段或根据时间进行分区。另外，时间字段分区可能存在热点节点，严重情况下可考虑使用二级分区字段来平衡热点。</p>
+<h3 id="3-SQL-遇到的问题"><a href="#3-SQL-遇到的问题" class="headerlink" title="3.SQL 遇到的问题"></a><strong>3.SQL 遇到的问题</strong></h3><p>数据库团队曾遇到两个SQL问题，一是DDL 添加字段，可能会导致 SQL 执行计划失效，全表扫描。二是查询 SQL 的原绑定执行计划失效，性能急剧下降，原本只需要3秒, 失效后变为300秒。对此，一种临时方案是在进行 DDL 增加字段操作之前，若出现 SQL 执行计划失效问题，可以先手动全量合并空间。但从长期来看，需要将 OceanBase 集群从 4.3.2 版本升级到 4.3.5 版本，可以彻底解决。</p>
+<p>究其根本，导致SQL性能急剧下降的原因在于：userType 表被 OceanBase 的查询优化器进行了连接消除（join elimination），由于 outer join 主键连接的特性，优化器认为该表是冗余的并将其消除，所有包含 userType 表的 Hint 都因此失效，以至于查询执行计划发生了非预期的改变，导致性能大幅下降。</p>
+<p><strong>针对连接消除导致的性能问题，我们采用了三种优化方案。</strong></p>
+<p>优化方案一：控制核心表连接顺序使用。</p>
+<ul>
+<li>使用 hint: &#x2F;_+LEADING(a e) use_hash_&#x2F;</li>
+<li>效果：查询时间从300+秒降至48秒。</li>
+</ul>
+<p>优化方案二：指定连接方式和索引。</p>
+<ul>
+<li>使用 hint：&#x2F;_+leading(a e) use_nl(e) index(e idx_appl_no)_&#x2F;</li>
+<li>效果：查询时间进一步降至8秒。</li>
+</ul>
+<p>优化方案三：防止连接消除（最优方案）。</p>
+<ul>
+<li>使用 hint：&#x2F;_+LEADING((a userType) e) index(e idx_appl_no) index(userType PRIMARY) NO_ELIMINATE_JOIN_&#x2F;</li>
+<li>关键点：使用 NO_ELIMINATE_JOIN 阻止优化器消除 userType 表的连接。</li>
+<li>效果：查询时间降至4秒，是所有方案中效果最好的。</li>
+</ul>
+<p>在优化方案中，解决 SQL 性能问题的核心思路是：通过 NO_ELIMINATE_JOIN hint 强制保留原有的表连接关系，防止优化器过度优化导致的性能退化，最终将查询时间从300秒降低到了4秒。</p>
+<h3 id="4-OMS-工具遇到的问题"><a href="#4-OMS-工具遇到的问题" class="headerlink" title="4.OMS 工具遇到的问题"></a><strong>4.OMS 工具遇到的问题</strong></h3><p>目前内部 OMS 集群节点共15+，涉及300+ 同步任务、4000+ 库表同步，不可避免地出现了一些问题。比如：</p>
+<ul>
+<li>离线场景需要从上游 MySQL 同步数据，涉及到 100+ 库，库表数量众多、任务部署繁琐。</li>
+<li>OMS 元信息原本存储在 MySQL 中，随着任务数据量越来越大，MySQL 的存储面临很大压力。</li>
+<li>涉及分库分表 DDL 操作，可能会引起表结构的不一致问题。</li>
+</ul>
+<p>解决方案也比较简单：</p>
+<ul>
+<li>通过工单化+接口+脚本，自动创建数据源，自动迁移，并记录原数据信息。</li>
+<li>OMS 数据源从 MySQL 改为到 OceanBase 存储。</li>
+<li>后经与业务沟通，采用分库分表+视图的形式。</li>
+</ul>
+<h2 id="价值收益：降本增效零抖动"><a href="#价值收益：降本增效零抖动" class="headerlink" title="价值收益：降本增效零抖动"></a><strong>价值收益：降本增效零抖动</strong></h2><p>在应用OceanBase后，奇富科技在成本和技术方面均获得了超出预期的收益。</p>
+<h3 id="成本收益——多方面缩减成本"><a href="#成本收益——多方面缩减成本" class="headerlink" title="成本收益——多方面缩减成本"></a><strong>成本收益——多方面缩减成本</strong></h3><p>存储成本：OceanBase 的高压缩率可以直接降低存储成本，在归档业务引入 OceanBase 后，**集群的数据量从 10TB 减少到 5TB，**存储成本降低一半。</p>
+<p>硬件成本：使用OceanBase替换 TiDB 后，也缩减了一些机器数量，<strong>整体缩减服务器超30台。</strong></p>
+<p>运维成本：OceanBase 的在线扩缩容相比其他数据库更加方便、快捷，极大节省了运维的人力成本。同时，OceanBase 提供了多种工具，如白屏管理工具OCP、安装部署工具 OBD、数据迁移服务 OMS、诊断工具 obdiag 等，自动化程度高、人工介入少。值得一提的是，单节点引发的 RTO 时间极短，极大地降低了DBA 运维难度。</p>
+<p>代码改造成本：得益于OceanBase独有的原生分布式数据库特性，此前业务<strong>因分库分表引起的代码改造成本降低90%。</strong></p>
+<h3 id="技术收益——支撑业务更加给力"><a href="#技术收益——支撑业务更加给力" class="headerlink" title="技术收益——支撑业务更加给力"></a><strong>技术收益——支撑业务更加给力</strong></h3><p>性能提升：OceanBase 作为原生分布式数据库，可以多节点并行处理复杂 SQL，大幅缩短了响应时间，显著提升性能。因此，相较于之前：</p>
+<ul>
+<li>单机所能承载的流量也更大。</li>
+<li>业务流量的骤增不会引发较大的性能波动，能够很好地承载突发流量。</li>
+<li>对于离线查询的跑批任务，<strong>整体任务执行时间缩减40%。</strong></li>
+<li>用户行为记录业务的流量提升 30%，且<strong>抖动消除。</strong></li>
+</ul>
+<p>稳定性改进：OceanBase 具备金融级高可用能力，铸就了稳定性这一产品优势。OceanBase拥有较多核心技术用于故障判断，对比我们原来使用的 Orchestrator + MySQL 主从架构，不仅容灾能力更强，降低了故障率，提升了系统可用性，而且运维操作对业务几乎没有影响。上线 OceanBase 后，业务稳定性显著提高，能够承载更多的业务流量且不抖动，有效缩减了业务任务的执行时间。</p>
+<p>扩展能力：OceanBase 支持在线扩缩容，且有 OCP 等白屏管理工具可实现白屏扩缩容操作。对于需要管理容量的场景，弹性伸缩非常便捷、有效增强了并发处理能力。</p>
+<h2 id="未来规划：广泛应用，统一技术栈"><a href="#未来规划：广泛应用，统一技术栈" class="headerlink" title="未来规划：广泛应用，统一技术栈"></a><strong>未来规划：广泛应用，统一技术栈</strong></h2><p>未来，奇富科技将从技术演进、业务支撑、团队建设、工具平台四个方面更深入、可持续地使用 OceanBase。</p>
+<p>业务支撑：后续奇富科技将在更多场景接入 OceanBase 作为存储方案。在业务侧使用 OceanBase 的过程中，数据库团队将协助解决业务侧遇到的问题，持续提升使用体验。</p>
+<p>技术演进：数据库团队会调研OceanBase的向量、KV 特性，满足越来越多的向量数据库的需求。目前，OceanBase在奇富科技内部的应用范围渐广，从运维角度而言，在满足技术要求的情况下，使用统一技术栈是最好的方案。</p>
+<p>团队建设：奇富科技将进行OceanBase运维人才培养，并建设相关知识体系。一方面内部分组学习OceanBase，定期在公司内部进行围绕 OceanBase 的技术分享。另一方面，在学习过程中，做好内部针对 OceanBase 相关内容的知识沉淀，技术推广，累积运维经验。</p>
+<p>工具平台：奇富科技计划将OceanBase运维工具与与内部管控平台打通，提升 OceanBase 应用生命周期管理的自动化程度。同时，完善运维事项，提升运维效率，比如 OMS 同步任务的固定巡检及任务合并。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/OMS/" rel="tag"># OMS</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%81%E7%A7%BB/" rel="tag"># 数据库迁移</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" rel="tag"># 分库分表</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E5%A5%87%E5%AF%8C%E7%A7%91%E6%8A%80/" rel="tag"># 奇富科技</a>
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E6%94%B9%E9%80%A0/" rel="tag"># 代码改造</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-11-ai-gaibian-shujuku-chanpin/" rel="prev" title="AI改变数据库产品实践探索 - obloader agent与OceanBase Agent">
+                  <i class="fa fa-angle-left"></i> AI改变数据库产品实践探索 - obloader agent与OceanBase Agent
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-22-quwan-ai-yuangong-zhushou/" rel="next" title="成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践">
+                  成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

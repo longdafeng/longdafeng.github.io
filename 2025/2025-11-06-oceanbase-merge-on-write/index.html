@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/01.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/02.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/03.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/04.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/05.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-merge-on-write/06.png">
+<meta property="article:published_time" content="2025-11-05T22:24:38.000Z">
+<meta property="article:modified_time" content="2025-11-05T22:24:38.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="LSM Tree">
+<meta property="article:tag" content="Merge-On-Write">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="列存">
+<meta property="article:tag" content="存储引擎">
+<meta property="article:tag" content="读放大">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-merge-on-write/01.jpeg">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/","path":"2025/2025-11-06-oceanbase-merge-on-write/","title":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Merge-On-Write-%E8%A1%A8%E7%89%B9%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">Merge-On-Write 表特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-%E5%AD%98%E5%82%A8%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.1.</span> <span class="nav-text">OceanBase 存储介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Merge-On-Read-%E8%A1%A8%E6%9F%A5%E8%AF%A2%E5%8F%8A%E5%85%B6%E7%97%9B%E7%82%B9"><span class="nav-number">2.2.</span> <span class="nav-text">Merge-On-Read 表查询及其痛点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Merge-On-Write-%E8%A1%A8%E6%9F%A5%E8%AF%A2%E6%B5%81%E7%A8%8B"><span class="nav-number">2.3.</span> <span class="nav-text">Merge-On-Write 表查询流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Merge-On-Write-%E8%A1%A8%E7%9A%84%E5%AE%9E%E9%AA%8C%E6%95%B0%E6%8D%AE"><span class="nav-number">2.4.</span> <span class="nav-text">Merge-On-Write 表的实验数据</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Merge-On-Write-%E8%A1%A8%E7%9A%84%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">Merge-On-Write 表的适用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Merge-On-Write-%E8%A1%A8%E7%9A%84%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">Merge-On-Write 表的使用方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="nav-number">5.</span> <span class="nav-text">未来展望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#What-is-more-%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">What is more ？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Q-A"><span class="nav-number">7.</span> <span class="nav-text">Q &amp; A</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Commercial-Break"><span class="nav-number">8.</span> <span class="nav-text">Commercial Break</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E8%BE%B9%E5%AD%A6%E8%BE%B9%E7%BB%83%EF%BC%8C%E6%95%88%E6%9E%9C%E6%8B%94%E7%BE%A4%EF%BC%81"><span class="nav-number">8.1.</span> <span class="nav-text">0x00. 边学边练，效果拔群！</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表 | Longda's Interesting World">
+      <meta itemprop="description" content="介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-06 06:24:38" itemprop="dateCreated datePublished" datetime="2025-11-06T06:24:38+08:00">2025-11-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">兹拉坦</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>15 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表","description":"介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。","image":"https://ilongda.com/img/oceanbase-merge-on-write/01.jpeg","wordCount":4069,"datePublished":"2025-11-05T22:24:38.000Z","dateModified":"2025-11-05T22:24:38.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"},"url":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/","inLanguage":"zh-CN","keywords":["OceanBase","列存","HTAP","存储引擎","Merge-On-Write","LSM Tree","读放大"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表","item":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"}]}</script>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>OceanBase 从 4.3.0 版本开始，推出了加速 AP 查询的列存引擎，具体包含：</p>
+<ul>
+<li>新的列式编码</li>
+<li>列预聚合信息</li>
+<li>列存执行引擎</li>
+<li>向量化内存格式</li>
+<li>新的查询优化器，能根据规则和代价动态选择行存和列存引擎。</li>
+</ul>
+<p>OceanBase 列存引擎发布之后，AP 分析能力得到了大幅提升，在与一系列竞品的对比测试中都有比较好的表现，正式踏入了 HTAP 领域。</p>
+<p>为了节省存储成本和简化用户的运维，OceanBase 将 TP 和 AP 业务放在一套系统中，共享一份数据。实际的业务场景中，尤其是核心业务，往往有大量数据更新，这些业务也需要对数据做一些实时的数据分析，因此对 OceanBase 分析引擎提出了比较高的挑战。</p>
+<p>在实战营（第三季）第一期的课程文档中，大家知道 OceanBase 采用的是 LSM Tree 的存储架构，数据分层存储，新数据追加写入最热层，并且只记录最新值。这种写入方式对 TP 系统比较友好（写多读少），但是因为查询采用的是 Merge-On-Read 的处理方式，所以当增量数据比较多时，对 AP 分析能力有一定的影响（读放大）。</p>
+<p>为了消除增量数据对分析引擎的性能影响，OceanBase 在 4.3.5 版本中提出了 Merge-On-Write 表，将更新拆分成 delete &#x2F; insert 写入增量数据中，查询时分别对增量和基线数据进行处理，从而显著地提高了更新频繁场景下 OceanBase 的实时分析能力。</p>
+<span id="more"></span>
+
+<h1 id="Merge-On-Write-表特性"><a href="#Merge-On-Write-表特性" class="headerlink" title="Merge-On-Write 表特性"></a>Merge-On-Write 表特性</h1><h2 id="OceanBase-存储介绍"><a href="#OceanBase-存储介绍" class="headerlink" title="OceanBase 存储介绍"></a>OceanBase 存储介绍</h2><p>先简单来回顾和复习一下：</p>
+<ul>
+<li>OceanBase 采用的是 LSM Tree 的存储架构，每张表的每个分区中，数据在磁盘上存储的逻辑单位是 SSTABLE，LSM Tree 的每层数据包含一个或者多个 SSTABLE，每个 SSTABLE 内部数据按主键顺序排列。</li>
+<li>基线 SSTABLE 也被称为 Major SSTABLE，主要用来优化查询。基线 SSTABLE 是选取某个快照点，对提交版本在快照内的数据做全量合并之后生成的 SSTABLE。</li>
+<li>为了优化写 IO，SSTABLE 内数据按固定 2MB 大小切割成宏块（MacroBlock），宏块是数据文件写 IO 的基本单位。</li>
+<li>为了优化读 IO，每个宏块内的数据按 16KB 切割成一个个微块（MicroBlock），微块是数据读 IO 的基本单位。</li>
+</ul>
+<p><img data-src="/img/oceanbase-merge-on-write/01.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<h2 id="Merge-On-Read-表查询及其痛点"><a href="#Merge-On-Read-表查询及其痛点" class="headerlink" title="Merge-On-Read 表查询及其痛点"></a>Merge-On-Read 表查询及其痛点</h2><p>OceanBase 当前存储架构中，为了优化写入性能和节省存储空间，增量 SSTABLE 只记录主键和更新列的值。</p>
+<p>查询时为了获取主键的最新值，需要依次读取 MemTable、增量 SSTABLE、基线 SSTABLE，融合每层读到的数据获取完整行，这种在查询时对数据进行融合的流程叫做 Merge-On-Read。</p>
+<p>Merge-On-Read 能较好地支持按主键点查，但是对于范围查询不太友好。当各层 SSTABLE 之间主键存在重叠和交叉时，对于每层 SSTABLE 吐出的行，需要用败者树（最小&#x2F;大堆）来对各层吐出的数据进行融合和去重，这样执行引擎只能按行来计算下压谓词和投影，整体处理性能不高。</p>
+<p>在当前版本中，OceanBase 对这种处理方式做了比较多的优化，例如在查询过程中能动态判断某层 SSTABLE 的宏块&#x2F;微块内的数据与其它 SSTABLE 内的数据是否有交叉。如果某个宏块、微块内的主键和其它的微块没有交叉，说明这批主键只在这个宏块、微块内存在，可以不需要走败者树，只对这个 SSTABLE 进行扫描。</p>
+<blockquote>
+<p>说明：上面这段内容，不理解也无妨。</p>
+<p>大意就是说 OceanBase 存储引擎有一些实现上的优化，来缓解读放大的问题。</p>
+</blockquote>
+<p><img data-src="/img/oceanbase-merge-on-write/02.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<p>Merge-On-Read 查询流程中实现单边扫描优化之后，虽然 AP 能力得到了一定的增强，但是增数数据较多时，尤其增量与基线之间主键存在大量交叉时，整体的查询性能仍然会受到一定影响。</p>
+<h2 id="Merge-On-Write-表查询流程"><a href="#Merge-On-Write-表查询流程" class="headerlink" title="Merge-On-Write 表查询流程"></a>Merge-On-Write 表查询流程</h2><p>与 merge-on-read 不同，merge-on-write 能更好地解决对基线数据做大量更新之后的查询性能问题。</p>
+<p>为了不影响查询的性能，merge-on-write 会将更新数据的修改，移到写入阶段。业界中常用的做法是在旧行上标记 delete bitmap，然后在尾部追加写入新行。查询时，只需要读取原始数据和相应的 delete bitmap，便可以对相同主键的数据进行去重，获取最新值。</p>
+<p>OceanBase 也参考了业界的经典方案，添加了 merge-on-write 表类型，将查询的部分热点的 merge 动作，前置到写入模块。</p>
+<p>但考虑到 HTAP 业务中数据的更新量比较大，OceanBase 需要支持的业务比较复杂，需要维护每个快照点的多版本信息，这样对于 delete bitmap 的多版本信息维护将是一个比较大的挑战，并且在数据部分，OceanBase 已经有了一套比较成熟的 MVCC 多版本管理机制。</p>
+<p>因此 OceanBase 对 merge-on-write 方案做了一些改进，写入时更新行会将 update 改写成 delete + insert，update 时会读出旧值，将融合之后的最新行的全列数据 insert 写入 memtable（即下图中的 mini），每行数据都会记录其提交版本信息。</p>
+<p><img data-src="/img/oceanbase-merge-on-write/03.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<p>OceanBase merge-on-write 表的查询过程中，将增量数据和基线数据分成了两个部分，而不是像原来一样放入一棵败者树中进行比较。</p>
+<p><img data-src="/img/oceanbase-merge-on-write/04.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<p>扫描时先选取提交版本号大于基线的增量数据进行扫描，计算下压谓词，再做投影。</p>
+<p>若投影时，发现增量数据有对基线数据做修改，会将相应的更新信息缓存住，扫描基线时会跳过相应的主键行。相对于原有查询流程的主要优化点是：</p>
+<ol>
+<li>增量部分存储了全列信息，可以预先计算下压谓词；</li>
+<li>增量数据和基线数据不在一棵败者树中，当增量数据被下压谓词过滤之后，能大幅减少基线数据跳重复行的次数，从而大幅提高了增量和基线的批处理能力。</li>
+</ol>
+<blockquote>
+<p>说明：</p>
+<p>上面这一大段的内容，不理解也无妨。</p>
+<p>大意就是说：在 MOW 表中，memtable 中不像以前一样，只存主键和被更新的列，而是会存储最新行的全部列的数据。这样在一定程度上，可以减少查询时增量数据和基线数据归并的实现复杂度，进而实现更好的查询优化。</p>
+</blockquote>
+<h2 id="Merge-On-Write-表的实验数据"><a href="#Merge-On-Write-表的实验数据" class="headerlink" title="Merge-On-Write 表的实验数据"></a>Merge-On-Write 表的实验数据</h2><p>OceanBase merge-on-write 表相对于 merge-on-read 表的区别主要是：</p>
+<ol>
+<li>写入时会将 update 拆解为 delete + insert，insert 行会写入所有列的最新值。</li>
+<li>增量部分原来因为没有填充旧值，不能预先计算下压谓词，需要将各层数据融合之后才能计算过滤条件；写入全列之后，增量部分也可以直接计算过滤条件。</li>
+<li>原来增量数据和基线数据的查询会用一棵败者树，当有主键交叉或者重叠时，弱化了基线数据的批处理能力。在查询流程中将这两部分拆开之后，基线数据的批处理只有在过滤之后仍有 delete 行的条件下，才会按批去做主键去重，基线的批处理能力得到了很大的增强。</li>
+</ol>
+<blockquote>
+<p>说明：</p>
+<p>上面这一大段的内容，不理解也无妨。因为涉及到了底层实现，所以大家不用害怕，也不必花时间深究。</p>
+<p>后面的这一小部分 “适用场景” 和 “使用方法”，才是本期课程中希望大家了解的重点内容（精华内容总是被浓缩的状态）~</p>
+</blockquote>
+<p><strong>详细的实验数据，先不在这里放了，推荐大家到本文最后的 “边学边练，效果拔群” 部分，通过在线体验来获取吧~</strong></p>
+<h1 id="Merge-On-Write-表的适用场景"><a href="#Merge-On-Write-表的适用场景" class="headerlink" title="Merge-On-Write 表的适用场景"></a>Merge-On-Write 表的适用场景</h1><p>merge-on-write 表适用于 HTAP 和 AP 类的分析场景。如果是 TP 场景，则不建议开启，因为 merge-on-write 表的增量数据会记录查询融合后的全行信息，影响数据更新效率和存储空间。</p>
+<p>业务中有大量数据更新并且需要实时做复杂的分析查询时，可以指定表的类型为 merge-on-write 表。</p>
+<h1 id="Merge-On-Write-表的使用方法"><a href="#Merge-On-Write-表的使用方法" class="headerlink" title="Merge-On-Write 表的使用方法"></a>Merge-On-Write 表的使用方法</h1><p>OceanBase 中可以指定 merge_engine &#x3D; delete_insert 来使用 merge-on-write 表，它在 4.3.5.3 及以后的版本生效。</p>
+<p>下面是具体的使用方法：</p>
+<ul>
+<li>创建表时指定。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> table_name xxx</span><br><span class="line">  [merge_engine <span class="operator">=</span> &#123;delete_insert <span class="operator">|</span> partial_update&#125;]</span><br><span class="line">  [<span class="keyword">with</span> <span class="keyword">column</span> <span class="keyword">group</span>(xxx)]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>merge_engine &#x3D; delete_insert : 表示采用 merge on write 的写入和查询模式；</li>
+<li>merge_engine 不指定或者指定 merge_engine &#x3D; partial_update，仍采用以前部分列更新的流程，即 merge-on-read 的模式。</li>
+</ul>
+<ul>
+<li>使用示例：</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 创建一张纯列存表，更新模型是 <span class="keyword">merge</span><span class="operator">-</span><span class="keyword">on</span><span class="operator">-</span>write</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t1(c1 <span class="type">int</span>, c2 <span class="type">int</span>)</span><br><span class="line">  merge_engine <span class="operator">=</span> delete_insert</span><br><span class="line">  <span class="keyword">with</span> <span class="keyword">column</span> <span class="keyword">group</span>(<span class="keyword">each</span> <span class="keyword">column</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>租户配置项中指定。<ul>
+<li>如果不想修改业务代码，OceanBase 也支持指定租户新建表的默认 merge_engine。</li>
+<li>租户配置项只在建表语句中没有显示指定 merge_engine 的情况下生效，若建表语句中显式指定了表的 merge_engine，则按建表语句中指定的格式进行解析。</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 用户创建表默认 merge_engine <span class="operator">=</span> delete_insert</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 在建表语句中自动添加 merge_engine <span class="operator">=</span> delete_insert</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> default_table_merge_engine <span class="operator">=</span> delete_insert;</span><br></pre></td></tr></table></figure>
+
+<h1 id="未来展望"><a href="#未来展望" class="headerlink" title="未来展望"></a>未来展望</h1><p>merge-on-write 表的增量数据包含了数据的全行信息，在生成增量 SSTABLE 时，对于频繁查询的列，可以在 SSTABLE 的中间层生成 skip index 预聚合信息（详见：<strong>列 Skip Index 属性</strong><sup>[1]</sup>）。</p>
+<blockquote>
+<p>说明：</p>
+<p>加上 skip index 之后，OceanBase 的 AP 性能，就可以直接上桌去和 StarRocks 等纯 AP 数据库掰掰手腕了。</p>
+</blockquote>
+<p>处理增量数据时，可以像基线数据一样，基于 skip index 对访问数据进行裁剪。当增量 SSTABLE 中访问的宏块、微块数据可以用 skip index 进行裁剪时，整体的查询性能会有数量级的提升。</p>
+<p>关于增量 SSTABLE <strong>自适应添加 skip index</strong>，会在下一版本对外发布，欢迎大家持续关注~ <del>（听寒晖和蒲华说，下一个版本，性能会在现在的基础上，继续再翻上个几倍。算了，这个秘密还是不提前泄露出去了）</del></p>
+<h1 id="What-is-more-？"><a href="#What-is-more-？" class="headerlink" title="What is more ？"></a>What is more ？</h1><p>如果您现在使用的 OceanBase 版本是低于 4.3.5 的老版本，可以考虑通过调整 table mode 这种更传统的方法，来缓解存储引擎的读放大问题。</p>
+<p>具体方法详见 OceanBase 社区公众号上的这篇文章 ——<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTQ1OCZpZHg9MSZzbj1jZDJmYzYxN2EyNDA2ZDAxODkxZDgyNzM0OGY1MGZjYSZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《在 OceanBase 中，如何应对存储引擎的读放大问题？》<i class="fa fa-external-link-alt"></i></span>。</p>
+<h1 id="Q-A"><a href="#Q-A" class="headerlink" title="Q &amp; A"></a>Q &amp; A</h1><p>最后在这里记录用户在阅读之后，在技术交流群里提出的问题，以及群友的回复：</p>
+<p><strong>问：</strong> LSM Tree 架构下，对一个非主键字段 c1 一直更新不同的值，那随着不断更新，select c1 from tab 的效率是不是一直在变慢？</p>
+<p><strong>答：</strong> 没合并前，如果持续更新，理论上是会一直变慢的。</p>
+<p><strong>问：</strong> 但我看 OB 在 trans node 的变更链上一直是在头上添加新增的最新值，为什么会原来越慢？</p>
+<p><strong>答：</strong> 因为每次修改记录的都是变化的数据，你只改 c1，它就只记录 c1 的最新值。而查询往往要查询很多列，查询数据需要合并多个结果集。LSMTree 读就是这样，不只是 OB 这样。</p>
+<p><strong>问：</strong> 查询其它列慢我想通的。每次只查 c1 列还会变慢不太理解。</p>
+<p><strong>答：</strong> 如果只是 get（例如走主键）是不会影响的，buffer 表针对的是 scan 的查询慢。如果中间的多版本行或者 delete 行比较多，扫描的过程中需要跳过比较多的无效行。跳的无效行越多，查询就会越慢。</p>
+<p><strong>对本文内容有任何疑问的朋友，欢迎到评论区留言提问，小编会第一时间回复大家！（不限于 MOW 表和 buffer 表，其他任何和 OceanBase 有关的问题都可以。知无不言，言无不尽~）</strong></p>
+<h1 id="Commercial-Break"><a href="#Commercial-Break" class="headerlink" title="Commercial Break"></a>Commercial Break</h1><h2 id="0x00-边学边练，效果拔群！"><a href="#0x00-边学边练，效果拔群！" class="headerlink" title="0x00. 边学边练，效果拔群！"></a>0x00. 边学边练，效果拔群！</h2><p>实战营中 MOW 表性能提升的在线体验地址：<strong>《Delete-Insert 存储引擎》</strong><sup>[2]</sup>。</p>
+<ul>
+<li><strong>常规生产环境的测试结果：merge-on-write 表，查询性能相对于 merge-on-read 表，会有 5 倍以上的提升。</strong></li>
+<li>这个实验有导入数据（大概要 100 秒左右）之类耗时较长的操作，大家可以一次性把实验文档所有 SQL 语句全都复制到右边的实验环境里去执行，然后一边等待最后的实验结果，一边阅读下面的文章内容。</li>
+<li>在实验环境是在纯列存表上做了一个小规模数据的测试，在这个测试中，性能差异可能没有那么明显（不过 2 ~ 3 倍应该还是有的，<strong>为确保测试准确性，建议在实验环境中多次重复执行最后的性能对比 SQL，并取平均值</strong>）。实际在更大规模数据或更高并发场景下（生产环境），才能真正体现出 merge-on-write 表的优势。</li>
+</ul>
+<p><img data-src="/img/oceanbase-merge-on-write/05.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<ul>
+<li><strong>文档不可尽信，实践才出真知。</strong><ul>
+<li>OceanBase 官网文档《创建表》<sup>[3]</sup>中的创建 MOW 表的语法如下（截至 2025.10.22）：</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> table_name column_definition</span><br><span class="line">    MERGE_ENGINE <span class="operator">=</span> &#123;delete_insert <span class="operator">|</span> partial_update&#125;</span><br><span class="line">    <span class="keyword">WITH</span> <span class="keyword">COLUMN</span> <span class="keyword">GROUP</span>([<span class="keyword">all</span> columns,] <span class="keyword">each</span> <span class="keyword">column</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>语法中的 WITH COLUMN GROUP，看上去是建 MOW 表的必选项，所以<strong>貌似</strong>只有列存表和行列混存表才能被设置 MOW 属性。</li>
+<li>大家可以试一试，去掉 WITH COLUMN GROUP xxx，看看能不能把纯行存表也设置为 MOW 表？</li>
+<li>大家还可以尝试看看能不能把实验环境中最初的两个建表语句改成纯行存表，然后再对比一下行存 MOW 表相比普通行存表的性能提升（多次执行查询，取平均值），看看能不能达到蒲华大佬宣称的性能提升 5 倍以上？</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> ct1 (</span><br><span class="line">    c1 <span class="type">INT</span>,</span><br><span class="line">    c2 <span class="type">INT</span>,</span><br><span class="line">    c3 <span class="type">DATE</span></span><br><span class="line">) MERGE_ENGINE <span class="operator">=</span> DELETE_INSERT;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> ct1_normal (</span><br><span class="line">    c1 <span class="type">INT</span>,</span><br><span class="line">    c2 <span class="type">INT</span>,</span><br><span class="line">    c3 <span class="type">DATE</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>小编的猜想：</p>
+<p>因为行存表的查询性能一般会比列存表更差，所以如果行存表可以设置 MOW 属性的话，性能提升幅度大概率也会比列存表更显著。（换句话说就是：进步快，源于起点低~ 🤣）</p>
+<p>大家可以在实验环境中通过测试，来验证下这个家伙的猜想是否正确？</p>
+<p>如果不正确，可以再思考下为何不正确？</p>
+</blockquote>
+<p><img data-src="/img/oceanbase-merge-on-write/06.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
+<ul>
+<li>课后小测地址：【DBA 实战营】 Merge-On-Write 表<sup>[4]</sup>，在第三季的实战营活动中，每通过一个课后练习，就会自动获得 10 个社区积分，并获得一次抽奖的资格。抽奖时有机会获得实体礼物或更高额的积分奖励。</li>
+</ul>
+<blockquote>
+<p>小提示：</p>
+<ol>
+<li>需要先登录 OceanBase 账号，才能初始化屏幕右边的实验环境进行实验。</li>
+<li>在实验环境里，干什么都可以。大家不要受限于屏幕左边的实验手册，可以天马行空地做一些你感兴趣的事情，<strong>或者验证一些你对 OceanBase 官网文档的疑问、以及自己的猜想等等</strong>。</li>
+<li>欢迎大家平时在学习 OceanBase 的过程中，也都能充分利用在线体验页面为您提供的一些实验环境，来体验 OceanBase 中您感兴趣的新特性。</li>
+</ol>
+</blockquote>
+<p><strong>参考资料</strong></p>
+<p>[1] 列 Skip Index 属性: <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2Utc3RhbmRhbG9uZS0xMDAwMDAwMDAzNTc3OTA2">https://www.oceanbase.com/docs/common-oceanbase-database-standalone-1000000003577906<i class="fa fa-external-link-alt"></i></span></p>
+<p>[2] 《Delete-Insert 存储引擎》: <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kZW1vL2RlbGV0ZS1pbnNlcnQtZW5naW5l">https://www.oceanbase.com/demo/delete-insert-engine<i class="fa fa-external-link-alt"></i></span></p>
+<p>[3] 《创建表》: <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2Utc3RhbmRhbG9uZS0xMDAwMDAwMDAzNTc3OTY3">https://www.oceanbase.com/docs/common-oceanbase-database-standalone-1000000003577967<i class="fa fa-external-link-alt"></i></span></p>
+<p>[4] 【DBA 实战营】 Merge-On-Write 表: <span class="exturl" data-url="aHR0cHM6Ly9leGFtLm9jZWFuYmFzZS5jb20vcHJlP2RpZD1oYV92TjVaczNTUF81S0QzNzh3VjE=">https://exam.oceanbase.com/pre?did=ha_vN5Zs3SP_5KD378wV1<i class="fa fa-external-link-alt"></i></span></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%97%E5%AD%98/" rel="tag"># 列存</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" rel="tag"># 存储引擎</a>
+              <a href="/tags/Merge-On-Write/" rel="tag"># Merge-On-Write</a>
+              <a href="/tags/LSM-Tree/" rel="tag"># LSM Tree</a>
+              <a href="/tags/%E8%AF%BB%E6%94%BE%E5%A4%A7/" rel="tag"># 读放大</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-31-baili-mycat-qianyi-oceanbase/" rel="prev" title="分库分表MyCat架构迁移至OceanBase | 百丽核心财务系统迁移经验总结">
+                  <i class="fa fa-angle-left"></i> 分库分表MyCat架构迁移至OceanBase | 百丽核心财务系统迁移经验总结
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-07-database-evolution-vector-hybrid-search/" rel="next" title="AI 时代的数据库进化论 —— 从向量到混合检索">
+                  AI 时代的数据库进化论 —— 从向量到混合检索 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

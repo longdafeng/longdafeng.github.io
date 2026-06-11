@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文深入解析 OceanBase 从硬件到存储再到运维实现极致降本的核心技术，包括单机分布式一体化架构、百万分区元数据按需加载、磁盘 I&#x2F;O 隔离、Compaction 优化以及编码与压缩等，并结合四川华迪、58同城、怪兽充电、携程、多点、云集等企业案例展示降本成效。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase：如何做到从硬件到存储再到运维的极致降本？">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文深入解析 OceanBase 从硬件到存储再到运维实现极致降本的核心技术，包括单机分布式一体化架构、百万分区元数据按需加载、磁盘 I&#x2F;O 隔离、Compaction 优化以及编码与压缩等，并结合四川华迪、58同城、怪兽充电、携程、多点、云集等企业案例展示降本成效。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/07.png">
+<meta property="article:published_time" content="2025-07-29T07:26:12.000Z">
+<meta property="article:modified_time" content="2025-07-29T08:14:47.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Compaction">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="LSM-Tree">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="单机分布式一体化">
+<meta property="article:tag" content="存储引擎">
+<meta property="article:tag" content="数据压缩">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/","path":"2025/2025-07-29-extreme-cost-reduction-analysis/","title":"OceanBase：如何做到从硬件到存储再到运维的极致降本？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase：如何做到从硬件到存储再到运维的极致降本？ | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%80%E5%A5%97%E7%B3%BB%E7%BB%9F%E6%94%AF%E6%8C%81%E4%B8%9A%E5%8A%A1%E5%85%A8%E9%98%B6%E6%AE%B5%EF%BC%8C%E6%9E%81%E8%87%B4%E8%8A%82%E7%BA%A6%E8%B5%84%E6%BA%90%E6%88%90%E6%9C%AC"><span class="nav-number">2.</span> <span class="nav-text">一、一套系统支持业务全阶段，极致节约资源成本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%8D%95%E6%9C%BA%E7%99%BE%E4%B8%87%E5%88%86%E5%8C%BA%E6%94%AF%E6%8C%81%EF%BC%8C%E5%85%83%E6%95%B0%E6%8D%AE%E5%B0%8F%E5%9E%8B%E5%8C%96%EF%BC%8C%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%EF%BC%8C%E6%8F%90%E9%AB%98%E8%B5%84%E6%BA%90%E4%BD%BF%E7%94%A8%E6%95%88%E7%8E%87"><span class="nav-number">3.</span> <span class="nav-text">二、单机百万分区支持，元数据小型化，按需加载，提高资源使用效率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9B%B4%E7%81%B5%E6%B4%BB%E7%9A%84%E7%A3%81%E7%9B%98I-O%E9%9A%94%E7%A6%BB%E7%AD%96%E7%95%A5%EF%BC%8C%E6%9B%B4%E5%AE%89%E5%85%A8%E3%80%81%E6%9B%B4%E5%85%85%E5%88%86%E5%9C%B0%E4%BD%BF%E7%94%A8%E8%B5%84%E6%BA%90"><span class="nav-number">4.</span> <span class="nav-text">三、更灵活的磁盘I&#x2F;O隔离策略，更安全、更充分地使用资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Compaction%E4%BC%98%E5%8C%96%EF%BC%8C%E9%99%8D%E4%BD%8E%E7%A9%BA%E9%97%B4%E6%94%BE%E5%A4%A7%E5%92%8C%E7%A3%81%E7%9B%98%E5%BC%80%E9%94%80"><span class="nav-number">5.</span> <span class="nav-text">四、Compaction优化，降低空间放大和磁盘开销</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E7%BC%96%E7%A0%81%E4%B8%8E%E5%8E%8B%E7%BC%A9%EF%BC%8C%E5%AD%98%E5%82%A8%E7%A9%BA%E9%97%B4%E6%9E%81%E8%87%B4%E9%99%8D%E6%9C%AC"><span class="nav-number">6.</span> <span class="nav-text">五、编码与压缩，存储空间极致降本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E6%9E%B6%E6%9E%84%E5%8A%A9%E5%8A%9B%E4%BC%81%E4%B8%9A%E8%8A%82%E7%9C%81%E7%A1%AC%E4%BB%B6%E3%80%81%E5%AD%98%E5%82%A8%E3%80%81%E8%BF%90%E7%BB%B4%E6%88%90%E6%9C%AC"><span class="nav-number">7.</span> <span class="nav-text">六、数据存储架构助力企业节省硬件、存储、运维成本</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%9B%9B%E5%B7%9D%E5%8D%8E%E8%BF%AA%E6%95%B0%E4%BB%93%E5%BB%BA%E8%AE%BE%EF%BC%8C%E7%A1%AC%E4%BB%B6%E6%88%90%E6%9C%AC%E8%8A%82%E7%9C%8160"><span class="nav-number">7.1.</span> <span class="nav-text">（一）四川华迪数仓建设，硬件成本节省60%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%8958%E5%90%8C%E5%9F%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8D%87%E7%BA%A7%EF%BC%8C%E8%8A%82%E7%BA%A680-%E6%9C%BA%E5%99%A8%E6%88%90%E6%9C%AC"><span class="nav-number">7.2.</span> <span class="nav-text">（二）58同城数据库升级，节约80%机器成本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E6%80%AA%E5%85%BD%E5%85%85%E7%94%B5%E5%8E%86%E5%8F%B2%E5%BA%93%E8%BF%81%E7%A7%BBOceanBase%EF%BC%8C%E5%AD%98%E5%82%A8%E6%88%90%E6%9C%AC%E9%99%8D71"><span class="nav-number">7.3.</span> <span class="nav-text">（三）怪兽充电历史库迁移OceanBase，存储成本降71%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E6%90%BA%E7%A8%8B%E5%8F%8C%E4%B8%9A%E5%8A%A1%E5%8D%87%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%8C%E7%A1%AC%E4%BB%B6%E9%99%8D%E6%9C%AC60-%EF%BC%8C%E5%AD%98%E5%82%A8%E9%99%8D%E6%9C%AC85"><span class="nav-number">7.4.</span> <span class="nav-text">（四）携程双业务升级数据库，硬件降本60%，存储降本85%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E5%A4%9A%E7%82%B9%E6%96%B0%E9%9B%B6%E5%94%AE%E8%BD%AC%E5%9E%8B%EF%BC%8C%E6%88%90%E6%9C%AC%E8%8A%82%E7%9C%8180"><span class="nav-number">7.5.</span> <span class="nav-text">（五）多点新零售转型，成本节省80%</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%85%AD%EF%BC%89%E4%BA%91%E9%9B%86%E7%94%B5%E5%95%86%E8%A7%84%E6%A8%A1%E5%8C%96%E9%99%8D%E6%9C%AC%E5%AE%9E%E8%B7%B5%EF%BC%8C%E7%BB%8F%E6%B5%8E%E6%88%90%E6%9C%AC%E9%99%8D87-5"><span class="nav-number">7.6.</span> <span class="nav-text">（六）云集电商规模化降本实践，经济成本降87.5%</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase：如何做到从硬件到存储再到运维的极致降本？ | Longda's Interesting World">
+      <meta itemprop="description" content="本文深入解析 OceanBase 从硬件到存储再到运维实现极致降本的核心技术，包括单机分布式一体化架构、百万分区元数据按需加载、磁盘 I&#x2F;O 隔离、Compaction 优化以及编码与压缩等，并结合四川华迪、58同城、怪兽充电、携程、多点、云集等企业案例展示降本成效。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase：如何做到从硬件到存储再到运维的极致降本？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-29 15:26:12" itemprop="dateCreated datePublished" datetime="2025-07-29T15:26:12+08:00">2025-07-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>26 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文深入解析 OceanBase 从硬件到存储再到运维实现极致降本的核心技术，包括单机分布式一体化架构、百万分区元数据按需加载、磁盘 I/O 隔离、Compaction 优化以及编码与压缩等，并结合四川华迪、58同城、怪兽充电、携程、多点、云集等企业案例展示降本成效。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase：如何做到从硬件到存储再到运维的极致降本？","description":"本文深入解析 OceanBase 从硬件到存储再到运维实现极致降本的核心技术，包括单机分布式一体化架构、百万分区元数据按需加载、磁盘 I/O 隔离、Compaction 优化以及编码与压缩等，并结合四川华迪、58同城、怪兽充电、携程、多点、云集等企业案例展示降本成效。","image":"https://ilongda.com/img/7-29-extreme-cost-reduction-analysis/01.png","wordCount":6961,"datePublished":"2025-07-29T07:26:12.000Z","dateModified":"2025-07-29T08:14:47.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/"},"url":"https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/","inLanguage":"zh-CN","keywords":["OceanBase","LSM-Tree","HTAP","数据压缩","单机分布式一体化","降本增效","Compaction","存储引擎"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase：如何做到从硬件到存储再到运维的极致降本？","item":"https://ilongda.com/2025/2025-07-29-extreme-cost-reduction-analysis/"}]}</script>
+<p>本文摘自<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vbGVhcm5pbmcjZWJvb2s=">《OceanBase社区版在泛互场景的应用案例研究<i class="fa fa-external-link-alt"></i></span>》电子书，点击链接即可获取完整版内容。</p>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>自企业开始运转，数据就会源源不断地汇入它们的存储系统。国际数据公司（IDC）报告指出，在2025年，全球每天将产生180ZB的数据。面对越来越庞大的数据处理需求，一些存储系统会出现诸如存储空间扩展难、性能下降、成本走高等问题。因此，越来越多企业开始考虑能够同时满足低成本、高效率、高扩展性的数据库方案。</p>
+<p>作为一款完全自主研发的数据库，OceanBase可以帮助企业节省至少60%的存储成本，且同时实现硬件成本与运维成本的降低，其核心技术是什么？</p>
+<span id="more"></span>
+
+<h2 id="一、一套系统支持业务全阶段，极致节约资源成本"><a href="#一、一套系统支持业务全阶段，极致节约资源成本" class="headerlink" title="一、一套系统支持业务全阶段，极致节约资源成本"></a>一、一套系统支持业务全阶段，极致节约资源成本</h2><p>在传统数据库选型过程中（见图1），起初单机小规格的 MySQL 即可支撑业务需要。但随着业务的发展，MySQL 逐渐在数据增长的过程中无法满足性能和存储需求。这时，将系统升级为高规格机器的 Oracle 成为众多企业的选择，当高规格单机 Oracle 也无法满足的数据量时，则会考虑使用 RAC 共享存储，甚至为核心业务更换数据库类型，如 Db2。数据系统作为”底座”和”心脏”，在更替时不仅要对业务的影响降至最低，还必须考虑替换成本。因此一套顺滑可扩展的系统会大大降低成本和风险。那么，有没有一套系统可以应对客户不同业务规模下的数据管理需求呢？</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/01.png" alt="图1 传统数据库选型过程"></p>
+<p>图1 传统数据库选型过程</p>
+<p>OceanBase 4.x版本的单机分布式一体化架构就能够满足业务不同阶段的需求。其兼具分布式的扩展性和集中式数据库的功能与单机性能。通过动态日志流的方式，实现了系统静态下的单机高性能，以及动态调整日志流平滑快速扩展的目的。对于存储引擎，则通过资源开销的小型化、轻量化，同一个引擎支持不同的部署形态、支持从小数据量到海量数据的平滑增长。</p>
+<p>因此，在小数据量的小型业务中，一套小规格 OceanBase实例便可支撑。随着业务数据量的缓慢增长，通过最简单的垂直扩容，即租户配置升级到高规格即可满足。当业务发展需要有容灾或负载均衡时，OceanBase可轻松切换至三副本，每个副本的数据存储仍然保证高压缩比，用以降低多副本带来的成本增长。对于大型业务，则可通过在集群内水平扩容的方式来满足需求。这就是OceanBase 单机分布式一体化的重要意义和作用。</p>
+<p>另外，OceanBase 4.x在资源管理方面更加轻量化、小型化和可扩展特性便于企业更充分、更合理地使用资源，节约资源成本。</p>
+<h2 id="二、单机百万分区支持，元数据小型化，按需加载，提高资源使用效率"><a href="#二、单机百万分区支持，元数据小型化，按需加载，提高资源使用效率" class="headerlink" title="二、单机百万分区支持，元数据小型化，按需加载，提高资源使用效率"></a>二、单机百万分区支持，元数据小型化，按需加载，提高资源使用效率</h2><p>OceanBase 创新地提出了日志流概念，用以降低海量数据分区下的网络、CPU 开销。每个数据分区的多副本都是一个Paxos成员组，用以保证数据的多副本的一致性。为了降低多分区或是小规格下的一致性协议开销，将相同成员组的数据分区日志聚集在一起，即所谓的单日志流。只需要一个日志流负责同步或选举即可实现一组分区副本的容灾及 Paxos 高可用。</p>
+<p>而对于海量数据下的内存，OceanBase设计了元数据按需加载，智能区分冷热分区和必要的元数据，极大地降低内存占用。</p>
+<p>如图2所示，日志流下面有很多 Tablet ，即数据分片，可以理解为用户表的一个分区。它是分布式系统负载均衡和容灾恢复等最基础的单位。Tablet 的数量 与 Log Stream 相比是指数级的。原因在于一个集群里的可用区拓扑关系是有限和少量的。但是对分区来说，其数量会根据业务需求调整，数量可能上万。</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/02.png" alt="图2 OceanBase分区架构"></p>
+<p>图2 OceanBase分区架构</p>
+<p>在OceanBase 4.x版本中，按需加载分区下的元数据。</p>
+<ul>
+<li>所谓元数据，是指分区副本的一些基本属性，用以支持数据的增删改查、LSM-Tree的变更、负载均衡、容灾恢复等单机和分布式功能。OeanBase 4.x版本的元数据会动态地根据请求负载，只加载查询范围有关的数据块。所以不论数据规模如何膨胀，有限的热数据访问内存消耗并不会随之膨胀，也就进一步在历史库的机型选择上降低了对内存的要求成本。</li>
+<li>所谓按需加载，是指将热分区下的元数据保持在内存里，不加载不经常访问的冷分区或是其元数据。通过冷热分离手段，使内存的使用效率发挥到极致。100w 分区下的常驻内存可以降低到 200MB。小规格机器下，就能支持更多的分区。类似历史库按时间分区的场景，就能在不升级机器规格的情况下，存储更久远的历史分区数据。</li>
+</ul>
+<h2 id="三、更灵活的磁盘I-O隔离策略，更安全、更充分地使用资源"><a href="#三、更灵活的磁盘I-O隔离策略，更安全、更充分地使用资源" class="headerlink" title="三、更灵活的磁盘I&#x2F;O隔离策略，更安全、更充分地使用资源"></a>三、更灵活的磁盘I&#x2F;O隔离策略，更安全、更充分地使用资源</h2><p>OceanBase 提供一套完整的语法支持，为每个租户配置最大或最小 IOPS 及权重的能力。让用户能灵活调配租户所使用的I&#x2F;O资源，进一步均衡流量高低峰间对磁盘的性能要求，降低成本。</p>
+<p>如图3所示，4 号租户（蓝线，可以限制 IOPS）要求最大 IOPS 不超过 5000 ，在业务上可以防止并发流量过大影响其他租户， 1 号（红线）、2 号（绿线）租户本身 IOPS 量比较大，配置上限是 10 万，权重比可以控制流量比较大的租户之间的关系，比如永远保持 2:1 的关系。如果 3 号（黄线）租户新加入这个集群，会对集群产生什么冲击呢？由于 4 号租户有限制，因此不受影响，3 号租户的 IOPS 可以向 1 号、2 号租户借，1 号、2 号租户按照比例下降权重，这样就可以起到租户间的隔离作用。</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/03.png" alt="图3 租户配置 IOPS"></p>
+<p>图3 租户配置 IOPS</p>
+<p>除了租户间的隔离外，还有租户内的隔离。为什么要做租户内的隔离呢？</p>
+<p>从两个场景来看：其一，在同时需要承担 TP 和 AP 业务流量的场景下，避免对于延迟敏感的TP型请求受到干扰，影响正常业务流量的稳定性；其二，前台流量和后台流量隔离的场景，如果后台资源隔离做不好，则会影响前台的查询请求，进而产生用户可感知的抖动。</p>
+<p>租户内隔离可以做到不同负载混合场景下都能安全有效地使用资源，举个例子，图4中ABCD 可以是不同的负载，B 的 Min Percent 设置 97%，意味着虽然 B 是最小的 IOPS，但希望能保证最小的 IOPS 不至于跌的很低（蓝线），A 和 C 本身的权重是 50:25，从图中也可以看到保持着 2:1 的关系，去保证不同的负载能够拿到相应的 IOPS ）。</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/04.png" alt="图4 租户内不同负载的隔离能力"></p>
+<p>图4 租户内不同负载的隔离能力</p>
+<h2 id="四、Compaction优化，降低空间放大和磁盘开销"><a href="#四、Compaction优化，降低空间放大和磁盘开销" class="headerlink" title="四、Compaction优化，降低空间放大和磁盘开销"></a>四、Compaction优化，降低空间放大和磁盘开销</h2><p>作为对系统资源依赖比较重的因素，Compaction 一直是基于LSM-Tree架构的系统里最值得深入研究和探索的核心技术热点之一。各家厂商在解决读放大、写放大和空间放大的问题时，采取不同的优化策略。Compaction 的技术掌控力，关系到能不能为用户节省更多的后台计算资源，转而投入到前台的业务请求，达到更佳的性价比。</p>
+<p>OceanBase 经过十多年的自研探索，在 Compaction 的计算性能提升和磁盘空间等资源成本降低方面创新地提出了许多有效的优化方法和工程实践。例如采用业内熟知的Tiered &amp; Leveled Policy，在此基础上，根据事务特性、数据特征、资源依赖等因素，设计不同类型的Compaction。</p>
+<p>如图5所示，整个LSM-Tree的持久化SSTable只有三层，有别于RocksDB、Cassandra和一些其他系统的多层优化。虽然层数不多，但每一层SSTable都有其设计目的。</p>
+<ul>
+<li>L0 层目的在于尽快释放内存，其中对于数据的处理逻辑必须是低耗且快速的。</li>
+<li>L1 层则是尽可能地消除读放大，因为数据之间可能出现交叉，包括空间上的数据冗余及时间是多版本间的冗余，还需要考虑磁盘开销。</li>
+<li>L2层不仅要彻底解决空间放大的问题，还要做到数据校验、回收和压缩等较复杂且带有事务和分布式特性的功能点。</li>
+</ul>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/05.png" alt="图5 LSM-Tree的持久化SSTable架构"></p>
+<p>图5 LSM-Tree的持久化SSTable架构</p>
+<p>基于数据处理和系统资源两方面的深入分析，OceanBase 设计了多类型的 Compaction （mini、minior、medium、major），能够依据系统内资源的实时状况，结合统计采样信息，自动调用相应的Compaction，达到动态平衡缓解资源瓶颈、提高系统稳定性的目的。其中：</p>
+<ul>
+<li>Mini Compaction 负责生成L0层的SSTable，磁盘采用高效的稠密格式，在最大化IOPS的同时，对CPU消耗最小。</li>
+<li>Minor Compaction 负责生成L1层，合并多个L0和L1层SSTable。其功能是重新整理同一主键上的多版本数据，提高查询性能。自动探测增量数据间的重叠范围，做宏块级别的数据块重用，降低空间放大。未来，还会支持数据编码和压缩，进一步降低磁盘开销。</li>
+<li>Major Compaction 产生L2层的基线数据，是降本的主要贡献者。除了进一步回收增量数据中的老版本数据、磁盘格式根据用户的表格属性会采用高级压缩技术降低存储成本以外，还对离散插入导致的数据空洞做重整和压缩，更好地支持不同类型的数据更新模型。值得一提的是，Major还负责多副本间的数据校验，保证数据存储的安全可靠。</li>
+</ul>
+<p>而Medium Compaction，作用之一是解决LSM-Tree 架构中著名的queuing表问题。举个例子，用户插入 6 行数据，随后又删除这 6 行数据。从逻辑上来说，Table 是空的。但实际查询扫描的物理行数仍然是12 行。再例如 update 和 inset 交互的场景，也会出现聚合count为2行，但实际扫描代价为7行的问题。这类现象归结为物理行数与逻辑行数的巨大差异造成了查询性能的不及预期。</p>
+<p>在 OceanBase 的老版本中，用户在建表时需要显式指定 buffer 表属性，以提示存储引擎发现行数比较多的buffer表，尽快触发特殊的 Compaction 动作把一些行回收掉。OceanBase 4.1 版本开始，存储引擎在每次生成 SSTable 时，会智能地对数据做统计信息收集。对于每个SSTable，通过一组向量来表示这组数据的更新特征。当发现符合queuing表的特征时，系统会自动发起Medium Compaction，消除冗余数据。这一过程对于用户是无感的，不需要用户在建表前感知业务特性，也不会在系统上线后被迫做一次DDL，降低了使用OceanBase 的门槛，提高业务切流后的稳定性。</p>
+<h2 id="五、编码与压缩，存储空间极致降本"><a href="#五、编码与压缩，存储空间极致降本" class="headerlink" title="五、编码与压缩，存储空间极致降本"></a>五、编码与压缩，存储空间极致降本</h2><p>除了在资源利用、磁盘占用、内存占用方面降低整体成本外，存储降本也非常关键。其核心技术在于存储引擎。尤其是在海量数据的历史库场景中，越是好的存储引擎带来的降本收益越是可观。</p>
+<p>直白地说，OceanBase 存储引擎在降成本方面有着传统数据库不具备的架构优势。一般而言，基于 B+ Tree 的传统数据库，由于是in place update，底层的 block 又是定长的，因此在存储压缩后会有写放大的碎片问题需要解决，也会对查询性能造成一定影响。OceanBase使用LSM-Tree 存储架构，为数据库压缩提供了更多可能。首先，消除了传统 B+Tree 的磁盘随机写瓶颈和存储空间碎片化问题，相比传统实时更新数据块的方式，拥有更高的写入性能。其次，可以将数据更新（增删改）与压缩动作解耦，数据更新路径中没有压缩动作，对性能影响更小。另外，在批量落盘的过程中，数据库可以自适应地调整数据块中的数据量，并在对连续数据块压缩的过程中，收集和利用压缩率等先验知识对下一个块进行更好地压缩。</p>
+<p>针对TP场景，OceanBase 存储引擎采用行列混存模式（见图6）。区别于行存模式，微块内的数据不再是一条条铺平的行，而是按列先组织在一起。Compaction生成SStable期间，对于微块的编码和压缩是分两步进行的。第一步会利用某一列上相邻行的数据特征，挑选比较合适的算法进行编码，经过第一层编码后的压缩率往往能够达到 50%，第二步再对编码后的微块进行一次通用压缩，最终达到平均30%的极致压缩率。</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/06.png" alt="图6 OceanBase 存储引擎磁盘格式"></p>
+<p>图6 OceanBase 存储引擎磁盘格式</p>
+<p>OceanBase 存储引擎在选择编码算法时，会自动分析数据类型、值域、NDV 等特征，参考相邻微块的编码压缩历史，是自适应启发式的算法。例如，对于用小范围的字符串像车辆牌照等，支持 Bit-packing 和 HEX 编码，能够有效降低存储的位宽，达到编码压缩的效果；对于列数据重复率高的例如性别、星座等，会采用字典编码和 RLE 编码做单列数据去重；对于字符串或值域相近的采用差值编码；当数据列与列之间存在关联或者前缀相近时，如商品大类之间的条形码，采用列间编码减少多列数据冗余。</p>
+<p>针对AP场景，OceanBase 4.3版本实现了对列存的支持。在列存下，每列数据存储为一个独立的 SSTable，所有列的 SSTable 组合成为一个虚拟 SSTable 作为用户的列存基线数据。列存格式具备的核心特性包括：列式编码算法、skip index，查询下压等。其中列式编码负责降本；skip index，查询下压用于加速AP场景下大范围高过滤性扫描性能，负责提效。</p>
+<p>在列式编码格式下（见图7），用户数据的每一列都是以流为单位进行存储，并且取消了微块级别的通用压缩。数据的编码或压缩都是以流为单位，原因是对于整型数据，经过高效的编码后，再使用通用压缩收益很小，取消通用压缩可以节省cpu。对于字符串数据，其元数据和数据会分开存储，所有的字符串流的数据合并在一起编码，节省编码次数的同时，还可以带来整体压缩率的提升。</p>
+<p><img data-src="/img/7-29-extreme-cost-reduction-analysis/07.png" alt="图7 OceanBase 列式编码格式"></p>
+<p>图7 OceanBase 列式编码格式</p>
+<h2 id="六、数据存储架构助力企业节省硬件、存储、运维成本"><a href="#六、数据存储架构助力企业节省硬件、存储、运维成本" class="headerlink" title="六、数据存储架构助力企业节省硬件、存储、运维成本"></a>六、数据存储架构助力企业节省硬件、存储、运维成本</h2><p>OceanBase经过多年全自研探索，从数据流入到流出的各个环节都对资源开销成本做了极致优化，形成一套统一、高效、可扩展的数据存储架构。</p>
+<ul>
+<li>在数据组织上，对各层元数据采用了按需加载的方式，使系统的内存资源服务于访问更频繁的热点数据，进一步降低单机规格依赖，提升小规格场景的收益。</li>
+<li>在数据写入路径，多层次、多类型compaction策略保证高效写入性能的同时，又能平滑不抖动。自动压缩数据空洞，高压缩比基线数据，降低存储成本。</li>
+<li>在数据查询方面，不同格式均支持聚合和过滤下推、SIMD向量化以及skip index，提升了大查询和AP性能。</li>
+<li>在资源管控中，租户间CPU、内存和I&#x2F;O等资源隔离逐步完善，使同一套集群服务于多业务系统，降低系统整体成本。</li>
+</ul>
+<p>通过上述数据存储架构的技术能力，帮助用户从硬件到存储再到运维实现成本节约。</p>
+<h3 id="（一）四川华迪数仓建设，硬件成本节省60"><a href="#（一）四川华迪数仓建设，硬件成本节省60" class="headerlink" title="（一）四川华迪数仓建设，硬件成本节省60%"></a>（一）四川华迪数仓建设，硬件成本节省60%</h3><p>四川华迪开发的”齐家乐智慧医养大数据公共服务平台”，整合医疗、养老等多方资源，为老年人提供健康养老服务。该数据实时计算平台需要处理 20TB 左右数据总量的医疗数据，且原有Hadoop系统存在组件复杂、运维困难等问题。通过引入 OceanBase，取得了巨大的收益。</p>
+<p>首先，在数据架构上，从利用 10 台机器部署一个 Hadoop 环境，其中使用了 ETL、HDFS、Hive、Spark SQL 等 20 多种不同的开源组件分别负责数据导入导出、数据清洗和 AP 分析等功能，到直接在 3 台 OceanBase 节点构成的集群中对数据进行 AP 分析。提升了原有 AP 分析性能的同时，服务器也从10台 Hadoop 服务器减少到4台 OceanBase 服务器，节省60%硬件成本。同时，从 Haoop 海量组件中释放出来；使用一套OceanBase系统处理 HTAP 场景需求，简化了运维复杂度。</p>
+<p>其次，经过验证，OceanBase 在三备份的情况下占用的存储空间只有 Oracle 的 1&#x2F;3 到 1&#x2F;4 左右：分别使用 5 台相同规格的集群部署了 Oracle 和 OceanBase 集群，使用一个 5 亿行数据记录、大小为 372 GB 的数据文件，进行数据导入导出测试。分别向 Oracle 和 OceanBase 导入以上相同数据， 在Oracle 中占用 220 GB 的存储空间，导入 OceanBase 中利用三备份存储只占用了 78GB 存储空间。</p>
+<h3 id="（二）58同城数据库升级，节约80-机器成本"><a href="#（二）58同城数据库升级，节约80-机器成本" class="headerlink" title="（二）58同城数据库升级，节约80%机器成本"></a>（二）58同城数据库升级，节约80%机器成本</h3><p>58同城作为综合性生活服务平台，涵盖有车、房产、招聘，本地服务、金融等众多业务，且不同场景对数据库的要求各不相同，需要寻找一款可以支撑复杂多样的业务场景的数据库产品。</p>
+<p>58 同城优先将DBA使用的线上数据统计信息库迁移到了 OceanBase4.2.1版本，搭建了一套配置为 64核&#x2F;512G&#x2F;NVMe SSD 的6节点集群，将原有TiDB&#x2F;MySQL 20+节点的集群统一迁移到一套 OceanBase 集群上，不同业务的统计数据按照租户进行拆分。这样不仅利用 OceanBase 的高压缩比节省了存储空间（大约节省50%），还能把节点数量从20+个缩减到6个，机器成本缩减了80%左右。</p>
+<p>在上线流程中，58同城使用OMS将一张 21 亿行的表从 MySQL 迁移到 OceanBase，迁移完成后，达到磁盘占用量的顶峰 259GB，全量合并后，数据约 157GB 。也就是说，MySQL单副本1.5TB大表迁移到OceanBase后是双副本 155GB，从单副本来看的话，应该只有 80GB 左右，数据从1.5TB 变成 80GB，整体压缩率达到95%。</p>
+<h3 id="（三）怪兽充电历史库迁移OceanBase，存储成本降71"><a href="#（三）怪兽充电历史库迁移OceanBase，存储成本降71" class="headerlink" title="（三）怪兽充电历史库迁移OceanBase，存储成本降71%"></a>（三）怪兽充电历史库迁移OceanBase，存储成本降71%</h3><p>怪兽充电作为共享充电宝第一股，注册用户超3.6亿，日均订单量190万笔，业务增长迅速，以至于业务架构不停地增加组件。当时使用的混合云架构复杂，微服务与多数据组件（MySQL、Elasticsearch等）并存，面临运维成本高、存储成本高、扩展性差等诸多问题。</p>
+<p>怪兽充电的订单业务主要是充电宝，其特点是客单价较低、单量大。从MySQL下图是订单业务使用的数据库情况。主要包含支持用户下单的高并发实时数据库、满足后台多字段的联合查询需求的Elasticsearch 集群、使用 MySQL 分库分表的历史库。迁移到OceanBase后，存储量从原来的 9.62TB*2（9.62 为单 MySQL 实例，考虑主从高可用部署所以乘以 2）变为 5.6TB（三副本的总存储量），存储成本节约了 71%。64个 MySQL 库合并为单集群，减少了分库分表维护负担，且短期之内无容量瓶颈问题，大幅度降低了存储成本，简化了运维难度。</p>
+<h3 id="（四）携程双业务升级数据库，硬件降本60-，存储降本85"><a href="#（四）携程双业务升级数据库，硬件降本60-，存储降本85" class="headerlink" title="（四）携程双业务升级数据库，硬件降本60%，存储降本85%"></a>（四）携程双业务升级数据库，硬件降本60%，存储降本85%</h3><p>携程金融业务的快速发展使业务表单表数据量在 2023 年急剧攀升至 300 亿 KV 对，每日更新峰值高达 500 亿。原有的存储架构在面对如此海量数据时，存储容量扩展艰难，写入性能低下，无法满足数据快速写入的需求，且查询稳定性也难以保障，严重影响金融业务的实时性与准确性，制约了业务的进一步拓展。</p>
+<p>上线OceanBase后，在性能方面实现了每分钟 6000 万次的写入速度，每日可写入 864 亿条数据，远超业务需求。高优先级任务的 2 小时完成率从原本的 60% 大幅提升至接近 100%；在降本方面，存储总空间降低了 72%，硬件成本降低近 60%；在应用架构方面，由于无需处理复杂的分库分表逻辑，应用架构得到极大精简，应用机器数量和 CPU 核数均精简了 50%，有效提升了系统的整体运行效率，为携程金融业务的持续发展奠定了坚实的技术基础。</p>
+<p>携程历史库早期使用 SQL Server，后迁移至 MySQL，但随着业务增长，扩容复杂、存储成本高、维护耗时等问题逐渐显露。为减少生产环境压力，携程将冷数据归档到历史库，但最初采用的MyRocks因扩容困难无法满足激增的数据需求。后续携程 MySQL 历史库中大小为 475G 的表，迁移到 OceanBase 后仅占 55G，平均存储资源仅为原来的1&#x2F;8，存储成本降低85%左右。</p>
+<h3 id="（五）多点新零售转型，成本节省80"><a href="#（五）多点新零售转型，成本节省80" class="headerlink" title="（五）多点新零售转型，成本节省80%"></a>（五）多点新零售转型，成本节省80%</h3><p>多点作为零售数字化领域的先锋，不仅是国内顶尖的全局数字化解决方案提供商，更在亚洲市场上占据领先地位。在数字化转型的趋势下，其主要使用的六种开源数据库，使整个生产环境中的数据库实例已超过一万个，数据空间规模也接近10PB级别。导致系统面临系统复杂度高、数据增长迅速、资源成本高昂以及运维成本居高不下等挑战。</p>
+<p>截至2025年1月，多点已在 OceanBase 成功上线了五个业务库，数据量 20T，涵盖物流系统、结算系统、虚拟系统以及监控和快照慢查询分析库，成本效益显著。例如在 MySQL 中2.1T的单副本数据量，迁移到OceanBase 后锐减至252GB。单副本的压缩率已接近惊人的90%。由于 MySQL 采用一主两副本架构，而 OceanBase则采用三副本架构，综合计算下来，OceanBase 的整体压缩率带来了超过80%的成本节省。</p>
+<h3 id="（六）云集电商规模化降本实践，经济成本降87-5"><a href="#（六）云集电商规模化降本实践，经济成本降87-5" class="headerlink" title="（六）云集电商规模化降本实践，经济成本降87.5%"></a>（六）云集电商规模化降本实践，经济成本降87.5%</h3><p>云集电商是一家类似于淘宝和京东的电商公司，但更聚焦于社交电商，致力于通过”精选”策略，为会员提供超高性价比的全品类精选商品，帮助亿万消费者以”批发价”买到品质可靠的商品。受近几年外部环境的影响，对服务器成本和人力成本要求越来越高。且当前服务器成本占总成本85%以上，亟需降低硬件开支、提升资源利用率、减少运维复杂度。</p>
+<p>通过引入OceanBase，业务由原来的CDB + ETL + 大数据的架构转变为一套OceanBase集群支撑HTAP业务，减少了数据链路的中间环节，同一套技术栈同时降低开发工作量，通过OceanBase RTO&lt;8s、RPO&#x3D;0的高可靠性也满足了等保审核的需求。总的来说，云集实现了机器、存储、人力运维等多方面的成本优化，由原来每月服务器高达800多万的成本峰值，降为现在不到100万，节约87.5%的经济成本。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于企业而言，降本不是单一层面的优化，而是硬件+存储+软件的全栈协同，OceanBase 致力于在硬件兼容、生态易用、存储引擎等各方面不断优化创新。通过高数据压缩率、多租户资源隔离降低资源碎片化、编码与压缩技术等多重核心技术，实现直接降本；支持HTAP混合引擎、KV多模态、向量化等多种业务需求，减少运维复杂度，避免多套系统混合部署，实现间接降本；通过单机分布式一体化架构适配业务全生命周期，避免频繁更换数据库的迁移成本，提高长期使用的性价比。这些特点让越来越多的企业选择 OceanBase ，OceanBase 也不断探索，以技术创新为核心驱动力，致力于为企业降本带来更大空间。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/LSM-Tree/" rel="tag"># LSM-Tree</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%8E%8B%E7%BC%A9/" rel="tag"># 数据压缩</a>
+              <a href="/tags/%E5%8D%95%E6%9C%BA%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%80%E4%BD%93%E5%8C%96/" rel="tag"># 单机分布式一体化</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/Compaction/" rel="tag"># Compaction</a>
+              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" rel="tag"># 存储引擎</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-28-vibe-coding-opensource-community/" rel="prev" title="Vibe Coding 时代的开源社区开发新体验">
+                  <i class="fa fa-angle-left"></i> Vibe Coding 时代的开源社区开发新体验
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-30-tal-ai-oceanbase-cost-reduction/" rel="next" title="走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86%">
+                  走出三大困境，深耕五大场景 | 好未来AI业务探索OceanBase实现降本86% <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

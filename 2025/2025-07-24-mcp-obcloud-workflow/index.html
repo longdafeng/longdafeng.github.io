@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="传统数据库运维需要在控制台逐级点击、反复查阅文档，耗时且低效。本文从前端视角出发，介绍如何基于 MCP 协议与大模型构建 OB Cloud 全新运维工作流，通过实例诊断、配置修改、SQL 可视化等案例，展示 AI 替代传统 GUI 的可能性。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI替代传统GUI：基于 MCP 的 OBCloud 工作流">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="传统数据库运维需要在控制台逐级点击、反复查阅文档，耗时且低效。本文从前端视角出发，介绍如何基于 MCP 协议与大模型构建 OB Cloud 全新运维工作流，通过实例诊断、配置修改、SQL 可视化等案例，展示 AI 替代传统 GUI 的可能性。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/05.png">
+<meta property="article:published_time" content="2025-07-24T09:11:28.000Z">
+<meta property="article:modified_time" content="2025-07-25T09:43:34.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OB Cloud">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="人机交互">
+<meta property="article:tag" content="大模型">
+<meta property="article:tag" content="数据库运维">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-24-mcp-obcloud-workflow/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/","path":"2025/2025-07-24-mcp-obcloud-workflow/","title":"AI替代传统GUI：基于 MCP 的 OBCloud 工作流"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>AI替代传统GUI：基于 MCP 的 OBCloud 工作流 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E4%BA%A4%E4%BA%92%E4%B8%8B%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4"><span class="nav-number">1.</span> <span class="nav-text">传统交互下的数据库运维</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%AB%AF%E8%A7%86%E8%A7%92%E4%B8%8B-AI-%E4%B8%BA%E8%BF%90%E7%BB%B4%E5%B8%A6%E6%9D%A5%E7%9A%84%E5%8F%98%E5%8C%96%E5%92%8C%E6%8C%91%E6%88%98"><span class="nav-number">2.</span> <span class="nav-text">前端视角下 AI 为运维带来的变化和挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AI%E6%9B%BF%E4%BB%A3%E4%BC%A0%E7%BB%9FGUI%EF%BC%9AOB-Cloud-MCP"><span class="nav-number">2.1.</span> <span class="nav-text">AI替代传统GUI：OB Cloud MCP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OB-Cloud-MCP-%E6%89%A7%E8%A1%8C%E6%A1%88%E4%BE%8B%EF%BC%9A%E5%AE%9E%E4%BE%8B%E4%BF%A1%E6%81%AF%E8%8E%B7%E5%8F%96%E3%80%81%E8%AF%8A%E6%96%AD"><span class="nav-number">2.2.</span> <span class="nav-text">OB Cloud MCP 执行案例：实例信息获取、诊断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OB-Cloud-MCP-%E6%89%A7%E8%A1%8C%E6%A1%88%E4%BE%8B%EF%BC%9ASQL-%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="nav-number">2.3.</span> <span class="nav-text">OB Cloud MCP 执行案例：SQL 可视化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="AI替代传统GUI：基于 MCP 的 OBCloud 工作流 | Longda's Interesting World">
+      <meta itemprop="description" content="传统数据库运维需要在控制台逐级点击、反复查阅文档，耗时且低效。本文从前端视角出发，介绍如何基于 MCP 协议与大模型构建 OB Cloud 全新运维工作流，通过实例诊断、配置修改、SQL 可视化等案例，展示 AI 替代传统 GUI 的可能性。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AI替代传统GUI：基于 MCP 的 OBCloud 工作流
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-24 17:11:28" itemprop="dateCreated datePublished" datetime="2025-07-24T17:11:28+08:00">2025-07-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">乔磊</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">传统数据库运维需要在控制台逐级点击、反复查阅文档，耗时且低效。本文从前端视角出发，介绍如何基于 MCP 协议与大模型构建 OB Cloud 全新运维工作流，通过实例诊断、配置修改、SQL 可视化等案例，展示 AI 替代传统 GUI 的可能性。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AI替代传统GUI：基于 MCP 的 OBCloud 工作流","description":"传统数据库运维需要在控制台逐级点击、反复查阅文档，耗时且低效。本文从前端视角出发，介绍如何基于 MCP 协议与大模型构建 OB Cloud 全新运维工作流，通过实例诊断、配置修改、SQL 可视化等案例，展示 AI 替代传统 GUI 的可能性。","image":"https://ilongda.com/img/7-24-mcp-obcloud-workflow/01.png","wordCount":1977,"datePublished":"2025-07-24T09:11:28.000Z","dateModified":"2025-07-25T09:43:34.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/"},"url":"https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/","inLanguage":"zh-CN","keywords":["OceanBase","AI","大模型","MCP","数据库运维","OB Cloud","人机交互"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"AI替代传统GUI：基于 MCP 的 OBCloud 工作流","item":"https://ilongda.com/2025/2025-07-24-mcp-obcloud-workflow/"}]}</script>
+<blockquote>
+<p>作者：乔磊，OceanBase 前端工程师</p>
+</blockquote>
+<h2 id="传统交互下的数据库运维"><a href="#传统交互下的数据库运维" class="headerlink" title="传统交互下的数据库运维"></a>传统交互下的数据库运维</h2><p>作为一名与数据库密切相关且经验丰富的开发人员，在定位问题时，通常需要查看 OceanBase 实例。</p>
+<p>在 OB Cloud 控制台中，用户可以查看 OceanBase 实例、租户、节点以及代理等信息。此外，控制台提供了多达几十甚至上百项的监控指标，用于观察是否存在异常情况。然而，用户往往需要通过逐级点击和逐步排查的方式进行定位。在某些情况下，用户还需要深入 OB Cloud 的诊断模块，排查 top sql、slow sql、可疑 sql 或高危 sql 等，以确定问题的可能位置。在经过上述两步操作后，通常还需继续深入数据库内部执行相关操作，进一步定位问题。此时，用户可能需要结合 OceanBase 官网文档查阅相关资料，以辅助思考并确定可能的搜索方向，从而定位问题。</p>
+<span id="more"></span>
+
+<p>回顾上述交互流程，可以看到一些问题（局限性）。</p>
+<ol>
+<li><p>OB Cloud 管控台的 UI 界面，是面向所有用户的一个”通用性”的交互方案，为了满足信息架构的逻辑性，难免会牺牲操作的便捷性，举例来说，你的操作路径总是：</p>
+<ul>
+<li>选择 obcloud 实例 -&gt; 选择租户 -&gt; 查看监控 -&gt; 切换监控指标 -&gt; 查看租户诊断 -&gt; 筛选诊断信息</li>
+<li>选择 obcloud 实例 -&gt; 选择租户 -&gt; 选择 unit -&gt; 查看 unit 监控 -&gt; 切换监控指标</li>
+</ul>
+</li>
+<li><p>在官网查文档则可以视为另一个重复的交互过程，直接查阅不可能命中你想要的答案，总是需要多次浏览、阅读文档，才能找到可能有效的方案。</p>
+</li>
+</ol>
+<p>从交互和查阅两个方面来看，用户实际上花费了大量时间在这些重复的操作上，而日常运维工作往往也遵循类似的流程。尽管在实际工作中，遇到问题的概率相对较小，很多时候用户只是想检查当前运行的实例和数据库是否存在异常，但完成这样一套重复的操作仍会耗费大量时间。</p>
+<h2 id="前端视角下-AI-为运维带来的变化和挑战"><a href="#前端视角下-AI-为运维带来的变化和挑战" class="headerlink" title="前端视角下 AI 为运维带来的变化和挑战"></a>前端视角下 AI 为运维带来的变化和挑战</h2><p>随着人工智能技术的兴起，尤其是近一年来 AI 的广泛应用，人们在遇到问题时的反应发生了显著变化。以往，人们可能会首先通过搜索引擎查找答案，而现在，他们更倾向于直接向 AI 助手（如 DeepSeek）提问。</p>
+<p>这是因为 AI 能够更高效地理解用户意图，并基于该意图整合出更符合用户需求的答案，从而在大多数场景下消除许多无效的交互过程。例如，当用户询问”牛肉怎么做才好吃”时，AI 能够准确地提供答案，而如果通过搜索引擎查找，用户可能需要浏览多个标题，甚至将多个来源的信息拼凑在一起才能找到满意的答案。</p>
+<p>那么，AI 可以为传统运维带来哪些改变？</p>
+<h3 id="AI替代传统GUI：OB-Cloud-MCP"><a href="#AI替代传统GUI：OB-Cloud-MCP" class="headerlink" title="AI替代传统GUI：OB Cloud MCP"></a>AI替代传统GUI：OB Cloud MCP</h3><p>在 AI 时代的人机交互中，数据才是核心要素。图形用户界面（GUI）的存在主要是为了帮助人们更好地理解数据。结合 AI 技术，我们可以利用大模型替代传统的图形界面，帮助用户理解数据。与上述 OB Cloud 的交互和查阅官网文档的过程相比，大模型可以取代中间的交互环节。</p>
+<p><img data-src="/img/7-24-mcp-obcloud-workflow/01.png" alt="基于 MCP 的 OB Cloud 工作流架构"></p>
+<p>图中的 MCP 是 Function call 的一种标准协议形式，主要用处是把用户的意图（action），转化为可被执行的 Function。</p>
+<p>OB Cloud MCP 提供了两类可被大模型执行的 Function：</p>
+<ul>
+<li>获取 OB 实例信息：如：list_tenants（获取某实例租户列表信息）、diagnostics（获取某个租户的相关指标信息已诊断）。</li>
+<li>连接数据库并执行 sql（被大模型转为 sql 的自然语言）</li>
+</ul>
+<p>整个流程可以概括为：在对话过程中，系统会尝试匹配是否命中 MCP。如果命中 MCP，系统会判断是否仅涉及资源状态信息查询。如果是，则查询相关信息并返回给大模型进行处理；如果不是，则基于 OB 文档和用户语义生成搜索词并查询。如果没有命中 MCP，则基于 OB 知识库文档给出回答，或者由底层大模型自行处理。以下是一些演示案例。</p>
+<h3 id="OB-Cloud-MCP-执行案例：实例信息获取、诊断"><a href="#OB-Cloud-MCP-执行案例：实例信息获取、诊断" class="headerlink" title="OB Cloud MCP 执行案例：实例信息获取、诊断"></a>OB Cloud MCP 执行案例：实例信息获取、诊断</h3><p>首先，用户尝试询问当前实例的状态。系统匹配到对应的 MCP 后，执行相关操作并列出实例信息和诊断结果。通过调用 OB Cloud 的 API，系统将数据传递给大模型进行处理。用户可以看到实例的诊断结果，包括 SQL 语句的执行情况、性能表现、慢查询情况以及资源使用情况等。从结果来看，资源使用情况较为健康，活跃用户和主要操作的数据库也一目了然。</p>
+<p><img data-src="/img/7-24-mcp-obcloud-workflow/02.png" alt="实例信息获取演示"></p>
+<p><img data-src="/img/7-24-mcp-obcloud-workflow/03.png" alt="实例诊断结果演示"></p>
+<p><strong>OB Cloud MCP 执行案例：修改系统配置</strong></p>
+<p>另一个案例是修改系统配置。用户尝试开启数据库的日志监控，系统执行多次操作并启用 circle 审计。在启用 SQL 审计后，系统发现审计的百分比较低，于是尝试提高该值。在日常操作中，用户可能需要查阅 OB 文档才能执行此类操作。然而，日志监控和 SQL 审计并非强相关的名词对应关系，用户可能需要经过多轮查询才能掌握相关知识。</p>
+<p><img data-src="/img/7-24-mcp-obcloud-workflow/04.png" alt="修改系统配置演示"></p>
+<h3 id="OB-Cloud-MCP-执行案例：SQL-可视化"><a href="#OB-Cloud-MCP-执行案例：SQL-可视化" class="headerlink" title="OB Cloud MCP 执行案例：SQL 可视化"></a>OB Cloud MCP 执行案例：SQL 可视化</h3><p>最后一个案例是尝试对某张表的数据进行可视化。系统查询出相关数据并进行了可视化处理。这种数据可视化能力取决于 MCP 客户端的支持情况。虽然这不是由用户直接实现的，而是通过调用 OB Cloud 的功能完成的，但它展示了通过大模型处理数据并将其转换为可被图表识别的格式的可能性。用户甚至可以自行实现一个客户端，将数据进行可视化展示。</p>
+<p><img data-src="/img/7-24-mcp-obcloud-workflow/05.png" alt="SQL 数据可视化演示"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>回顾前面提到的繁琐交互过程，基于大模型和 MCP 协议，我们可以构建一套全新的数据库运维工作流。这种工作流能够实现个性化的效果，即根据用户不同的数据库工程师水平、能力以及问题需求，大模型可以提供相应的反馈并帮助解决问题。</p>
+<p>未来，用户的日常运维工作可能只需与大模型进行交流即可，甚至可以借助大模型完成一些商业智能（BI）操作。相关代码已提交至 GitHub：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9tY3Atb2NlYW5iYXNlL3RyZWUvbWFpbi9zcmMvb2JjbG91ZF9tY3Bfc2VydmVy">https://github.com/oceanbase/mcp-oceanbase/tree/main/src/obcloud_mcp_server<i class="fa fa-external-link-alt"></i></span>，并附有详细的 MCP 使用教程，欢迎感兴趣的用户及开发者参考。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个 Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/AI/" rel="tag"># AI</a>
+              <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" rel="tag"># 大模型</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/" rel="tag"># 数据库运维</a>
+              <a href="/tags/OB-Cloud/" rel="tag"># OB Cloud</a>
+              <a href="/tags/%E4%BA%BA%E6%9C%BA%E4%BA%A4%E4%BA%92/" rel="tag"># 人机交互</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-23-weibo-partition-table-practice/" rel="prev" title="微博基于OceanBase数据库架构升级实战: 又稳又省">
+                  <i class="fa fa-angle-left"></i> 微博基于OceanBase数据库架构升级实战: 又稳又省
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-28-vibe-coding-opensource-community/" rel="next" title="Vibe Coding 时代的开源社区开发新体验">
+                  Vibe Coding 时代的开源社区开发新体验 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

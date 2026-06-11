@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文是一篇喂饭级教程，手把手演示如何基于 OceanBase seekdb 构建 RAG 检索增强生成系统，涵盖环境搭建、三种 Embedding 函数配置、数据导入、向量检索与 Streamlit 应用启动的完整流程。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用">
+<meta property="og:url" content="https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文是一篇喂饭级教程，手把手演示如何基于 OceanBase seekdb 构建 RAG 检索增强生成系统，涵盖环境搭建、三种 Embedding 函数配置、数据导入、向量检索与 Streamlit 应用启动的完整流程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-rag-tutorial/01.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-rag-tutorial/02.png">
+<meta property="article:published_time" content="2025-12-04T23:11:33.000Z">
+<meta property="article:modified_time" content="2025-12-04T23:11:33.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Embedding">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="pyseekdb">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-rag-tutorial/01.jpeg">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/","path":"2025/2025-12-05-seekdb-rag-tutorial/","title":"喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E6%8F%90%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">前提条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">准备工作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%8B%E9%9A%86%E4%BB%A3%E7%A0%81"><span class="nav-number">2.1.</span> <span class="nav-text">克隆代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83"><span class="nav-number">2.2.</span> <span class="nav-text">设置环境</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E4%BD%BF%E7%94%A8%E7%9A%84%E6%A8%A1%E5%9D%97"><span class="nav-number">3.</span> <span class="nav-text">主要使用的模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96-LLM-%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">3.1.</span> <span class="nav-text">初始化 LLM 客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5"><span class="nav-number">3.2.</span> <span class="nav-text">创建数据库连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B5%8C%E5%85%A5%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F"><span class="nav-number">3.3.</span> <span class="nav-text">自定义嵌入模型的工厂模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA-Collection"><span class="nav-number">3.4.</span> <span class="nav-text">创建 Collection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%8F%92%E5%85%A5%E6%95%B0%E6%8D%AE%E5%87%BD%E6%95%B0"><span class="nav-number">3.5.</span> <span class="nav-text">核心插入数据函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%9B%B8%E4%BC%BC%E5%BA%A6%E6%90%9C%E7%B4%A2"><span class="nav-number">3.6.</span> <span class="nav-text">向量相似度搜索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%9F%E8%AE%A1-Collection-%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E6%83%85%E5%86%B5"><span class="nav-number">3.7.</span> <span class="nav-text">统计 Collection 中的数据情况</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA-RAG-%E7%B3%BB%E7%BB%9F"><span class="nav-number">4.</span> <span class="nav-text">构建 RAG 系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5%E6%95%B0%E6%8D%AE"><span class="nav-number">4.1.</span> <span class="nav-text">导入数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%BA%94%E7%94%A8"><span class="nav-number">4.2.</span> <span class="nav-text">启动应用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">实际运行示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E4%BD%93%E9%AA%8C"><span class="nav-number">6.</span> <span class="nav-text">快速体验</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用 | Longda's Interesting World">
+      <meta itemprop="description" content="本文是一篇喂饭级教程，手把手演示如何基于 OceanBase seekdb 构建 RAG 检索增强生成系统，涵盖环境搭建、三种 Embedding 函数配置、数据导入、向量检索与 Streamlit 应用启动的完整流程。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-05 07:11:33" itemprop="dateCreated datePublished" datetime="2025-12-05T07:11:33+08:00">2025-12-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文是一篇喂饭级教程，手把手演示如何基于 OceanBase seekdb 构建 RAG 检索增强生成系统，涵盖环境搭建、三种 Embedding 函数配置、数据导入、向量检索与 Streamlit 应用启动的完整流程。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用","description":"本文是一篇喂饭级教程，手把手演示如何基于 OceanBase seekdb 构建 RAG 检索增强生成系统，涵盖环境搭建、三种 Embedding 函数配置、数据导入、向量检索与 Streamlit 应用启动的完整流程。","image":"https://ilongda.com/img/seekdb-rag-tutorial/01.jpeg","wordCount":3151,"datePublished":"2025-12-04T23:11:33.000Z","dateModified":"2025-12-04T23:11:33.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/"},"url":"https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/","inLanguage":"zh-CN","keywords":["OceanBase","Embedding","RAG","向量检索","seekdb","pyseekdb","Python"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用","item":"https://ilongda.com/2025/2025-12-05-seekdb-rag-tutorial/"}]}</script>
+<blockquote>
+<p>✨ 对 seekdb 感兴趣的朋友，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 进行体验，跟着教程一起动手实践，快速构建你的 RAG 应用！</p>
+</blockquote>
+<p>本文又是一篇喂饭级教程，为大家展示通过 OceanBase seekdb 构建 RAG（检索增强生成）系统的详细步骤。</p>
+<p><img data-src="/img/seekdb-rag-tutorial/01.jpeg" alt="喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用"></p>
+<p>RAG 系统结合了检索系统和生成模型，可根据给定提示生成新文本。系统首先使用 seekdb 的原生向量搜索功能从语料库中检索相关文档，然后使用生成模型根据检索到的文档生成新文本。</p>
+<span id="more"></span>
+
+<h2 id="前提条件"><a href="#前提条件" class="headerlink" title="前提条件"></a>前提条件</h2><ul>
+<li>已安装 Python 3.11 或以上版本</li>
+<li>已安装 uv</li>
+<li>已准备好 LLM API Key</li>
+</ul>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h3 id="克隆代码"><a href="#克隆代码" class="headerlink" title="克隆代码"></a>克隆代码</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/pyseekdb.git</span><br><span class="line"><span class="built_in">cd</span> pyseekdb/demo/rag</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置环境"><a href="#设置环境" class="headerlink" title="设置环境"></a>设置环境</h3><h4 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h4><p>基础安装（适用于 <code>default</code> 或 <code>api</code> embedding 类型）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv <span class="built_in">sync</span></span><br></pre></td></tr></table></figure>
+
+<p>本地模型（适用于 <code>local</code> embedding 类型）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv <span class="built_in">sync</span> --extra <span class="built_in">local</span></span><br></pre></td></tr></table></figure>
+
+<p>提示：</p>
+<ul>
+<li><code>local</code> 额外依赖包含 <code>sentence-transformers</code> 及相关依赖（约 2-3 GB）。</li>
+<li>如果您在中国大陆，可以使用国内镜像源加速下载：<ul>
+<li>基础安装（清华源）：<code>uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple</code></li>
+<li>基础安装（阿里源）：<code>uv sync --index-url https://mirrors.aliyun.com/pypi/simple</code></li>
+<li>本地模型（清华源）：<code>uv sync --extra local --index-url https://pypi.tuna.tsinghua.edu.cn/simple</code></li>
+<li>本地模型（阿里源）：<code>uv sync --extra local --index-url https://mirrors.aliyun.com/pypi/simple</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="设置环境变量"><a href="#设置环境变量" class="headerlink" title="设置环境变量"></a>设置环境变量</h4><p>步骤一：复制环境变量模板</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> .env.example .<span class="built_in">env</span></span><br></pre></td></tr></table></figure>
+
+<p>步骤二：编辑 <code>.env</code> 文件，设置环境变量</p>
+<p>本系统支持三种 Embedding 函数类型，您可以根据需求选择：</p>
+<ol>
+<li><code>default</code>（默认，推荐新手使用）<ul>
+<li>使用 pyseekdb 自带的 <code>DefaultEmbeddingFunction</code>（基于 ONNX）</li>
+<li>首次使用会自动下载模型，无需配置 API Key</li>
+<li>适合本地开发和测试</li>
+</ul>
+</li>
+<li><code>local</code>（本地模型）<ul>
+<li>使用自定义的 <code>sentence-transformers</code> 模型</li>
+<li>需要安装 <code>sentence-transformers</code> 库</li>
+<li>可配置模型名称和设备（CPU&#x2F;GPU）</li>
+</ul>
+</li>
+<li><code>api</code>（API 服务）<ul>
+<li>使用 OpenAI 兼容的 Embedding API（如 DashScope、OpenAI 等）</li>
+<li>需要配置 API Key 和模型名称</li>
+<li>适合生产环境</li>
+</ul>
+</li>
+</ol>
+<p>以下使用通义千问作为示例（使用 <code>api</code> 类型）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Embedding Function 类型：api, local, default</span></span><br><span class="line">EMBEDDING_FUNCTION_TYPE=api</span><br><span class="line"></span><br><span class="line"><span class="comment"># LLM 配置（用于生成答案）</span></span><br><span class="line">OPENAI_API_KEY=sk-your-dashscope-key</span><br><span class="line">OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1</span><br><span class="line">OPENAI_MODEL_NAME=qwen-plus</span><br><span class="line"></span><br><span class="line"><span class="comment"># Embedding API 配置（仅在 EMBEDDING_FUNCTION_TYPE=api 时需要）</span></span><br><span class="line">EMBEDDING_API_KEY=sk-your-dashscope-key</span><br><span class="line">EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1</span><br><span class="line">EMBEDDING_MODEL_NAME=text-embedding-v4</span><br><span class="line"></span><br><span class="line"><span class="comment"># 本地模型配置（仅在 EMBEDDING_FUNCTION_TYPE=local 时需要）</span></span><br><span class="line">SENTENCE_TRANSFORMERS_MODEL_NAME=all-mpnet-base-v2</span><br><span class="line">SENTENCE_TRANSFORMERS_DEVICE=cpu</span><br><span class="line"></span><br><span class="line"><span class="comment"># seekdb 配置</span></span><br><span class="line">SEEKDB_DIR=./data/seekdb_rag</span><br><span class="line">SEEKDB_NAME=<span class="built_in">test</span></span><br><span class="line">COLLECTION_NAME=embeddings</span><br></pre></td></tr></table></figure>
+
+<p>环境变量说明：</p>
+<table>
+<thead>
+<tr>
+<th>变量名</th>
+<th>说明</th>
+<th>默认值&#x2F;示例值</th>
+<th>必需条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EMBEDDING_FUNCTION_TYPE</td>
+<td>Embedding 函数类型</td>
+<td><code>default</code>（可选：<code>api</code>、<code>local</code>、<code>default</code>）</td>
+<td>必须设置</td>
+</tr>
+<tr>
+<td>OPENAI_API_KEY</td>
+<td>LLM API Key（支持 OpenAI、通义千问等兼容服务）</td>
+<td>-</td>
+<td>必须设置（用于生成答案）</td>
+</tr>
+<tr>
+<td>OPENAI_BASE_URL</td>
+<td>LLM API 基础 URL</td>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kYXNoc2NvcGUuYWxpeXVuY3MuY29tL2NvbXBhdGlibGUtbW9kZS92MQ==">https://dashscope.aliyuncs.com/compatible-mode/v1<i class="fa fa-external-link-alt"></i></span></td>
+<td>可选</td>
+</tr>
+<tr>
+<td>OPENAI_MODEL_NAME</td>
+<td>语言模型名称</td>
+<td>qwen-plus</td>
+<td>可选</td>
+</tr>
+<tr>
+<td>EMBEDDING_API_KEY</td>
+<td>Embedding API Key</td>
+<td>-</td>
+<td><code>EMBEDDING_FUNCTION_TYPE=api</code> 时必需</td>
+</tr>
+<tr>
+<td>EMBEDDING_BASE_URL</td>
+<td>Embedding API 基础 URL</td>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kYXNoc2NvcGUuYWxpeXVuY3MuY29tL2NvbXBhdGlibGUtbW9kZS92MQ==">https://dashscope.aliyuncs.com/compatible-mode/v1<i class="fa fa-external-link-alt"></i></span></td>
+<td><code>EMBEDDING_FUNCTION_TYPE=api</code> 时可选</td>
+</tr>
+<tr>
+<td>EMBEDDING_MODEL_NAME</td>
+<td>Embedding 模型名称</td>
+<td>text-embedding-v4</td>
+<td><code>EMBEDDING_FUNCTION_TYPE=api</code> 时必需</td>
+</tr>
+<tr>
+<td>SENTENCE_TRANSFORMERS_MODEL_NAME</td>
+<td>本地模型名称</td>
+<td>all-mpnet-base-v2</td>
+<td><code>EMBEDDING_FUNCTION_TYPE=local</code> 时可选</td>
+</tr>
+<tr>
+<td>SENTENCE_TRANSFORMERS_DEVICE</td>
+<td>运行设备</td>
+<td>cpu</td>
+<td><code>EMBEDDING_FUNCTION_TYPE=local</code> 时可选</td>
+</tr>
+<tr>
+<td>SEEKDB_DIR</td>
+<td>seekdb 数据库目录</td>
+<td>.&#x2F;data&#x2F;seekdb_rag</td>
+<td>可选</td>
+</tr>
+<tr>
+<td>SEEKDB_NAME</td>
+<td>数据库名称</td>
+<td>test</td>
+<td>可选</td>
+</tr>
+<tr>
+<td>COLLECTION_NAME</td>
+<td>嵌入表名称</td>
+<td>embeddings</td>
+<td>可选</td>
+</tr>
+</tbody></table>
+<p>提示：</p>
+<ul>
+<li>如果使用 <code>default</code> 类型，只需配置 <code>EMBEDDING_FUNCTION_TYPE=default</code> 和 LLM 相关变量即可。</li>
+<li>如果使用 <code>api</code> 类型，需要额外配置 Embedding API 相关变量。</li>
+<li>如果使用 <code>local</code> 类型，需要安装 <code>sentence-transformers</code> 库，并可选择配置模型名称。</li>
+</ul>
+<h2 id="主要使用的模块"><a href="#主要使用的模块" class="headerlink" title="主要使用的模块"></a>主要使用的模块</h2><h3 id="初始化-LLM-客户端"><a href="#初始化-LLM-客户端" class="headerlink" title="初始化 LLM 客户端"></a>初始化 LLM 客户端</h3><p>我们通过加载环境变量来初始化 LLM 客户端：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_llm_client</span>() -&gt; OpenAI:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Initialize LLM client using OpenAI-compatible API.&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> OpenAI(</span><br><span class="line">        api_key=os.getenv(<span class="string">&quot;OPENAI_API_KEY&quot;</span>),</span><br><span class="line">        base_url=os.getenv(<span class="string">&quot;OPENAI_BASE_URL&quot;</span>),</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建数据库连接"><a href="#创建数据库连接" class="headerlink" title="创建数据库连接"></a>创建数据库连接</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_seekdb_client</span>(<span class="params">db_dir: <span class="built_in">str</span> = <span class="string">&quot;./seekdb_rag&quot;</span>, db_name: <span class="built_in">str</span> = <span class="string">&quot;test&quot;</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Initialize seekdb client (embedded mode).&quot;&quot;&quot;</span></span><br><span class="line">    cache_key = (db_dir, db_name)</span><br><span class="line">    <span class="keyword">if</span> cache_key <span class="keyword">not</span> <span class="keyword">in</span> _client_cache:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Connecting to seekdb: path=<span class="subst">&#123;db_dir&#125;</span>, database=<span class="subst">&#123;db_name&#125;</span>&quot;</span>)</span><br><span class="line">        _client_cache[cache_key] = Client(path=db_dir, database=db_name)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;seekdb client connected successfully&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> _client_cache[cache_key]</span><br></pre></td></tr></table></figure>
+
+<h3 id="自定义嵌入模型的工厂模式"><a href="#自定义嵌入模型的工厂模式" class="headerlink" title="自定义嵌入模型的工厂模式"></a>自定义嵌入模型的工厂模式</h3><p>在 <code>.env</code> 文件中可以通过配置 <code>EMBEDDING_FUNCTION_TYPE</code> 使用不同的 <code>embedding_function</code>。您也可以参考这个例子自定义您的 <code>embedding_function</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyseekdb <span class="keyword">import</span> EmbeddingFunction, DefaultEmbeddingFunction</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">List</span>, <span class="type">Union</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI</span><br><span class="line"></span><br><span class="line">Documents = <span class="type">Union</span>[<span class="built_in">str</span>, <span class="type">List</span>[<span class="built_in">str</span>]]</span><br><span class="line">Embeddings = <span class="type">List</span>[<span class="type">List</span>[<span class="built_in">float</span>]]</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SentenceTransformerCustomEmbeddingFunction</span>(EmbeddingFunction[Documents]):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    A custom embedding function using sentence-transformers with a specific model.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, model_name: <span class="built_in">str</span> = <span class="string">&quot;all-mpnet-base-v2&quot;</span>, device: <span class="built_in">str</span> = <span class="string">&quot;cpu&quot;</span></span>):  <span class="comment"># <span class="doctag">TODO:</span> your own model name and device</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Initialize the sentence-transformer embedding function.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">            model_name: Name of the sentence-transformers model to use</span></span><br><span class="line"><span class="string">            device: Device to run the model on (&#x27;cpu&#x27; or &#x27;cuda&#x27;)</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        self.model_name = model_name <span class="keyword">or</span> os.environ.get(<span class="string">&#x27;SENTENCE_TRANSFORMERS_MODEL_NAME&#x27;</span>)</span><br><span class="line">        self.device = device <span class="keyword">or</span> os.environ.get(<span class="string">&#x27;SENTENCE_TRANSFORMERS_DEVICE&#x27;</span>)</span><br><span class="line">        self._model = <span class="literal">None</span></span><br><span class="line">        self._dimension = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_ensure_model_loaded</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Lazy load the embedding model&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> self._model <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> SentenceTransformer</span><br><span class="line">                self._model = SentenceTransformer(self.model_name, device=self.device)</span><br><span class="line">                <span class="comment"># Get dimension from model</span></span><br><span class="line">                test_embedding = self._model.encode([<span class="string">&quot;test&quot;</span>], convert_to_numpy=<span class="literal">True</span>)</span><br><span class="line">                self._dimension = <span class="built_in">len</span>(test_embedding[<span class="number">0</span>])</span><br><span class="line">            <span class="keyword">except</span> ImportError:</span><br><span class="line">                <span class="keyword">raise</span> ImportError(</span><br><span class="line">                    <span class="string">&quot;sentence-transformers is not installed. &quot;</span></span><br><span class="line">                    <span class="string">&quot;Please install it with: pip install sentence-transformers&quot;</span></span><br><span class="line">                )</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">dimension</span>(<span class="params">self</span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Get the dimension of embeddings produced by this function&quot;&quot;&quot;</span></span><br><span class="line">        self._ensure_model_loaded()</span><br><span class="line">        <span class="keyword">return</span> self._dimension</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__call__</span>(<span class="params">self, <span class="built_in">input</span>: Documents</span>) -&gt; Embeddings:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Generate embeddings for the given documents.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">            input: Single document (str) or list of documents (List[str])</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Returns:</span></span><br><span class="line"><span class="string">            List of embedding vectors</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        self._ensure_model_loaded()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Handle single string input</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(<span class="built_in">input</span>, <span class="built_in">str</span>):</span><br><span class="line">            <span class="built_in">input</span> = [<span class="built_in">input</span>]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Handle empty input</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">input</span>:</span><br><span class="line">            <span class="keyword">return</span> []</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Generate embeddings</span></span><br><span class="line">        embeddings = self._model.encode(</span><br><span class="line">            <span class="built_in">input</span>,</span><br><span class="line">            convert_to_numpy=<span class="literal">True</span>,</span><br><span class="line">            show_progress_bar=<span class="literal">False</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Convert numpy arrays to lists</span></span><br><span class="line">        <span class="keyword">return</span> [embedding.tolist() <span class="keyword">for</span> embedding <span class="keyword">in</span> embeddings]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">OpenAIEmbeddingFunction</span>(EmbeddingFunction[Documents]):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    A custom embedding function using Embedding API.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, model_name: <span class="built_in">str</span> = <span class="string">&quot;&quot;</span>, api_key: <span class="built_in">str</span> = <span class="string">&quot;&quot;</span>, base_url: <span class="built_in">str</span> = <span class="string">&quot;&quot;</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Initialize the Embedding API embedding function.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">            model_name: Name of the Embedding API embedding model</span></span><br><span class="line"><span class="string">            api_key: Embedding API key (if not provided, uses EMBEDDING_API_KEY env var)</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        self.model_name = model_name <span class="keyword">or</span> os.environ.get(<span class="string">&#x27;EMBEDDING_MODEL_NAME&#x27;</span>)</span><br><span class="line">        self.api_key = api_key <span class="keyword">or</span> os.environ.get(<span class="string">&#x27;EMBEDDING_API_KEY&#x27;</span>)</span><br><span class="line">        self.base_url = base_url <span class="keyword">or</span> os.environ.get(<span class="string">&#x27;EMBEDDING_BASE_URL&#x27;</span>)</span><br><span class="line">        self._dimension = <span class="literal">None</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.api_key:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&quot;Embedding API key is required&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_ensure_model_loaded</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Lazy load the Embedding API model&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            client = OpenAI(</span><br><span class="line">                api_key=self.api_key,</span><br><span class="line">                base_url=self.base_url</span><br><span class="line">            )</span><br><span class="line">            response = client.embeddings.create(</span><br><span class="line">                model=self.model_name,</span><br><span class="line">                <span class="built_in">input</span>=[<span class="string">&quot;test&quot;</span>]</span><br><span class="line">            )</span><br><span class="line">            self._dimension = <span class="built_in">len</span>(response.data[<span class="number">0</span>].embedding)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">f&quot;Failed to load Embedding API model: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">dimension</span>(<span class="params">self</span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Get the dimension of embeddings produced by this function&quot;&quot;&quot;</span></span><br><span class="line">        self._ensure_model_loaded()</span><br><span class="line">        <span class="keyword">return</span> self._dimension</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__call__</span>(<span class="params">self, <span class="built_in">input</span>: Documents</span>) -&gt; Embeddings:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Generate embeddings using Embedding API.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">            input: Single document (str) or list of documents (List[str])</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        Returns:</span></span><br><span class="line"><span class="string">            List of embedding vectors</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment"># Handle single string input</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(<span class="built_in">input</span>, <span class="built_in">str</span>):</span><br><span class="line">            <span class="built_in">input</span> = [<span class="built_in">input</span>]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Handle empty input</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">input</span>:</span><br><span class="line">            <span class="keyword">return</span> []</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Call Embedding API</span></span><br><span class="line">        client = OpenAI(</span><br><span class="line">            api_key=self.api_key,</span><br><span class="line">            base_url=self.base_url</span><br><span class="line">        )</span><br><span class="line">        response = client.embeddings.create(</span><br><span class="line">            model=self.model_name,</span><br><span class="line">            <span class="built_in">input</span>=<span class="built_in">input</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Extract Embedding API embeddings</span></span><br><span class="line">        embeddings = [item.embedding <span class="keyword">for</span> item <span class="keyword">in</span> response.data]</span><br><span class="line">        <span class="keyword">return</span> embeddings</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create_embedding_function</span>() -&gt; EmbeddingFunction:</span><br><span class="line">    embedding_function_type = os.environ.get(<span class="string">&#x27;EMBEDDING_FUNCTION_TYPE&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> embedding_function_type == <span class="string">&quot;api&quot;</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Using OpenAI Embedding API embedding function&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> OpenAIEmbeddingFunction()</span><br><span class="line">    <span class="keyword">elif</span> embedding_function_type == <span class="string">&quot;local&quot;</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Using SentenceTransformer embedding function&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> SentenceTransformerCustomEmbeddingFunction()</span><br><span class="line">    <span class="keyword">elif</span> embedding_function_type == <span class="string">&quot;default&quot;</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Using Default embedding function&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> DefaultEmbeddingFunction()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">f&quot;Unsupported embedding function type: <span class="subst">&#123;embedding_function_type&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建-Collection"><a href="#创建-Collection" class="headerlink" title="创建 Collection"></a>创建 Collection</h3><p>在 <code>get_or_create_collection()</code> 方法中我们传入了 <code>embedding_function</code>，之后使用这个 collection 的 <code>add()</code> 和 <code>query()</code> 方法的时候就不需要传入向量了，只需传入文本，向量会由 <code>embedding_function</code> 自动生成。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_seekdb_collection</span>(<span class="params">client, collection_name: <span class="built_in">str</span> = <span class="string">&quot;embeddings&quot;</span>,</span></span><br><span class="line"><span class="params">                  embedding_function: <span class="type">Optional</span>[EmbeddingFunction] = DefaultEmbeddingFunction(<span class="params"></span>),</span></span><br><span class="line"><span class="params">                  drop_if_exists: <span class="built_in">bool</span> = <span class="literal">True</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Get or create a collection using pyseekdb&#x27;s get_or_create_collection.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Args:</span></span><br><span class="line"><span class="string">        client: seekdb client instance</span></span><br><span class="line"><span class="string">        collection_name: Name of the collection</span></span><br><span class="line"><span class="string">        embedding_function: Embedding function (required for automatic embedding generation)</span></span><br><span class="line"><span class="string">        drop_if_exists: Whether to drop existing collection if it exists</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">        Collection object</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> drop_if_exists <span class="keyword">and</span> client.has_collection(collection_name):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Collection &#x27;<span class="subst">&#123;collection_name&#125;</span>&#x27; already exists, deleting old data...&quot;</span>)</span><br><span class="line">        client.delete_collection(collection_name)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> embedding_function <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">&quot;embedding_function is required&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Use pyseekdb&#x27;s native get_or_create_collection</span></span><br><span class="line">    collection = client.get_or_create_collection(</span><br><span class="line">        name=collection_name,</span><br><span class="line">        embedding_function=embedding_function</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Collection &#x27;<span class="subst">&#123;collection_name&#125;</span>&#x27; ready!&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> collection</span><br></pre></td></tr></table></figure>
+
+<h3 id="核心插入数据函数"><a href="#核心插入数据函数" class="headerlink" title="核心插入数据函数"></a>核心插入数据函数</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">insert_embeddings</span>(<span class="params">collection, data: <span class="type">List</span>[<span class="type">Dict</span>[<span class="built_in">str</span>, <span class="type">Any</span>]]</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Insert data into collection. Embeddings are automatically generated by collection&#x27;s embedding_function.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Args:</span></span><br><span class="line"><span class="string">        collection: Collection object (must have embedding_function configured)</span></span><br><span class="line"><span class="string">        data: List of data dictionaries containing &#x27;text&#x27;, &#x27;source_file&#x27;, &#x27;chunk_index&#x27;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        ids = [<span class="string">f&quot;<span class="subst">&#123;item[<span class="string">&#x27;source_file&#x27;</span>]&#125;</span>_<span class="subst">&#123;item.get(<span class="string">&#x27;chunk_index&#x27;</span>, <span class="number">0</span>)&#125;</span>&quot;</span> <span class="keyword">for</span> item <span class="keyword">in</span> data]</span><br><span class="line">        documents = [item[<span class="string">&#x27;text&#x27;</span>] <span class="keyword">for</span> item <span class="keyword">in</span> data]</span><br><span class="line">        metadatas = [&#123;<span class="string">&#x27;source_file&#x27;</span>: item[<span class="string">&#x27;source_file&#x27;</span>],</span><br><span class="line">                     <span class="string">&#x27;chunk_index&#x27;</span>: item.get(<span class="string">&#x27;chunk_index&#x27;</span>, <span class="number">0</span>)&#125; <span class="keyword">for</span> item <span class="keyword">in</span> data]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Collection&#x27;s embedding_function will automatically generate embeddings from documents</span></span><br><span class="line">        collection.add(</span><br><span class="line">            ids=ids,</span><br><span class="line">            documents=documents,</span><br><span class="line">            metadatas=metadatas</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Inserted <span class="subst">&#123;<span class="built_in">len</span>(data)&#125;</span> items successfully&quot;</span>)</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Error inserting data: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">raise</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="向量相似度搜索"><a href="#向量相似度搜索" class="headerlink" title="向量相似度搜索"></a>向量相似度搜索</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">results = collection.query(</span><br><span class="line">                    query_texts=[question],</span><br><span class="line">                    n_results=<span class="number">3</span>,</span><br><span class="line">                    include=[<span class="string">&quot;documents&quot;</span>, <span class="string">&quot;metadatas&quot;</span>, <span class="string">&quot;distances&quot;</span>]</span><br><span class="line">                )</span><br></pre></td></tr></table></figure>
+
+<h3 id="统计-Collection-中的数据情况"><a href="#统计-Collection-中的数据情况" class="headerlink" title="统计 Collection 中的数据情况"></a>统计 Collection 中的数据情况</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">get_database_stats</span>(<span class="params">collection</span>) -&gt; <span class="type">Dict</span>[<span class="built_in">str</span>, <span class="type">Any</span>]:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Get statistics about the collection.&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        results = collection.get(limit=<span class="number">10000</span>, include=[<span class="string">&quot;metadatas&quot;</span>])</span><br><span class="line">        ids = results.get(<span class="string">&#x27;ids&#x27;</span>, []) <span class="keyword">if</span> <span class="built_in">isinstance</span>(results, <span class="built_in">dict</span>) <span class="keyword">else</span> []</span><br><span class="line">        metadatas = results.get(<span class="string">&#x27;metadatas&#x27;</span>, []) <span class="keyword">if</span> <span class="built_in">isinstance</span>(results, <span class="built_in">dict</span>) <span class="keyword">else</span> []</span><br><span class="line"></span><br><span class="line">        unique_files = &#123;m.get(<span class="string">&#x27;source_file&#x27;</span>) <span class="keyword">for</span> m <span class="keyword">in</span> metadatas <span class="keyword">if</span> m <span class="keyword">and</span> m.get(<span class="string">&#x27;source_file&#x27;</span>)&#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> &#123;</span><br><span class="line">            <span class="string">&quot;total_embeddings&quot;</span>: <span class="built_in">len</span>(ids),</span><br><span class="line">            <span class="string">&quot;unique_source_files&quot;</span>: <span class="built_in">len</span>(unique_files)</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Error getting database stats: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> &#123;<span class="string">&quot;total_embeddings&quot;</span>: <span class="number">0</span>, <span class="string">&quot;unique_source_files&quot;</span>: <span class="number">0</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="构建-RAG-系统"><a href="#构建-RAG-系统" class="headerlink" title="构建 RAG 系统"></a>构建 RAG 系统</h2><p>本模块实现了 RAG 系统的检索功能。通过将用户提出的问题转换为嵌入向量，利用 seekdb 提供的原生向量搜索能力，快速检索出与问题最相关的文档片段，为后续的生成模型提供必要的上下文信息。</p>
+<h3 id="导入数据"><a href="#导入数据" class="headerlink" title="导入数据"></a>导入数据</h3><p>我们使用 pyseekdb 的 SDK 文档作为示例，您也可以使用自己的 Markdown 文档或者目录。</p>
+<p>运行数据导入脚本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 导入单个文档</span></span><br><span class="line">uv run python seekdb_insert.py ../../README.md</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或导入目录下的所有 Markdown 文档</span></span><br><span class="line">uv run python seekdb_insert.py path/to/your_dir</span><br></pre></td></tr></table></figure>
+
+<h3 id="启动应用"><a href="#启动应用" class="headerlink" title="启动应用"></a>启动应用</h3><p>在 <code>pyseekdb/demo/rag</code> 路径下执行如下命令，通过 Streamlit 启动应用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv run streamlit run seekdb_app.py --server.port your_port</span><br></pre></td></tr></table></figure>
+
+<p>使用 IP 和端口号（默认为 <code>8501</code>，可通过 <code>--server.port</code> 选项自定义）即可在浏览器中打开 RAG 界面。</p>
+<p>提示：如果使用 <code>uv</code> 作为包管理器，请在命令前加上 <code>uv run</code> 前缀，以确保使用正确的 Python 环境和依赖。</p>
+<p><img data-src="/img/seekdb-rag-tutorial/02.png" alt="喂饭级教程 —— 基于 OceanBase seekdb 构建 RAG 应用"></p>
+<h2 id="实际运行示例"><a href="#实际运行示例" class="headerlink" title="实际运行示例"></a>实际运行示例</h2><p>以下是一个真实的查询示例，展示了 seekdb RAG 系统的实际效果：</p>
+<p>用户问题：”What is seekdb’s vector search?”</p>
+<p>检索到的相关文档：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1. 30.experience-vector-retrieval.md</span><br><span class="line">   Vector search overview In today&#x27;s era of information explosion, users often need to quickly retrieve the information they need from massive amounts o...</span><br><span class="line"></span><br><span class="line">2. 20.using-seekdb-in-python-mode.md</span><br><span class="line">   Experience vector search SeekDB supports up to 16,000 dimensions of float-type dense vectors, sparse vectors, and various types of vector distance ca...</span><br><span class="line"></span><br><span class="line">3. 70.experience-hybrid-vector-index.md</span><br><span class="line">   Summary Through this tutorial, you have mastered the core features of SeekDB&#x27;s hybrid vector index: Simplified usage process: Achieve semantic ret...</span><br></pre></td></tr></table></figure>
+
+<p>使用 LLM 生成的答案：</p>
+<blockquote>
+<p>SeekDB’s vector search is a powerful feature that enables efficient and accurate retrieval of data by encoding various types of data—such as text, images, and audio—into mathematical vectors and performing searches in a vector space. This approach captures deep semantic relationships within the data, going beyond traditional keyword-based search methods to deliver more relevant results.</p>
+<p>Key capabilities of SeekDB’s vector search include:</p>
+<ul>
+<li>High-dimensional vector support: It supports up to 16,000 dimensions for float-type dense vectors and sparse vectors.</li>
+<li>Multiple distance metrics: It supports various similarity or distance calculations, including Manhattan distance, Euclidean distance, inner product, and cosine distance.</li>
+<li>Advanced indexing methods: Vector indexes can be created using HNSW (Hierarchical Navigable Small World) or IVF (Iterative Virtual File), enabling fast approximate nearest neighbor searches.</li>
+<li>Incremental updates: The system allows for real-time insertion and deletion of vectors without compromising search accuracy or recall.</li>
+<li>Hybrid search with scalar filtering: Users can combine vector similarity search with traditional attribute-based (scalar) filtering for more precise results.</li>
+<li>Flexible access interfaces: SeekDB supports SQL access via MySQL protocol clients in multiple programming languages, as well as a Python SDK.</li>
+<li>Automatic embedding and hybrid indexing: With hybrid vector index features, users can store raw text directly—the system automatically converts it into vectors and builds indexes.</li>
+</ul>
+<p>In summary, SeekDB’s vector search provides a comprehensive, high-performance solution for semantic search, particularly valuable in AI applications involving large-scale unstructured data.</p>
+</blockquote>
+<p>这个示例展示了：</p>
+<ul>
+<li>✅ 准确的信息检索：系统成功从文档中找到了相关信息</li>
+<li>✅ 多文档整合：从 3 个不同文档中提取和整合信息</li>
+<li>✅ 语义匹配：准确匹配了”vector search”相关的文档</li>
+<li>✅ 结构化回答：AI 将检索到的信息整理成清晰的结构</li>
+<li>✅ 完整性：涵盖了 seekdb 向量搜索的主要特性</li>
+<li>✅ 专业性：回答包含了技术细节和实际应用价值</li>
+</ul>
+<p>检索质量分析：</p>
+<ul>
+<li>最相关文档：<code>experience-vector-retrieval.md</code> - 向量搜索概览</li>
+<li>技术细节：<code>using-seekdb-in-python-mode.md</code> - 具体的技术规格</li>
+<li>高级特性：<code>experience-hybrid-vector-index.md</code> - 混合向量索引功能</li>
+</ul>
+<h2 id="快速体验"><a href="#快速体验" class="headerlink" title="快速体验"></a>快速体验</h2><p>如需快速体验 seekdb RAG 系统，请参考 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9weXNlZWtkYi9ibG9iL21haW4vZGVtby9yYWcvUkVBRE1FX0NOLm1k">快速部署<i class="fa fa-external-link-alt"></i></span>。</p>
+<p><strong>参考资料</strong></p>
+<ul>
+<li>[1] LLM API 基础 URL：<span class="exturl" data-url="aHR0cHM6Ly9kYXNoc2NvcGUuYWxpeXVuY3MuY29tL2NvbXBhdGlibGUtbW9kZS92MQ==">https://dashscope.aliyuncs.com/compatible-mode/v1<i class="fa fa-external-link-alt"></i></span></li>
+<li>[2] Embedding API 基础 URL：<span class="exturl" data-url="aHR0cHM6Ly9kYXNoc2NvcGUuYWxpeXVuY3MuY29tL2NvbXBhdGlibGUtbW9kZS92MQ==">https://dashscope.aliyuncs.com/compatible-mode/v1<i class="fa fa-external-link-alt"></i></span></li>
+<li>[3] 快速部署：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9weXNlZWtkYi9ibG9iL21haW4vZGVtby9yYWcvUkVBRE1FX0NOLm1k">https://github.com/oceanbase/pyseekdb/blob/main/demo/rag/README_CN.md<i class="fa fa-external-link-alt"></i></span></li>
+<li>[4] seekdb 项目地址：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/Embedding/" rel="tag"># Embedding</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/pyseekdb/" rel="tag"># pyseekdb</a>
+              <a href="/tags/Python/" rel="tag"># Python</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-03-seekdb-agent-ai-architecture/" rel="prev" title="专为AI而生：用OceanBase seekdb高效搭建你的Agent与AI系统架构">
+                  <i class="fa fa-angle-left"></i> 专为AI而生：用OceanBase seekdb高效搭建你的Agent与AI系统架构
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-10-seekdb-book-search-app/" rel="next" title="基于 seekdb，教你从零开始构建智能搜书应用">
+                  基于 seekdb，教你从零开始构建智能搜书应用 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

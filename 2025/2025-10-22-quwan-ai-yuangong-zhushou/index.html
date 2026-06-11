@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验，实现标量、向量、全文检索三合一数据库底座，满足AI应用多重需求。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践">
+<meta property="og:url" content="https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验，实现标量、向量、全文检索三合一数据库底座，满足AI应用多重需求。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/06.png">
+<meta property="article:published_time" content="2025-10-22T02:19:46.000Z">
+<meta property="article:modified_time" content="2025-10-22T02:19:46.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI应用">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="员工助手">
+<meta property="article:tag" content="趣丸科技">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/","path":"2025/2025-10-22-quwan-ai-yuangong-zhushou/","title":"成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%9A%E5%8A%A1%E9%9C%80%E6%B1%82%EF%BC%9A%E6%88%90%E7%86%9F%E7%A8%B3%E5%AE%9A%E3%80%81%E7%9C%81%E9%92%B1%E5%A5%BD%E7%94%A8%E7%9A%84AI%E5%BA%94%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">业务需求：成熟稳定、省钱好用的AI应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8B%A5%E6%8A%B1AI%EF%BC%8C%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88"><span class="nav-number">1.1.</span> <span class="nav-text">拥抱AI，降本增效</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI%E5%BA%94%E7%94%A8%E5%BC%80%E5%8F%91%E9%9A%BE%E7%82%B9%EF%BC%9A%E6%97%A0%E4%B8%80%E7%90%86%E6%83%B3%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.2.</span> <span class="nav-text">AI应用开发难点：无一理想数据库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E5%9E%8B%E4%B9%8B%E8%B7%AF%EF%BC%9A%E5%AF%B9%E6%AF%94%E4%B8%89%E7%A7%8D%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E6%96%B9%E6%A1%88"><span class="nav-number">2.</span> <span class="nav-text">选型之路：对比三种向量数据库方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E6%95%88%E6%9E%9C%EF%BC%9A%E4%B8%89%E5%90%88%E4%B8%80%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BA%95%E5%BA%A7%E6%BB%A1%E8%B6%B3%E5%A4%9A%E9%87%8D%E9%9C%80%E6%B1%82"><span class="nav-number">3.</span> <span class="nav-text">应用效果：三合一数据库底座满足多重需求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%9A%E5%8A%A1%E4%B8%8A%E7%BA%BF%E6%95%88%E6%9E%9C"><span class="nav-number">3.1.</span> <span class="nav-text">业务上线效果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-%E6%B5%8B%E8%AF%95%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">3.2.</span> <span class="nav-text">OceanBase 测试注意事项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9AI%E5%BA%94%E7%94%A8%E7%9A%84%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E6%9C%9F%E5%BE%85"><span class="nav-number">3.3.</span> <span class="nav-text">对AI应用的底层数据库的期待</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践 | Longda's Interesting World">
+      <meta itemprop="description" content="趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验，实现标量、向量、全文检索三合一数据库底座，满足AI应用多重需求。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-10-22 10:19:46" itemprop="dateCreated datePublished" datetime="2025-10-22T10:19:46+08:00">2025-10-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">趣丸科技</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>11 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验，实现标量、向量、全文检索三合一数据库底座，满足AI应用多重需求。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践","description":"趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验，实现标量、向量、全文检索三合一数据库底座，满足AI应用多重需求。","image":"https://ilongda.com/img/2025-10-22-quwan-ai-yuangong-zhushou/01.png","wordCount":2901,"datePublished":"2025-10-22T02:19:46.000Z","dateModified":"2025-10-22T02:19:46.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/"},"url":"https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","HTAP","向量检索","降本增效","趣丸科技","AI应用","员工助手"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践","item":"https://ilongda.com/2025/2025-10-22-quwan-ai-yuangong-zhushou/"}]}</script>
+<p>作者：苏程辉，趣丸数据库负责人</p>
+<p>如今，大模型推动各行各业加速智能化转型已广为人知。而在实际应用过程中，#大模型 对特定领域或私有数据的无知导致其难免存在”#幻觉” 问题，催生了企业对高效、精准的”记忆系统”的迫切需求。向量数据库作为连接大模型与海量非结构化数据的核心桥梁，以其强大的相似性检索能力，迅速成为构建新一代#AI应用（如智能问答、推荐系统、语义搜索等）的基础设施，直接决定了AI应用的智能高度与用户体验。本文分享趣丸科技定制化AI助手在选型底层数据库时，对比多款向量数据库后选择OceanBase的思路和经验。</p>
+<h2 id="业务需求：成熟稳定、省钱好用的AI应用"><a href="#业务需求：成熟稳定、省钱好用的AI应用" class="headerlink" title="业务需求：成熟稳定、省钱好用的AI应用"></a><strong>业务需求：成熟稳定、省钱好用的AI应用</strong></h2><p>趣丸科技成立于2014年，是一家集兴趣社交、人工智能、电子竞技等技术于一体的创新型科技企业，1600+的员工中有50%为技术人员，软件著作权和专利近500项，成为了中国互联网综合实力百强企业、#广州互联网企业20强。</p>
+<h3 id="拥抱AI，降本增效"><a href="#拥抱AI，降本增效" class="headerlink" title="拥抱AI，降本增效"></a><strong>拥抱AI，降本增效</strong></h3><p>作为一家先进的科技企业，对新技术的态度是敞开怀抱。近两年，AI 技术的成熟和应用对趣丸内部各个部门产生了积极影响，趣丸希望借助 AI 提升效率，降低人力成本，尤其在数据库中间件的日常场景和运维监控场景。</p>
+<p><strong>日常场景对AI 的需求可归纳为四类：</strong></p>
+<ol>
+<li>AI 慢日志优化。研发人员可直接与 AI 对话，由模型实时输出索引建议、重写方案及代价评估，无需再人工提单至 DBA 团队，SQL 优化效率大大提升。</li>
+<li>AI 数据库磁盘资源分析。系统需要每日采集库表级增量、TOP 排行及数据趋势，可直接借助 AI 完成，并结合业务特征预测容量峰值，提前触发归档或扩容建议，提升系统稳定性。</li>
+<li>AI 数据库连接分析。当连接数接近阈值时，AI 可以输出详细连接信息如业务来源，辅助快速定位异常业务。</li>
+<li>AI 数据库 CPU 告警分析。CPU 告警触发后，AI 可自动关联慢日志、执行计划及系统指标，生成根因分析报告，一线人员可根据报告直接执行优化或扩容，解决告警和资源问题。</li>
+</ol>
+<p><strong>在运维监控侧，计划将 AI 能力应用于以下两个方向：</strong></p>
+<ol>
+<li>AI 数据库告警根因分析。一般情况下，告警会涉及多个场景，因此需要排查多个监控日志，借助 AI 可以快速定位问题，关联事务、I&#x2F;O、慢查询等多维日志，输出根因结论，如大事务并发导致锁等待导致瞬时 I&#x2F;O 飙升触发阻塞等，有效降低人工排障时长。</li>
+<li>AI OPS 告警治理。告警范围覆盖多种数据库，包括传统数据库 MySQL、PostgreSQL、PolarDB、GaussDB 等，消息中间件 Kafka、RocketMQ 等，告警量过多，纯人工无法闭环，通过引入 AI 进行智能化治理。</li>
+</ol>
+<p>基于各部门的不同需求，公司面向员工推出统一的服务入口——员工助手。每位员工都需要拥有独立的私有助手，满足定制化需求。这对底层数据库又提出四项核心需求。</p>
+<ol>
+<li>标量数据存储：需具备高性能、易扩展能力，以支撑高并发读写。</li>
+<li>全文检索：支持全文检索。</li>
+<li>向量存储与计算：支持向量数据的写入、索引及相似度查询。</li>
+<li>HTAP 能力：会话上下文数据永久保存，并可直接在库内进行实时分析，无需额外数据链路。</li>
+</ol>
+<span id="more"></span>
+
+<h3 id="AI应用开发难点：无一理想数据库"><a href="#AI应用开发难点：无一理想数据库" class="headerlink" title="AI应用开发难点：无一理想数据库"></a><strong>AI应用开发难点：无一理想数据库</strong></h3><p>在员工助手的开发过程中，数据库团队在调研 AI 应用的行业现状、开发难度和稳定性保障等，发现现实远比想象中更具挑战。</p>
+<p>首先，目前行业内尚未出现一个成熟、开箱即用、可支撑 AI 应用快速开发的底层数据库。</p>
+<p>其次，要满足多种需求，可能需要同时维护 MySQL（标量检索、支持 TP）、Elasticsearch（全文检索、向量检索）、VDB&#x2F;Milvus（向量数据库），至少三套系统，大幅提升了引入成本和开发难度。</p>
+<p>最后。每个组件的稳定性都需要单独保障，包括高可用、监控、备份及故障排查等，运维工作量大，定位链路长。</p>
+<h2 id="选型之路：对比三种向量数据库方案"><a href="#选型之路：对比三种向量数据库方案" class="headerlink" title="选型之路：对比三种向量数据库方案"></a><strong>选型之路：对比三种向量数据库方案</strong></h2><p>基于业务快速落地与稳定性的双重要求，数据库团队优化了选型方案，核心诉求如下。</p>
+<ul>
+<li>标量数据：支持海量规模存储，并提供一致性与高可用保障。</li>
+<li>向量数据：具备高性能向量写入、索引构建与近似查询能力，满足毫秒级召回。</li>
+<li>开发接口：兼容标准 SQL，研发侧无需学习成本即可实现 AI 应用快速开发。</li>
+<li>总体成本：通过存储压缩、资源池化与统一运维，显著降低硬件与人力投入。</li>
+</ul>
+<p>在该目标指引下，初步选定三套数据库方案，并进行对比。</p>
+<p><strong>方案一：MySQL + Elasticsearch+ Milvus&#x2F;VDB</strong></p>
+<p>如上文所述，采用该方案需要维护三套独立系统，数据同步链路长，开发、测试与发布周期成倍增加。同时硬件投入与人力运维成本均高，不符合”低成本快速上线”目标。</p>
+<p><strong>方案二：TiDB + ES</strong></p>
+<ul>
+<li>需部署 PD、Server、KV 等多节点，部署成本较高；</li>
+<li>全文检索需额外引入 Elasticsearch，进一步推高成本；</li>
+</ul>
+<p>此外，TiDB需手工或通过 TiUP 组件部署，自动化与平台化程度低于 OceanBase，运维便利性不足。</p>
+<p><strong>方案三：OceanBase</strong></p>
+<ul>
+<li>具备原生 HTAP、高压缩、向量索引能力，单套集群即可同时满足标量、向量与全文检索需求；</li>
+<li>兼容 MySQL 协议，零学习成本；</li>
+<li>资源池化多租户，硬件利用率高，运维通过图形化平台完成，扩缩容全自动。</li>
+</ul>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/01.png" alt="image"></p>
+<p>综合性能、兼容性、持久化、扩展性、成本、运维便利多个维度，最终选择 OceanBase 作为统一数据底座。主要出于五点原因：</p>
+<ol>
+<li>高兼容性。高度兼容 MySQL 语法、SQL 原生支持向量查询，可帮助快速低成本实现业务的 AI 应用需求。</li>
+<li>稳定可靠性。集群高可用能力强，可快速恢复，RTO&lt;8s，系统稳定性得到保证。同时三副本架构下，每一个副本下都有一份完整的数据，数据无丢失风险。</li>
+<li>HTAP 能力。基于”同一份数据，同一个引擎”，同时支持在线实时交易及实时分析两种场景。</li>
+<li>强扩展能力。节点扩容可以在分钟级别完成、容量扩容在秒级完成，具备丝滑高效的在线扩展能力。</li>
+<li>文本的多路融合检索。OceanBase 的向量检索+全文检索的混合检索能力实现了对文本的多路融合检索，整个流程包括插入文本 (Chunk)、向量化（Embedding）、分词、向量检索、全文检索、重排序（Rerank）等步骤。</li>
+</ol>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/02.png" alt="image"></p>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/03.png" alt="image"></p>
+<p>此外，在调研过程中，趣丸也发现 <strong>OceanBase 具备三个突出优势，也是其他方案不具备的能力。</strong></p>
+<p>一是OCP 运维平台提供图形化、自动化集群管理能力，显著降低日常运维复杂度，可实现一键扩缩容、监控告警、备份恢复、补丁升级及故障自愈等常用的运维操作。</p>
+<p>二是副本级列存。在不增加额外组件的前提下，通过将其中一个副本以列式存储呈现，即可满足轻量级分析需求。</p>
+<p>三是数据高压缩比。OceanBase 提供多级数据压缩能力，压缩率可达 3:1～5:1。虽然单 TB 磁盘单价较低，但当数据规模达到数十 TB 且用于长期归档时，高压缩特性可直接减少机器数量，形成可观的成本节约。</p>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/04.png" alt="image"></p>
+<h2 id="应用效果：三合一数据库底座满足多重需求"><a href="#应用效果：三合一数据库底座满足多重需求" class="headerlink" title="应用效果：三合一数据库底座满足多重需求"></a><strong>应用效果：三合一数据库底座满足多重需求</strong></h2><h3 id="业务上线效果"><a href="#业务上线效果" class="headerlink" title="业务上线效果"></a><strong>业务上线效果</strong></h3><p>目前基于 OceanBase 的员工助手已经上线，运行平稳，CPU使用率长期稳定在15%以下，抖动很小，整体平均响应时间满足业务的需求。</p>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/05.png" alt="image"></p>
+<p><img data-src="/img/2025-10-22-quwan-ai-yuangong-zhushou/06.png" alt="image"></p>
+<p>之所以该业务得以快速上线，关键在于开发效率提升、运维标准化、成本节省这三个方面。</p>
+<p><strong>提升开发效率：</strong> OceanBase 支持标量、向量、全文等混合检索，通过一条 SQL 即可解决复杂的多维查询需求，简化开发逻辑，降低编码复杂度。</p>
+<p><strong>运维标准化：</strong> OceanBase的迁移工具和运维平台方便易用，简化了部署与监控，可以快速上线，减少部署时间。</p>
+<p><strong>成本节省：</strong> 相较于三套数据库才能满足业务需求的方案，采用三合一的数据库底座，减少了资源的申请和审批流程，且大幅节省资源消耗。</p>
+<h3 id="OceanBase-测试注意事项"><a href="#OceanBase-测试注意事项" class="headerlink" title="OceanBase 测试注意事项"></a><strong>OceanBase 测试注意事项</strong></h3><p>在上线OceanBase的过程中，运维团队遇到两个问题，可作为注意事项以提醒大家。</p>
+<p>第一，OceanBase 的初始资源占用较高，在尝试验证生产环境所需的资源规格时，运维团队发现常规的资源配置如 8C16G，无法成功完成部署。尤其是在安装 OCP 等全套组件时，可能会存在资源不足的问题。因此，部署生产环境建议配置较高规格的资源如 8C32G。</p>
+<p>第二，在性能测试中，运维团队在 OceanBase 中使用了业务中常用的租户配置，如 2C4G、4C8G，测试结果表明，在该配置下 OceanBase 的性能未能达到预期。建议使用较高规格的租户进行测试，避免产生性能不达标问题，同时也能对真实业务环境的性能表现有所把握。</p>
+<h3 id="对AI应用的底层数据库的期待"><a href="#对AI应用的底层数据库的期待" class="headerlink" title="对AI应用的底层数据库的期待"></a><strong>对AI应用的底层数据库的期待</strong></h3><p>员工助手是趣丸内部面向员工使用的服务入口，后续将其接入其他 #AI产品 中。因此，对于AI应用的底层数据库 OceanBase，趣丸也有几点期待：</p>
+<ol>
+<li>分布式迁移-自动分区。目前OceanBase 4.3.5版本已经支持自动分区能力，在测试环境迁移至生产环境过程中，针对大表，提供按规则自动分区功能，减少人工拆分与校验工作量。也希望在后续的业务场景尝试这种方式，减少开发、运维工作量。</li>
+<li>共享存储。对于 I&#x2F;O 敏感度较低的业务，希望引入共享存储方案，以提升存储资源利用率并简化扩容流程。</li>
+<li>存储自动冷热分离。对于不常用的冷数据，希望存储到 OSS 等低成本介质中，并可以通过策略规则（如时间字段、访问频度）自动实现，降低存储成本。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E8%B6%A3%E4%B8%B8%E7%A7%91%E6%8A%80/" rel="tag"># 趣丸科技</a>
+              <a href="/tags/AI%E5%BA%94%E7%94%A8/" rel="tag"># AI应用</a>
+              <a href="/tags/%E5%91%98%E5%B7%A5%E5%8A%A9%E6%89%8B/" rel="tag"># 员工助手</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-16-qifu-fenkufenbiao-gaizao/" rel="prev" title="怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%">
+                  <i class="fa fa-angle-left"></i> 怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-31-deepseek-ocr-jinghua/" rel="next" title="用最纯粹的语言解析DeepSeek OCR - 上下文光学压缩的颠覆性思想">
+                  用最纯粹的语言解析DeepSeek OCR - 上下文光学压缩的颠覆性思想 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

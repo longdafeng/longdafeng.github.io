@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文用通俗白话解析 AI Memory：从人脑记忆的分类与操作出发，对比智能体记忆的存储区与存储形式，并深入剖析 Letta、Zep、Mem0 等主流记忆框架的实现原理，总结 Agent 记忆的技术演进趋势与底层存储需求。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="用最纯粹的白话，解析 AI Memory">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-18-ai-memory-explained/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文用通俗白话解析 AI Memory：从人脑记忆的分类与操作出发，对比智能体记忆的存储区与存储形式，并深入剖析 Letta、Zep、Mem0 等主流记忆框架的实现原理，总结 Agent 记忆的技术演进趋势与底层存储需求。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/01.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/02.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/03.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/04.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/05.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/06.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/07.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/08.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/09.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-explained/10.png">
+<meta property="article:published_time" content="2025-11-18T02:40:40.000Z">
+<meta property="article:modified_time" content="2025-11-18T02:40:40.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Memory">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Letta">
+<meta property="article:tag" content="Mem0">
+<meta property="article:tag" content="Zep">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="知识图谱">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/ai-memory-explained/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-18-ai-memory-explained/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-18-ai-memory-explained/","path":"2025/2025-11-18-ai-memory-explained/","title":"用最纯粹的白话，解析 AI Memory"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>用最纯粹的白话，解析 AI Memory | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-18-ai-memory-explained/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Memory-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">Memory 是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9A%E4%B9%89-Memory%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">如何定义 Memory？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%BA%E8%84%91%E8%AE%B0%E5%BF%86%E7%BB%93%E6%9E%84"><span class="nav-number">2.1.</span> <span class="nav-text">人脑记忆结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E5%88%86%E7%B1%BB"><span class="nav-number">2.1.1.</span> <span class="nav-text">记忆分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E6%93%8D%E4%BD%9C"><span class="nav-number">2.1.2.</span> <span class="nav-text">记忆操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E4%BD%93%E8%AE%B0%E5%BF%86"><span class="nav-number">2.2.</span> <span class="nav-text">智能体记忆</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E5%AD%98%E5%82%A8%E5%8C%BA%E7%9A%84%E5%B7%AE%E5%88%AB"><span class="nav-number">2.2.1.</span> <span class="nav-text">记忆存储区的差别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BD%A2%E5%BC%8F%E7%9A%84%E5%B7%AE%E5%88%AB"><span class="nav-number">2.2.2.</span> <span class="nav-text">存储形式的差别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E4%BD%93%E8%AE%B0%E5%BF%86%E5%88%86%E7%B1%BB"><span class="nav-number">2.2.3.</span> <span class="nav-text">智能体记忆分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E4%BD%93%E8%AE%B0%E5%BF%86%E6%93%8D%E4%BD%9C"><span class="nav-number">2.2.4.</span> <span class="nav-text">智能体记忆操作</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Agent-Memory-%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">Agent Memory 实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#LETTA"><span class="nav-number">3.1.</span> <span class="nav-text">LETTA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZEP"><span class="nav-number">3.2.</span> <span class="nav-text">ZEP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MEM0"><span class="nav-number">3.3.</span> <span class="nav-text">MEM0</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%80%BB%E7%BB%93"><span class="nav-number">3.4.</span> <span class="nav-text">实现总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%80%E5%90%8E"><span class="nav-number">4.</span> <span class="nav-text">最后</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-18-ai-memory-explained/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="用最纯粹的白话，解析 AI Memory | Longda's Interesting World">
+      <meta itemprop="description" content="本文用通俗白话解析 AI Memory：从人脑记忆的分类与操作出发，对比智能体记忆的存储区与存储形式，并深入剖析 Letta、Zep、Mem0 等主流记忆框架的实现原理，总结 Agent 记忆的技术演进趋势与底层存储需求。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          用最纯粹的白话，解析 AI Memory
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-18 10:40:40" itemprop="dateCreated datePublished" datetime="2025-11-18T10:40:40+08:00">2025-11-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>6.3k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>23 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文用通俗白话解析 AI Memory：从人脑记忆的分类与操作出发，对比智能体记忆的存储区与存储形式，并深入剖析 Letta、Zep、Mem0 等主流记忆框架的实现原理，总结 Agent 记忆的技术演进趋势与底层存储需求。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"用最纯粹的白话，解析 AI Memory","description":"本文用通俗白话解析 AI Memory：从人脑记忆的分类与操作出发，对比智能体记忆的存储区与存储形式，并深入剖析 Letta、Zep、Mem0 等主流记忆框架的实现原理，总结 Agent 记忆的技术演进趋势与底层存储需求。","image":"https://ilongda.com/img/ai-memory-explained/01.png","wordCount":6218,"datePublished":"2025-11-18T02:40:40.000Z","dateModified":"2025-11-18T02:40:40.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-18-ai-memory-explained/"},"url":"https://ilongda.com/2025/2025-11-18-ai-memory-explained/","inLanguage":"zh-CN","keywords":["知识图谱","向量检索","Agent","AI Memory","Mem0","Zep","Letta"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"用最纯粹的白话，解析 AI Memory","item":"https://ilongda.com/2025/2025-11-18-ai-memory-explained/"}]}</script>
+<p>想象一下：每次和朋友聊天，对方都会清空记忆，每段对话都从零开始，没有记忆、没有上下文、没有进展。</p>
+<p><img data-src="/img/ai-memory-explained/01.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>而遗憾的是，这正是当下大多数 AI 系统的现状。它们足够聪明，却缺失了关键要素：记忆能力。</p>
+<h1 id="Memory-是什么？"><a href="#Memory-是什么？" class="headerlink" title="Memory 是什么？"></a>Memory 是什么？</h1><p>当下阶段 AI 应用正在从 Generative AI 向 Agentic AI 阶段迈进，2025 年被视为 Agent 市场元年，Agent 架构相关的技术讨论非常火热，技术演进也非常的快速。从目前的技术发展趋势看，各类开发框架逐渐从底层专注于与 LLM 的集成演进到上层关注于对 Agent 内部各类组件的抽象和集成，也有了像 MCP 和 A2A 这类定义了 Agent 如何调用工具以及如何与其他 Agent 交互的标准协议的建立，Agent 架构的各个部件逐渐被定义清晰并且形成标准。</p>
+<span id="more"></span>
+
+<p><img data-src="/img/ai-memory-explained/02.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>上图（来自《The Rise and Potential of Large Language Model Based Agents: A Survey》）定义了 Agent 架构，其中包含几个重要部分：</p>
+<ol>
+<li>感知能力（Perception）：让 Agent 具备环境感知能力，能接受多模态的信息输入。</li>
+<li>决策能力（Brain-Decision Making）：让 Agent 具备自主决策和规划的能力，能够执行更复杂的任务。</li>
+<li>记忆能力（Brain-Memory &amp; Knowledge）：让 Agent 具备记忆能力，记忆内部存储了 Agent 的知识和技能。</li>
+<li>行动能力（Action）：让 Agent 具备与外界交互的能力，通过行动与感知让 Agent 能自主完成更多复杂任务。</li>
+</ol>
+<p>本文要探讨的就是对 Agent 至关重要的记忆能力：</p>
+<ol>
+<li>让 Agent 具备持续学习能力：Agent 所拥有的知识主要蕴含在 LLM 的参数内，这部分是静态的，记忆让 Agent 具备了知识与经验积累和优化的能力。有研究表明配置了记忆的 Agent 能显著增强性能，Agent 能够从过去经历中总结经验以及从错误中学习，加强任务表现。</li>
+<li>让 Agent 能够保持对话的连贯性和行动的一致性：拥有记忆能够让 Agent 具备更远距离的上下文管理能力，在长对话中能够保持一致的上下文从而保持连贯性。也能避免建立与之前相矛盾的事实，保持行动的一致性。</li>
+<li>让 Agent 能够提供个性化的服务和用户体验：拥有记忆能够让 Agent 通过历史对话推断用户偏好，构建与用户互动的心理模型，从而提供更符合用户偏好的个性化服务和体验。</li>
+</ol>
+<h1 id="如何定义-Memory？"><a href="#如何定义-Memory？" class="headerlink" title="如何定义 Memory？"></a>如何定义 Memory？</h1><p>大语言模型本质是对人脑神经网络的模拟，智能体记忆也可以通过模拟人脑记忆来实现更强的性能。</p>
+<h2 id="人脑记忆结构"><a href="#人脑记忆结构" class="headerlink" title="人脑记忆结构"></a>人脑记忆结构</h2><p>记忆是人类编码、存储和提取信息的过程，使人类能够随着时间的推移保留经验、知识、技能和事实，是成长和有效与世界互动的基础。要弄清楚记忆的结构，需要搞明白记忆如何分类以及提供哪些操作。</p>
+<h3 id="记忆分类"><a href="#记忆分类" class="headerlink" title="记忆分类"></a>记忆分类</h3><p>记忆有不同维度的分类方法，常见的几个分类方法包括：</p>
+<h4 id="按存储时间进行分类"><a href="#按存储时间进行分类" class="headerlink" title="按存储时间进行分类"></a>按存储时间进行分类</h4><p>人类很早就开始对人脑记忆的研究，按照存储时间的记忆分类法最早是在 1968 年发布的 Atkinson-Shiffrin Memory Model 中提出，将记忆分为感知记忆（Sensory Memory）、短期记忆（Short-term Memory）和长期记忆（Long-term Memory）。感知记忆存储了人脑从环境中捕获的信息，例如声音、视觉等信息，在感知记忆区这类信息只能保留很短的时间。短期记忆存储人脑在思考过程中所需要处理的信息，也被称为工作记忆（在 1974 年 Baddeley &amp; Hitch 模型中提出），通常也只能保留很短的时间。长期记忆用于长期保留人类记忆，如知识与技能。</p>
+<p>这几类记忆实际代表着不同的记忆工作区，感知记忆是人脑的信息输入区，短期记忆（或工作记忆区）是人脑工作时的信息暂存区（或信息加工区），而长期记忆就是人脑的长期信息储存区。短期记忆的内容来自感知记忆区的输入以及从长期记忆区的记忆提取，人脑产生的新的信息也会暂存在工作记忆区。人脑对信息的处理通常会贯穿这几个记忆区，信息的输入、加工和变成长期记忆进行储存，这个过程贯穿这几个记忆区。</p>
+<h4 id="按内容性质进行分类"><a href="#按内容性质进行分类" class="headerlink" title="按内容性质进行分类"></a>按内容性质进行分类</h4><p>按照内容性质可以把记忆分为可声明式记忆（Declarative Memory）和不可声明式记忆（Non-Declarative Memory），也有另外一种称法为显式记忆（Explicit Memory）和隐式记忆（Implicit Memory）。</p>
+<p>这两类记忆的主要区别在于：</p>
+<ul>
+<li>是否可以用语言描述：可声明式记忆可以用语言来描述，例如所掌握的某个知识内容。不可声明式记忆不可被语言描述，例如所掌握的某个技能如骑车。</li>
+<li>是否需要有意识参与：显式记忆需要有意识主动回忆，而隐式记忆无意识参与，所以也被称为肌肉记忆。</li>
+</ul>
+<h4 id="按存储内容进行分类"><a href="#按存储内容进行分类" class="headerlink" title="按存储内容进行分类"></a>按存储内容进行分类</h4><p>人类可以从记忆中提取不同类型的内容，我们可以回忆过去，这部分内容称为『经历』，也可以通过记忆掌握『知识』，同时也是通过记忆保存『技能』。所以可以抽象地把记忆内容分类为『经历』、『知识』和『技能』，更科学的命名是：</p>
+<ul>
+<li>情境记忆（Episodic Memory）：代表经历，存储了过去发生的事件。</li>
+<li>语义记忆（Semantic Memory）：代表知识，存储了所了解的知识。</li>
+<li>流程记忆（Procedure Memory）：代表技能，存储了所掌握的技能。</li>
+</ul>
+<p>以上是常见的几种记忆分类方法，这几个分类方法并不矛盾，而是代表不同的维度，并且互相有一定的关系。比如通常情境记忆是显式记忆，因为需要主动回忆并且可以用语言来描述。技能通常是隐式记忆，例如骑车这个技能属于肌肉记忆，无需主动回忆也不可被语言描述。</p>
+<p>我们可以把这几个维度结合在一起来定义记忆，描述为『存储在哪个记忆区』的『以什么形式存在』的『什么类型的』记忆。例如骑车这个技能就是存储在『长期记忆』区的以『隐式』形式存在的『流程』记忆，再比如在写这篇文章时脑子里的内容就是存储在『短期记忆』区的以『显式』形式存在的『语义』记忆。</p>
+<h3 id="记忆操作"><a href="#记忆操作" class="headerlink" title="记忆操作"></a>记忆操作</h3><p>记忆就是人脑对信息进行编码、存储和检索的过程，所以核心操作就是：</p>
+<ol>
+<li>编码（Encode）：获取和处理信息，将其转化为可以存储的形式。</li>
+<li>存储（Storage）：在短期记忆或长期记忆中保留编码信息的过程。</li>
+<li>提取（Retrival）：也可称为回忆，即在需要时访问并使存储的信息重新进入意识的过程。</li>
+</ol>
+<p>记忆还包含其他的一些操作：</p>
+<ol>
+<li>巩固（Consolidation）：通过巩固将短期记忆转变成长期记忆，存储在大脑中，降低被遗忘的可能性。</li>
+<li>再巩固（Reconsolidation）：先前存储的记忆被重新激活，进入不稳定状态并需要再巩固以维持其存储的过程。</li>
+<li>反思（Reflection）：反思是指主动回顾、评估和检查自己的记忆内容的过程，以增强自我意识，调整学习策略或优化决策的过程。</li>
+<li>遗忘（Forgetting）：遗忘是一个自然的过程。</li>
+</ol>
+<h2 id="智能体记忆"><a href="#智能体记忆" class="headerlink" title="智能体记忆"></a>智能体记忆</h2><p>上面我们提到过，可以把几个维度结合在一起来定义记忆，描述为『存储在哪个记忆区』的『以什么形式存在』的『什么类型的』记忆。智能体记忆可以按照相同的方式对记忆进行分类，但是由于记忆存储区和存储形式的差异，与人脑记忆分类略有差别。</p>
+<h3 id="记忆存储区的差别"><a href="#记忆存储区的差别" class="headerlink" title="记忆存储区的差别"></a>记忆存储区的差别</h3><p>智能体内的记忆存储区主要包括：</p>
+<ol>
+<li>上下文：上下文就是智能体的短期记忆或工作记忆区，窗口有限且容易被遗忘。</li>
+<li>LLM：蕴含了智能体的大部分知识，属于智能体的长期记忆区，包含了不同类型的记忆。</li>
+<li>外挂记忆存储：由于 LLM 内知识不可更新，所以会通过外挂存储的方式来对记忆进行扩展，这部分也属于智能体的长期记忆区。</li>
+</ol>
+<p>与人脑记忆区对比的话，感知记忆和短期记忆对应智能体的上下文，长期记忆对应智能体的 LLM 和外挂记忆存储。</p>
+<h3 id="存储形式的差别"><a href="#存储形式的差别" class="headerlink" title="存储形式的差别"></a>存储形式的差别</h3><p>智能体内的记忆主要以两种形式存在，可以简单归类为参数形式（Parametric）和非参数形式（Non-parametric）。在智能体的短期记忆区和长期记忆区都会存在两种不同形式的记忆，比如 KV-Cache 可以认为是短期记忆区参数形式的记忆，LLM 是长期记忆区参数形式的记忆，外挂记忆存储是长期记忆区非参数形式存在的记忆。</p>
+<h3 id="智能体记忆分类"><a href="#智能体记忆分类" class="headerlink" title="智能体记忆分类"></a>智能体记忆分类</h3><p>通过上面的内容我们了解到智能体的记忆存储区和存储形式与人脑有一定的差别，但是还是可以对应上来，如下图所示。</p>
+<p><img data-src="/img/ai-memory-explained/03.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>我们按照相同的维度但是不同的内容对智能体记忆做个分类，然后看下不同的记忆分类下目前有哪些技术实现（这里不通过记忆类型来分类，因为不影响技术实现分类）。</p>
+<p>以下是截取自 MemOS 论文中对现有记忆实现的分类：</p>
+<p><img data-src="/img/ai-memory-explained/04.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>从上面的分类可以看到，智能体记忆的技术实现还是非常细分、多样的。挑几个我们熟悉的技术来说，提示词工程（Prompt Engineer）属于对短期记忆区的显示记忆的优化，知识库（RAG 技术）属于对长期记忆区的显示记忆的优化，模型微调（Fine-Tunning）属于对长期记忆区的隐式记忆的优化。</p>
+<h3 id="智能体记忆操作"><a href="#智能体记忆操作" class="headerlink" title="智能体记忆操作"></a>智能体记忆操作</h3><p>智能体提供的记忆操作与人脑记忆是比较类似的，也包括编码、存储和提取。记忆编码包含了对记忆的获取和处理，通过对工作记忆区内容的处理发现新的记忆，编码成可存储的结构。记忆存储为参数或非参数的形式，非参数的形式通常以 Plaintext、Graph 或 Structure-Table 的结构存储。记忆提取通常通过检索来实现，具体技术实现包括全文检索、向量检索、图检索或者是混合检索，具体检索方式取决于存储的内容和结构。</p>
+<h1 id="Agent-Memory-实现"><a href="#Agent-Memory-实现" class="headerlink" title="Agent Memory 实现"></a>Agent Memory 实现</h1><p>Agent Memory 的技术演进非常快，目前市面上已经有很多开源或商业的 Memory 产品。特别是在 2025 年，以更快的速度涌现出来一批新的产品。最近上海的一家初创公司『记忆张量』更是获得了亿元的天使轮融资，同时也开源了自家的 Memory 产品 MemOS。可见 Agent Memory 市场正在快速发展，商业前景也得到了认可。</p>
+<p>接下来会逐个分析下目前的 Memory 产品的实现，主要的信息来自各自分享的论文，论文内容可能已经与最新版本的实现有所差异，感兴趣的可以去追踪最新的开源进展。通过分析，我们希望能总结一些技术演进趋势，了解下在 Memory 场景对底层存储会有怎么样的结构定义和存储的需求。</p>
+<h2 id="LETTA"><a href="#LETTA" class="headerlink" title="LETTA"></a>LETTA</h2><p>LETTA 的技术源自 MemGPT 的研究，目前是独立的一个商业化产品。LETTA 提出的方法借鉴了操作系统虚拟内存分页的思想，这种技术最初是为了让应用程序能够处理远超可用内存大小的数据集而开发的，它通过在主内存和磁盘之间进行数据分页来实现这一目标。LETTA 模拟虚拟内存的实现，将 Context 分为 Main Context 和 External Context 两部分，当 Main Context 空间不够的时候可以与 External Context 进行数据交换。</p>
+<p>要理解它的原理我们看这个图即可：</p>
+<p><img data-src="/img/ai-memory-explained/05.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>整体被分为 Main Context 和 External Context，类似内存和磁盘。Main Context 就是 Prompt Tokens 部分，又被分为三个小部分：</p>
+<ul>
+<li>System Instructions：存储静态的系统提示词。</li>
+<li>Working Context：在对话场景中，这部分存储 key facts、perferences 和其他重要的关于用户的重要信息，以及 Agent 的个性。</li>
+<li>FIFO：存储滚动的历史对话记录，包含已经从 FIFO 队列中移除的对话记录的 Summary 以及最新的对话记录。</li>
+</ul>
+<p>对记忆内容会做如下操作：</p>
+<ul>
+<li>递归的摘要总结（Recursive Summary）：基于当前的 Recursive Summary 和要从队列中移除的消息生成新的 Summary，通过这一步来压缩信息节省对 Context 的空间占用。</li>
+<li>记忆的更新与提取：这个动作通过 Function Executor 来完成。记忆的更新与提取是完全自驱动的，通过在系统指令中给出提示词，提示词中会包含：1）记忆层次结构及其各自的用户的详细描述；2）系统可调用的函数，通过自然语言来描述，以让 LLM 能够访问和修改记忆。</li>
+</ul>
+<h2 id="ZEP"><a href="#ZEP" class="headerlink" title="ZEP"></a>ZEP</h2><p>ZEP 号称更满足企业内的需求，传统的 RAG 是基于静态的文档数据，ZEP 能够根据对话和 Bussiness Data 来获取更实时的信息。它的主要创新在于记忆的存储结构，底层自研了一个图引擎 Graphiti，能够提供时间感知的知识图谱。由于在它之前也就 MemGPT（上面的 LETTA）表现比较优异，所以论文中主要与其做对比。DMR Benchmark 比 MemGPT 表现更优，94.8% vs 93.4%。同时在 LongMemEval benchmark，这是一个更符合企业用例的测试，包含一些复杂的时间推理任务，通过 ZEP 准确度提升了 18.5%。</p>
+<p><img data-src="/img/ai-memory-explained/06.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>上面是官网截取的一个架构图，包含的信息比较少。它的核心部分都在其所构建的知识图谱内，整个知识图谱分三个层次：</p>
+<ol>
+<li>情境子图（可以理解为用图的方式存储了情境记忆）：包含原始的输入数据，消息、问题或者 Json 格式，作为一个无损的数据存储。图中的 Node 是情境，Edge 连接到对应的语义实体。</li>
+<li>语义子图（可以理解为用图的方式存储了语义记忆）：构建在情境子图之上，从中提取语义实体和关系。图中的 Node 是语义实体，Edge 表示语义实体之间的关系。</li>
+<li>社区子图（语义记忆的更高层次的概括）：图中的 Node 表示强连接实体的 Clusters，为一个社区，社区包含了对聚类的高层次的概括，社区 Edge 将社区与其成员相连接。这部分实现参考了 GraphRAG 的思路，通过构建社区来实现对语义记忆有一个更全局的概括。</li>
+</ol>
+<p>论文中解释了它的心理学原理，采用了原始情节数据与衍生的语义实体信息的双重存储方式，反映了心理学中的人类记忆模型。这个模型将记忆区分为情境记忆，即对特定事件的记忆，以及语义记忆，即对概念及其含义之间关联的记忆。这种双重结构使得使用 Zep 的智能体能够构建更加复杂和细致的记忆结构，更贴近对人类记忆系统的模拟。</p>
+<p>ZEP 关于记忆的更新和提取的实现还有一些比较有意思的地方：</p>
+<p>记忆更新</p>
+<ol>
+<li>记忆去重：提取的语义实体会进行去重，避免存储冲突的记忆。对实体的去重会通过对实体名和实体摘要进行全文检索来找到相似的实体，通过 LLM 进行判重，如果判定重复会更新当前实体的相关信息。</li>
+<li>时间信息提取与边失效机制：这是 Graphiti 相比其他知识图谱所具备的差异化能力。在图中会记录事实数据的产生时间和作用时间，当有新的事实数据引入时会通过 LLM 进行判重。如果有发现存在时间重叠的矛盾事实，会对该事实标记为失效并且记录失效时间。这样既能保留最新的事实，也能保留事实的变化。</li>
+<li>采用标签传播算法构建社区子图：标签传播算法在动态扩展方面具备简单性的优势，使得系统在新数据不断进入图结构时，能够在更长时间内保持稳定的社区子图，从而延缓完全重新计算社区的需要。但是长时间后所形成的社区结构会逐渐偏离完整运行标签传播算法所得出的结果。因此，仍需定期对社区结构进行重新计算。</li>
+</ol>
+<p>记忆的提取</p>
+<p>抽象来讲通过一个 input string 作为检索条件，返回一个 output string，输出的 string 中包含了格式化后的 nodes 和 edges。详细的检索步骤分为三步：</p>
+<ol>
+<li>Search：通过多种检索方法结合进行检索，检索结果包含语义边列表、实体节点列表和社区节点列表——这三种图结构中包含了相关的文本信息。</li>
+<li>Reranker：对搜索结果进行重新排序。</li>
+<li>Constructor：将相关的节点和边转换为文本上下文。</li>
+</ol>
+<p><img data-src="/img/ai-memory-explained/07.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>ZEP 实现了三种搜索功能：语义相似度搜索、BM25 全文搜索和广度优先搜索。这三种搜索方法分别针对不同层面的相似性：全文搜索识别词语层面的相似性，余弦相似性捕捉语义层面的相似性，而广度优先搜索揭示上下文层面的相似性 - 即图中距离较近的节点和边往往出现在更相似的对话上下文中。这种多角度的候选结果识别方法，最大化了发现最优上下文的可能性。</p>
+<h2 id="MEM0"><a href="#MEM0" class="headerlink" title="MEM0"></a>MEM0</h2><p>MEM0 是目前开源 Memory 框架中 Star 数最多的，提供了两种实现，一种是没有利用图的 Mem0，另一种是基于 Graph 实现的 Mem0-G。下面分别介绍下两种实现方式：</p>
+<p><img data-src="/img/ai-memory-explained/08.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>上图是 Mem0 的实现，几个主要步骤包括：</p>
+<ol>
+<li>记忆生成：采用上下文感知的记忆生成方式，上下文中会包括当前问答 + 最近 M 条消息 + 会话的 Summary 这些内容。在后台会异步地生成对话 Summary，整个过程独立于主处理流程运行。</li>
+<li>记忆更新：主要目的是为了保持记忆一致性以及避免冗余。会从数据库中检索语义相似的 N 个记忆，与候选 Facts 一起提供给 LLM，让 LLM 来判断是否需要对记忆进行增加、修改或者删除，或者是啥都不用做。</li>
+</ol>
+<p><img data-src="/img/ai-memory-explained/09.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<p>上图是 Mem0-G 的实现，主要总结下与 Mem0 实现的差异：</p>
+<ul>
+<li>记忆生成：生成过程采用了一个两阶段的流水线，利用大语言模型（LLMs）将非结构化文本转化为结构化的图表示。首先实体提取模块处理输入文本，识别出一组实体及其对应的类型。接下来关系生成器模块在这些实体之间建立有意义的连接，生成一组关系三元组，以捕捉信息的语义结构。</li>
+<li>记忆更新：对于每一个新的关系三元组，我们计算源实体和目标实体的 Embedding，然后搜索语义相似度高于设定阈值的现有节点。为了保持知识图的一致性，实现了一个冲突检测机制，用于在新信息到来时识别潜在的冲突关系。基于 LLM 的更新解析器会判断某些关系是否应被废弃，并将其标记为无效，而非物理删除，从而支持时间推理。（这个机制有点类似于 ZEP）</li>
+<li>记忆检索：采用了实体中心法和语义三元组法双重检索机制，使 Mem0 能够高效处理聚焦实体的特定问题和更广泛的概念性查询：<ul>
+<li>实体中心方法：首先识别查询中的关键实体，然后利用语义相似性在知识图中定位对应的节点。该方法系统性地探索这些锚点节点的入边和出边，构建一个涵盖相关上下文信息的完整子图。</li>
+<li>语义三元组方法：这个方法采取更整体的视角，将整个查询编码为一个 Embedding 向量。然后将该查询表示与知识图中每个关系三元组的文本编码进行匹配。系统计算查询与所有可用三元组之间的细粒度相似度得分，仅返回超过可配置的相关性阈值的三元组，并按相似度降序排列。</li>
+</ul>
+</li>
+</ul>
+<p>来看下 Mem-0 在 LOCOMO 数据集上的表现，相比上面的 Memory 框架综合表现更好，可能这也是为啥 STAR 数最多的原因（这里还有一个有意思的发现，Open Domain 和 Temporal 问题 Graph 的效果会更高，ZEP 这种专门做 Graph 的在 Open Domain 中取得最优的分数，但是在 Temporal 中 Mem0-G 分数更高）。</p>
+<p><img data-src="/img/ai-memory-explained/10.png" alt="用最纯粹的白话，解析 AI Memory"></p>
+<h2 id="实现总结"><a href="#实现总结" class="headerlink" title="实现总结"></a>实现总结</h2><p>Memory 正在覆盖越来越多的场景，同时也在覆盖越来越多的记忆类型。早期 Memory 主要聚焦在对话记忆，现在已扩展到任务执行、决策支持、个性化服务等多个场景，覆盖的记忆类型也更加全面。</p>
+<p>在技术实现方案上，有一些被验证的手段能够有效提升记忆的性能表现：</p>
+<ol>
+<li>精细化的记忆管理：记忆在场景、分类和形式上有明确的区分，『分而治之』的思路被证明是有效的优化手段，这个和 Multi-Agent 的优化思路是类似的。</li>
+<li>组合多种记忆存储结构：记忆底层存储结构可以大致分为结构化信息（Metadata 或 Tag 等）、纯文本（Text-Chunk、Summary、情境记录等）和知识图谱，会分别构建标签索引、全文索引、向量索引和图索引等提升检索效果。也有基于这些原子索引能力构建场景化的索引，如分层摘要、社区图等。不同的存储结构对应不同的场景，记忆框架由集成单一结构演进到组合多种架构，带来了一定的效果提升。</li>
+<li>记忆检索优化：检索方式也在逐步演进，由单一检索演进到混合检索，也有针对 Embedding 和 Reranker 进行调优优化。</li>
+</ol>
+<h1 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h1><p>以 Mem0、Zep、Letta 代表的 AI 记忆系统在解决 LLM 无状态问题上做出了重要贡献。它们通过向量数据库和知识图谱技术，实现了对话历史的持久化存储和语义检索。</p>
+<p>同时，也为 AI 系统未来的发展，指出了一个方向 —— AI 系统应该能够像人类一样随着时间积累知识和经验：</p>
+<ul>
+<li><strong>智能提取和保留</strong>：通过 LLM 模型进行记忆的提取，根据重要性和相关性确定哪些信息值得记住。</li>
+<li><strong>上下文理解</strong>：维护跨交互的上下文以实现有意义的个性化体验。</li>
+<li><strong>持续学习</strong>：AI 系统需要能够从每次交互中学习并随着时间的推移而改进。</li>
+<li><strong>自适应遗忘</strong>：像人类记忆一样，需要实现了自适应遗忘机制以防止信息过载。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1/" rel="tag"># 知识图谱</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/AI-Memory/" rel="tag"># AI Memory</a>
+              <a href="/tags/Mem0/" rel="tag"># Mem0</a>
+              <a href="/tags/Zep/" rel="tag"># Zep</a>
+              <a href="/tags/Letta/" rel="tag"># Letta</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-14-oceanbase-partition-basics/" rel="prev" title="OceanBase 分区基础知识">
+                  <i class="fa fa-angle-left"></i> OceanBase 分区基础知识
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-21-oceanbase-session-id-mystery/" rel="next" title="OceanBase Session ID 之谜">
+                  OceanBase Session ID 之谜 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

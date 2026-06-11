@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文从计划管理、并发控制、多维度缓存、热点行优化、日志聚合与编译优化等内核组件设计角度，解读OceanBase在高并发场景下保障系统性能的关键因素。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase高并发场景下的性能保障">
+<meta property="og:url" content="https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文从计划管理、并发控制、多维度缓存、热点行优化、日志聚合与编译优化等内核组件设计角度，解读OceanBase在高并发场景下保障系统性能的关键因素。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/01.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/02.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/03.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/04.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/05.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/06.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/07.png">
+<meta property="og:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/08.png">
+<meta property="article:published_time" content="2025-08-26T00:15:48.000Z">
+<meta property="article:modified_time" content="2025-08-26T01:43:58.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="LSM-Tree">
+<meta property="article:tag" content="MVCC">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="日志引擎">
+<meta property="article:tag" content="热点行">
+<meta property="article:tag" content="计划缓存">
+<meta property="article:tag" content="高并发">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/","path":"2025/2025-08-26-oceanbase-high-concurrency-performance/","title":"OceanBase高并发场景下的性能保障"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase高并发场景下的性能保障 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%86%85%E6%A0%B8%E7%BB%84%E4%BB%B6%E7%9A%84%E5%90%88%E7%90%86%E8%AE%BE%E8%AE%A1%EF%BC%8C%E4%BF%9D%E9%9A%9C%E7%B3%BB%E7%BB%9F%E6%80%A7%E8%83%BD"><span class="nav-number">1.</span> <span class="nav-text">通过内核组件的合理设计，保障系统性能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E9%AB%98%E6%95%88%E7%9A%84%E8%AE%A1%E5%88%92%E7%AE%A1%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">（一）高效的计划管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6"><span class="nav-number">1.2.</span> <span class="nav-text">（二）并发控制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E5%A4%9A%E7%BB%B4%E5%BA%A6%E7%BC%93%E5%AD%98"><span class="nav-number">1.3.</span> <span class="nav-text">（三）多维度缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E7%83%AD%E7%82%B9%E8%A1%8C%E4%BC%98%E5%8C%96"><span class="nav-number">1.4.</span> <span class="nav-text">（四）热点行优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E6%97%A5%E5%BF%97%E8%81%9A%E5%90%88%E4%BC%98%E5%8C%96"><span class="nav-number">1.5.</span> <span class="nav-text">（五）日志聚合优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%85%AD%EF%BC%89%E7%BC%96%E8%AF%91%E4%BC%98%E5%8C%96"><span class="nav-number">1.6.</span> <span class="nav-text">（六）编译优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase高并发场景下的性能保障 | Longda's Interesting World">
+      <meta itemprop="description" content="本文从计划管理、并发控制、多维度缓存、热点行优化、日志聚合与编译优化等内核组件设计角度，解读OceanBase在高并发场景下保障系统性能的关键因素。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase高并发场景下的性能保障
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-26 08:15:48" itemprop="dateCreated datePublished" datetime="2025-08-26T08:15:48+08:00">2025-08-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">高山岩</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>16 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文从计划管理、并发控制、多维度缓存、热点行优化、日志聚合与编译优化等内核组件设计角度，解读OceanBase在高并发场景下保障系统性能的关键因素。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase高并发场景下的性能保障","description":"本文从计划管理、并发控制、多维度缓存、热点行优化、日志聚合与编译优化等内核组件设计角度，解读OceanBase在高并发场景下保障系统性能的关键因素。","image":"https://ilongda.com/img/8-26-oceanbase-high-concurrency-performance/01.png","wordCount":4331,"datePublished":"2025-08-26T00:15:48.000Z","dateModified":"2025-08-26T01:43:58.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/"},"url":"https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/","inLanguage":"zh-CN","keywords":["OceanBase","性能优化","LSM-Tree","高并发","计划缓存","MVCC","热点行","日志引擎"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase高并发场景下的性能保障","item":"https://ilongda.com/2025/2025-08-26-oceanbase-high-concurrency-performance/"}]}</script>
+<p>本文摘自<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vbGVhcm5pbmc/c2Vzc2lvbmlkPSNlYm9vaw==">《OceanBase社区版在泛互场景的应用案例研究》电子书<i class="fa fa-external-link-alt"></i></span>，点击链接获取完整版内容。</p>
+<p>海量数据日益增长的今天，越来越多的业务系统面临高并发、高性能访问的压力，以至于企业对业务系统的性能保障诉求越来越强烈。数据库系统作为业务系统的基础组件，具备高并发、高性能的能力，是支撑业务系统、满足客户诉求的关键。本文通过阐述数据库组件的设计，解读做好系统性能保障的关键因素。</p>
+<span id="more"></span>
+
+<h2 id="通过内核组件的合理设计，保障系统性能"><a href="#通过内核组件的合理设计，保障系统性能" class="headerlink" title="通过内核组件的合理设计，保障系统性能"></a>通过内核组件的合理设计，保障系统性能</h2><p>作为连续12年保障”天猫双11”大促活动以及用于支付宝核心系统的数据库，OceanBase久经高并发场景的多重性能考验。2025年3月，OceanBase性能再次升级，在同等的硬件规模下（16 核配置），经过 Sysbench 标准测试集的实际测试（见图1），其单机版在整体性能（包括查询、批量读取、写入、读写混合、插入和更新操作）方面全面优于 MySQL 8.0。特别是在高并发写入场景中，吞吐量实现了显著提升，最高提升达到 214.99%，能够满足高负载场景下的业务需求。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/01.png" alt="图1 Sysbench 性能基准测试对比（OceanBase 单机版VS MySQL 8.0）"></p>
+<p>图1 Sysbench 性能基准测试对比（OceanBase 单机版VS MySQL 8.0）</p>
+<p>OceanBase的高性能离不开系统内核各个组件的设计与实现，主要包含高效的计划管理、并发控制、多维度缓存优化、热点行优化、日志聚合优化和编译优化等方面。下文将分别解析各模块，为大家揭开高性能的神秘面纱。</p>
+<h3 id="（一）高效的计划管理"><a href="#（一）高效的计划管理" class="headerlink" title="（一）高效的计划管理"></a>（一）高效的计划管理</h3><p><strong>1.计划缓存。</strong></p>
+<p>SQL语句的优化是一个比较耗时的过程，随着SQL语句的复杂度增高，优化的时间也会越来越长。为了避免反复执行优化过程，生成的执行计划会加入计划缓存中，以便再次执行该SQL时使用。每一个租户在每一台server上都有一个独立的计划缓存，用以缓存在此server上处理过的SQL计划。</p>
+<p>在应用系统中，同一条SQL每次执行可能会使用不同的参数，为了减少计划缓存的大小，系统会首先将用户SQL的参数做参数化处理，得到与具体参数无关的SQL字符串，并使用该字符串作为计划缓存的键值。计划缓存是一个典型的Key-Value结构，Key就是参数化后的SQL字符串，Value就是该条SQL所对应的执行计划。在OceanBase的计划缓存中，SQL的执行计划可以分为本地计划、远程计划和分布式计划三种类型。在计划缓存中，同一条SQL根据其需要访问的数据不同，可能同时有这三种执行计划。对于某一条SQL的某一种执行计划，默认情况下OceanBase只会保留一个计划，该计划由第一次执行SQL时生成；但在某些情况下，同一条SQL的参数值可能会影响到计划的选择，计划缓存可能会根据需要，为不同的参数值保留不同的执行计划，从而保证每次执行时可以使用最合适的计划。</p>
+<p><strong>2.快速参数化。</strong></p>
+<p>有了计划缓存之后，如何快速获取缓存数据，是需要考虑的另一个问题。传统数据库在进行参数化时一般是对语法树进行参数化，然后使用参数化后的语法树作为键值在Plan Cache中获取计划，而OceanBase使用的是词法分析，对文本串直接参数化后作为Plan Cache的键值，因此叫做快速参数化。具体流程如图2所示。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/02.png" alt="图2 基于快速参数化的获取执行计划过程"></p>
+<p>图2 基于快速参数化的获取执行计划过程</p>
+<p>计划缓存的优化，减少了计划生成的重复动作。快速参数化，省去了语法分析的过程，与此同时，相比对参数化后语法树做Hash和比较操作，对文本串进行Hash和MemCmp操作，效率更高，提升了从计划缓存中获取计划的效率。两个优化本质上均降低了CPU的开销，从而提升系统的吞吐能力。</p>
+<h3 id="（二）并发控制"><a href="#（二）并发控制" class="headerlink" title="（二）并发控制"></a>（二）并发控制</h3><p><strong>1.数据管理。</strong></p>
+<p>OceanBase 存储引擎采用的是 LSM tree 架构，数据分成静态和动态数据。动态数据保存在 Memtable 中并定期 dump 到磁盘中，Memtable 采用 B+tree 以及Hash 双索引结构对数据进行存储，其中 B+tree 用于范围查询，Hash 用于单行查询。B+tree 的叶子节点保存了行数据的元信息，关键的3个字段：主键、锁以及链表指针，如图3所示。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/03.png" alt="图3 memtable内存数据结构图（行上的多次修改）"></p>
+<p>图3 memtable内存数据结构图（行上的多次修改）</p>
+<ul>
+<li>锁信息表示是否有事务持有行锁，事务在修改数据之前需要先加行锁。</li>
+<li>链表信息指向多个版本的数据，每个版本只保存增量信息，比如某一次修改只修改一个字段，增量信息只会记录该字段的变化情况。</li>
+<li>对于尚未提交，已经转储到静态数据中的行，静态数据会进行特殊标记，用于行锁存在与否的判断。</li>
+</ul>
+<p><strong>2.并发控制。</strong></p>
+<p>OceanBase 基于MVCC和行上的互斥锁，实现了并发控制，主要特点如下：</p>
+<ul>
+<li>快照版本一个时间戳，通过比较时间戳的大小就可以确定事务的可见性。因此，相比其他数据库系统，OceanBase不需要维护全局事务管理器，高并发场景下，不存在全局事务管理器访问瓶颈的问题。</li>
+<li>OceanBase 行的元数据上保存了锁信息，同样也不需要额外的锁管理器。</li>
+<li>读操作不加行锁，写操作加行上的互斥锁，做到了读、写不相互阻塞，提升了高并发场景下的吞吐。</li>
+</ul>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/04.png" alt="图4 memtable内存数据结构图（读写请求逻辑）"></p>
+<p>图4 memtable内存数据结构图（读写请求逻辑）</p>
+<h3 id="（三）多维度缓存"><a href="#（三）多维度缓存" class="headerlink" title="（三）多维度缓存"></a>（三）多维度缓存</h3><p>上文提到，OceanBase 存储引擎采用的是 LSM tree 架构，其存储引擎整体架构如图5所示。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/05.png" alt="图5 OceanBase存储引擎架构图"></p>
+<p>图5 OceanBase存储引擎架构图</p>
+<p>通常来讲，LSM架构的查询，需要将静态数据和动态数据做merge，经过投影之后再返回给客户端。对于多级的sstable，这无疑会增加执行路径。为了提升查询效率，OceanBase设计多级缓存策略，具体包括以下5项。</p>
+<p>（1）Block Cache：类似于Oracle的Buffer Cache，缓存具体的数据块，实际上Block Cache中缓存是解压后的微块，大小是变长的。</p>
+<p>（2）Block Index Cache：缓存微块的索引，类似于Btree的中间层，在数据结构上和Block Cache有一些区别，由于中间层通常不大，Block Index Cache的命中率通常都比较高。</p>
+<p>（3）BloomFilter Cache：BloomFilter是一种结构，可以帮助加速对空查询的过滤，有助于提升insert的性能。OceanBase的BloomFilter是构建在宏块上的，按需自动构建，当一个宏块上的空查次数超过某个阈值时，就会自动构建BloomFilter，并将BloomFilter放入Cache。</p>
+<p>（4）Row Cache：Row Cache缓存具体的数据行，在进行Get&#x2F;MultiGet查询时，可能会将对应查到的数据行放入Row Cache，这样在进行热点行的查询时，就可以极大地提升查询性能。</p>
+<p>（5）Fuse Row Cache：跟row cache的差异在于，fuse row cache缓存的是当前系统中动、静态数据merge之后的值，对于高频的数据访问，可以直接访问fuse row cache。</p>
+<h3 id="（四）热点行优化"><a href="#（四）热点行优化" class="headerlink" title="（四）热点行优化"></a>（四）热点行优化</h3><p>随着在线交易、电商行业的发展，业务系统的热点并发压力逐渐成为一种挑战。热点账户短时间内余额大量更新，或者热门商品在营销活动中限时抢购，都是这种场景的直接体现。热点更新的本质是短时间内对数据库中的同一行数据的某些字段值进行高并发的修改（余额，库存等），这其中的瓶颈主要在于关系型数据库为了保持事务一致性，对数据行的更新都需要经过 “加锁-&gt;更新-&gt;写日志提交-&gt;释放锁” 的过程，而这个过程实质上是串行的。因此，提高热点行更新能力的关键在于如何尽可能缩短持有锁的时间。为了缓解热点行更新的问题，OceanBase提出了提前解行锁（Early Lock Release)的优化方案，其原理见图6。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/06.png" alt="图6 提前解行锁原理"></p>
+<p>图6 提前解行锁原理</p>
+<p><strong>1.优化前。</strong></p>
+<p>在用户发起 COMMIT 操作后，数据库（DB）端会触发日志的持久化流程。这个过程包括以下4个步骤：</p>
+<p>（1）将内存中的数据序列化并提交给本地的 Log buffer。</p>
+<p>（2）数据库将日志数据发送到所有备机。</p>
+<p>（3）等待多数备机同步日志成功后，数据库才认为日志持久化成功。</p>
+<p>（4）最终解锁事务，并向客户端返回事务提交成功的应答。</p>
+<p>在此流程中，一个事务的持锁时间包含以下几个部分：数据写入、日志序列化、同步备机的网络通信、日志刷盘的时间。对于三地五中心部署或者磁盘性能较差的情况，持锁时间较长，容易对热点行产生显著的性能影响。</p>
+<p><strong>2.优化后。</strong></p>
+<p>在数据库优化方案中，整体提交流程基本保持不变，但对解锁时机进行了调整。在新的流程中，当日志序列化完成并提交给 Log buffer 后，立即触发解锁操作，而不再等待多数备机的日志刷盘完成。这样可以有效减少事务的持锁时间。事务解锁后，允许后续事务对同一行进行操作，实现了多个事务并发更新同一行的效果，从而提升了系统的吞吐量。</p>
+<p>该优化生效的前提是OceanBase内核保证了以下关键特性：</p>
+<ul>
+<li>提前解锁的事务如果最终发生了回滚，后续凡是读到该事务信息的事务都需要回滚，我们称之为级联回滚；</li>
+<li>提前解锁的事务尚未应答客户端之前，后续凡是读到该事务信息的事务，都不能提前应答客户端；</li>
+<li>只支持单机事务使用ELR优化，降低级联回滚的概率。</li>
+</ul>
+<p><strong>3.优化效果。</strong></p>
+<p>基于上述优化方案，热点行场景下的性能可以通过以下公式计算：TPS&#x3D;1&#x2F;{一个事务内热点行的持锁耗时}，其中，持锁耗时指的是从加锁开始到事务提交完成的时间间隔。</p>
+<p>在三地五中心的场景下，由于 SQL 的整体执行耗时为 30ms，事务的 COMMIT 响应时间（RT）约为 30ms。通过该优化，性能基本能够与同城部署保持一致。</p>
+<p>基于Sysbench单行更新，16c&#x2F;64g阿里云ECS环境做压测，热点行优化效果见表1。</p>
+<p>表1 热点行优化效果</p>
+<table>
+<thead>
+<tr>
+<th>客户端并发</th>
+<th>优化前（TPS）</th>
+<th>优化后（TPS）</th>
+<th>性能提升</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2270</td>
+<td>2245</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2489</td>
+<td>8247</td>
+<td>231%</td>
+</tr>
+<tr>
+<td>15</td>
+<td>2470</td>
+<td>8458</td>
+<td>242%</td>
+</tr>
+<tr>
+<td>25</td>
+<td>2527</td>
+<td>10588</td>
+<td>319%</td>
+</tr>
+<tr>
+<td>50</td>
+<td>2502</td>
+<td>10641</td>
+<td>325%</td>
+</tr>
+</tbody></table>
+<h3 id="（五）日志聚合优化"><a href="#（五）日志聚合优化" class="headerlink" title="（五）日志聚合优化"></a>（五）日志聚合优化</h3><p>数据库系统中，WAL落盘是一个常见的动作。大量、高频的小数据量日志频繁落盘，会产生大量的I&#x2F;O，进而影响业务请求RT和系统的吞吐能力。为了解决或者优化该问题，数据库领域常见的解决方案是聚合提交，简言之，将多条日志进行聚合，整体执行一次I&#x2F;O。高并发写入场景下，降低持久化日志的IOPS和与该动作相关的CPU开销，最终达到提升系统吞吐的效果。</p>
+<p>OceanBase 4.x版本在3.x版本日志聚合方案基础上，重新做了设计，降低了单条日志数据buffer拷贝的次数，以日志流的维度，进一步提升了日志聚合能力，架构如图7所示。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/07.png" alt="图7 OceanBase日志引擎主、备副本逻辑管理结构"></p>
+<p>图7 OceanBase日志引擎主、备副本逻辑管理结构</p>
+<p>在图7中，事务模块提交日志到GroupBuffer中做聚合，通过一定的聚合策略，将生成的日志提交给ringbuffer实现的滑动窗口，即FixedSlidingWindow。该结构负责将聚合之后的日志同步备机，触发事务模块日志回调，推高本地最大连续committed lsn等信息。</p>
+<p>为了满足不同并发写入场景下日志的同步效率，OceanBase 4.x版本支持两种日志聚合策略：周期性和反馈式聚合。</p>
+<ul>
+<li>周期性聚合：后台每隔1ms由一个独立的线程触发日志聚合，该策略对高并发持续写入比较友好。</li>
+<li>反馈式聚合：对于低并发写入场景，周期性聚合导致事务日志存在1ms的延迟，业务影响较大。为了更好地解决该问题，OceanBase 4.x版本支持I&#x2F;O线程的反馈式聚合策略，即日志的刷盘线程完成当前I&#x2F;O动作之后，主动触发一次日志聚合，进行下一次I&#x2F;O动作。</li>
+</ul>
+<p>上述两种策略是互斥的，系统会根据当前的写入流量自适应做选择，兼顾了低并发下单个commit请求的延迟和高并发下系统整体的吞吐能力。基于32c * 3三副本环境，客户端单次模拟提交日志大小512B，对比了OceanBase日志模块Palf、Etcd、Braft三款系统的持久化日志的极限吞吐能力。经过验证，相同并发下，OceanBase的日志模块Palf吞吐远高于其他两个系统（见图8）。</p>
+<p><img data-src="/img/8-26-oceanbase-high-concurrency-performance/08.png" alt="图8 OceanBase PALF、Etcd、Braft三款系统日志持久化极限能力对比"></p>
+<p>图8 OceanBase PALF、Etcd、Braft三款系统日志持久化极限能力对比</p>
+<h3 id="（六）编译优化"><a href="#（六）编译优化" class="headerlink" title="（六）编译优化"></a>（六）编译优化</h3><p>2024年OceanBase基于国产化和Intel芯片做了大量的性能优化，这些优化目前已经应用于实际的业务场景，并取得了显著的性能提升。</p>
+<p>PGO（Profile Guided Optimization)也被称为FDO（Feedback Directed Optimization），是一类基于反馈式编译优化的技术。其核心原理是基于生产环境中的实际流量采集profile数据，经过加工处理，获取热点函数、分支执行频率结果信息，最后将结果文件输入编译、链接器，重新编译，产生优化之后二进制文件。该优化从多个方面提升了指令执行的效率（icache、itlb、page fault等）。</p>
+<p>LTO（Link Time Optimization)，即链接时优化，是另一种编译器优化技术。它允许编译器在链接阶段进行跨编译单元的全局优化，可以完成全局视角的inline、virtual method优化，从而达到提升CPU icache命中率，进而提升系统的整体吞吐。</p>
+<p>除了编译优化之外，OceanBase通过汇编指令的优化，解决了ARM CPU下glibc原生load128原子操作性能瓶颈的问题；根据CPU架构的差异，自适应设置CACHE ALIGN的大小，从而实现了x86和ARM cpu下，热点变量的自适应对齐能力，从而有效减少了false sharing的问题。此优化显著提升了OceanBase在国产芯片环境下的运行性能，为各行业信创推广实施中降低了实施成本。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文围绕高并发场景下的数据库性能保障展开讨论，指出在海量数据与高并发访问的压力下，高性能数据库系统对业务支撑的重要性。并以OceanBase数据库为例，从SQL引擎、事务引擎、存储引擎、编译优化等多个角度解读了一款具备高性能的分布式数据库在高并发场景下的关键设计，基于上述设计与优化，OceanBase得以支撑不同业务场景中的高并发、高性能诉求。希望本文能够为高并发系统的性能优化提供有价值的参考。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># 性能优化</a>
+              <a href="/tags/LSM-Tree/" rel="tag"># LSM-Tree</a>
+              <a href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/" rel="tag"># 高并发</a>
+              <a href="/tags/%E8%AE%A1%E5%88%92%E7%BC%93%E5%AD%98/" rel="tag"># 计划缓存</a>
+              <a href="/tags/MVCC/" rel="tag"># MVCC</a>
+              <a href="/tags/%E7%83%AD%E7%82%B9%E8%A1%8C/" rel="tag"># 热点行</a>
+              <a href="/tags/%E6%97%A5%E5%BF%97%E5%BC%95%E6%93%8E/" rel="tag"># 日志引擎</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-25-vector-db-ugc-recommendation/" rel="prev" title="向量数据库在 UGC 社区个性化推荐的落地指南">
+                  <i class="fa fa-angle-left"></i> 向量数据库在 UGC 社区个性化推荐的落地指南
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-27-dmall-oceanbase-resource-isolation/" rel="next" title="多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级">
+                  多点DMALL与OceanBase：实现租户间资源完全隔离与低成本系统升级 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="北京理工大学团队基于 OceanBase 构建非结构化文档智能分析系统 QUEST，通过采样选择性评估、Token 成本预估、filter 与 join 协同优化及 RAG 精准定位，突破传统全量抽取的高成本瓶颈，实现更高准确率、更低成本与更短延迟。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="北京理工大学团队基于 OceanBase 构建非结构化文档智能分析系统 QUEST，通过采样选择性评估、Token 成本预估、filter 与 join 协同优化及 RAG 精准定位，突破传统全量抽取的高成本瓶颈，实现更高准确率、更低成本与更短延迟。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/07.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/08.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/09.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/10.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/11.png">
+<meta property="og:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/12.png">
+<meta property="article:published_time" content="2025-07-04T09:10:54.000Z">
+<meta property="article:modified_time" content="2025-07-04T10:19:00.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI应用开发">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="大模型">
+<meta property="article:tag" content="混合检索">
+<meta property="article:tag" content="非结构化数据">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/","path":"2025/2025-07-04-ai-app-unstructured-document-analysis/","title":"AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%A7%E6%95%B0%E6%8D%AE%E6%97%B6%E4%BB%A3%E7%9A%84%E9%9D%9E%E7%BB%93%E6%9E%84%E5%8C%96%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E4%B8%8E%E5%88%86%E6%9E%90%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">大数据时代的非结构化数据存储与分析挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EOceanBase%E6%9E%84%E5%BB%BA%E9%9D%9E%E7%BB%93%E6%9E%84%E6%96%87%E6%A1%A3%E6%99%BA%E8%83%BD%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9F%E2%80%94%E2%80%94QUEST"><span class="nav-number">2.</span> <span class="nav-text">基于OceanBase构建非结构文档智能分析系统——QUEST</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E4%BC%A0%E7%BB%9F%E6%96%B9%E6%B3%95%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">（一）传统方法的局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%96%B0%E5%85%B4%E7%A0%94%E7%A9%B6%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">2.2.</span> <span class="nav-text">（二）新兴研究的局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89QUEST%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%88%9B%E6%96%B0%E4%BC%98%E5%8C%96"><span class="nav-number">2.3.</span> <span class="nav-text">（三）QUEST系统的创新优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89QUEST%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.4.</span> <span class="nav-text">（四）QUEST系统的设计与实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-OceanBase-%E8%83%BD%E6%94%AF%E6%92%91AI%E5%BA%94%E7%94%A8%E5%87%86%E7%A1%AE%E7%8E%87%E6%9B%B4%E9%AB%98%E3%80%81%E6%88%90%E6%9C%AC%E6%9B%B4%E4%BD%8E%E3%80%81%E5%BB%B6%E8%BF%9F%E8%BE%83%E7%9F%AD%EF%BC%9F"><span class="nav-number">2.5.</span> <span class="nav-text">为什么 OceanBase 能支撑AI应用准确率更高、成本更低、延迟较短？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E4%B8%8E%E5%B1%95%E6%9C%9B"><span class="nav-number">3.</span> <span class="nav-text">总结与展望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性 | Longda's Interesting World">
+      <meta itemprop="description" content="北京理工大学团队基于 OceanBase 构建非结构化文档智能分析系统 QUEST，通过采样选择性评估、Token 成本预估、filter 与 join 协同优化及 RAG 精准定位，突破传统全量抽取的高成本瓶颈，实现更高准确率、更低成本与更短延迟。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-04 17:10:54" itemprop="dateCreated datePublished" datetime="2025-07-04T17:10:54+08:00">2025-07-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">佘俊志</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>15 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">北京理工大学团队基于 OceanBase 构建非结构化文档智能分析系统 QUEST，通过采样选择性评估、Token 成本预估、filter 与 join 协同优化及 RAG 精准定位，突破传统全量抽取的高成本瓶颈，实现更高准确率、更低成本与更短延迟。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性","description":"北京理工大学团队基于 OceanBase 构建非结构化文档智能分析系统 QUEST，通过采样选择性评估、Token 成本预估、filter 与 join 协同优化及 RAG 精准定位，突破传统全量抽取的高成本瓶颈，实现更高准确率、更低成本与更短延迟。","image":"https://ilongda.com/img/7-4-ai-app-unstructured-document-analysis/01.png","wordCount":3976,"datePublished":"2025-07-04T09:10:54.000Z","dateModified":"2025-07-04T10:19:00.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/"},"url":"https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","大模型","RAG","混合检索","AI应用开发","非结构化数据"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"AI应用开发：创新实现非结构化文档分析系统，避免传统方式的局限性","item":"https://ilongda.com/2025/2025-07-04-ai-app-unstructured-document-analysis/"}]}</script>
+<h2 id="大数据时代的非结构化数据存储与分析挑战"><a href="#大数据时代的非结构化数据存储与分析挑战" class="headerlink" title="大数据时代的非结构化数据存储与分析挑战"></a>大数据时代的非结构化数据存储与分析挑战</h2><p>大数据时代，非结构化数据存储需求增大，IDC 报告显示现有的非结构化数据占比超过92.9%，新的数据存储范式应运而生。</p>
+<p>对于非结构化文档的存储和分析需要用到大模型的属性抽取能力。在实际业务场景中，企业会积累大量格式各异、内容复杂的产品开发文档、日志、报告、合同、病历等非结构化数据。这些数据直接存储和检索难度较大，而通过大模型进行属性抽取，将关键信息结构化后进行高效存储和检索，成为当前企业数据管理与智能化运营的迫切需求。例如，上述运维日志、产品开发文档、简历、病历、财报等典型场景，均属于非结构化文档，亟需结构化抽取和分析。</p>
+<p>当前，非结构化文档存储与分析能力已成为AI应用在企业数据智能化场景下的重要基础支撑，直接关系到智能搜索、自动化报表、风险监控等下游应用的效果与效率。然而非结构化文档存储和分析正面临四个挑战：</p>
+<ol>
+<li>组织和存储难。文档格式多样、分块边界模糊、元数据管理困难导致组织和存储困难。</li>
+<li>需适应多种查询需求。过滤器中同时包含稀疏向量匹配、稠密向量匹配、标量过滤，多种混合检索需求难以满足。</li>
+<li>难以高效分析。低延迟( LLM 算子)：复杂查询可能涉及基于 LLM 的语义操作符，效率和延迟的优化难以保障。</li>
+<li>水平扩展和增量更新难度大。文档数量动态增长，增量维护索引困难。</li>
+</ol>
+<span id="more"></span>
+
+<p>面对上述挑战，现有的数据存储方式虽然在各自的应用场景中都具有优势，但也存在不足，难以支撑非结构化文档智能分析系统所需的能力。</p>
+<ul>
+<li>传统关系型数据库：应用于结构化数据的存储与管理，适用于业务表单、固定事务处理、电子发票等数据结构稳定、关系清晰的场景，优点是拥有较强的ACID事务支持，成熟稳定，但对非结构数据支持很弱。</li>
+<li>数据湖（Data Lake），应用于大规模原始数据资产化，存储原始非结构化数据，存储成本低、查询速度慢、分析功能少。</li>
+<li>数据仓（Data Warehouse），应用于利用预处理好的规范数据进行核心业务决策支持，存储处理后的（半）结构化数据，存储成本较高、查询速度较慢、分析功能较多。</li>
+<li>向量数据库（Vector Database），应用于AI实时推理场景，存储向量数据，存储成本高、查询速度快，且仅支持向量相似查询。</li>
+</ul>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/01.png" alt="各类数据存储方式对比"></p>
+<p>可见，要应对非结构化数据的存储与分析挑战，需要存储方式至少具备以下特性：</p>
+<ul>
+<li>较强的ACID事务支持；</li>
+<li>性能较高的SQL查询与分析；</li>
+<li>支持非结构化数据；</li>
+<li>高扩展性与灵活性；</li>
+<li>存储成本低；</li>
+<li>完善的索引和精确查询；</li>
+<li>丰富的AI生态集成；</li>
+</ul>
+<h2 id="基于OceanBase构建非结构文档智能分析系统——QUEST"><a href="#基于OceanBase构建非结构文档智能分析系统——QUEST" class="headerlink" title="基于OceanBase构建非结构文档智能分析系统——QUEST"></a>基于OceanBase构建非结构文档智能分析系统——QUEST</h2><p>目前市面上能够有效应对非结构化数据存储与分析挑战的存储方式并不多，OceanBase可谓其中之一，因此，我们基于OceanBase开发了AI数据库应用——QUEST。帮助企业自动完成非结构化数据的解析、结构化和分析，提升数据利用率，解决信息孤岛问题。</p>
+<h3 id="（一）传统方法的局限性"><a href="#（一）传统方法的局限性" class="headerlink" title="（一）传统方法的局限性"></a>（一）传统方法的局限性</h3><p>以产品开发文档为例，企业的数据湖中往往沉淀着大量长篇的非结构化文档。理论上，这些文档可以通过抽取形成一张”属性-文档”二维表，每行对应一个文档，每列对应一个属性。但在实际应用中，存在如下挑战：</p>
+<ul>
+<li><strong>海量数据，查询聚焦</strong>：每次用户查询往往只关注文档集合中的极少部分文档，并且感兴趣的属性通常只出现在文档的少量文本块中。即”needle in the sea”式的需求。</li>
+<li><strong>属性需求动态变化</strong>：用户的查询属性难以一次性预定义，且随着业务演变不断变化。</li>
+</ul>
+<p>因此，**如何高效应对属性和文档的动态筛选、快速在线抽取，**成为传统系统难以克服的技术瓶颈。</p>
+<p>当前主流的属性抽取系统，通常采用全量抽取的方式：每当遇到新的查询属性时，系统会针对文档集合中的每一份文档进行一次全面的属性抽取。这种做法带来了如下局限：</p>
+<ul>
+<li>**LLM Token成本高：**大规模的全量抽取极大消耗LLM的token资源，运算与运营成本居高不下。</li>
+<li>**过滤机制低效：**用户的查询往往只关心少量文档，但全量抽取无法充分利用filter（如SQL where子句）带来的聚焦效果，浪费大量计算资源在无关文档上。</li>
+<li>**应对动态查询的能力不足：**用户对属性和分析需求经常发生变化，传统全量抽取方法难以及时响应，每次新增属性都要重复扫描全体文档，效率极低。</li>
+</ul>
+<h3 id="（二）新兴研究的局限性"><a href="#（二）新兴研究的局限性" class="headerlink" title="（二）新兴研究的局限性"></a>（二）新兴研究的局限性</h3><p>近年来，DocETL、Evaporate等系统尝试改进传统做法，提出了**”先filter再抽取属性”**的优化路径和工作流设计方法，致力于减少无效抽取操作。</p>
+<p>与传统数据库相比，非结构化文档属性抽取系统中的filter算子在实现和开销上有明显区别。</p>
+<p>具体而言，在非结构化文档属性抽取系统中，filter的执行往往也依赖于属性值的抽取。也就是说，系统必须先从每个文档中抽取出相关属性的值，才能在SQL查询中进行关系代数的判断。</p>
+<p>因此，对于复杂SQL语句，尤其是带有多个filter条件的场景，如果filter中涉及的新属性未能命中已有缓存，系统还需额外进行大量的在线抽取。这种”为过滤而抽取”的过程极大增加了LLM的消耗和整体处理成本；此外，join操作也可以视为filter的一种形式，其过程也涉及参与join的列的属性抽取，且join操作本身可以过滤掉表中的一些列。而新兴研究对filter和join等关键算子的协同排序和优化做得不够完善，所以在面对带有多个filter的复杂SQL查询时能力仍有不足。</p>
+<h3 id="（三）QUEST系统的创新优化"><a href="#（三）QUEST系统的创新优化" class="headerlink" title="（三）QUEST系统的创新优化"></a>（三）QUEST系统的创新优化</h3><p>针对上述问题，QUEST系统做了全方位的优化，具体包括以下四点。</p>
+<ul>
+<li>**基于采样的选择性评估：**对采样文档进行抽取得到”采样表”，可用于估计任意filter的选择性，实现更智能的筛选策略。</li>
+<li>**LLM Token Cost预估：**通过对RAG（Retrieval-Augmented Generation）方式获得的属性相关文本块长度统计，精准预估LLM处理成本，结合选择性指标合理排序filter优先级。</li>
+<li>**filter与join协同排序优化：**QUEST将join操作转化为IN操作，与被join表中的filter一起进行排序，从而最大程度利用过滤机制，优先排除无关（非热点）文档，极大减少无效抽取操作。</li>
+<li>**上下文精准定位与RAG加持：**QUEST利用RAG技术，精准定位待抽取属性所在的上下文，不必将整个文档传给LLM，大幅缩短上下文长度，不仅提高了抽取准确率，也进一步降低了成本。</li>
+</ul>
+<h3 id="（四）QUEST系统的设计与实现"><a href="#（四）QUEST系统的设计与实现" class="headerlink" title="（四）QUEST系统的设计与实现"></a>（四）QUEST系统的设计与实现</h3><p>OceanBase for QUEST 系统的原型设计来源于我们在顶级国际会议上发表的论文，该论文获得了2025年 sigmod 的 strong accept 评价。首先我们来看一下系统的整体框架。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/02.png" alt="QUEST系统整体框架"></p>
+<p>从上图可见，OceanBase 在系统中主要参与第一步、第二步中的二级索引建立与检索过程，也就是图中标出来的四个圆圈。 整体流程的第一步是离线构建文档级索引和分块级的索引，即对每一个原始文档进行分块处理，然后把分块存到对应的数据库表中。</p>
+<p>第二步是在线 SQL 查询，一共包括5项流程：</p>
+<ol>
+<li>采样部分文档。LLM 从中抽取用户查询 Q 中出现的属性来生成采样表 S，用于查询增强和优化。</li>
+<li>文档检索。Q 文档主题+文档索引: 过滤无关文档。</li>
+<li>分块检索。(Q 属性名,S-Evidence ) + 分块索引:，获得与属性相关的分块。</li>
+<li>系统根据采样表 S 中属性的选择性和属性相关分块的 token 总数，生成优化的执行计划。</li>
+<li>系统按照计划逐个处理文档，调用 LLM 从相关文本块中抽取出现在 Q 中的属性并缓存。</li>
+</ol>
+<p>简单总结来说， QUEST 将对非结构化文档的查询转换为对查询相关属性的抽取和优化任务。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/03.png" alt="QUEST处理流程示意一"></p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/04.png" alt="QUEST处理流程示意二"></p>
+<p>下面是我们利用 OceanBase 在处理流程中的操作细节，首先我们需要把文档的分块二级索引存储在 OceanBase 的二维表中。对于文档表，我们存储文档 ID、文档内容、文档总结、文档总结嵌入向量、文档标题；对于分块表，我们存储分块 ID、分块内容、分块嵌入向量、分块所属的文档 ID。</p>
+<p>在二维表建立后，需要分别构建文档索引和分块索引。</p>
+<ul>
+<li>文档索引构建：documents 表。<ul>
+<li>对 summary_embedding 建立稠密向量索引（hnsw 语义- 相似度)。</li>
+<li>对 content 建立稀疏向量索引（BM25 关键词匹配)。</li>
+<li>针对 title 等 metadata 建立标量索引。</li>
+</ul>
+</li>
+<li>分块索引构建：text_chunks表。<ul>
+<li>对 embedding 建立稠密向量索引（hnsw 语义相似度)。</li>
+<li>对 content 建立稀疏向量索引 ( BM25 关键词匹配)。</li>
+<li>针对 doc_id 等 metadata 建立标量索引。</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/05.png" alt="文档表与分块表结构"></p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/06.png" alt="文档索引与分块索引构建"></p>
+<p>举一个简单的例子，假设查询是 SELECT age, name, team FROM NBAPlayer WHERE age&gt;30 系统要处理这个查询，就要先从文档中抽取出过滤器 WHERE age&gt;30 中的 age 属性，再进一步从符合条件的文档中提取 name、team 属性。那么，如何用 OceanBase 找出每个文档中 age 相关的文本块，从而送给 LLM抽 取？</p>
+<p>对于文档表，用单词”NBA”进行全文检索，再用表名 NBAPlayer 嵌入得到的 alpha 向量进行语义相似度检索，从而返回主题为 NBAPlayer 的文档，过滤掉无关文档。</p>
+<p>对于分块表，限定 doc_id 进行标量检索，用单词”age”和”birthdate”进行全文检索，再用属性名 age和 age 附加的 Evidence 描述进行语义相似度检索，从而实现从一篇特定的文档中抽取与 age 相关的文本块的功能。</p>
+<p>上述功能是 QUEST 系统的核心操作之一，OceanBase 帮助我们以优雅的方式实现了这一点。<strong>QUEST 系统的实验效果：</strong></p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/07.png" alt="QUEST系统检索示例"></p>
+<p>为了测试QUEST 系统的效果，我们在 WikiText、SWDE、LCR 几个数据集上进行了实验，其中 LCR 是法律数据集、SWDE 是影视相关的数据集，然后与其他领域内比较领先的非结构化文档分析系统进行了比较，发现 QUEST 系统在准确率、成本、延迟方面都明显优于其他系统。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/08.png" alt="QUEST系统实验效果对比"></p>
+<h3 id="为什么-OceanBase-能支撑AI应用准确率更高、成本更低、延迟较短？"><a href="#为什么-OceanBase-能支撑AI应用准确率更高、成本更低、延迟较短？" class="headerlink" title="为什么 OceanBase 能支撑AI应用准确率更高、成本更低、延迟较短？"></a>为什么 OceanBase 能支撑AI应用准确率更高、成本更低、延迟较短？</h3><p>那么，为什么 OceanBase能够应对非结构化文档存储与分析的挑战，帮助我们实现准确率更高、成本更低、延迟较短的 QUEST 系统呢？</p>
+<p><strong>1.一体化数据库 for AI。</strong></p>
+<p>相比于传统的单一存储范式，OceanBase 是一体化数据库，它将不同存储范式的优点集成在一起，较市面上独立的向量数据库能更好地应对非结构化文档存储和分析的挑战。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/09.png" alt="OceanBase一体化数据库"></p>
+<p><strong>2.出色的向量检索性能。</strong></p>
+<p>对于 AI 应用开发而言，OceanBase 具备出色的向量检索性能，下图为向量数据库查询 Benchmark 压测的结果，来自于 OceanBase 2025开发者大会现场测试。从图中可以看出，OceanBase 每秒执行的向量查询次数远高于其他的主流向量数据库。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/10.png" alt="向量数据库Benchmark压测结果"></p>
+<p><strong>3.多模一体化混合检索：稠密向量+稀疏向量+标量。</strong></p>
+<p>OceanBase 支持多模一体化的混合检索，用户在一条查询语句中可以同时使用稠密向量、稀疏向量和标量三种过滤器。</p>
+<p><strong>4.SQL-Python 开发接口。</strong></p>
+<p>OceanBase 向量检索提供灵活的访问接口，不仅支持通过 MySQL 协议的各种语言客户端使用 SQL 访问，也可以使用 SDK 访问（例如 Python），带来简单高效的 AI 应用开发体验。</p>
+<p><strong>5.主流 AI 框架集成。</strong></p>
+<p>OceanBase 集成了主流的 AI 框架和服务，例如 LangChain、Llamalndex、Dify、Fast-GPT 等，同时兼容标准的 MCP 协议，可以在 AI 应用开发的各种场景中为开发者提供较好的平台和框架，打通开发流程。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/11.png" alt="OceanBase集成主流AI框架"></p>
+<p><strong>6.强大的开源社区支持。</strong></p>
+<p>OceanBase 社区拥有活跃的共建氛围和强大的官方支持。而且社区成员积极参与不同细分领域的特别兴趣组 OceanBase SIG（Special Interest Group）进行技术共建，甚至每周开会讨论开发需求与计划，促进成员之间的交流、提升开发效率。</p>
+<h2 id="总结与展望"><a href="#总结与展望" class="headerlink" title="总结与展望"></a>总结与展望</h2><p>QUEST系统特别适用于**企业级大规模数据湖、知识管理、合规文档抽查、产品研发资料整理、合同审核等复杂场景，**帮助用户在”只关心少量文档和属性”的动态需求下，低成本、高效率、智能化地完成在线属性抽取与分析。</p>
+<p>后续，我们将在QUEST 系统增加对带有图片的多模态文档的查询支持，这就要求我们将图片存储到 OceanBase中。由于 OceanBase 良好的多模一体化接口设计，我们针对图片的存储和索引预期设计与针对文本的设计差不多，这充分体现了 OceanBase 在 AI 应用开发中的优势。</p>
+<p><img data-src="/img/7-4-ai-app-unstructured-document-analysis/12.png" alt="QUEST多模态文档查询展望"></p>
+<p>经过我们的试验，基于 OceanBase 开发AI应用的优点主要有三点：支持一体化数据库范式、原生支持分布式扩展，具有良好的产品生态。此外， OceanBase 能实现存算一体的查询和存储操作，无需开发者编写额外的查询引擎，大大加速了我们的应用开发。</p>
+<p>OceanBase 作为 AI 时代的数据底座，为 RAG 和 Agent 的应用提供高质量、可扩展、易查询的数据源。我们相信 OceanBase 未来能在 AI 应用领域发挥出更大的价值。</p>
+<p>💌</p>
+<blockquote>
+<p>老纪的技术唠嗑局 不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星 ✨ 吧！你的每一个Star，都是我们努力的动力～💕</p>
+<p><strong><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vY2VhbmJhc2U=">https://github.com/oceanbase/oceanbase<i class="fa fa-external-link-alt"></i></span></strong></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" rel="tag"># 大模型</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/AI%E5%BA%94%E7%94%A8%E5%BC%80%E5%8F%91/" rel="tag"># AI应用开发</a>
+              <a href="/tags/%E9%9D%9E%E7%BB%93%E6%9E%84%E5%8C%96%E6%95%B0%E6%8D%AE/" rel="tag"># 非结构化数据</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-06-30-boss-zhipin-high-performance-storage/" rel="prev" title="面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案">
+                  <i class="fa fa-angle-left"></i> 面对日增亿级数据，BOSS直聘基于OceanBase的高性能与高效存储方案
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-07-oceanbase-poc-ap-business/" rel="next" title="OceanBase PoC 经验总结（二）—— AP 业务">
+                  OceanBase PoC 经验总结（二）—— AP 业务 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

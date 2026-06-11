@@ -206,18 +206,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-count">207</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">271</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -358,7 +358,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- innodb 内存","description":"InnoDB 内存管理源码笔记：mem_heap_t 堆分配、ut_allocator 封装与 block 对齐及 no-man land 调试机制","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1567608375891-e051f193-78b8-4d57-a45f-03f9d191cc08.png#align=left&display=inline&height=840&name=image.png&originHeight=840&originWidth=1618&size=131594&status=done&width=1618","wordCount":769,"datePublished":"2019-06-23T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.956Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/innodb/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/innodb/","inLanguage":"zh-CN","keywords":["Database","MySQL","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"MySQL 源码解读 -- innodb 内存","description":"InnoDB 内存管理源码笔记：mem_heap_t 堆分配、ut_allocator 封装与 block 对齐及 no-man land 调试机制","image":"https://cdn.nlark.com/yuque/0/2019/png/106206/1567608375891-e051f193-78b8-4d57-a45f-03f9d191cc08.png#align=left&display=inline&height=840&name=image.png&originHeight=840&originWidth=1618&size=131594&status=done&width=1618","wordCount":769,"datePublished":"2019-06-23T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.956Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/innodb/"},"url":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/innodb/","inLanguage":"zh-CN","keywords":["MySQL","Database","MySQL 源码解读"],"articleSection":["Database","MySQL","MySQL 源码解读"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"Database","item":"https://ilongda.com/categories/Database/"},{"@type":"ListItem","position":3,"name":"MySQL 源码解读 -- innodb 内存","item":"https://ilongda.com/2019/docs/mysql/source_code_reading/memory/innodb/"}]}</script>
 <h1 id="innodb-内存"><a href="#innodb-内存" class="headerlink" title="innodb 内存"></a>innodb 内存</h1><p><a name="1JdVP"></a></p>
 <h3 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h3><p>在innodb 内部， 用另外一个内存数据结构， mem_heap_t（也是mem_block_t）来表示<br><img data-src="https://cdn.nlark.com/yuque/0/2019/png/106206/1567608375891-e051f193-78b8-4d57-a45f-03f9d191cc08.png#align=left&display=inline&height=840&name=image.png&originHeight=840&originWidth=1618&size=131594&status=done&width=1618" alt="image.png"><br>另外有allocator， </p>
@@ -414,8 +414,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/Database/" rel="tag"># Database</a>
               <a href="/tags/MySQL-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/" rel="tag"># MySQL 源码解读</a>
           </div>
 
@@ -428,8 +428,8 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2019/docs/mysql/source_code_reading/memory/buffer_pool/" rel="prev" title="MySQL 源码解读 -- Buffer Pool">
-                  <i class="fa fa-angle-left"></i> MySQL 源码解读 -- Buffer Pool
+                <a href="/2019/docs/mysql/source_code_reading/memory/index/" rel="prev" title="MySQL 源码解读 -- 内存管理">
+                  <i class="fa fa-angle-left"></i> MySQL 源码解读 -- 内存管理
                 </a>
             </div>
             <div class="post-nav-item">
@@ -471,14 +471,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">197k</span>
+    <span title="Word count total">483k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:57</span>
+    <span title="Reading time total">29:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

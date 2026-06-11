@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="中国联通分享数据库智能专家 ChatDBA 的建设历程，详解为何从 MySQL+Milvus 升级为 OceanBase 向量数据库，并公开 Milvus、Elasticsearch、OceanBase 三款产品的功能与性能实测对比结果。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="中国联通分享数据库智能专家 ChatDBA 的建设历程，详解为何从 MySQL+Milvus 升级为 OceanBase 向量数据库，并公开 Milvus、Elasticsearch、OceanBase 三款产品的功能与性能实测对比结果。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/07.png">
+<meta property="og:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/08.png">
+<meta property="article:published_time" content="2025-07-09T09:02:28.000Z">
+<meta property="article:modified_time" content="2025-07-09T09:22:51.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="ChatDBA">
+<meta property="article:tag" content="Elasticsearch">
+<meta property="article:tag" content="Milvus">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="中国联通">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="智能运维">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/","path":"2025/2025-07-09-china-unicom-chatdba-vector-database/","title":"中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%EF%BC%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%A7%E5%93%81%E5%8F%8A%E8%BF%90%E7%BB%B4%E4%BD%93%E7%B3%BB%E5%BB%BA%E8%AE%BE"><span class="nav-number">1.</span> <span class="nav-text">一、背景：数据库产品及运维体系建设</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E8%87%AA%E7%A0%94-%E5%95%86%E7%94%A8%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%A7%E5%93%81%E4%BD%93%E7%B3%BB"><span class="nav-number">1.1.</span> <span class="nav-text">（一）自研 + 商用数据库产品体系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B3%E5%8F%B0%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%BB%BA%E8%AE%BE%E2%80%94%E2%80%94ChatDBA"><span class="nav-number">1.2.</span> <span class="nav-text">（二）数据库平台智能运维建设——ChatDBA</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E9%80%89%E6%8B%A9-OceanBase-%E8%B5%8B%E8%83%BD%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4"><span class="nav-number">2.</span> <span class="nav-text">二、选择 OceanBase 赋能智能运维</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8C%91%E6%88%98"><span class="nav-number">2.1.</span> <span class="nav-text">（一）智能运维平台的技术挑战</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">（二）向量数据库选型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E7%A8%8B%E5%BA%8F%E9%80%82%E9%85%8D%E6%94%B9%E9%80%A0%E5%8F%8A%E5%8D%87%E7%BA%A7%E6%95%88%E6%9E%9C"><span class="nav-number">2.3.</span> <span class="nav-text">（三）程序适配改造及升级效果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="nav-number">3.</span> <span class="nav-text">三、未来展望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比 | Longda's Interesting World">
+      <meta itemprop="description" content="中国联通分享数据库智能专家 ChatDBA 的建设历程，详解为何从 MySQL+Milvus 升级为 OceanBase 向量数据库，并公开 Milvus、Elasticsearch、OceanBase 三款产品的功能与性能实测对比结果。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-09 17:02:28" itemprop="dateCreated datePublished" datetime="2025-07-09T17:02:28+08:00">2025-07-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">中国联通</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.3k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>12 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">中国联通分享数据库智能专家 ChatDBA 的建设历程，详解为何从 MySQL+Milvus 升级为 OceanBase 向量数据库，并公开 Milvus、Elasticsearch、OceanBase 三款产品的功能与性能实测对比结果。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比","description":"中国联通分享数据库智能专家 ChatDBA 的建设历程，详解为何从 MySQL+Milvus 升级为 OceanBase 向量数据库，并公开 Milvus、Elasticsearch、OceanBase 三款产品的功能与性能实测对比结果。","image":"https://ilongda.com/img/7-9-china-unicom-chatdba-vector-database/01.png","wordCount":3244,"datePublished":"2025-07-09T09:02:28.000Z","dateModified":"2025-07-09T09:22:51.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/"},"url":"https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","智能运维","RAG","中国联通","ChatDBA","Milvus","Elasticsearch"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"中国联通 ChatDBA 升级向量数据库，Milvus、Elasticsearch、OceanBase实测对比","item":"https://ilongda.com/2025/2025-07-09-china-unicom-chatdba-vector-database/"}]}</script>
+<p>本文整理自2025 OceanBase开发者大会演讲<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kZXZjb24yMDI1">《中国联通如何用 OceanBase 重塑数据库的智能运维未来》<i class="fa fa-external-link-alt"></i></span>，点击链接可查看视频回顾。</p>
+<p>随着信息技术的快速发展，数据库作为企业数据管理和分析的核心，其重要性日益凸显。中国联通作为国内领先的通信服务提供商，为了应对业务发展的过程中数据量激增、业务需求多样化等挑战，积极探索数据库技术的创新应用，特别是在智能运维领域。</p>
+<p>本文将详细探讨中国联通为何选择 OceanBase 的向量能力，构建智能运维平台，并分享Milvus、Elasticsearch、OceanBase 的选型对比。</p>
+<span id="more"></span>
+
+<h2 id="一、背景：数据库产品及运维体系建设"><a href="#一、背景：数据库产品及运维体系建设" class="headerlink" title="一、背景：数据库产品及运维体系建设"></a>一、背景：数据库产品及运维体系建设</h2><p>在核心技术自主可靠的大背景下，中国联通率先开启了内部系统可靠战略，计划在 2027 年完成全部的架构改造，旨在通过采用国产、自主可靠的技术和产品，提高信息系统的安全性和可靠性，减少对外部技术的依赖。</p>
+<h3 id="（一）自研-商用数据库产品体系"><a href="#（一）自研-商用数据库产品体系" class="headerlink" title="（一）自研 + 商用数据库产品体系"></a>（一）自研 + 商用数据库产品体系</h3><p>在以上背景下，同时为了应对 MySQL 5.7 停服风险、降低商用依赖以及提升软研院软实力等几方面综合考虑，早在三年前，中国联通选定基于 OceanBase 社区版打造自研分布式 CUDB 产品，同时补齐数据库产品生态能力。随后，中国联通引进多款商用数据库产品，形成了自研+商用的数据库产品体系，解决了数据库核心技术问题，助力集团架构升级，完成内部系统可靠战略。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/01.png" alt="中国联通自研+商用数据库产品体系"></p>
+<p>在数据库产品生态能力的建设中，为屏蔽底层数据库差异、提高运营效能，中国联通建立了泛数据库 CDAS（Cloud Database Autonomous System）工具体系，提供统一操作与运维视图，自研打造跨产品融合、全场景驾驭的数据库自治服务工具，实现数据库的全生命周期自治化管理，减少人工干预，提高数据库性能、稳定性和安全性。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/02.png" alt="泛数据库 CDAS 工具体系"></p>
+<h3 id="（二）数据库平台智能运维建设——ChatDBA"><a href="#（二）数据库平台智能运维建设——ChatDBA" class="headerlink" title="（二）数据库平台智能运维建设——ChatDBA"></a>（二）数据库平台智能运维建设——ChatDBA</h3><p>为了更好地服务于应用，降低数据库的使用门槛，提升运维效率，中国联通将目光聚焦于数据库 DevOps 全生命周期管理，将 AI 大模型与数据库专家经验结合，建设了数据库智能专家 ChatDBA。</p>
+<p>ChatDBA 以大模型和微调模型为基础，构建多 Agent 编排调度引擎，集成各类成熟工具，赋能数据库的全生命周期。</p>
+<ul>
+<li>在设计阶段，ChatDBA 规划了模型设计、结构设计，以及智能化建库建表的能力；</li>
+<li>在开发策略阶段，ChatDBA 优先关注 SQL 的生成补全、SQL 转代码、异构 SQL 转化的能力；</li>
+<li>在上线阶段，ChatDBA 优先关注 SQL 审核、索引检查优化等能力；</li>
+<li>在运维阶段，ChatDBA 通过日志、监控等手段，实现根因定位和快速恢复的能力；</li>
+<li>在后期运营阶段，ChatDBA 优先实现 SQL 调优功能。</li>
+</ul>
+<p>上述能力可以使数据库更好地服务于应用，具体以数据库开发、数据库运维排障、DBA知识问答这三个场景为例，详细介绍。</p>
+<p><strong>场景一：数据库开发。</strong></p>
+<p>在数据库开发阶段，应用可能面临很多问题，如：手写 SQL 不仅耗时长还容易出错，新数据库的使用门槛高、SQL 质量参差不齐。为此，中国联通将大模型和 Agent 能力结合，构建了 Text2SQL、SQL 转代码、异构 SQL 转换等能力，以及通过不断调试提升生成结果的准确率，进而提升开发效率。此外，通过建设数据库智能体，结合 CDAS 工具，让智能体具备专业的行动力，能够根据指令自主进行决策和行动。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/03.png" alt="数据库开发场景"></p>
+<p><strong>场景二：数据库运维排障。</strong></p>
+<p>在数据库运维阶段，运维人员可能面临日志监控等信息需要人工分析的问题，耗时长、效率低。为此，中国联通基于大语言模型和 Agent 智能体围绕故障发现、故障诊断、故障处置等核心运维场景，打造了数据库的运维排障助手。通过收集常用的运维知识，包括经验、故障等，使用向量数据库输送知识的方式，培养 Agent 的专业运维能力。此外，基于多 Agent 的编排调度，各自领域的 Agent 协同工作，提高运维效率。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/04.png" alt="数据库运维排障场景"></p>
+<p><strong>场景三：DBA 知识问答。</strong></p>
+<p>在数据库的全生命周期中，产品人员和开发人员可能面临应用多、问题多、更新迭代快等挑战，不仅需要持续学习，还有问题被及时解决的需求。为此，中国联通复用研发大模型知识处理能力，聚焦数据库领域专业知识和产品运维支撑知识，基于 CDAS 的数据库融合生态，建设 DBA 知识问答能力。首先，收集专业知识文档，通过文档的分割、切片、生成向量等方式，使大语言模型可以获取专业的数据库领域知识；其次，通过向量检索辅助大语言模型生成更准确、更丰富的文本内容，提升文本处理任务的效率和质量。通过以上方案，最终为数据库使用者（应用人员）和数据库维护方（产品运维、支撑人员）提供一站式的高质量技术咨询与解决方案服务。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/05.png" alt="DBA 知识问答场景"></p>
+<h2 id="二、选择-OceanBase-赋能智能运维"><a href="#二、选择-OceanBase-赋能智能运维" class="headerlink" title="二、选择 OceanBase 赋能智能运维"></a>二、选择 OceanBase 赋能智能运维</h2><h3 id="（一）智能运维平台的技术挑战"><a href="#（一）智能运维平台的技术挑战" class="headerlink" title="（一）智能运维平台的技术挑战"></a>（一）智能运维平台的技术挑战</h3><p>在数据库智能专家 ChatDBA 的各个使用场景中都用到了一个关键的基础组件：向量数据库。</p>
+<p>起初，中国联通在实现 ChatDBA 的过程中使用 MySQL 处理数据，使用 Milvus 检索，但存在以下问题。</p>
+<ul>
+<li>单点问题：由于 MySQL 是集中式数据库，只能单机进行部署，存在单点问题，Milvus 当前非 k8s 环境，也只能单机部署，导致系统可用性存在较大隐患。</li>
+<li>扩展性问题：受限于单机部署架构，在业务上线初期，业务量较少时资源浪费严重，随着业务量增长，也无法水平扩展。</li>
+<li>运维复杂性问题：同时运维多个数据库组件，复杂度较高，而且由于 Milvus 依赖于 Mini IO 等组件，运营成本直线上升。</li>
+</ul>
+<p>因此，中国联通将目光投向了行业内其他功能架构更适配的向量数据库。</p>
+<h3 id="（二）向量数据库选型"><a href="#（二）向量数据库选型" class="headerlink" title="（二）向量数据库选型"></a>（二）向量数据库选型</h3><p><strong>1.行业内产品对比。</strong></p>
+<p>中国联通对市面上主流的向量数据库产品进行了初步调研，尤其是 Milvus、Elasticsearch 和 OceanBase 这三款关注度较高的产品。以下是详细调研情况。</p>
+<ul>
+<li>向量基础能力：如基本向量查询，Milvus、Elasticsearch 和 OceanBase 三款数据库基本都支持。</li>
+<li>向量维度：OceanBase 最高支持 16000 维；Milvus 最高支持 32768 维（不直接支持SQL）；Elasticsearch 支持 4096 维。</li>
+<li>数据一致性：OceanBase 支持事务，可以保证数据的一致性，Elasticsearch 和 Milvus 不能保证。</li>
+<li>产品部署：目前三款数据库的最新版本都支持单机和分布式部署模式，但 OceanBase 是原生的分布式架构，可以做到透明、弹性。</li>
+<li>备份恢复：Milvus 只支持数据的全量备份；Elasticsearch 支持全备和增量备份；OceanBase 支持全备、增备和事务日志备份。此外，Milvus 和 Elasticsearch 只支持将数据恢复到备份时的时间点，而 OceanBase 支持恢复到任意时间点。</li>
+<li>其他方面：Milvus 不具备监控巡检接口和多模态能力，且后续没有支持计划，加上权限管理支持较弱，因此整体的运维易用性不能很好的满足业务需求。</li>
+</ul>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/06.png" alt="Milvus、Elasticsearch、OceanBase 产品能力对比"></p>
+<p><strong>2.基准性能测试。</strong></p>
+<p>向量数据库的性能也是中国联通重点关注的方面，便对上述几款向量数据库进行了基准性能测试，测试环境为国产 ARM 环境，采用了标准数据集以及专业的向量数据库测试工具 VectorDBBench，以下是性能测试结果。</p>
+<p>在 768 维 100 万数据集下，OceanBase 的总体性能优于 Milvus，在相同召回率下：</p>
+<ul>
+<li>当召回率在0.74 ~ 0.98 区间时，OceanBase 的性能基本是 Milvus 的 3 倍；</li>
+<li>当召回率为 0.98 时，OceanBase 性能甚至达到了 Milvus 的 6 倍。</li>
+</ul>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/07.png" alt="768维100万数据集性能测试结果"></p>
+<p>OceanBase 的总体性能也优于 Elasticsearch，在召回率在 0.74 ~ 0.98 区间时，OceanBase 的整体性能相比 Elasticsearch 提升 70% 左右。</p>
+<p>在 1536 维 50 万数据集下，OceanBase 的整体性能优于 Milvus，如下图所示，当召回率在 0.87 ~ 0.99 区间时，OceanBase 的性能相比 Milvus 提升大概 60% 左右，整体性能与 Elasticsearch 相当。</p>
+<p><img data-src="/img/7-9-china-unicom-chatdba-vector-database/08.png" alt="1536维50万数据集性能测试结果"></p>
+<p><strong>3.验证总结。</strong></p>
+<p>综上所述，Milvus、Elasticsearch 和 OceanBase在功能、性能、产品生态的区别大致如下。</p>
+<ul>
+<li>功能：Milvus 不支持混合查询；Elasticsearch 仅支持向量、全文索引的混合查询；而 OceanBase 支持向量、标量、GIS、全文索引和混合查询等非常全面的向量查询能力。</li>
+<li>性能：OceanBase 整体优于 Milvus 和 Elasticsearch，在相同召回率下，OceanBase 是 Milvus 的 1.5 ~3 倍，相比 Elasticsearch 性能整体提升 40% 左右。</li>
+<li>产品生态方面，OceanBase 具备明显优势：<ul>
+<li>OceanBase 的管理工具可以直接实现白屏化的监控告警、备份恢复等；</li>
+<li>由于 OceanBase 是原生分布式架构，支持单机故障的快速恢复，具备原生高可用能力以及弹性扩缩容能力，可以做到透明弹性扩缩和透明负载均衡；</li>
+<li>OceanBase 具备多租户资源隔离能力，结合其强大的扩展性，可以提供安全灵活的 DBAS 服务，极大简化架构，便于运维。</li>
+</ul>
+</li>
+</ul>
+<p>基于OceanBase在对比验证中的综合优势，中国联通决定选用 OceanBase 作为目标向量数据库，并基于其多模态支持，对 MySQL 和 Milvus 进行架构升级。</p>
+<h3 id="（三）程序适配改造及升级效果"><a href="#（三）程序适配改造及升级效果" class="headerlink" title="（三）程序适配改造及升级效果"></a>（三）程序适配改造及升级效果</h3><p>在架构升级过程中，中国联通首先对程序进行了适配改造。由于 OceanBase 完全兼容 MySQL 语法，MySQL 只需要简单地修改链接地址即可完成升级。同时 OceanBase 支持 SDK 和 SQL 两种访问方式，并提供了兼容 Milvus 的 SDK 接口，替换 Milvus 的改造量也不大，因此，中国联通仅用半个月的时间就完成了所有的程序适配改造与验证工作。</p>
+<p>在数据迁移方面，OceanBase 的官方迁移服务 OMS 支持 MySQL 到 OceanBase 全量和增量数据迁移、支持 Milvus 到 OceanBase 的全量迁移，整个迁移过程非常平滑，耗时较短。</p>
+<p>完成架构升级后，效果显著，在资源利用、稳定性、扩展性等方面尤为明显。</p>
+<ul>
+<li>资源利用：原来使用两个数据库支撑的业务替换为一体化的OceanBase后，规格减少了 30%，带来了 30% 的资源节省。</li>
+<li>稳定性：OceanBase 是多节点架构，在单机故障情况下可以做到 RPO&#x3D;0，RTO&lt; 8s，规避了原来架构存在的业务可用性和数据丢失风险。</li>
+<li>扩展性：OceanBase 可以根据业务负载情况灵活调整规格，做到了对资源的极致利用，在整个集群负载压力比较大的情况下，还可以进行横向扩展来满足需求，并且所有操作对应用来说都是完全透明的。</li>
+</ul>
+<p>总的来说，此次架构改造不仅实现了技术升级，还带来了资源更省、稳定性更强、透明弹性扩缩容等额外效益，使中国联通内部业务人员、研发及运维人员都非常满意。</p>
+<h2 id="三、未来展望"><a href="#三、未来展望" class="headerlink" title="三、未来展望"></a>三、未来展望</h2><p>未来，中国联通将建设向量数据库资源池，统一向量数据库技术栈，统一赋能知识库 RAG 场景，并探索OceanBase的向量能力。目前 OceanBase 也在继续优化和完善向量支持能力，如支持二进制距离、更多索引类型，以及进一步提升向量索引构建速度、丰富向量检索能力、支持 GPU 加速等。基于与 OceanBase 社区的深厚合作基础以及目前取得的成果，中国联通希望可以继续在向量库研发方面展开共建，进一步繁荣社区生态。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4/" rel="tag"># 智能运维</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E4%B8%AD%E5%9B%BD%E8%81%94%E9%80%9A/" rel="tag"># 中国联通</a>
+              <a href="/tags/ChatDBA/" rel="tag"># ChatDBA</a>
+              <a href="/tags/Milvus/" rel="tag"># Milvus</a>
+              <a href="/tags/Elasticsearch/" rel="tag"># Elasticsearch</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-08-standalone-distributed-integrated-database/" rel="prev" title="OceanBase 单机分布式一体化数据库的架构设计与优化">
+                  <i class="fa fa-angle-left"></i> OceanBase 单机分布式一体化数据库的架构设计与优化
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-10-dify-oceanbase-mcp-rag/" rel="next" title="Dify + OceanBase + MCP：三剑合璧，轻松构建 RAG 应用">
+                  Dify + OceanBase + MCP：三剑合璧，轻松构建 RAG 应用 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

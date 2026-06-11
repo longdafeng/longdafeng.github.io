@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="快钱支付DBA分享DB架构从MySQL主备、MyCAT分库分表到OceanBase的三次变迁，详解迁移五大经验，最终实现硬件成本降低52%。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="硬件成本降52%，快钱支付引入OceanBase后的降本增效">
+<meta property="og:url" content="https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="快钱支付DBA分享DB架构从MySQL主备、MyCAT分库分表到OceanBase的三次变迁，详解迁移五大经验，最终实现硬件成本降低52%。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/8-13-99bill-oceanbase-cost-reduction/01.png">
+<meta property="og:image" content="https://ilongda.com/img/8-13-99bill-oceanbase-cost-reduction/02.png">
+<meta property="og:image" content="https://ilongda.com/img/8-13-99bill-oceanbase-cost-reduction/03.png">
+<meta property="article:published_time" content="2025-08-12T23:00:03.000Z">
+<meta property="article:modified_time" content="2025-08-12T23:21:04.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MyCAT">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="OMS">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="快钱支付">
+<meta property="article:tag" content="数据库迁移">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/8-13-99bill-oceanbase-cost-reduction/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/","path":"2025/2025-08-13-99bill-oceanbase-cost-reduction/","title":"硬件成本降52%，快钱支付引入OceanBase后的降本增效"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>硬件成本降52%，快钱支付引入OceanBase后的降本增效 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%92%B1DB%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8E%86%E5%8F%B2%E5%8F%98%E8%BF%81"><span class="nav-number">1.</span> <span class="nav-text">快钱DB架构的历史变迁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%9C%80%E5%88%9D%E9%98%B6%E6%AE%B5"><span class="nav-number">1.1.</span> <span class="nav-text">（一）最初阶段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89MySQL%E4%BD%BF%E7%94%A8%E7%97%9B%E7%82%B9"><span class="nav-number">1.2.</span> <span class="nav-text">（二）MySQL使用痛点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89DB%E6%96%B0%E6%9E%B6%E6%9E%84%E7%9A%84%E9%80%89%E5%9E%8B%E5%92%8C%E9%9C%80%E6%B1%82"><span class="nav-number">1.3.</span> <span class="nav-text">（三）DB新架构的选型和需求</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E5%AE%9AOceanBase%EF%BC%8C%E8%BF%81%E7%A7%BB%E7%9A%84%E4%BA%94%E4%B8%AA%E7%BB%8F%E9%AA%8C"><span class="nav-number">2.</span> <span class="nav-text">选定OceanBase，迁移的五个经验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%B0%9DOceanBase%EF%BC%8C%E7%A1%AC%E4%BB%B6%E6%88%90%E6%9C%AC%E9%99%8D%E4%BD%8E52"><span class="nav-number">3.</span> <span class="nav-text">初尝OceanBase，硬件成本降低52%</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="硬件成本降52%，快钱支付引入OceanBase后的降本增效 | Longda's Interesting World">
+      <meta itemprop="description" content="快钱支付DBA分享DB架构从MySQL主备、MyCAT分库分表到OceanBase的三次变迁，详解迁移五大经验，最终实现硬件成本降低52%。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          硬件成本降52%，快钱支付引入OceanBase后的降本增效
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-13 07:00:03" itemprop="dateCreated datePublished" datetime="2025-08-13T07:00:03+08:00">2025-08-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">冷盛杰</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>13 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">快钱支付DBA分享DB架构从MySQL主备、MyCAT分库分表到OceanBase的三次变迁，详解迁移五大经验，最终实现硬件成本降低52%。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"硬件成本降52%，快钱支付引入OceanBase后的降本增效","description":"快钱支付DBA分享DB架构从MySQL主备、MyCAT分库分表到OceanBase的三次变迁，详解迁移五大经验，最终实现硬件成本降低52%。","image":"https://ilongda.com/img/8-13-99bill-oceanbase-cost-reduction/01.png","wordCount":3640,"datePublished":"2025-08-12T23:00:03.000Z","dateModified":"2025-08-12T23:21:04.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/"},"url":"https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","OMS","数据库迁移","MySQL","降本增效","快钱支付","MyCAT"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"硬件成本降52%，快钱支付引入OceanBase后的降本增效","item":"https://ilongda.com/2025/2025-08-13-99bill-oceanbase-cost-reduction/"}]}</script>
+<p><strong>编者按：</strong> 在移动互联网时代，在线支付和移动支付已经成为大众的普通选择。尤其在国内，除支付宝和微信支付两大巨头外，还有许多第三方支付企业为商家和用户提供便捷的支付服务，如金融型支付企业银联商务、快钱；信用中介型支付企业拉卡拉、嘉联支付等。如何保证交易的正确性、实时性和安全性？这与技术架构底层的数据库服务息息相关。本文通过分享快钱公司的DB架构变迁及升级的方案和经验，解答上述问题。</p>
+<span id="more"></span>
+
+<h2 id="快钱DB架构的历史变迁"><a href="#快钱DB架构的历史变迁" class="headerlink" title="快钱DB架构的历史变迁"></a>快钱DB架构的历史变迁</h2><p>快钱公司（快钱）作为国内领先的独立第三方支付企业，其产品丰富，包括但不限于人民币支付、外卡支付，代缴&#x2F;收费业务，VPOS服务，集团账户管理等，目前正在拓展跨境人民币结算业务。其支持互联网、手机、电话和POS等多种终端，为各类企业及个人提供安全、便捷和保密的综合电子支付服务。快钱曾荣获中国信息安全产品测评认证中心颁发的”支付清算系统安全技术保障级一级”认证证书和国际PCI安全认证，这是源于业务后方对技术先进性与安全性的持续追求，比如对于有着”系统心脏”之称的数据库，在其创立的20年间，已经历三次变革。</p>
+<h3 id="（一）最初阶段"><a href="#（一）最初阶段" class="headerlink" title="（一）最初阶段"></a>（一）最初阶段</h3><p>在业务早期阶段，快钱使用的MySQL架构，如下图所示。</p>
+<p><img data-src="/img/8-13-99bill-oceanbase-cost-reduction/01.png" alt="快钱早期MySQL架构"></p>
+<p>该架构的优点是</p>
+<ul>
+<li>使用了Keepalived，基本保证了数据库的高可用；</li>
+<li>拥有slave，基本可以做到读写分离；</li>
+<li>小规模的数据情况下，MySQL可以从容应对。</li>
+</ul>
+<p>但是，Keepalived固有的脑裂问题无法解决，比如一旦发生脑裂，就容易造成应用连接报错、数据不一致等问题，这是支付领域无法容忍的故障。 同时，因为slave是作为M2的备库，如果M2出现异常，slave很难保证数据一致。</p>
+<h3 id="（二）MySQL使用痛点"><a href="#（二）MySQL使用痛点" class="headerlink" title="（二）MySQL使用痛点"></a>（二）MySQL使用痛点</h3><p>随着公司业务量的激增，原始的两主一备的MySQL架构已经无法满足业务需求，例如当时最大的一张核心单表达到4TB，数据库性能、运维能力都难以支撑，且对业务扩展造成了影响。于是引入MyCAT作为分库分表的中间件，以及 MySQL高可用方案MHA（底层MySQL同步采用GTID机制）。</p>
+<p><img data-src="/img/8-13-99bill-oceanbase-cost-reduction/02.png" alt="MyCAT分库分表架构"></p>
+<p>采用该架构能够短暂突破单机MySQL在性能、容量、高可用性等方面的瓶颈，且架构改造对应用几乎没有影响。应用程序只需连接MyCAT这一个入口点，使用标准的SQL和MySQL协议进行交互即可。MyCAT负责解析SQL，根据预定义的分片规则（如取模、范围、哈希、日期等）将请求路由到后端的物理数据库（分片节点）执行，并将结果聚合后返回应用。由于改造复杂性较低，对于开发人员而言，也无需过多投入。 但是缺点也比较显著，比如：</p>
+<ul>
+<li>分布式事务支持薄弱，XA事务性能低下。MyCAT支持基于XA协议的分布式事务，但在跨多个分片节点执行时，性能开销极大，锁持有时间长，严重影响系统吞吐量。</li>
+<li>缺乏最终一致性方案。对于需要跨分片强一致性的场景，MyCAT没有内建的、成熟的最终一致性补偿机制。</li>
+<li>跨分片JOIN&#x2F;子查询性能差。跨多个分片的复杂关联查询（JOIN）、嵌套子查询等，需要MyCAT从多个节点拉取大量数据在内存中进行处理，效率极低，容易导致内存溢出。</li>
+<li>分片规则选择与管理不灵活。选择合适的分片键和分片规则至关重要且具有挑战性。一旦初始规则选择不当或业务变化导致规则不合理，进行数据重新分片（Resharding）是极其痛苦的操作，且风险较高。</li>
+<li>SQL兼容性与调试不完整。虽然MyCAT兼容大部分MySQL协议和SQL，但在某些特定语法、函数或复杂语句中可能存在兼容性问题或解析错误。</li>
+<li>数据迁移与扩容需人工干预。初始数据导入和后续的节点缩容和扩容，通常需要人工进行数据迁移和重新平衡，过程复杂且可能影响在线服务。</li>
+</ul>
+<p>值得一提的是，在高可用方面，相较于此前两主一备架构，MHA能自动检测主库故障，在确认主库不可用后，能够秒级完成故障转移过程，包括选择最优从库、应用差异中继日志、提升为新主库、切换其他从库等步骤，最大限度地减少停机时间。另外，得益于GTID的特性，也可以最大程度减少数据丢失。</p>
+<p>但是MHA架构具有潜在的脑裂风险，如果MHA Manager无法准确判断主库状态（例如网络分区导致Manager与主库连接中断，但主库实际仍在运行并接受写操作），它可能会错误地触发故障转移。此时会出现两个”主库”同时接受写请求，导致数据严重不一致。此外，MHA Manager节点是单点，无法对自身进行高可用，如果Manager节点宕机，整个高可用管理功能（自动故障转移）将失效。而且MHA管理节点需要能通过SSH无密码登录到所有的MySQL节点以执行命令和复制日志文件。这带来了额外的安全配置和管理负担。</p>
+<h3 id="（三）DB新架构的选型和需求"><a href="#（三）DB新架构的选型和需求" class="headerlink" title="（三）DB新架构的选型和需求"></a>（三）DB新架构的选型和需求</h3><p>随着业务的再次激增，MySQL+MyCAT的架构开始逐步受到成本、性能、高可用等挑战。</p>
+<p><strong>1.服务器成本高。</strong></p>
+<p>我们在MySQL+MyCAT的架构中通常采用两种分片模式，hash分片120个schema，range按时间分片到不同的schema。在我们的初步架构中120个分片分布到24个实例中，而每台DB服务器4个实例，每个实例5个schema，底层采用MHA的架构时就需要18台DB服务器。再加上MyCAT的服务器，这将是一个庞大的集群。服务器成本随着业务数据量的增加而”水涨船高”，在公司降本增效的要求下，眼见该架构无法长久。</p>
+<p><strong>2.资源难以精准利用。</strong></p>
+<p>底层的I&#x2F;O、CPU、内存均为共享模式，即使MySQL5.7版本可以在线调整innodb_buffer_pool_size，但依然无法做到更加智能的调整，一旦业务上线，很难根据业务的具体发展情况进行动态调整和按需分配。</p>
+<p><strong>3.无法快速定位。</strong></p>
+<p>从上文MyCAT架构图中可以看到，从应用程序到负载均衡层再到MyCAT再到MySQL，是一条很长的链路，中间任一环节出现问题，都很难被快速定位。</p>
+<p><strong>4.危险的在线DDL。</strong></p>
+<p>尽管我们将MySQL升级到8.0版本后在线DDL得到增加，但在分库分表的情况下，即便使用脚本和自动化运维，一旦大表进行DDL操作，依然存在主备同步延迟、DB锁导致上层业务波动的风险。</p>
+<p><strong>5.高可用问题。</strong></p>
+<p>一旦MySQL在主从延迟的情况下发生切换，MHA无法保证不丢数据。</p>
+<h2 id="选定OceanBase，迁移的五个经验"><a href="#选定OceanBase，迁移的五个经验" class="headerlink" title="选定OceanBase，迁移的五个经验"></a>选定OceanBase，迁移的五个经验</h2><p>针对我们在生产环境中遇到的种种问题，架构替换势在必行。我们结合业务情况和对市场中开源数据库的调研数据，注意到 OceanBase社区版非常符合我们对新架构的要求，尤其是以下五个方面。</p>
+<ul>
+<li>低成本：基于 LSM-Tree 的高压缩引擎，存储成本可降低 70% - 90%；原生支持多租户架构，同集群可为多个独立业务提供服务，租户间数据隔离，降低部署和运维成本。</li>
+<li>高可用：独创 “三地五中心” 容灾架构方案，建立金融行业无损容灾新标准。支持同城&#x2F;异地容灾，可实现多地多活，满足金融行业 6 级容灾标准（RPO&#x3D;0，RTO&lt; 8s）。</li>
+<li>高兼容：高度兼容MySQL，覆盖绝大多数常见功能，支持过程语言、触发器等高级特性，提供自动迁移工具，支持迁移评估和反向同步以保障数据迁移安全。可支撑金融、政府、运营商等关键行业核心场景替代。</li>
+<li>水平扩展：可以实现透明水平扩展，支持业务快速的扩容、缩容，同时，通过准内存处理架构实现高性能。支持集群节点超过数千个，单集群最大数据量超过 3PB，最大单表行数达万亿级。</li>
+<li>安全可靠：OceanBase拥有信创资格，拥有完备的角色权限管理体系，数据存储和通信全链路透明加密，支持国密算法，通过等保三级专项合规检测。</li>
+</ul>
+<p>迁移过程较为丝滑，不在此赘述，分享几点迁移经验。</p>
+<p>第一，所有表必须有主键。每个表最多拥有一个主键列集合，主键列的数量不能超过64列，且主键数据总长度不能超过16KB。如果一张表不存在主键，那么OceanBase的迁移工具OMS将无法正常迁移该表。</p>
+<p>第二，外键约束问题。OMS对于MySQL外键表的迁移有所限制，如果有外键约束的MySQL表需要迁移到OceanBase，一定要在前期将外键的逻辑优化到应用中。</p>
+<p>第三，合理设计分区表。在OceanBase中分区表的性能和功能比MySQL强大很多，所以在一张MySQL的大表迁移至OceanBase时，可以考虑是否将大表改造为OceanBase的分区表。但OceanBase总MySQL租户类型的分区表强烈不建议使用全局索引，这是因为MySQL租户下的分区表如果存在全局索引，在对分区进行drop或者truncate时会造成全局索引失效。</p>
+<p>第四，参数兼容性问题。当业务迁移至OceanBase后，一定要注意相关参数的修改。这里举例两个常见的参数。</p>
+<p><code>ob_query_timeout</code>：该参数为OceanBase的SQL超时时间，默认只有10S，所以一定要结合自己的系统进行修改。</p>
+<p><code>explicit_defaults_for_timestamp</code>：该参数在MySQL中控制TIMESTAMP列默认行为的系统变量，主要影响TIMESTAMP列的NULL值处理、自动更新特性及默认值设置。在MySQL5.7中，该参数默认值为OFF，但在OceanBase中为ON，所以建议根据源端数据库的情况进行修改。</p>
+<p>第五，使用OMS迁移中间件架构的问题。在实际使用中，OMS基本可以完美解决从MySQL迁移到OceanBase的问题，但OMS同步数据的原理是基于MySQL的binlog，但分库分表的中间件只是一个路由和SQL解析的工具，无法提供类似binlog从而产生增量数据用于OMS的增量同步和反向同步，因此，我们对需要迁移的中间件架构进行了改造。如下图所示：</p>
+<p><img data-src="/img/8-13-99bill-oceanbase-cost-reduction/03.png" alt="OMS迁移中间件架构改造"></p>
+<p>从图中可以看到，</p>
+<ul>
+<li>OMS正向同步数据到OceanBase时，直接从分库分表底层的MySQL节点开始同步，对所有分片的数据在OceanBase层面进行汇总。需要注意的是，因为源端数据的表名和目标端的表名一致，OMS用于数据汇聚后进行验证时，必须保证源表不但有主键还需要另外一个唯一键，这样才能进行数据校验比对。</li>
+<li>因为我们在迁移时OMS尚未支持MyCAT，所以采用obbinlog进行反向同步数据，然后通过Canal或Flink在正向切换完毕后，将数据反向同步到MyCAT。MyCAT会根据自身的分片规则，将数据反向同步回MySQL节点。</li>
+</ul>
+<h2 id="初尝OceanBase，硬件成本降低52"><a href="#初尝OceanBase，硬件成本降低52" class="headerlink" title="初尝OceanBase，硬件成本降低52%"></a>初尝OceanBase，硬件成本降低52%</h2><p>由于快钱业务线众多，本次仅通过将账户、风控、小微交易、监控、部分大数据业务迁移至OceanBase。从MyCAT迁移到OceanBase后，业务的降本和增效显著，硬件成本降低了52%。</p>
+<p>此外，高可用、资源利用、运维等方面均得到改善：</p>
+<ul>
+<li>我们曾经对集群中任意一个节点进行搬迁升级，业务均无影响；</li>
+<li>底层硬件资源除了存储空间，均可做到资源独立，这样就能根据业务的需求进行灵活的扩容和缩容。</li>
+<li>OceanBase运维平台OCP功能强大，不但拥有常规功能如图表监控、badsql监控、短信发送等，还可以通过动态调整租户、集群资源的方式救急。如果出现突发流量或badsql导致的问题时，可以使用SQL 限流功能。如果需要水平扩容，对应用毫无影响，甚至还有完美的最终链路追踪功能。</li>
+<li>在平时DB上线方面。OceanBase的在线DDL比MySQL强大太多。基本做到了业务无感知。</li>
+</ul>
+<p>目前OceanBase支撑快钱业务系统稳定运行，未出现性能抖动。未来，其可靠性和性能得到进一步验证后，我们考虑将继续探索OceanBase的更多特性，逐步将业务系统数据库迁移到OceanBase。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/OMS/" rel="tag"># OMS</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%81%E7%A7%BB/" rel="tag"># 数据库迁移</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+              <a href="/tags/%E5%BF%AB%E9%92%B1%E6%94%AF%E4%BB%98/" rel="tag"># 快钱支付</a>
+              <a href="/tags/MyCAT/" rel="tag"># MyCAT</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-12-dify-oceanbase-ai-multi-scenario/" rel="prev" title="Dify + OceanBase，AI业务多场景落地实践">
+                  <i class="fa fa-angle-left"></i> Dify + OceanBase，AI业务多场景落地实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-08-15-modelscope-oceanbase-mcp-agent/" rel="next" title="手把手教你构建基于魔搭 x OceanBase MCP 的 Agent">
+                  手把手教你构建基于魔搭 x OceanBase MCP 的 Agent <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文由 OceanBase 社区贡献者李子毅分享 okctl-mcp-server 的设计详解，介绍如何借助 MCP 协议让 AI 通过自然语言完成 OceanBase on K8s 的集群创建、租户管理等复杂运维操作，并探讨动态加载、长任务轮询等优化与现存局限。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文由 OceanBase 社区贡献者李子毅分享 okctl-mcp-server 的设计详解，介绍如何借助 MCP 协议让 AI 通过自然语言完成 OceanBase on K8s 的集群创建、租户管理等复杂运维操作，并探讨动态加载、长任务轮询等优化与现存局限。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/05.png">
+<meta property="article:published_time" content="2025-07-18T07:46:07.000Z">
+<meta property="article:modified_time" content="2025-07-18T08:17:46.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI运维">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="ob-operator">
+<meta property="article:tag" content="okctl">
+<meta property="article:tag" content="云原生">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-18-okctl-mcp-server-design/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/","path":"2025/2025-07-18-okctl-mcp-server-design/","title":"OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E6%83%85%E6%8F%90%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">前情提要</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFokctl"><span class="nav-number">1.1.</span> <span class="nav-text">什么是okctl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81okctl-mcp-server"><span class="nav-number">1.2.</span> <span class="nav-text">为什么需要okctl-mcp-server</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">设计思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E5%88%86%E6%9E%90"><span class="nav-number">2.1.</span> <span class="nav-text">模块分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%E5%9C%BA%E6%99%AF"><span class="nav-number">2.2.</span> <span class="nav-text">示例场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E4%BC%98%E5%8C%96"><span class="nav-number">2.3.</span> <span class="nav-text">其他优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%98%E5%9C%A8%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">存在的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">4.</span> <span class="nav-text">写在最后</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解 | Longda's Interesting World">
+      <meta itemprop="description" content="本文由 OceanBase 社区贡献者李子毅分享 okctl-mcp-server 的设计详解，介绍如何借助 MCP 协议让 AI 通过自然语言完成 OceanBase on K8s 的集群创建、租户管理等复杂运维操作，并探讨动态加载、长任务轮询等优化与现存局限。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-18 15:46:07" itemprop="dateCreated datePublished" datetime="2025-07-18T15:46:07+08:00">2025-07-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">李子毅</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>8 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文由 OceanBase 社区贡献者李子毅分享 okctl-mcp-server 的设计详解，介绍如何借助 MCP 协议让 AI 通过自然语言完成 OceanBase on K8s 的集群创建、租户管理等复杂运维操作，并探讨动态加载、长任务轮询等优化与现存局限。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解","description":"本文由 OceanBase 社区贡献者李子毅分享 okctl-mcp-server 的设计详解，介绍如何借助 MCP 协议让 AI 通过自然语言完成 OceanBase on K8s 的集群创建、租户管理等复杂运维操作，并探讨动态加载、长任务轮询等优化与现存局限。","image":"https://ilongda.com/img/7-18-okctl-mcp-server-design/01.png","wordCount":2018,"datePublished":"2025-07-18T07:46:07.000Z","dateModified":"2025-07-18T08:17:46.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/"},"url":"https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/","inLanguage":"zh-CN","keywords":["OceanBase","云原生","Kubernetes","MCP","AI运维","ob-operator","okctl"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解","item":"https://ilongda.com/2025/2025-07-18-okctl-mcp-server-design/"}]}</script>
+<blockquote>
+<p>作者：李子毅，目前就读于武汉大学研究生二年级，OceanBase 社区贡献者、SIG 成员。对AI、向量数据库、云原生等领域感兴趣并积极探索。</p>
+</blockquote>
+<h2 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h2><h3 id="什么是okctl"><a href="#什么是okctl" class="headerlink" title="什么是okctl"></a>什么是okctl</h3><p>okctl是与ob-operator配套的命令行管理工具，全名为OceanBase Kubernetes Control Tool，它诞生于2024年的开源之夏项目，可以实现集群管理、租户资源管理、备份策略资源管理、组件管理等多项功能，同时，它还可以提供本地组件的版本检查及更新，以及建议搭建集群和配套租户的命令，适用于ob on k8s的资源管控。</p>
+<h3 id="为什么需要okctl-mcp-server"><a href="#为什么需要okctl-mcp-server" class="headerlink" title="为什么需要okctl-mcp-server"></a>为什么需要okctl-mcp-server</h3><p>MCP（Model Context Protocol）协议由Anthropic提出，旨在为AI与其他数据源之间提供一种统一、标准且安全的数据连接方式，使AI可以集成文件系统、数据库，以及各种现有系统。MCP协议可以作为大模型的”手和脚”，提升大模型的能力。</p>
+<p>2025年被称为Agent元年，MCP协议的出现也使各家公司纷纷提出自己的MCP服务器，包括各个数据库厂商。因此，我有想法去实现okctl的mcp-server，作为一次AI在运维工作上的尝试。</p>
+<span id="more"></span>
+
+<p>言归正传，为什么需要okctl-mcp-server？在AI时代，随着各种AI IDE的出现，编码的门槛和成本逐渐降低，开发一个项目的速度越来越快，因此，在开发一个项目前，了解自己的目的、技术选型、以及系统架构显得更为重要。</p>
+<p>对于目前OceanBase在K8s上的运维，主要有三种方式：</p>
+<ul>
+<li>传统的采用yaml的方式抛出资源与K8s进行交互；</li>
+<li>采用OB-Dashboard（配套管理界面服务）在页面上进行操作；</li>
+<li>采用okctl命令行工具组合命令实现运维。</li>
+</ul>
+<p>这三种方式各有利弊，首先，采用yaml的方式抛出资源与K8s进行交互，适合于对K8s的基础操作，以及OceanBase的各种资源配置有深刻理解的用户；其次，OB-Dashboard则作为ob-operator上的管理工具，可以采用页面的方式进行配置，非常适合对于一些精细配置的调控，也适合采用ob-operator的企业运维人员对集群进行管理；最后，是okctl，okctl设计的初衷是为了简化kubectl的使用，同时，也扩展相关的功能，如组件安装、简易集群搭建。</p>
+<p>但随着后续的使用，我们发现，对于okctl而言，一些常见的命令和一些简单的配置，在日常中使用的频率是较高的。而对于一些较为精细的配置，例如完成对集群的zone资源的一些调控，则需要非常复杂的命令参数组合。同时也需要用户去阅读okctl的help命令所对应的相关文档，这很明显是对用户不友好的，也是该工具的不足之处。</p>
+<p>那么，能否有一种方式，使较为复杂的配置可以简单的完成？显然，MCP协议可以实现这一设想，因此我们的设想是，通过okctl-mcp-server的配置，使较为复杂的资源运维操作可以用自然语言进行描述，并交由AI来完成。而okctl作为功能提供的底座，可以通过最少量的代码来为AI提供调用的能力，并且，也可以和其他mcp server进行集成，使AI可以实现更加复杂的工作流。</p>
+<p>另外，由于我在OceanBase Cloud Native这个SIG中参与共建一年多，得到了社区的很多帮助，也希望为社区贡献自己的力量，多做一些尝试。</p>
+<p>下面，我将讲解一下具体的设计思路。</p>
+<h2 id="设计思路"><a href="#设计思路" class="headerlink" title="设计思路"></a>设计思路</h2><h3 id="模块分析"><a href="#模块分析" class="headerlink" title="模块分析"></a>模块分析</h3><p>主要的模块如下图所示：</p>
+<p><img data-src="/img/7-18-okctl-mcp-server-design/01.png" alt="okctl-mcp-server 模块分析"></p>
+<p>其中，部分功能需要对齐okctl的实现，也就是底层调用okctl的命令，较为简单。部分功能则为后续编写，为了给AI提供更多的集群检测能力而设计。目前代码已经合并到mcp-oceanbase仓库中，具体的实现细节可以参考该仓库：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9tY3Atb2NlYW5iYXNl">https://github.com/oceanbase/mcp-oceanbase<i class="fa fa-external-link-alt"></i></span></p>
+<h3 id="示例场景"><a href="#示例场景" class="headerlink" title="示例场景"></a>示例场景</h3><p>创建集群并查看状态：</p>
+<p><img data-src="/img/7-18-okctl-mcp-server-design/02.png" alt="创建集群并查看状态"></p>
+<p>连接到集群下指定租户并执行SQL语句：</p>
+<p><img data-src="/img/7-18-okctl-mcp-server-design/03.png" alt="连接到集群下指定租户并执行SQL语句"></p>
+<p>修改租户密码，创建空备租户并实现主备租户切换：</p>
+<p><img data-src="/img/7-18-okctl-mcp-server-design/04.png" alt="修改租户密码"></p>
+<p><img data-src="/img/7-18-okctl-mcp-server-design/05.png" alt="创建空备租户并实现主备租户切换"></p>
+<p>对于该操作，可以看到当租户密码修改未完成时，可以等待租户的操作完成，并再次尝试。</p>
+<p>通过这三个简单的操作，可以看到，通过自然语言的交互，原本复杂的运维操作变得非常简单。</p>
+<h3 id="其他优化"><a href="#其他优化" class="headerlink" title="其他优化"></a>其他优化</h3><p>对于该项目，我们又进行了一些其他优化，用于为用户提供更好的使用体验。</p>
+<p>首先，经过调研我们发现，对部分mcp client而言，装载的mcp server过多时，会出现问题，而okctl-mcp-server一个工具就提供了30多个tools，这是非常不利的，因此需要为用户提供动态加载的能力，从而实现灵活的配置，来避免tools过多时加载过慢的问题，只需要在启动时，在命令行添加对应的参数，选择要启动的模块即可。</p>
+<p>其次，我们也做了对长任务的优化，对于每一个任务，处理的流程都是先调用相关工具，获得状态信息，并交由LLM进行处理。而对于部分操作如创建集群、更改集群，需要消耗大量的时间，短时间内的调用，返回的集群状态显然是不符合预期的。LLM会反复调用tool中的show cluster和show tenant函数去检查状态，而这样不断的调用，最大的问题就是会消耗大量token，而这些显然也是无意义的。</p>
+<p>为了解决该问题，我们想出的简单的解决办法就是当执行集群资源的创建更改等操作时，采用轮询的方式进行检测，直到集群的状态为running，再返回给LLM。这样可以避免无意义的token消耗，但弊端是这两个操作的响应时间变长了。</p>
+<h2 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题"></a>存在的问题</h2><p>在介绍了上述优点之后，让我们来探讨一下不足。</p>
+<p>目前，该工具有一定的局限性，首先体现在，运维操作相对于其他操作的成本较高。而LLM是概率模型，工具的调用，很大程度上依赖于AI的判断，甚至可以说依赖于LLM本身，以及prompt的编写。因此即便能通过学习和优化prompt的编写，仍然无法完全将运维的操作交由AI来执行，只能作为辅助。</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>该项目还在继续更新迭代中，连接集群功能正在进行重构，后续会在okctl中实现该功能。</p>
+<p>希望未来随着LLM的不断发展和新技术、新的交互协议的迭代，我们可以得到更好的解决方案，并在AI运维的道路上进行更多探索。</p>
+<p>最后，希望OceanBase社区和Cloud Native SIG越来越好！如果你也对该项目感兴趣，请多多关注ob-operator和mcp-oceanbase仓库：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9tY3Atb2NlYW5iYXNl">https://github.com/oceanbase/mcp-oceanbase<i class="fa fa-external-link-alt"></i></span></p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！<br>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星 ✨ 吧！你的每一个Star，都是我们努力的动力。</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vY2VhbmJhc2U=">https://github.com/oceanbase/oceanbase<i class="fa fa-external-link-alt"></i></span></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/" rel="tag"># 云原生</a>
+              <a href="/tags/Kubernetes/" rel="tag"># Kubernetes</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/AI%E8%BF%90%E7%BB%B4/" rel="tag"># AI运维</a>
+              <a href="/tags/ob-operator/" rel="tag"># ob-operator</a>
+              <a href="/tags/okctl/" rel="tag"># okctl</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-16-duxiaoman-database-selection/" rel="prev" title="OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍">
+                  <i class="fa fa-angle-left"></i> OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-21-oceanbase-auto-increment-evolution/" rel="next" title="OceanBase 的自增列进化史及最佳实践">
+                  OceanBase 的自增列进化史及最佳实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

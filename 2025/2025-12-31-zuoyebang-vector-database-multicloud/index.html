@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="作业帮基于 OceanBase 构建 AI 业务数据底座，详解向量数据库选型、跨云主备租户复制、读写分离与云原生代理等多云架构设计，并分享 40+ 集群、20000+ 核规模下的大规模运维经验与降本成效。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化">
+<meta property="og:url" content="https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="作业帮基于 OceanBase 构建 AI 业务数据底座，详解向量数据库选型、跨云主备租户复制、读写分离与云原生代理等多云架构设计，并分享 40+ 集群、20000+ 核规模下的大规模运维经验与降本成效。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/zuoyebang-vector-database-multicloud/01.png">
+<meta property="og:image" content="https://ilongda.com/img/zuoyebang-vector-database-multicloud/02.png">
+<meta property="og:image" content="https://ilongda.com/img/zuoyebang-vector-database-multicloud/03.png">
+<meta property="og:image" content="https://ilongda.com/img/zuoyebang-vector-database-multicloud/04.png">
+<meta property="article:published_time" content="2025-12-31T07:17:35.000Z">
+<meta property="article:modified_time" content="2025-12-31T07:17:35.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="作业帮">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="多云架构">
+<meta property="article:tag" content="读写分离">
+<meta property="article:tag" content="运维实践">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/zuoyebang-vector-database-multicloud/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/","path":"2025/2025-12-31-zuoyebang-vector-database-multicloud/","title":"作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AI%E4%B8%9A%E5%8A%A1%E6%8C%91%E6%88%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">AI业务挑战及解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E4%B8%9A%E5%B8%AE%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E4%BC%98%E5%8C%96"><span class="nav-number">2.</span> <span class="nav-text">作业帮多云架构设计与优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E9%80%89%E5%9E%8B"><span class="nav-number">2.1.</span> <span class="nav-text">多云架构选型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B9%8B%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB"><span class="nav-number">2.2.</span> <span class="nav-text">多云架构设计之读写分离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B9%8B%E4%BA%91%E5%8E%9F%E7%94%9F%E4%BB%A3%E7%90%86"><span class="nav-number">2.3.</span> <span class="nav-text">多云架构设计之云原生代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%B9%8B%E7%A7%9F%E6%88%B7%E9%9A%94%E7%A6%BB%E5%8F%8A%E5%8D%95%E4%BA%91%E9%97%AD%E7%8E%AF"><span class="nav-number">2.4.</span> <span class="nav-text">多云架构设计之租户隔离及单云闭环</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%9A%E5%8A%A1%E5%BA%94%E7%94%A8%E8%A7%84%E6%A8%A1%E5%8F%8A%E5%A4%A7%E8%A7%84%E6%A8%A1%E8%BF%90%E7%BB%B4%E7%BB%8F%E9%AA%8C"><span class="nav-number">3.</span> <span class="nav-text">业务应用规模及大规模运维经验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%B0%86OCP%E8%9E%8D%E5%85%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4%E5%B9%B3%E5%8F%B0"><span class="nav-number">3.1.</span> <span class="nav-text">1.将OCP融入数据库运维平台</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BD%BF%E7%94%A8OceanBase%E7%9A%84%E6%9C%80%E6%96%B0%E7%A8%B3%E5%AE%9A%E7%89%88%E6%9C%AC"><span class="nav-number">3.2.</span> <span class="nav-text">2.使用OceanBase的最新稳定版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83%E4%B8%8D%E5%9D%87%E8%A1%A1%E7%9A%84%E8%A7%A3%E5%86%B3%E6%80%9D%E8%B7%AF"><span class="nav-number">3.3.</span> <span class="nav-text">3. 数据分布不均衡的解决思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E9%81%BF%E5%85%8D%E7%A7%9F%E6%88%B7-unit-num-%E6%89%A9%E5%AE%B9%E5%90%8E%E9%95%BF%E6%97%B6%E9%97%B4%E4%B8%8D%E7%BB%93%E6%9D%9F"><span class="nav-number">3.4.</span> <span class="nav-text">4. 避免租户 unit_num 扩容后长时间不结束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E8%A7%A3%E5%86%B3OMS%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E5%BB%B6%E8%BF%9F%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">3.5.</span> <span class="nav-text">5. 解决OMS同步链路延迟的方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化 | Longda's Interesting World">
+      <meta itemprop="description" content="作业帮基于 OceanBase 构建 AI 业务数据底座，详解向量数据库选型、跨云主备租户复制、读写分离与云原生代理等多云架构设计，并分享 40+ 集群、20000+ 核规模下的大规模运维经验与降本成效。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-31 15:17:35" itemprop="dateCreated datePublished" datetime="2025-12-31T15:17:35+08:00">2025-12-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">张恒岩</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>16 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">作业帮基于 OceanBase 构建 AI 业务数据底座，详解向量数据库选型、跨云主备租户复制、读写分离与云原生代理等多云架构设计，并分享 40+ 集群、20000+ 核规模下的大规模运维经验与降本成效。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化","description":"作业帮基于 OceanBase 构建 AI 业务数据底座，详解向量数据库选型、跨云主备租户复制、读写分离与云原生代理等多云架构设计，并分享 40+ 集群、20000+ 核规模下的大规模运维经验与降本成效。","image":"https://ilongda.com/img/zuoyebang-vector-database-multicloud/01.png","wordCount":4472,"datePublished":"2025-12-31T07:17:35.000Z","dateModified":"2025-12-31T07:17:35.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/"},"url":"https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","RAG","多云架构","作业帮","读写分离","运维实践"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化","item":"https://ilongda.com/2025/2025-12-31-zuoyebang-vector-database-multicloud/"}]}</script>
+<p>作者：张恒岩，作业帮 DBA 团队负责人</p>
+<p>作业帮是中国领先的在线教育平台，将人工智能、大数据等技术与教育教学深度融合，打造覆盖教、学、考、评、管、研等全场景智慧教育解决方案。在技术底层，作业帮一直寻求能够助力业务发展的数据库，从2022年开始调研 OceanBase 至今，已在多个核心业务中大规模使用 OceanBase。本文详述作业帮AI业务及多云架构的数据库方案和运维经验。</p>
+<h2 id="AI业务挑战及解决方案"><a href="#AI业务挑战及解决方案" class="headerlink" title="AI业务挑战及解决方案"></a>AI业务挑战及解决方案</h2><p>随着AI技术的爆发式普及，及其在各行业的深度融合，作业帮的业务场景中也逐步引入了多种AI驱动功能，如智能客服、问答机器人与AI写作等。这些场景对 RAG（检索增强生成）架构与向量知识库提出了更高要求，涉及大规模向量存储、高并发检索性能、低延迟实时响应等关键技术需求。同时，基于作业帮多云架构的现状，我们在选型适配的AI技术底座时，主要面临两大挑战。</p>
+<span id="more"></span>
+
+<p><strong>挑战一：LLM内容存储与审核。</strong></p>
+<p>你有没有这样的感触？业务大量使用大模型后，会快速消耗数据库的存储空间。作业帮内部有很多集群，每天的数据增长达到10TB级别，存储成本压力陡增。同时，对于像AI写作、智能问答等业务场景中产生的海量AI生成内容、用户多轮次对话，不仅需要冷热数据并存，还有审核需求。为了减轻存储压力，通常会采取清理冷数据的方式，这在MySQL数据库中，会带来大量磁盘碎片。</p>
+<p><strong>挑战二：RAG 对向量数据库需求突增。</strong></p>
+<p>为了保证用户在使用产品时，拥有更快、更精确的搜索结果，业务侧希望增加向量数据库以支撑更好的产品能力与用户体验。</p>
+<p>起初，DBA团队倾向于购买云服务快速解决业务需求。但现实情况却不允许这样做。作业帮的应用服务为多云架构，云上购买PaaS服务难以实现多云部署，若自建多云数据库服务，DBA团队投入的精力与成本过高。考虑到集群情况，即少量大集群和大量碎片化小集群，而不同业务对向量数据库的规模需求差异较大，需要部署一套可根据业务规模灵活使用的向量数据库，以避免资源浪费。</p>
+<p>基于上述背景，当我们在选择向量数据库方案时，考虑Milvus与OceanBase向量数据库两种方案。对于前者，新增一个自运维的数据库类型需要大量的建设工作，人力成本与时间成本较高。而作业帮其他业务早在2022就使用了OceanBase，不需要我们重新搭建技术栈，故而选择了OceanBase支撑AI业务。</p>
+<p>那么，使用OceanBase怎么解决上述技术挑战呢？</p>
+<p>首先，在大模型场景中，经过实测，OceanBase对存储空间的占用约为MySQL的1&#x2F;6，可以实现对存储成本的极致压缩。同时，由于OceanBase的分布式特性，单集群的数据承载量是MySQL的两倍以上。另外，得益于OceanBase的合并机制能够进行碎片整理，避免磁盘碎片化问题。</p>
+<p>其次，对于向量数据库的需求，则使用OceanBase 4.3.5版本的向量能力支撑。OceanBase支持多云，不需要我们重复建设，能够快速承接AI业务，其天然的多租户架构也可以显著提升资源使用率。11月中，OceanBase发布了轻量化的AI原生数据库——seekdb，能够更好地应对碎片化小集群的向量数据处理需求。</p>
+<p>另外值得一提的是，OceanBase社区活跃且相比其他开源数据库拥有更高的支持力度。当我们在AI业务中落地OceanBase时，社区版的技术人员在多方面给予我们很多帮助，如各种查询性能优化、召回效果优化、SDK使用问题等方面，显著降低了向量数据库的上线周期。</p>
+<h2 id="作业帮多云架构设计与优化"><a href="#作业帮多云架构设计与优化" class="headerlink" title="作业帮多云架构设计与优化"></a>作业帮多云架构设计与优化</h2><p>上文提到作业帮为多云架构，在AI业务中部署OceanBase时，需要综合考虑：</p>
+<ul>
+<li>多个机房和多云之间专线故障的问题；</li>
+<li>多云架构中业务对降本增效的要求；</li>
+<li>OceanBase与云原生服务的融合问题。作业帮在早期完成了云原生改造，业务基本部署在K8s中，而OceanBase不被建议部署在K8s集群中。</li>
+</ul>
+<h3 id="多云架构选型"><a href="#多云架构选型" class="headerlink" title="多云架构选型"></a>多云架构选型</h3><p>对于业务租户架构的选型，可选方案如下图所示。图左为方案一，在三个云上部署3 ZONE。图右为方案二，通过跨云的主备租户复制的方式搭建多云集群。</p>
+<p><img data-src="/img/zuoyebang-vector-database-multicloud/01.png" alt="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化"></p>
+<p>最终我们选择了方案二，这是因为：</p>
+<ul>
+<li>跨云专线的耗时约5ms，如果采用方案一，性能损耗明显；方案二的性能表现更好。</li>
+<li>主备租户切换可控，遇到故障可以灵活切换方案。</li>
+<li>兼容多云专线故障场景。假设三个云间的专线出现故障，每个云便成为了孤岛，这时方案二能够更好地解决问题。</li>
+</ul>
+<h3 id="多云架构设计之读写分离"><a href="#多云架构设计之读写分离" class="headerlink" title="多云架构设计之读写分离"></a>多云架构设计之读写分离</h3><p>考虑到备租户机房可以实现本地读，减少跨云带宽和耗时，以及备租户承担一部分读流量可以优化成本，我们基于方案二增加了读写分离设计。</p>
+<p>我们通过自研代理与ODP运维进行业务的本地读，即将备租户所在机房的读流量调度到备租户，进而实现本地读。由于我们目前使用的OceanBase 4.2.5版本的 OCP 不足以感知主备租户之间的延迟，因此，我们进行了针对性的改造，实现备租户延迟自动摘流。如此一来，带来两个好处。</p>
+<p>一是提升资源使用率。因为备租户的资源规模和主租户相同，对于业务来说，冷备存在50%的容量冗余，所以我们通过本地读的方式将50%的读流量转化到备租户，能够充分利用备租户资源。</p>
+<p>二是避免一致性风险。主备租户切换往往会面临一个问题：备租户内没有流量时可能会有数据一致性风险或者性能承载风险。因此，将50%的读流量转化到备租户也可以使切换更加可靠。</p>
+<p><img data-src="/img/zuoyebang-vector-database-multicloud/02.png" alt="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化"></p>
+<p>对于OCP的部署方案，我们采用了比较传统的三云部署。这是因为我们对OCP的性能要求不高，可以接受跨云的性能损耗。同时，由于主备租户切换的逻辑依赖于OCP，如果OCP再依赖主备租户切换就变成了循环依赖。为避免这种情况，我们需要解耦高可用之间的互相依赖。</p>
+<h3 id="多云架构设计之云原生代理"><a href="#多云架构设计之云原生代理" class="headerlink" title="多云架构设计之云原生代理"></a>多云架构设计之云原生代理</h3><p>因为OceanBase不被建议部署在K8s中，所以我们在客户端和运维平台ODP中加入了一层云原生代理。这是一个轻量级的代理，部署在K8s集群内部，它起到两个作用：</p>
+<ul>
+<li>一是不完全处理MySQL协议或者OceanBase协议，而是用于云原生的服务发现和服务观测。</li>
+<li>二是从MySQL迁移OceanBase时，可能会因为OceanBase的用户名长度被框架约束，或特殊字符存在兼容性问题，云原生代理能够处理OceanBase认证包，且对性能没有损耗。用户可以使用和MySQL一样的用户名及密码连接OceanBase。</li>
+</ul>
+<p>除云原生代理外，我们还在云原生层增强了ODP高可用机制的作用。这是因为 ODP在一些情况下会出现四层探活生效但SQL无法正式返回的情况，我们的做法是通过增加协议层探活，确保ODP的高可用机制完全可靠。</p>
+<p><img data-src="/img/zuoyebang-vector-database-multicloud/03.png" alt="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化"></p>
+<h3 id="多云架构设计之租户隔离及单云闭环"><a href="#多云架构设计之租户隔离及单云闭环" class="headerlink" title="多云架构设计之租户隔离及单云闭环"></a>多云架构设计之租户隔离及单云闭环</h3><p>为了更好的排查问题，我们在访问链路中设置了租户隔离及单云闭环。首先，将 ODP 与租户&#x2F;集群多对多关系梳理为一对一或一对多模式，这是因为不同租户 ODP 与云原生代理独立部署，避免相互影响，降低问题排查难度。其次从客户端到 ODP 设置单云闭环，只有ODP到OB Server间存在跨云，以降低跨云延迟和带宽占用。</p>
+<p><img data-src="/img/zuoyebang-vector-database-multicloud/04.png" alt="作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化"></p>
+<p>多云方案需要配合日常演练，通常我们会进行两类演练。一类是主备租户的日常切换，即选择业务的某一个集群，在低峰期切换主备租户，业务侧只能感知瞬间的抖动。另一类演练以半年为周期，测试机房宕机进行主备租户的容灾切换。</p>
+<h2 id="业务应用规模及大规模运维经验"><a href="#业务应用规模及大规模运维经验" class="headerlink" title="业务应用规模及大规模运维经验"></a>业务应用规模及大规模运维经验</h2><p>目前OceanBase已在作业帮多个核心业务上线，共部署40+集群、200+租户、20000+核，还在快速增长中。从验证到规模化部署OceanBase，用时三年。</p>
+<p>2022年，OceanBase 4.0版本发布时，我们注意到其特性能够解决我们在分布式数据库多云部署的问题，便和OceanBase社区进行了深度交流。从2023年我们配置OceanBase周边工具到2024年正式在AI业务和出海业务上线，期间对OceanBase进行了全方位的适配测试，包括兼容性、性能、稳定性等。</p>
+<p>今年我们的主要工作是将核心服务加速迁移至OceanBase，因为作业帮的资源用量将近数万核的规模，所以我们需要建设配套的规模化运维能力以支持核心业务的规模化上线OceanBase。在此过程中，我们积累了大量的大规模运维经验。</p>
+<h3 id="1-将OCP融入数据库运维平台"><a href="#1-将OCP融入数据库运维平台" class="headerlink" title="1.将OCP融入数据库运维平台"></a>1.将OCP融入数据库运维平台</h3><p>首要建议就是把OceanBase的运维平台OCP融入企业的数据库运维平台，它可以在多方面发挥重要价值，降低运维复杂度。</p>
+<p>首先，OCP有助于标准化配置，加速问题的发现和解决。作业帮多云架构设计复杂，且包含了许多自定义的逻辑关系，虽然无法在OCP中维护，但可以通过它将自定义逻辑关系、功能或任务统筹、管理，实现快速部署，比如，用户可以一键完成OBServer、ODP、自研代理的部署。同时，由于每个云上使用的资源如物理机规格不一致，也可以通过OCP将租户资源规格标准化，有效降低租户的资源碎片化风险。</p>
+<p>其次，基于OCP建设自定义运维功能，非常便捷。例如，某些时候我们需要监控一些特殊指标，即使OCP的监控报警功能已经完善，但也不自带该指标，就需要我们进行自建该功能；再例如主备租户的批量切换，一个一个切换太耗时，就需要在运维平台中实现批量切换的能力。在上述场景中，基于OCP能够非常便捷地建设运维功能，实现我们需要的能力。</p>
+<p>通过OCP运维体系，作业帮的运维服务已经实现了研发人员的自助能力，包括集群申请、审批、成本分摊、资源水平&#x2F;垂直扩容，以及SQL查询、审计等，更好地支撑大规模业务的运维。</p>
+<h3 id="2-使用OceanBase的最新稳定版本"><a href="#2-使用OceanBase的最新稳定版本" class="headerlink" title="2.使用OceanBase的最新稳定版本"></a>2.使用OceanBase的最新稳定版本</h3><p>对于使用OceanBase 4.X版本的朋友，建议直接升级到最新的稳定版本。我们最初使用OceanBase 3.x版本，后来升级到4.x版本，并经历了从V4.2.1.2升级到V4.2.5.2，再到V4.2.5.6，以及在AI业务中使用最新的V4.3.5。得到的经验是：新版本的性能、稳定性及其他功能的支持均最好。对于AP能力和向量能力的需求，则选择AP能力较强的版本或向量能力较强的版本。</p>
+<p>除选择合适的版本外，我们还针对不同的业务类型配备不同的集群，相当于将OceanBase集群看作资源池：</p>
+<ul>
+<li>对于核心业务，提供独占集群，降低业务间的互相干扰；</li>
+<li>对于非核心业务或小业务，提供共享集群，降低机器成本和业务的接入成本。同时提供一套能让业务人员自主迁移的方案，以便后续业务扩大或业务重要性提升时顺利从共享集群迁移至独占集群。</li>
+</ul>
+<h3 id="3-数据分布不均衡的解决思路"><a href="#3-数据分布不均衡的解决思路" class="headerlink" title="3. 数据分布不均衡的解决思路"></a>3. 数据分布不均衡的解决思路</h3><p>在一些场景中，我们可能会遇到数据分布不均衡的情况。例如作业帮某个核心集群，内含4个租户，在水平扩容时，OCP显示发起一个用户租户的<code>unit_num</code>扩容操作成功了。当4个租户的扩容任务都完成后，我们发现某个节点的磁盘数据持续增长甚至打满。</p>
+<p>经排查后得知，当OCP认为扩容任务已经完成时，均衡算法已经把日志流的逻辑分布好了，但是日志流实体还没有位于对应的位置，需要继续迁移。因此，我们会在对应的机器上看到对应磁盘数据持续上涨。同时，由于我们当时使用的V4.2.5.2版本只考虑分区数量，在扩容过程中放大了数据倾斜，最终导致磁盘空间被占满。</p>
+<p>我们的做法是逐个调整日志流所在 <code>unit_group</code> 解决磁盘占满的问题，并通过数据库平台限制租户扩容必须在后台日志流实体完成迁移后，才能继续下一个扩容。</p>
+<p>对于这类情况，我们需要避免日志流分裂时 bad case导致的不均衡，OceanBase 4.2.5_bp4版本修复了该问题，可将数据库版本升级至V4.2.5_bp4及更高版本。另外，建议将Balance 相关的表确认负载均衡任务完成，触发一次分区均衡，待分区均衡完成后再对其他租户<code>unit_num</code>进行调整。</p>
+<h3 id="4-避免租户-unit-num-扩容后长时间不结束"><a href="#4-避免租户-unit-num-扩容后长时间不结束" class="headerlink" title="4. 避免租户 unit_num 扩容后长时间不结束"></a>4. 避免租户 unit_num 扩容后长时间不结束</h3><p>这是使用老版本的一个常见问题。可以查看 transfer task history 表，若显示错误码 -7114，就是因为transfer 时有活跃事务导致<code>unit_num</code>扩容后无法结束。对于该问题的解决办法：</p>
+<ul>
+<li>对于V4.2.5_bp2之前的版本，等待活跃事务完成后再执行transfer，或者由 transfer 主动杀死活跃事务。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> _enable_balance_kill_transaction <span class="operator">=</span> <span class="string">&#x27;true&#x27;</span> tenant<span class="operator">=</span><span class="string">&#x27;xxx&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>若使用V4.2.5_bp2 和 V4.3.5 及更高版本，推荐打开 transfer 不杀活跃事务的特性就可以解决。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> _enable_active_txn_transfer<span class="operator">=</span><span class="string">&#x27;true&#x27;</span> tenant<span class="operator">=</span><span class="string">&#x27;xxx&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-解决OMS同步链路延迟的方法"><a href="#5-解决OMS同步链路延迟的方法" class="headerlink" title="5. 解决OMS同步链路延迟的方法"></a>5. 解决OMS同步链路延迟的方法</h3><p>OMS是我们常用的数据迁移工具，如果集群承载了流量非常大的业务，可能会产生数据同步链路延迟。我们在使用OMS将数据从OceanBase同步到Kafka时，遇到了这个问题。</p>
+<p>主要原因是作业帮所有的核心服务都要经过大数据平台的数据采集，当上游写入压力过大时，便会导致下游的数据同步延迟。对此，由于作业帮是多云部署的集群架构，优化方式比较复杂，具体包括：</p>
+<ul>
+<li>将多云部署的 OMS 的 store 和 incr-sync 调度到离上下游更近的实例中。</li>
+<li>通过拆分租户，拆分任务等方式控制单个链路的写入压力。</li>
+<li>使用 oms connector_utils.sh 工具分析性能瓶颈，根据提示修改相关配置<ul>
+<li>加大并发：<code>sink.workerNum=64</code>；</li>
+<li>调整大内存：<code>coordinator.connectorJvmParam 20-30gb</code>；</li>
+<li>调整 <code>source.useBetaListener=true</code> 使用 LogMessage 加速解析，减少中间对象；</li>
+<li>调整 <code>source.useSchemaCache=true</code> 使用 Schema 缓存，减少中间对象。</li>
+</ul>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>总的来说，OceanBase在作业帮AI业务落地的关键契机在于两方面：一方面是大模型业务带来了存储数据的指数级增长，原来的MySQL难以支撑；另一方面源自RAG服务对向量数据库的需求。而OceanBase的功能、性能、稳定性等测试结果都符合我们的预期，能够切实解决业务痛点，且适配多云架构。</p>
+<p>使用OceanBase后，大磁盘存储成本相较MySQL降低了40%~50%，在业务快速增长的情况下，避免了频繁分库分表。此外，我们提供了基于标准的多云向量数据库方案，提升了业务研发效率，真正诠释了什么是数据库技术助力业务发展。</p>
+<p>目前作业帮的数据库SLA标准达到99.99，借助OceanBase的运维工具，我们打造了自动化运维、自动化迁移，运维保障体系愈发完善，实现了业务人员的自助运维。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E5%A4%9A%E4%BA%91%E6%9E%B6%E6%9E%84/" rel="tag"># 多云架构</a>
+              <a href="/tags/%E4%BD%9C%E4%B8%9A%E5%B8%AE/" rel="tag"># 作业帮</a>
+              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/" rel="tag"># 读写分离</a>
+              <a href="/tags/%E8%BF%90%E7%BB%B4%E5%AE%9E%E8%B7%B5/" rel="tag"># 运维实践</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-26-oceanbase-ai-products-developer-view/" rel="prev" title="从开发者视角观察 OceanBase 开源的 AI 产品御三家">
+                  <i class="fa fa-angle-left"></i> 从开发者视角观察 OceanBase 开源的 AI 产品御三家
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

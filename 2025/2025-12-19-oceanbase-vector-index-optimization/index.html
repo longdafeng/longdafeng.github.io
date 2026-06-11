@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 向量索引研发同学夏进深入解析 OceanBase &#x2F; seekdb 向量索引的构建过程与五张辅助表结构，分析索引构建慢、内存占用高的根因，并给出加并行、提高采样率、改分区表、Rebuild 重建等优化方法。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 向量索引优化指南">
+<meta property="og:url" content="https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 向量索引研发同学夏进深入解析 OceanBase &#x2F; seekdb 向量索引的构建过程与五张辅助表结构，分析索引构建慢、内存占用高的根因，并给出加并行、提高采样率、改分区表、Rebuild 重建等优化方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/01.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/02.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/03.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/04.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/05.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/06.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/07.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/08.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/09.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/10.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/11.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/12.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/13.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/14.jpeg">
+<meta property="article:published_time" content="2025-12-18T23:11:40.000Z">
+<meta property="article:modified_time" content="2025-12-18T23:11:40.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HNSW">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="向量索引">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="索引重建">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-vector-index-optimization/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/","path":"2025/2025-12-19-oceanbase-vector-index-optimization/","title":"OceanBase 向量索引优化指南"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 向量索引优化指南 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E7%9A%84%E6%9E%84%E5%BB%BA%E8%BF%87%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">向量索引的构建过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E7%9A%84%E7%BB%84%E6%88%90"><span class="nav-number">2.1.</span> <span class="nav-text">向量索引的组成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E6%9E%84%E5%BB%BA%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.</span> <span class="nav-text">向量索引构建流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E6%B5%81%E7%A8%8B%E4%B8%AD%E7%9A%84%E7%8A%B6%E6%80%81%E6%8E%A8%E8%BF%9B"><span class="nav-number">2.3.</span> <span class="nav-text">构建流程中的状态推进</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E6%80%A7%E8%83%BD%E5%92%8C%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">构建性能和内存分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%80%97%E6%97%B6%E7%82%B9%E5%88%86%E6%9E%90"><span class="nav-number">3.1.</span> <span class="nav-text">耗时点分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E8%80%97%E6%97%B6%E5%88%86%E6%9E%90"><span class="nav-number">3.2.</span> <span class="nav-text">构建耗时分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90"><span class="nav-number">3.3.</span> <span class="nav-text">内存分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8%E5%88%86%E6%9E%90%E5%8F%8A%E4%BC%98%E5%8C%96%E5%BB%BA%E8%AE%AE"><span class="nav-number">3.3.1.</span> <span class="nav-text">内存占用分析及优化建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E6%80%A7%E8%83%BD%E5%92%8C%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%BB%BA%E8%AE%AE"><span class="nav-number">3.4.</span> <span class="nav-text">构建性能和内存优化建议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E9%80%9F%E5%BA%A6%E4%BC%98%E5%8C%96"><span class="nav-number">3.4.1.</span> <span class="nav-text">构建速度优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96"><span class="nav-number">3.4.2.</span> <span class="nav-text">构建内存优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E5%8E%9F%E7%90%86%E5%92%8C%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">重建原理和内存分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E7%9B%AE%E7%9A%84"><span class="nav-number">4.1.</span> <span class="nav-text">重建目的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E5%8E%9F%E7%90%86"><span class="nav-number">4.2.</span> <span class="nav-text">重建原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E8%AF%AD%E6%B3%95"><span class="nav-number">4.3.</span> <span class="nav-text">重建语法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E5%9C%BA%E6%99%AF"><span class="nav-number">4.4.</span> <span class="nav-text">重建场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%BB%BA%E8%BF%87%E7%A8%8B%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8"><span class="nav-number">4.5.</span> <span class="nav-text">重建过程中的内存占用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="nav-number">5.</span> <span class="nav-text">未来展望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 向量索引优化指南 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 向量索引研发同学夏进深入解析 OceanBase &#x2F; seekdb 向量索引的构建过程与五张辅助表结构，分析索引构建慢、内存占用高的根因，并给出加并行、提高采样率、改分区表、Rebuild 重建等优化方法。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 向量索引优化指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-12-19 07:11:40" itemprop="dateCreated datePublished" datetime="2025-12-19T07:11:40+08:00">2025-12-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">夏进</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>17 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 向量索引研发同学夏进深入解析 OceanBase / seekdb 向量索引的构建过程与五张辅助表结构，分析索引构建慢、内存占用高的根因，并给出加并行、提高采样率、改分区表、Rebuild 重建等优化方法。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 向量索引优化指南","description":"OceanBase 向量索引研发同学夏进深入解析 OceanBase / seekdb 向量索引的构建过程与五张辅助表结构，分析索引构建慢、内存占用高的根因，并给出加并行、提高采样率、改分区表、Rebuild 重建等优化方法。","image":"https://ilongda.com/img/oceanbase-vector-index-optimization/01.png","wordCount":4715,"datePublished":"2025-12-18T23:11:40.000Z","dateModified":"2025-12-18T23:11:40.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/"},"url":"https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/","inLanguage":"zh-CN","keywords":["OceanBase","性能优化","向量数据库","HNSW","向量索引","seekdb","索引重建"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 向量索引优化指南","item":"https://ilongda.com/2025/2025-12-19-oceanbase-vector-index-optimization/"}]}</script>
+<blockquote>
+<p>💡 如果你对文中提到的 seekdb 向量索引优化感兴趣，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 进行体验，深入探索 AI 原生数据库的向量检索能力！</p>
+</blockquote>
+<p>物格而后知至。</p>
+<p>——《礼记》</p>
+<h1 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h1><p>OceanBase 最近发布了 seekdb 数据库，主打 “轻量 + 向量 + AI”。</p>
+<p>在 seekdb 发布之后，陆续收到了许多用户关于 seekdb 中向量索引在使用上的一些问题，比如：索引创建耗时慢优化问题，创建时对内存的要求，增量达到什么规模需要重建，重建性能影响怎么消除等等等等。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/01.png" alt="OceanBase 向量索引优化指南"></p>
+<p>因此，向量索引的研发同学夏进大佬，今天就专门在这篇文章中，从 OceanBase &#x2F; seekdb 向量索引的构建过程开始讲起，为大家深入且详细地分析上述问题。有任何疑问欢迎大家留言提问～🙋</p>
+<span id="more"></span>
+
+<h1 id="向量索引的构建过程"><a href="#向量索引的构建过程" class="headerlink" title="向量索引的构建过程"></a>向量索引的构建过程</h1><p>很多同学会发现，只创建了一个向量索引，却发现多出来一堆辅助表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1(</span><br><span class="line">  c1 <span class="type">INT</span>,</span><br><span class="line">  c2 VECTOR(<span class="number">10</span>),</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY(c1),</span><br><span class="line">  VECTOR INDEX idx1(c2) <span class="keyword">WITH</span> (distance<span class="operator">=</span>l2, type<span class="operator">=</span>hnsw, lib<span class="operator">=</span>vsag));</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">   table_id,</span><br><span class="line">   table_name,</span><br><span class="line">   table_type</span><br><span class="line"><span class="keyword">from</span> oceanbase.__all_table</span><br><span class="line"><span class="keyword">where</span> database_id <span class="operator">=</span> <span class="number">500001</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="operator">|</span> table_id <span class="operator">|</span> table_name                                  <span class="operator">|</span> table_type <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500055</span> <span class="operator">|</span> t1                                          <span class="operator">|</span>          <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500061</span> <span class="operator">|</span> __AUX_LOB_META_500061_                      <span class="operator">|</span>         <span class="number">13</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500062</span> <span class="operator">|</span> __AUX_LOB_PIECE_500062_                     <span class="operator">|</span>         <span class="number">12</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500056</span> <span class="operator">|</span> __idx_500055_idx1                           <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500059</span> <span class="operator">|</span> __idx_500055_idx1_index_id_table            <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500060</span> <span class="operator">|</span> __idx_500055_idx1_index_snapshot_data_table <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500057</span> <span class="operator">|</span> __idx_500055_rowkey_vid_table               <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500058</span> <span class="operator">|</span> __idx_500055_vid_rowkey_table               <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="number">8</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p>table_type 的含义详见：<strong>seekdb 开源项目代码</strong>[2]，这里只截一张图，不再细说。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/02.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<h2 id="向量索引的组成"><a href="#向量索引的组成" class="headerlink" title="向量索引的组成"></a>向量索引的组成</h2><p>在了解向量索引构建过程前，需要先了解整个向量索引的组成部分，以 HNSW（Hierarchical Navigable Small World）索引为例，包含内存索引和磁盘索引两部分。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/03.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>上图的上半部分蓝色的是内存索引的结构，由三部分组成，分别是 snapshot 快照索引（0-1）、increment 增量内存索引（0-3）、valid_bitmap 内存结构（0-3），共同构成了向量索引的内存组成部分。</p>
+<p>下半部分黑色的是磁盘索引，包含五个辅助表：</p>
+<ul>
+<li>1 号表 rowkey_vid_table 用于保存 rowkey 和 vid 的映射关系。</li>
+</ul>
+<blockquote>
+<p>小编理解，意思是 1 号表用于记录主表主键和 vid 的对应关系，vid 的含义是 vector id，其实解释成 vector index value id 会更清楚一些。</p>
+</blockquote>
+<ul>
+<li>2 号表 vid_rowkey_table 保存的内容和 1 号表相同，存在的原因是在某些应用场景，例如查询场景，为了便于得到 vid，并根据 vid 得到 rowkey。</li>
+</ul>
+<blockquote>
+<p>小编理解，意思是 2 号表的作用是向量索引查询完成后，通过 vector_id 找到 rowkey 进行回表。</p>
+<p>1 号表和 2 号表都有两个相同的列（rowkey + vid），区别是 1 号表的主键是主表主键 rowkey，2 号表的主键是 vid。</p>
+</blockquote>
+<ul>
+<li>3 号表 delta_buffer_table 主要用于承接外部对主表进行 DML 操作的增量数据写入，数据会直接写到 3 号表中。</li>
+</ul>
+<blockquote>
+<p>小编理解，3 号表主要是用于记录发生更改的 VectorID 和 Type，Type 只有两种：’I’ 表示新增, ‘D’ 表示删除，每个 ID 至多被写入一次和删除一次。</p>
+</blockquote>
+<ul>
+<li>4 号表 index_id_table 实际上是 3 号表的超集，包含了不同时间段的三号表数据，会有一个后台用户定期将 3 号表的数据刷新到 4 号表中去，目的是为了提升在某些大数据量场景的查询效率，例如账单场景，由于历史数据庞大，如果直接对 3 号表进行全表扫描，耗时会比较长，定期将 3 号表的存量数据导入到 4 号表后，3 号表会始终维持在一个比较稳定的低数据量水位，从而提升查询效率。</li>
+<li>5 号表 index_snapshot_data_table 用于保存向量数据，这些向量数据首先会被写到一个 Lob Meta 表中，Lob Meta 表写完后，会将 Lob Meta 表对应的每一段的地址，存储到 5 号表中。总而言之，5 号表用于保存索引的向量数据。</li>
+</ul>
+<blockquote>
+<p>小编理解：</p>
+<p>1 ~ 2 号表，因为和主表主键都有关系，所以是共享辅助表，由一张表上的所有向量索引共用。</p>
+<p>3，4，5 号表，是每个向量索引独占的索引辅助表，也都有 vid 列。</p>
+<p>后面这三张表，感觉大家不需要细究其作用，可以简单理解成：向量数据维数限制很宽，所以需要用 LOB 这种大对象进行存储。大对象不能反复存储，所以只在 5 号表里存储了一份，其他表都是用来保证向量索引中大对象的更新和查询效率的。</p>
+</blockquote>
+<h2 id="向量索引构建流程"><a href="#向量索引构建流程" class="headerlink" title="向量索引构建流程"></a>向量索引构建流程</h2><p>在了解完索引辅助表在内存和磁盘上的整体结构后，我们来了解下索引表的构建流程。</p>
+<p>首先需要创建上文中提到的 5 个辅助表以及对应内容，当前在创建辅助表的过程中，使用的是 OceanBase DDL 框架，主要以 DDL task 的形式实现。对于一个 DDL task 来说，主要是以状态机的形式进行实现，推进每一个状态的执行以及切换，处理不同辅助表的创建过程。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/04.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>在状态机中流程共有三步。</p>
+<ul>
+<li>第一步，创建 1 号表 rowkey_vid table。如果该表已存在，可直接跳过，如果不存在，会直接创建 1 号表的 Schema、再在表中补全数据，该状态结束后会进入到下一个状态。</li>
+<li>第二步，创建 3 号表 delta_buff_table 和 4 号表 index_id_table。在该创建过程中，不需要进行数据补全，因为后续创建 5 号表 index_snapshot_data_table 时，会将数据统一导入到 5 号表中，因此 3 号表和 4 号表不需要再进行补全数据操作。3 号表创建完成后，即可开始写入外部 DML 操作的增量数据。</li>
+<li>第三步，创建 2 号表 vid_rowkey_table 和 5 号表 index_snapshot_data_table。创建 2 号表的过程和创建 1 号表过程类似，需要先创建 Schema、再补全数据。创建 5 号表的过程和上述流程都不太一样，需要同时创建内存索引和磁盘索引，会先将数据添加到内存增量索引中，数据补齐后，再将内存索引中的数据反序列化到 5 号表中，共包含了两个步骤。</li>
+</ul>
+<p>待上述流程全部完成后，即进入索引生效状态，然后将索引创建流程结束，即可开始使用。</p>
+<h2 id="构建流程中的状态推进"><a href="#构建流程中的状态推进" class="headerlink" title="构建流程中的状态推进"></a>构建流程中的状态推进</h2><p><strong>对于 DDL task 的执行流程，主要以状态机的形式来进行流程处理。主要逻辑是根据当前的状态，进行对应状态的处理，以及对下一个状态的转移。可能会有用户感到疑惑，为什么要引入索引状态机？</strong></p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/05.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>利用状态机的好处主要有两点：一是流程可视化，二是状态持久化。</p>
+<p>考虑到可能存在一些异常场景，例如 LS（LogStream）切主，或者重启、宕机等。在这些异常场景下，如果当前在进行 5 号表的补数据流程，在过程中发生了切主或重启，在场景异常恢复正常后，只需要从五号表到进行中状态继续往下进行，而不需要从头再进行一遍，以提高异常场景下的容错能力。</p>
+<h1 id="构建性能和内存分析"><a href="#构建性能和内存分析" class="headerlink" title="构建性能和内存分析"></a>构建性能和内存分析</h1><h2 id="耗时点分析"><a href="#耗时点分析" class="headerlink" title="耗时点分析"></a>耗时点分析</h2><p>通过两张图，来分析一下索引构建过程中的耗时点。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/06.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>图中集群的本地数据量为 2000 万，在该集群创建构建索引，通过查询内部表 __all_rootservice_event_history 得出构建索引每个状态的对应耗时，可以看出：</p>
+<ul>
+<li>WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 的状态耗时从 10 点 53 分一直到 14 点 28 分，中间经历了约 3.5 小时。</li>
+<li>其他状态的耗时均为几分钟。</li>
+</ul>
+<p>因此，整个构建索引过程大部分耗时都集中在 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态中。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/07.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>通过查询内部表 __all_rootservice_event_history 的 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态下对应表的构建子任务的状态和耗时可以看出：耗时比较久的是 REDEFINITION 状态，耗时为 3.5 小时，基本接近上文 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态的耗时，也就是说 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态的耗时点在 REDEFINITION 状态。</p>
+<h2 id="构建耗时分析"><a href="#构建耗时分析" class="headerlink" title="构建耗时分析"></a>构建耗时分析</h2><p><strong>小编划重点：</strong></p>
+<p><strong>从这里开始的内容，一定要看下！</strong></p>
+<p><strong>推荐收藏，以备不时之需~</strong></p>
+<p>GV$SESSION_LONGOPS 视图用于展示集群 DDL 操作的执行状态和进度，从该视图中可以得出构建过程的各个状态。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/08.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>首先需要关注并行度。图中的并行度 PARALLELISM 为 1，也就是说同时进行的构建过程只有一个，构建过程中的补数据操作的并行度也是 1，因此该场景下的后键过程是比较慢的，也就是说造成构建慢的很重要因素是没有开并行。</p>
+<p>第二个因素是补数据过程中的采样点。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/09.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>上图是红框为每个采样点的数值，第一个采样点是 122000，第二个采样点是 178000，第三个采样点是 297000，第四个采样点是 406000，第五个采样点是 642000，第六个采样点是 648000。</p>
+<p>第二个采样点和第一个采样点的值相差 5 万左右，因此第一个分片有 5 万左右的数据。</p>
+<p>以此类推：第二个分片有 12 万左右的数据，第三个分片有 11 万左右的数据，第四个分片有 20 万左右的数据，第五个分片只有 0.6 万左右的数据，从第三个分片开始，采样的数据量差距越来越大，到第五个分片却只有 0.6 万数据。</p>
+<p>可以得出一个结论：采样可能不均衡。</p>
+<p>那么这些分片是什么意思，然后他在构建过程中是有什么用呢？</p>
+<p>OceanBase 在补数据的过程中，利用了 PX 并行框架，可在创建索引时指定使用的线程数。上文补数据过程中并行度为 1，可能是在创建索引时未加 Hint，未指定并行度，导致只使用了一个线程进行补数据操作。</p>
+<p>假设开 10 个线程用于补数据，PX 框架中会先把一些数据采样出来，由于每个分片大小不一样，同时补数据是按照线程处理分配的，假设有十个数据，对应十个分片，每个线程处理一个分片的数据。如果采样不均衡，可能会存在某个分片的数量特别大，某个分片的数量特别小。</p>
+<p>例如现在有 100 万的数据，指定 10 个线程数，分成 10 个分片。可能第一个分片处理了 99 万数据，第二个分片或剩下的分片只处理了几千的数据。最终导致大部分时间都消耗在了第一个线程中，造成整个构建效率索引不高，因此第二个创建索引耗时的影响因素是采样不均。</p>
+<p>第三个造成后键索引速度慢的原因是：单条写入慢。如果表是非分区表，在对非分区表补数据时，相当于只有一个内存索引。假设内存索引存储了 100 万数据，在做补数据时，会将全部 100 万的数据写入一个分区内。HNSW 索引是 HNSW 的图结构，插入索引时，如果图的数据量越大，在搜图的耗时就越长。可能在插入到 90 万条数据后，插入速度已经变得非常缓慢。如果将表改为分区表，例如将 100 万的数据平摊到 10 个分区中，相当于在使用并行，此时插入效率会比一个分区快很多。</p>
+<p><strong>因此，构建索引慢的优化方法有：加并行、提高采样率、改分区表三种。</strong></p>
+<h2 id="内存分析"><a href="#内存分析" class="headerlink" title="内存分析"></a>内存分析</h2><p>通过查询 __all_virtual_vector_index_info 类目表，可以得出几个关键信息。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/10.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>内存索引主要由三个部分组成，分别是：</p>
+<ul>
+<li>增量索引内存</li>
+<li>快照索引内存</li>
+<li>Vbitmap 内存</li>
+</ul>
+<p>其中内存占用大部分在增量索引内存和快照索引内存，因此主要需要优化这两部分的内存占用。</p>
+<p>导致内存占用高的阶段主要可能有构建过程中的内存占用和建完后的 DML 和持久化操作。</p>
+<h3 id="内存占用分析及优化建议"><a href="#内存占用分析及优化建议" class="headerlink" title="内存占用分析及优化建议"></a>内存占用分析及优化建议</h3><p>关于内存占用分析，有如下几个场景的优化建议。</p>
+<ul>
+<li>场景一：增量内存占用高。<ul>
+<li>定期 Rebuild 重建索引。例如构建索引已经创建完成，并持续进行了较长时间的 DML 操作，此时如果发现内存索引的占用率比较高，即增量内存占用高，可以手动触发定期 Rebuild 重建索引。如果不手动触发，后台会默认每 24 小时进行一次。Rebuild 重建索引是一个比较好的降低内存使用的手段。</li>
+</ul>
+</li>
+<li>场景二：Follower 副本内存占用（不支持弱读场景）。<ul>
+<li>如果场景不需要支持弱读，可以通过调整参数将 Follow 副本的内存占用删除。假设有多个节点，包含 Leader 副本和 Follower 副本，如果不需要在 Follower 副本查数据，可以直接把 Follower 副本上的加载内存索引关掉，从而节省一半的内存空间。</li>
+</ul>
+</li>
+<li>场景三：使用非 BQ 索引。<ul>
+<li>建议使用 HNSW BQ 索引替换原生 HNSW 索引，相当于把 float（32 位浮点数）改成 Bit 存储，使得实际上的向量内存占用大大降低，从而解决 HNSW 索引内存占高的问题。</li>
+</ul>
+</li>
+</ul>
+<p>除此之外，建议使用内存预估提前规划好内存。针对目前一些客户的反馈问题，例如在后期过程中，如果发现内存不足导致报错、卡住等现象，可以在建内存索引前使用工具预估内存，例如 OceanBase 官方提供的 DBMS 工具，进行预估内存、提前规划，即可避免后续出现相关报错。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/11.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>内存预估能力会在 OceanBase V4.3.5_BP3 之后的版本支持。</p>
+<h2 id="构建性能和内存优化建议"><a href="#构建性能和内存优化建议" class="headerlink" title="构建性能和内存优化建议"></a>构建性能和内存优化建议</h2><p>综上所述，构建速度优化和构建内存优化的方式总结如下。</p>
+<h3 id="构建速度优化"><a href="#构建速度优化" class="headerlink" title="构建速度优化"></a>构建速度优化</h3><ol>
+<li>禁止每日合并（合并会占用大量的 CPU 资源）：<code>alter system set major_freeze_duty_time = &#39;disable&#39;;</code></li>
+<li>调高 DDL 补数据的执行优先级（默认 2，最高 8）：<code>alter system set ddl_thread_score = xxx;</code></li>
+<li>调大 PX 执行线程池线程数（设置比并行度大）：<code>set global parallel_servers_target = xxx;</code></li>
+<li>提高 PX 补数据采样阶段采样数（默认 200，上限是 100000，如果数据量比较大，可以调整为 5000，但并非越大越好，可能会增加时间开销）：<code>alter system set _px_object_sampling = 5000;</code></li>
+</ol>
+<h3 id="构建内存优化"><a href="#构建内存优化" class="headerlink" title="构建内存优化"></a>构建内存优化</h3><ol>
+<li>多副本下，禁止 Follower 节点加载内存索引：<code>alter system set load_vector_index_on_follower = false;</code></li>
+<li>禁止构建时创建内存索引（构建时只创建索引辅助表，不创建内存索引，在其他的后台任务或第一次查询的时加载回来）：<code>alter system set vector_index_memory_saving_mode = true;</code></li>
+</ol>
+<h1 id="重建原理和内存分析"><a href="#重建原理和内存分析" class="headerlink" title="重建原理和内存分析"></a>重建原理和内存分析</h1><h2 id="重建目的"><a href="#重建目的" class="headerlink" title="重建目的"></a>重建目的</h2><p>随着 DML 操作带来的更新数据变多，查询内存增量索引和 valid_bitmap 的代价变大，重建的目的是减少增量索引的内存占用和查询代价。</p>
+<h2 id="重建原理"><a href="#重建原理" class="headerlink" title="重建原理"></a>重建原理</h2><p>重建索引的原理其实很简单，即新建一个同名索引表，完成数据导入后，再删除旧索引，再交换索引名，使新索引生效。下图是重建索引的框架图，如图所示，是从 RS 中做驱动，执行 DDL 任务的流程，最终完成索引的创建。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/12.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<h2 id="重建语法"><a href="#重建语法" class="headerlink" title="重建语法"></a>重建语法</h2><p>REBUILD_INDEX 过程用于全量刷新（即重建）向量索引，触发重建索引的语法为（不设置并行度）：<code>call dbms_vector.rebuild_index(&#39;idx1&#39;,&#39;t1&#39;,&#39;c2&#39;)</code>。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/13.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<p>更多介绍可参见文档：<strong>OceanBase 官方文档 —— REBUILD_INDEX</strong>[3]。</p>
+<h2 id="重建场景"><a href="#重建场景" class="headerlink" title="重建场景"></a>重建场景</h2><p>重建索引是表级别的 Rebuild，较为耗时，一般建议增量数据占比超过快照数据的 20%，或者查询时出现 3 号表的数据访问热点时，选择重建。建议在 CPU 和内存空闲的时间段进行。</p>
+<h2 id="重建过程中的内存占用"><a href="#重建过程中的内存占用" class="headerlink" title="重建过程中的内存占用"></a>重建过程中的内存占用</h2><p>由于重建索引过程中会同时存在新旧两个索引，因此内存占用最大可能会是原来索引的 2 倍，重建完成后内存下降新索引内存水位。该过程有一些可用的优化手段，因为在做构建索引时，补数据是按照分区进行的，即不是一下补所有分区，而是一个分区一个分区进行，可以在某个分区重建索引好，立即将原内存索引删除。例如有一个分区表，有 10 个分区，原索引占用了 10G 内存，在资源有限的情况下，可以只预留 11G 或 12G 的内存空间，每次只进行单分区的索引重建及重建后删除，整体不会占用太多的磁盘和内存空间。</p>
+<p>重建后的内存绝大部分集中在 snap_index 快照索引，但若重建过程中有 DML 操作，重建后的 incr_index 增量索引也会有新的内存开销，因此建议在 Rebuild 索引时，将 DML 流量关掉。</p>
+<p><img data-src="/img/oceanbase-vector-index-optimization/14.jpeg" alt="OceanBase 向量索引优化指南"></p>
+<h1 id="未来展望"><a href="#未来展望" class="headerlink" title="未来展望"></a>未来展望</h1><p>关于 seekdb 和 OceanBase 向量索引未来的能力有如下 3 点展望：</p>
+<ol>
+<li>实现分区级自动并行重建。目前 OceanBase V4.3.5_BP3 已经支持了分区级自动重建，默认开启。但自动重建是单分区、单线程进行补数据，不支持并行，因此写入效率相对比较慢。未来希望支持并行重建，加快一个分区级自动重建效率。</li>
+<li>增量内存索引优化。除了分区级自动重建之外，希望向量索引自己本身能做到内存优化。例如将增量内存索引的数据迁移到其他地方，或直接降低内存索引的内存占用。</li>
+<li>构建性能优化。构建性能优化是后续会持续提升，以达到给用户提供更好的使用效率。</li>
+</ol>
+<p><strong>参考资料</strong></p>
+<p>[1] 在线体验环境: <em><span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kZW1vL29iLWh5YnJpZC1zZWFyY2gtcXVpY2stc3RhcnQ=">https://www.oceanbase.com/demo/ob-hybrid-search-quick-start<i class="fa fa-external-link-alt"></i></span></em></p>
+<p>[2] seekdb 开源项目代码: <em><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGIvYmxvYi9kZXZlbG9wL3NyYy9zaGFyZS9zY2hlbWEvb2Jfc2NoZW1hX3N0cnVjdC5o">https://github.com/oceanbase/seekdb/blob/develop/src/share/schema/ob_schema_struct.h<i class="fa fa-external-link-alt"></i></span></em></p>
+<p>[3] OceanBase 官方文档 —— REBUILD_INDEX: <em><span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzk4MDc3MQ==">https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000003980771<i class="fa fa-external-link-alt"></i></span></em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># 性能优化</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95/" rel="tag"># 向量索引</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E7%B4%A2%E5%BC%95%E9%87%8D%E5%BB%BA/" rel="tag"># 索引重建</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-17-didi-oceanbase-ops-practice/" rel="prev" title="OceanBase 在滴滴大规模运维经验以及新功能落地实践">
+                  <i class="fa fa-angle-left"></i> OceanBase 在滴滴大规模运维经验以及新功能落地实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-12-25-ai-native-database-knowledge-base-refactor/" rel="next" title="只用两个周末给公司省了5000刀：从多数据库架构到 AI 原生数据库的知识库重构之路">
+                  只用两个周末给公司省了5000刀：从多数据库架构到 AI 原生数据库的知识库重构之路 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

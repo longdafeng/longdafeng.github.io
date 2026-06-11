@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="微博数据库技术负责人杨尚刚深度解析微博数据库架构升级实践：以 OceanBase 分区表替代 MySQL 分库分表，存储占用从 50TB 降至 27TB，成本节省 46%，并分享分区表设计与统计信息收集经验，以及 KV、向量场景的探索规划。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="微博基于OceanBase数据库架构升级实战: 又稳又省">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="微博数据库技术负责人杨尚刚深度解析微博数据库架构升级实践：以 OceanBase 分区表替代 MySQL 分库分表，存储占用从 50TB 降至 27TB，成本节省 46%，并分享分区表设计与统计信息收集经验，以及 KV、向量场景的探索规划。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/07.png">
+<meta property="article:published_time" content="2025-07-23T09:07:40.000Z">
+<meta property="article:modified_time" content="2025-07-23T12:21:57.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分区表">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="微博">
+<meta property="article:tag" content="降本增效">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-23-weibo-partition-table-practice/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/","path":"2025/2025-07-23-weibo-partition-table-practice/","title":"微博基于OceanBase数据库架构升级实战: 又稳又省"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>微博基于OceanBase数据库架构升级实战: 又稳又省 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%AE%E5%8D%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84%E5%8F%8A%E7%8E%B0%E7%8A%B6"><span class="nav-number">1.</span> <span class="nav-text">微博数据库平台架构及现状</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%E5%8D%87%E7%BA%A7%EF%BC%8C%E4%BC%98%E5%85%88%E8%A7%A3%E5%86%B3MySQL%E7%97%9B%E7%82%B9"><span class="nav-number">2.</span> <span class="nav-text">架构升级，优先解决MySQL痛点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E8%A1%A8%E6%9B%BF%E4%BB%A3%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%EF%BC%8C%E5%8F%88%E7%A8%B3%E5%8F%88%E7%9C%81"><span class="nav-number">3.</span> <span class="nav-text">分区表替代分库分表，又稳又省</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E5%AF%B9%E6%8A%80%E6%9C%AF%E7%AD%96%E7%95%A5%EF%BC%8C%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88"><span class="nav-number">4.</span> <span class="nav-text">选对技术策略，降本增效</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E8%B7%B51%EF%BC%9A%E5%88%86%E5%8C%BA%E8%A1%A8%E8%AE%BE%E8%AE%A1"><span class="nav-number">4.1.</span> <span class="nav-text">实践1：分区表设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E8%B7%B52%EF%BC%9A%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">4.2.</span> <span class="nav-text">实践2：统计信息收集</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8KV%E5%9C%BA%E6%99%AF%E3%80%81%E5%90%91%E9%87%8F%E5%9C%BA%E6%99%AF%E8%BF%9B%E4%B8%80%E6%AD%A5%E6%8E%A2%E7%B4%A2OceanBase"><span class="nav-number">5.</span> <span class="nav-text">在KV场景、向量场景进一步探索OceanBase</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF1%EF%BC%9AKV-%E5%AD%98%E5%82%A8%E4%BC%98%E5%8C%96"><span class="nav-number">5.1.</span> <span class="nav-text">场景1：KV 存储优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF2%EF%BC%9A%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%97%9B%E7%82%B9"><span class="nav-number">5.2.</span> <span class="nav-text">场景2：向量数据库痛点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E5%9C%BA%E6%99%AF"><span class="nav-number">5.3.</span> <span class="nav-text">其他场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="微博基于OceanBase数据库架构升级实战: 又稳又省 | Longda's Interesting World">
+      <meta itemprop="description" content="微博数据库技术负责人杨尚刚深度解析微博数据库架构升级实践：以 OceanBase 分区表替代 MySQL 分库分表，存储占用从 50TB 降至 27TB，成本节省 46%，并分享分区表设计与统计信息收集经验，以及 KV、向量场景的探索规划。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          微博基于OceanBase数据库架构升级实战: 又稳又省
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-23 17:07:40" itemprop="dateCreated datePublished" datetime="2025-07-23T17:07:40+08:00">2025-07-23</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">杨尚刚</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>6.1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>22 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">微博数据库技术负责人杨尚刚深度解析微博数据库架构升级实践：以 OceanBase 分区表替代 MySQL 分库分表，存储占用从 50TB 降至 27TB，成本节省 46%，并分享分区表设计与统计信息收集经验，以及 KV、向量场景的探索规划。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"微博基于OceanBase数据库架构升级实战: 又稳又省","description":"微博数据库技术负责人杨尚刚深度解析微博数据库架构升级实践：以 OceanBase 分区表替代 MySQL 分库分表，存储占用从 50TB 降至 27TB，成本节省 46%，并分享分区表设计与统计信息收集经验，以及 KV、向量场景的探索规划。","image":"https://ilongda.com/img/7-23-weibo-partition-table-practice/01.png","wordCount":6128,"datePublished":"2025-07-23T09:07:40.000Z","dateModified":"2025-07-23T12:21:57.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/"},"url":"https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","向量数据库","微博","MySQL","分区表","分库分表","降本增效"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"微博基于OceanBase数据库架构升级实战: 又稳又省","item":"https://ilongda.com/2025/2025-07-23-weibo-partition-table-practice/"}]}</script>
+<p><strong>编者按：</strong> 作为中国最具影响力的社交媒体平台之一，微博（旧称新浪微博，股票代码：09898）自2009年上线以来已发展成为集内容发布、社交互动、热点传播于一体的综合性社交网络。据公开数据显示，2024年微博月活跃用户规模突破5.83亿。</p>
+<p>面对庞大的用户体量和日益复杂的业务场景，微博数据库平台面临关键挑战：如何在保障海量数据处理能力的同时，实现系统稳定性与成本效益的平衡。经过严谨的技术评估，团队最终完成了核心数据库系统的战略升级。在本文中，微博数据库技术负责人杨尚刚将从技术选型、方案设计到落地实践等维度，深度解析这场关乎亿级用户体验的数据库进化之路。</p>
+<span id="more"></span>
+
+<h2 id="微博数据库平台架构及现状"><a href="#微博数据库平台架构及现状" class="headerlink" title="微博数据库平台架构及现状"></a>微博数据库平台架构及现状</h2><p>微博的数据库平台主要分为三部分：常见的主流关系型数据库、 NoSQL 数据库托管，完整的 OLTP 和 OLAP 解决方案支撑，推动公司数据库技术创新实践和落地。</p>
+<p>其中，数据库实例规模总计数万个，NoSQL 数据库以 Redis 为主，每天的访问量在万亿级别，十亿级访问峰值。自2011年开始，我们大量使用 Redis ，并基于 Redis 研发了多个内部分支，持久化存储数据规模达 PB 级。</p>
+<p>下图为微博的数据库架构图：资源层包含早期的自建物理机、私有云和用于解决资源弹性扩缩容问题的公有云；调度层负责资源的管理和调度，包括内部自研的资源调度平台和开源的 Kubernetes；服务层主要是关系型数据库，包含MySQL、PostgreSQL、ClickHouse、Milvus、OceanBase、 MongoDB 等。当前产品种类繁多、导致平台管理成本比较高，稳定性和易用性也存在问题。</p>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/01.png" alt="微博数据库架构图"></p>
+<p>由于近几年经济状况较差，人力成本越来越高，而业务的正常发展、存储资源的持续增长，以及架构升级，都需要更多的人力支撑，因此，为降本增效，我们需要更加简单高效、低成本的技术架构。</p>
+<h2 id="架构升级，优先解决MySQL痛点"><a href="#架构升级，优先解决MySQL痛点" class="headerlink" title="架构升级，优先解决MySQL痛点"></a>架构升级，优先解决MySQL痛点</h2><p>在成本控制和精细化风险把控的背景下，需要用有限的服务器资源支撑业务的平稳增长，并实现资源利用最大化和高效交付。 在关系型数据库的应用中，MySQL使用范围较广，且存在的问题较为突出，所以在此次架构升级中，我们优先解决MySQL的应用痛点，比如：</p>
+<ul>
+<li>长尾数据多。像微博评论这样的数据每天都在大规模增长，且需要长期保存，导致长尾数据非常多，占用存储空间。</li>
+<li>分库分表的不可持续性。当数据库实例所需规格超过机器规格就需要扩容，通常我们只能考虑分库分表方案，短暂满足了业务要求，但带来了更高的管理成本和业务成本。</li>
+<li>高可用数据安全问题。 MySQL主要通过异步复制来同步数据，虽然也支持半同步，但会带来一定的性能损耗。MySQL 5.7 支持的 MGR 集群方案相对完善，运维成本却相对高。当进行主从切换后，存在数据一致性的风险。</li>
+<li>存储成本高。 MySQL 部署主要是一主两从架构，相当于双重备份。如下图所示，从2013年到2020年，机械盘和 SSD 盘的成本越来越接近，机械盘在存储成本的优势没有太大变化。</li>
+</ul>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/02.png" alt="机械盘与SSD盘成本对比"></p>
+<p>针对 MySQL 的痛点问题，我们计划从如下几个方面进行优化。</p>
+<p><strong>1.优化存储成本，不同场景使用不用存储模式。</strong></p>
+<p>2016年，为了解决延迟和性能问题，我们把数据从机械硬盘迁移到 QLC SSD。然而，随着业务场景的变化，QLC SSD 的成本优势并不明显，某些情况下使用机械硬盘可能是一个更优的选择，但在某些场景下，使用 QLC SSD 成本仅能降低约10%~20%，相比之下，机械硬盘由于其较高的单机存储密度，成本降低幅度可能更大，因此需要针对不同的业务场景使用不同的存储模式。</p>
+<p><strong>2.长尾数据归档到 S3。</strong></p>
+<p>我们计划将长尾数据归档到 S3，且正在调研适合的方案。已知MariaDB 插件支持 S3 存储，其本质是通过底层 S3 实现数据同步，而非传统意义上的集群数据同步。这种方案可显著降低存储成本，甚至可能低于使用硬盘的成本。但需要注意的是，该方案对业务场景有一定要求，例如对于数据更新频繁的表，可能会受到限制，更适合存储很少更新或基本不更新的数据。此外，OceanBase 也支持 S3 方案，其方案可行性正在调研中。</p>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/03.png" alt="长尾数据归档到S3方案"></p>
+<p><strong>3.通过压缩软件、硬件降低成本。</strong></p>
+<p>软件压缩和硬件压缩技术也是我们整体测试的方面。MySQL 从5.5版本开始支持压缩，到5.7和8.0版本引入了新的压缩方式。不过MySQL自带的压缩的性能损耗较大，例如使用 MySQL 压缩可以节省约40%的存储空间，但性能可能会下降约66%。由于我们了解到OceanBase具备较强的降本能力，因此，我们后续考虑通过OceanBase来降低硬件成本与存储成本，同时减少性能损耗。</p>
+<p><strong>4.资源池化以实现弹性扩展。</strong></p>
+<p>资源池化是解决弹性扩展能力的重要方向，但其实现需要较强的研发实力。我们暂不具备实施资源池化的条件，但可以参考业界的先进方案，如 AWS 或 PolarDB，再或者引入OceanBase时利用其资源池化能力。资源池化的主要目标是解决 MySQL 扩展困难的问题，尤其是数据存储和扩容的难点。</p>
+<p>通过多方面的优化措施，我们希望能够有效解决 MySQL 的痛点问题，提升系统性能和成本效益。而在调研数据库方案时，发现OceanBase比较符合我们的预期，便在业务中进行尝试。</p>
+<h2 id="分区表替代分库分表，又稳又省"><a href="#分区表替代分库分表，又稳又省" class="headerlink" title="分区表替代分库分表，又稳又省"></a>分区表替代分库分表，又稳又省</h2><p>OceanBase 是一款完全自主研发的原生分布式数据库，支持平滑扩展与弹性扩缩容、高度兼容 MySQL，能够平滑、快速、小成本搬迁应用与数据，且具备高可用（RPO&#x3D;0，RTO小于8s）能力，还有非常活跃的开源社区，因此我们开始尝试在某些场景引入 OceanBase。</p>
+<p>举个例子，某个系统此前面临分库分表拆分复杂、数据不一致、多实例导致的机器资源浪费、运维成本高等问题。我们尝试将该系统的数据库替换为 OceanBase，前期测试和部署过程都比较顺利，解决了该系统使用 MySQL 时问题。</p>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/04.png" alt="分区表替代分库分表方案"></p>
+<p>采用 OceanBase 后，主要收益如下：</p>
+<ol>
+<li>我们摒弃了原有的 MySQL 分库分表策略，转而使用 OceanBase 分区表。从业务层面来看，相当于一张大表，从而简化了业务读写逻辑，完全解决了数据一致性问题。</li>
+<li>OceanBase 底层存储使用通用压缩和数据编码压缩，数据压缩比高于 MySQL，且性能不受影响。在系统迁移到 OceanBase 后，存储占用从 50TB 下降到 27TB，成本节省46%。</li>
+<li>系统已稳定运行半年多，证明了 OceanBase 的强稳定性。</li>
+<li>OceanBase 分布式数据库天然具备高可用能力，集群部署完成后，不需要额外花大量工作维护数据的多副本，少数节点出现故障不影响业务使用；无需像 MySQL 那样引入额外的组件来保证集群切换，进一步降低了运维复杂性和 DBA 运维成本。</li>
+</ol>
+<h2 id="选对技术策略，降本增效"><a href="#选对技术策略，降本增效" class="headerlink" title="选对技术策略，降本增效"></a>选对技术策略，降本增效</h2><p>在引入 OceanBase 的过程中，我们收获了很多实践经验，供大家做参考。</p>
+<h3 id="实践1：分区表设计"><a href="#实践1：分区表设计" class="headerlink" title="实践1：分区表设计"></a>实践1：分区表设计</h3><p>分区表是数据库设计中常见的优化手段，尤其在处理大规模数据时。对于MySQL用户来说，分区表的设计和使用已有诸多规范、文档供阅读。然而，MySQL早期版本的分区表存在一些问题，因此在实际应用中，通常建议使用分表而非分区表。MySQL 单表通常为N千万行，大于此数量需要分库分表。</p>
+<p>OceanBase 分区表设计理念与 MySQL 有显著区别，主要通过分区表设计来实现大规模数据的高效管理，不存在单表数据量上限，对于大数据量表建议使用分区表，且单个分区表可以控制在100GB以下（对应MySQL 600GB~800GB）。同时，分区数量建议在服务器台数的2-3倍，以及 CPU逻辑核数的2倍范围之间，以确保数据分布均衡，避免因分区过少导致的数据不均衡问题。</p>
+<p>OceanBase支持一级分区和二级分区。一级分区是常见的分区方式，包括 HASH、KEY、LIST、RANGE、RANGE COLOMNS、LISTCOLOMNS等常用的分区类型，具体选择需根据业务场景和数据特点确定。例如，如果数据具有时间维度特征，范围分区可能更为合适；如果数据需要根据特定值进行分区，列表分区可能是更好的选择。</p>
+<p>二级分区相当于在一级分区的基础上，又从第二个维度进行了拆分。如果在设计初期选择了一级分区，后续需要扩展分区，直接修改分区键可能较为困难，此时可以通过引入二级分区来解决这一问题。二级分区的设计需要谨慎考虑，以确保分区的合理性和扩展性。</p>
+<p>创建分区的目的是在特定的SQL操作中减少数据读写的总量，以减少响应时间，同时提升了可扩展性能力、可管理性、提高性能等能力。</p>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/05.png" alt="OceanBase分区表设计"></p>
+<p>分区表设计的主要目的是优化数据量和响应时间，降低系统负担。通过合理分区，可以有效控制并发度，确保数据规模和性能的平衡。在设计分区表时，还需要注意以下几点。</p>
+<ol>
+<li>分区键选择。分区键应根据业务形态（热点数据打散、历史数据维护便利性、业务SQL的条件形态、分区裁剪）谨慎选择，尽量将数据均匀分布，避免数据热点问题。</li>
+<li>分区类型选择。根据业务需求选择合适的分区类型，如哈希分区、范围分区或列表分区。</li>
+<li>分区键与主键的关系。在 OceanBase 中，分区键必须是主键的子集，即主键中必须包含分区键。</li>
+<li>Range分区。考虑是否使用maxvalue，如果使用了maxvalue，后续会没办法再添加分区。</li>
+<li>写放大问题。为了避免写入放大问题，选择表的自定义主键时，不要使用随机生成的值，尽量有序，比如时序递增等。</li>
+<li>考虑分区裁剪优化。 分区表设计是数据库优化的重要环节，尤其在处理大规模数据时。OceanBase 的分区表设计比较灵活性，在实际应用中，需要根据业务需求和数据特点选择合适的分区策略，优化系统性能和数据管理效率。</li>
+</ol>
+<h3 id="实践2：统计信息收集"><a href="#实践2：统计信息收集" class="headerlink" title="实践2：统计信息收集"></a>实践2：统计信息收集</h3><p>统计信息收集是数据库 SQL 优化的重要组成部分，尤其是在处理慢查询时比较依赖统计信息。无论是MySQL 还是 OceanBase，其查询优化器的执行路径都依赖于统计信息的准确性。当表的数量较多时，统计信息的收集成本较高，耗时也较长。统计信息中，直方图是较为重要的一部分，直方图收集涉及复杂的计算，带来额外成本的耗时。大分区表默认收集二级分区、一级分区、全表的统计信息和直方图，代价为：3 * {cost(全表扫)+cost(直方图)}。</p>
+<p>统计信息收集需要注意五个方面。</p>
+<p><strong>其一，设置合适的默认收集并行度。</strong></p>
+<ul>
+<li>统计信息收集的并发度需要控制，因为其对机器性能有一定影响。建议在业务低峰期（如凌晨）进行收集，以减少对业务的影响。</li>
+<li>建议并行度控制 8 个以内，业务可控的情况下，可以调大并发通过牺牲资源保证了统计信息的收集效率</li>
+<li>业务租户执行：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt;call dbms_stats.set_table_prefs(&#x27;database_name&#x27;, &#x27;table_name&#x27;, &#x27;degree&#x27;, &#x27;8’);</span><br></pre></td></tr></table></figure>
+
+<p><strong>其二，配置采样比例。</strong></p>
+<p>配置块采样，可以通过块采样的方式减少统计信息收集时要处理的数据量，也达到到快速收集的效果。但会牺牲一定的统计信息的准确性。可使用如下方式设置。</p>
+<p>配置开启块采样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt;call dbms_stats.set_table_prefs(&#x27;databse_name&#x27;,&#x27;table_name&#x27;,&#x27;block_sample&#x27;,&#x27;True&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>配置采样比例，可根据表的数量级进行配置，通常情况下，采集千万级的数据即可充分反应一个表的数据特征：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt; call dbms_stats.set_table_prefs(&#x27;databse_name&#x27;,&#x27;table_name&#x27;,&#x27;estimate_percent&#x27;,&#x27;0.1&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p><strong>其三，设置默认列的直方图收集方式，考虑给数据分布均匀的列设置不收集直方图。</strong></p>
+<p>如果该表所有列的数据分布都是均匀的，可以使用如下方式设置所有列都不收集直方图</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt;call dbms_stats.set_table_prefs(&#x27;database_name&#x27;, &#x27;table_name&#x27;, &#x27;method_opt&#x27;, &#x27;for all columns size 1&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>如果该表仅极少数列数据分布不均匀，需要收集直方图，其他列都不需要，则可以使用如下方式设置(c1,c2收集直方图，c3不收集直方图)：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt;call dbms_stats.set_table_prefs(&#x27;database_name&#x27;, &#x27;table_name&#x27;, &#x27;method_opt&#x27;, &#x27;for columns c1 size 254, c2 size 254, c3 size 1);</span><br></pre></td></tr></table></figure>
+
+<p>跳过大对象字段，如果列中保存的都是大对象，可能会导致收集特别慢，因此，收集除大对象外的所有列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SQL&gt;call dbms_stats.set_table_prefs(&#x27;databse_name&#x27;,&#x27;table_name&#x27;,&#x27;method_opt&#x27;,&#x27;for columns col1,col2,col3,... size auto&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p><strong>其四，不同场景收集统计信息的方式。</strong></p>
+<p>慎用设置大表采样的方式收集统计信息，设置大表采样收集时，直方图的样本数量也会变得很大，存在适得其反的效果，设置采样的方式收集统计信息仅适合只收集基础统计信息，不收集直方图的场景。业务租户执行如下。 设置所有列都不收集直方图：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call dbms_stats.set_table_prefs(&#x27;database_name&#x27;, &#x27;table_name&#x27;, &#x27;method_opt&#x27;, &#x27;for all columns size 1&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>设置采样比例为10%：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call dbms_stats.set_table_prefs(&#x27;database_name&#x27;, &#x27;table_name&#x27;, &#x27;estimate_percent&#x27;, &#x27;10&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p><strong>其五，锁定统计信息。</strong></p>
+<p>考虑能否手动收集大表统计信息后，锁定相关的统计信息。需要注意的是当表的统计信息锁定后，自动收集将不会更新，适用于一些对数据特征变化不太大、数据值不敏感的场景，如果需要重新收集锁定的统计信息，需要先将其解锁。</p>
+<p>锁定表的统计信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call dbms_stats.lock_table_stats(&#x27;database_name&#x27;, &#x27;table_name&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>解锁表的统计信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call dbms_stats.unlock_table_stats(&#x27;database_name&#x27;, &#x27;table_name&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>统计信息收集需要综合考虑并发度、采样比例、收集方式以及表的使用场景等因素，以确保优化器能够基于准确的统计信息生成高效的查询计划，同时避免对系统性能造成过大影响。</p>
+<h2 id="在KV场景、向量场景进一步探索OceanBase"><a href="#在KV场景、向量场景进一步探索OceanBase" class="headerlink" title="在KV场景、向量场景进一步探索OceanBase"></a>在KV场景、向量场景进一步探索OceanBase</h2><p>由于 OceanBase 在已上线的业务中表现优秀，因此，我们计划在其他业务场景中继续进行尝试和探索。目前，我们的业务数据量较大，但读写量相对较低。未来，我们将尝试应用于读写量更大、对耗时更为敏感的业务场景，以进一步验证 OceanBase 的性能和适用性。</p>
+<h3 id="场景1：KV-存储优化"><a href="#场景1：KV-存储优化" class="headerlink" title="场景1：KV 存储优化"></a>场景1：KV 存储优化</h3><p>除了 TP 场景，微博内部的 KV 场景也面临一些挑战。以 Pika 为例，目前存在4个问题。</p>
+<ol>
+<li>混部影响 Pika 稳定性：Pika 与 MySQL 混布，且 Pika 实例较多。如果调度不均衡，可能导致单机 Pika 实例过多，进而影响其稳定性，尤其是在遇到热点数据或机器负载不均衡时。</li>
+<li>长尾数据：与 MySQL 类似，Pika 作为基于磁盘的 KV 存储，部分 Pika 实例存在长尾数据问题。这些数据需要长期存储，但又不能清理，给存储管理带来较大压力。</li>
+<li>扩展性问题：Pika 本质上是单机数据库，其数据规模和扩展性面临挑战，与 MySQL 类似，单机扩展性是当前较为棘手的问题之一。</li>
+<li>成本优化：成本主要分为两部分，一是 Redis 迁移到 Pika 等的迁移成本，二是引入新的平台 ARM 平台带来的成本。</li>
+</ol>
+<p>优化措施分为以下两个维度。<strong>一是优化扩展性优化，</strong> 针对 Pika 的扩展性问题，我们调研了相关方案，目前考虑通过 Proxy + Pika 的方式进行管理；<strong>二是适配ARM 架构，</strong> 我们已对 Pika、Redis 服务及 Memcached 进行了 ARM 架构适配。从测试结果来看，ARM 架构在单实例性能上较同配置的x86架构有显著提升，且成本更低。但适配过程存在一定成本，尤其是在ARM架构上，编译指令和JCC（Just-In-Time Compiler）支持等方面与 x86 架构有所不同。此外，MySQL 后续也可能进行 ARM 架构适配，但其适配难度可能较 Redis 更大，因为MySQL 代码复杂度更高。</p>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/06.png" alt="KV存储优化方案"></p>
+<h3 id="场景2：向量数据库痛点"><a href="#场景2：向量数据库痛点" class="headerlink" title="场景2：向量数据库痛点"></a>场景2：向量数据库痛点</h3><p>近年来，向量数据库发展迅速，种类繁多，如主流的 Milvus、Redis、Elasticsearch、PG Vector、OceanBase 等，均支持向量索引和标量索引，功能较为全面。 目前，微博线上主要使用 Milvus 和 Elasticsearch，但使用成本、存储成本、学习成本，以及管理复杂度都比较高，在处理高维向量数据时也存在性能和扩展的瓶颈。 基于微博向量数据库的应用现状，我们将评估当前技术架构、细化业务应用场景，并探索OceanBase 向量能力在内部业务场景的落地应用。</p>
+<p>首先，细化业务应用场景。未来，线上业务可能会继续沿用目前的多种数据库，包括 MySQL、Elasticsearch 、 OceanBase 等，我们将根据业务场景和数据规模进行细化选型，以优化成本和性能。</p>
+<p>其次，评估磁盘索引升级 Milvus 版本持续升级与优化。对于当前使用的向量数据库，需继续升级以解决其成本和性能问题。</p>
+<p>最后，测试 OceanBase 向量功能。 OceanBase在向量数据库方面具有一定优势，表现在：</p>
+<ul>
+<li>索引种类丰富。支持向量索引、标量索引、半结构化索引（多值索引、空间索引）、全文索引等。</li>
+<li>应用集成丰富。采用 SQL 访问，复用 MySQL 生态各个语言的客户端；提供 Python API、提供SDK, 类似Milvus SDK。</li>
+<li>索引创建语法丰富。索引类型包括HNSW、IVFFlat、DiskANN(on processing)；距离算法包括L2、IP、COSINE、Jaccard( on processing)。</li>
+<li>向量查询丰富。支持 TOP N 排序的相似度计算；支持向量和标量混合查询；</li>
+<li>部署运维方便。功能集成在数据库内核中，可以使用和 OceanBase 社区版相同的部署、运维、监控、数据迁移工具。</li>
+</ul>
+<p><img data-src="/img/7-23-weibo-partition-table-practice/07.png" alt="OceanBase向量能力"></p>
+<p>随着 AI 技术的发展，数据库将与 AI 结合更加深入，尤其是自然语言和SQL的结合如SQL 改写方向。同时，AI Agent 也将成为我们在 OceanBase 向量能力的探索方向，例如数据库助手、知识库等。希望利用 AI 提高内部人员的工作便捷性，降低运维复杂度，提高工作效率。</p>
+<h3 id="其他场景"><a href="#其他场景" class="headerlink" title="其他场景"></a>其他场景</h3><p>除KV场景和向量场景计划探索OceanBase外，我们在OceanBase应用过程中还将执行以下5个计划。</p>
+<p><strong>1. OCP平台和自建运维管理平台融合。</strong></p>
+<p>我们将推进OCP平台与自建运营管理平台的整合。如果要大规模使用OceanBase，必须将其与现有的数据库管理平台进行有效整合，从而降低使用成本并提高管理效率。</p>
+<p><strong>2. 资源隔离。</strong></p>
+<p>目前，我们的资源调度方式包括Kubernetes（K8s）和自研调度系统，在实现CPU和内存资源隔离方面存在一定的局限性。OceanBase的多租户架构可以更好地实现资源隔离。</p>
+<p><strong>3. 数据迁移自动化。</strong></p>
+<p>数据迁移是将MySQL或其他数据库迁移到OceanBase的关键环节。目前，数据迁移和校验工作尚未完全自动化，仍需逐步完善。我们将致力于提高数据迁移的自动化程度，确保迁移过程的高效性和数据的准确性。</p>
+<p><strong>4. 集群性能调优。</strong></p>
+<p>随着OceanBase在微博的应用范围扩大，集群规模也越来越大，性能调优将成为一项持续性的工作。我们将根据实际使用情况，逐步积累经验，优化集群性能，以满足业务需求。</p>
+<p><strong>5. 多可用区容灾。</strong></p>
+<p>容灾能力是后续需要重点建设的领域。随着云服务和自建虚拟化环境的普及，MySQL或其他数据库的部署规模和密度不断增加，对容灾和大规模故障处理能力的需求也日益迫切。未来，我们计划将OceanBase集群部署在多个数据中心，以提高容灾能力。虽然这种部署方式可能会因网络问题对性能产生一定影响，但我们将逐步评估和优化，以确保系统的高可用性和稳定性。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>经过本次数据库架构的成功升级，我们持续探索更优的架构和更便捷的开发、运维方式。OceanBase 作为一款日益流行的数据库产品，在微博的应用场景中具有广阔前景，我们将积极探索更多降本增效策略，以应对未来挑战。在此过程中，我们将坚持两个原则：</p>
+<ul>
+<li>One size does not fit all。对于互联网企业而言，数据库选型至关重要，需综合考虑技术稳定性、人员技能、运营体系和业务场景等因素。</li>
+<li>适合自己的才是最好的。我们将保持开放思维，持续关注 OceanBase 的发展，争取应用更多和我们业务场景适配的产品能力，助力业务发展。</li>
+</ul>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/%E5%BE%AE%E5%8D%9A/" rel="tag"># 微博</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E5%88%86%E5%8C%BA%E8%A1%A8/" rel="tag"># 分区表</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" rel="tag"># 分库分表</a>
+              <a href="/tags/%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88/" rel="tag"># 降本增效</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-22-obcp-v4-mock-exam-analysis/" rel="prev" title="OBCP V4 官网模拟题分析（含答案）">
+                  <i class="fa fa-angle-left"></i> OBCP V4 官网模拟题分析（含答案）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-24-mcp-obcloud-workflow/" rel="next" title="AI替代传统GUI：基于 MCP 的 OBCloud 工作流">
+                  AI替代传统GUI：基于 MCP 的 OBCloud 工作流 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="度小满技术委员会负责人赵辉分享统一存储架构实践：基于迁移、资源、学习、运维四大成本优势选型 OceanBase，并通过海量数据低延迟查询、实时数仓读写、变量高吞吐写入、向量混合查询、KV 读写五大场景验证，实现交付效率翻倍、成本收益 3 倍以上。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="度小满技术委员会负责人赵辉分享统一存储架构实践：基于迁移、资源、学习、运维四大成本优势选型 OceanBase，并通过海量数据低延迟查询、实时数仓读写、变量高吞吐写入、向量混合查询、KV 读写五大场景验证，实现交付效率翻倍、成本收益 3 倍以上。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/07.png">
+<meta property="article:published_time" content="2025-07-16T09:13:05.000Z">
+<meta property="article:modified_time" content="2025-07-16T09:32:51.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="KV存储">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="实时数仓">
+<meta property="article:tag" content="度小满">
+<meta property="article:tag" content="数据库选型">
+<meta property="article:tag" content="金融科技">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-16-duxiaoman-database-selection/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/","path":"2025/2025-07-16-duxiaoman-database-selection/","title":"OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E5%A4%A7%E6%88%90%E6%9C%AC%E4%BC%98%E5%8A%BF%E5%86%B3%E5%AE%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B%E7%BB%93%E6%9E%9C"><span class="nav-number">1.</span> <span class="nav-text">四大成本优势决定数据库选型结果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E4%B8%AA%E5%9C%BA%E6%99%AF%E6%8E%A2%E7%B4%A2OceanBase%E5%9C%A8%E4%B8%9A%E5%8A%A1%E8%90%BD%E5%9C%B0%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">五个场景探索OceanBase在业务落地的可行性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF1%EF%BC%9A%E6%B5%B7%E9%87%8F%E6%95%B0%E6%8D%AE%E7%9A%84%E4%BD%8E%E5%BB%B6%E8%BF%9F%E6%9F%A5"><span class="nav-number">2.1.</span> <span class="nav-text">场景1：海量数据的低延迟查</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF2%EF%BC%9A%E6%95%B0%E4%BB%93%E5%8A%A0%E5%B7%A5%E9%AB%98%E6%80%A7%E8%83%BD%E8%AF%BB%E5%86%99"><span class="nav-number">2.2.</span> <span class="nav-text">场景2：数仓加工高性能读写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF3%EF%BC%9A%E5%8F%98%E9%87%8F%E6%95%B0%E6%8D%AE%E9%AB%98%E5%90%9E%E5%90%90%E5%86%99%E5%85%A5"><span class="nav-number">2.3.</span> <span class="nav-text">场景3：变量数据高吞吐写入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF4%EF%BC%9A%E6%A0%87%E9%87%8F%E8%BF%87%E6%BB%A4%E2%80%8C-%E2%80%8C%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2%E7%9A%84%E6%B7%B7%E5%90%88%E6%9F%A5%E8%AF%A2"><span class="nav-number">2.4.</span> <span class="nav-text">场景4：标量过滤‌+‌向量检索的混合查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF5%EF%BC%9A%E6%9E%81%E8%87%B4%E7%9A%84-KV-%E8%AF%BB%E5%86%99%E6%80%A7%E8%83%BD"><span class="nav-number">2.5.</span> <span class="nav-text">场景5：极致的 KV 读写性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E4%B8%8E%E5%B1%95%E6%9C%9B"><span class="nav-number">3.</span> <span class="nav-text">总结与展望</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍 | Longda's Interesting World">
+      <meta itemprop="description" content="度小满技术委员会负责人赵辉分享统一存储架构实践：基于迁移、资源、学习、运维四大成本优势选型 OceanBase，并通过海量数据低延迟查询、实时数仓读写、变量高吞吐写入、向量混合查询、KV 读写五大场景验证，实现交付效率翻倍、成本收益 3 倍以上。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-16 17:13:05" itemprop="dateCreated datePublished" datetime="2025-07-16T17:13:05+08:00">2025-07-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">赵辉</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>14 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">度小满技术委员会负责人赵辉分享统一存储架构实践：基于迁移、资源、学习、运维四大成本优势选型 OceanBase，并通过海量数据低延迟查询、实时数仓读写、变量高吞吐写入、向量混合查询、KV 读写五大场景验证，实现交付效率翻倍、成本收益 3 倍以上。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍","description":"度小满技术委员会负责人赵辉分享统一存储架构实践：基于迁移、资源、学习、运维四大成本优势选型 OceanBase，并通过海量数据低延迟查询、实时数仓读写、变量高吞吐写入、向量混合查询、KV 读写五大场景验证，实现交付效率翻倍、成本收益 3 倍以上。","image":"https://ilongda.com/img/7-16-duxiaoman-database-selection/01.png","wordCount":3674,"datePublished":"2025-07-16T09:13:05.000Z","dateModified":"2025-07-16T09:32:51.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/"},"url":"https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","向量检索","数据库选型","度小满","实时数仓","KV存储","金融科技"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍","item":"https://ilongda.com/2025/2025-07-16-duxiaoman-database-selection/"}]}</script>
+<blockquote>
+<p>本文整理自6月21日”<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vYWN0aXZpdGllcy80OTIzMzc5">OceanBase 城市交流会 · SQL 遇上 AI”《度小满 × OceanBase 实践：统一架构驱动效率与成本双突破》<i class="fa fa-external-link-alt"></i></span>，点击链接可观看视频回顾。</p>
+</blockquote>
+<p>度小满，原百度金融。2018年4月，百度宣布旗下金融服务事业群组正式完成拆分融资协议签署，实现独立运营。作为一家金融科技公司，度小满充分发挥百度的AI优势和技术实力，携手金融机构合作伙伴，用科技更好地提供金融服务。本文介绍度小满业务高速增长背后，面临的存储挑战与数据库解决方案。</p>
+<span id="more"></span>
+
+<h2 id="四大成本优势决定数据库选型结果"><a href="#四大成本优势决定数据库选型结果" class="headerlink" title="四大成本优势决定数据库选型结果"></a>四大成本优势决定数据库选型结果</h2><p>度小满金融业务规模的高速扩张，使存储需求呈指数级增长。那时，底层的数据库方案面临数亿用户的高并发交易、毫秒级实时风控决策、高吞吐变量数据写入，以及报表分析的极低延迟的挑战。经大数据部门的深入分析，存储架构存在五个方面的问题，导致其很难面对上述挑战，持续支撑业务需求。</p>
+<p>其一，度小满自研技术栈多，比如关系存储类DDBS、KV存储类的CKV、稀疏海量存储类的Eggroll、等等。对于一线开发人员来说学习成本较高，需要对接并学习多种用法，开发和对接效率有待提高。</p>
+<p>其二，资源成本高，主机规模大，主从备架构部署冗余，存在多个小集群，导致存储成本高、CPU利用率低、资源难复用。</p>
+<p>其三，一些业务操作如流量切换与屏蔽、数据均衡操作、扩缩容操作复杂，且对业务不透明，需要多方配合，执行周期较长，部分场景更是需要方案定制。</p>
+<p>其四，存在可用性风险，所有类型的存储引擎在全场景下，比如进程挂起、硬件故障、机房故障、地域灾难等场景，难以达到9999的SLA。</p>
+<p>其五，工具生态欠缺，工具自动化，尤其是产品化程度较低，运维效率有提升空间。</p>
+<p>针对业务需求及原本数据库方案面临的困境，我们决定重新选择一款既满足业务需求又可以统一当前所有技术栈的产品。那么，为什么最终选择OceanBase呢？</p>
+<p>经过前期对多款数据库在迁移成本、资源成本、学习成本、运维成本等方面的调研，我们发现 OceanBase 非常符合我们的选型需求。</p>
+<p><strong>1.迁移成本低：兼容 MySQL 和 Redis 协议，迁移过程平滑无感。</strong></p>
+<p>为了实现底层架构栈的统一，我们替换数据库方案面临的第一个要求就是迁移成本不能过高，否则将会面临较大的业务阻力。由于 OceanBase 兼容 MySQL 和 Redis 协议，整个迁移过程非常平滑，几乎没有改造，我们投入的人力、时间都较少，对业务有正向收益，因此，间接降低了整体的迁移成本。</p>
+<p><strong>2.资源成本低：引擎执行高效，TPCC 刷榜世界纪录，超高压缩比。</strong></p>
+<p>OceanBase 有世界领先的计算执行引擎，曾打破 TPCC 世界纪录。而且，极致的数据压缩比在业内闻名，相比传统数据库 MySQL，能够实现几倍的存储空间节约，极大地降低了企业的存储成本，带来显著的资源利用率提升。</p>
+<p><strong>3.学习成本低：支持关系&#x2F;KV &#x2F;向量等技术栈统一，多种部署架构的运维方式统一。</strong></p>
+<p>如上文提到的，我们的多种技术栈及组件给一线的开发人员和运维人员带来了极大的学习成本，OceanBase 用一套引擎就可以解决关系型数据、KV、向量等多种数据类型的存储及计算，满足所有业务场景的需求，极大降低了学习成本，提升了运维效率。</p>
+<p><strong>4.运维成本低：支持机房地域级的容灾，RTO&lt;8s，RPO&#x3D;0。原生支持分布式，扩缩容对用户透明。</strong></p>
+<p>OceanBase 具备完善的周边工具生态，包括 OCP（云平台）、OMS（数据迁移服务）和 ODC（开发者中心）、OBD（安装部署工具）等，为用户提供了全方位的支持，从安装部署、迁移数据、开发工具到运维管理、监控告警，一应俱全。在支持在线扩缩容的基础上，通过云管理平台 OCP，可以白屏化实现非常便捷的扩缩容能力，极大地提升了我们目前的运营能力、使用体验和工作效率。此外，OceanBase 原生具备高可用能力、经过我们的实际测试，发现在故障发生时，业务完成切换的时间在 8s 之内，且数据零丢失，证明OceanBase确实达到了 RPO&#x3D;0，RTO&lt; 8s。</p>
+<h2 id="五个场景探索OceanBase在业务落地的可行性"><a href="#五个场景探索OceanBase在业务落地的可行性" class="headerlink" title="五个场景探索OceanBase在业务落地的可行性"></a>五个场景探索OceanBase在业务落地的可行性</h2><p>到底OceanBase在实际场景中的表现如何，能否解决我们此前面临的数据延迟、查询性能问题？下文通过五个技术场景的实践举例说明。</p>
+<h3 id="场景1：海量数据的低延迟查"><a href="#场景1：海量数据的低延迟查" class="headerlink" title="场景1：海量数据的低延迟查"></a>场景1：海量数据的低延迟查</h3><p>在单表月数据量 10亿，占用内存约 30GB 的查询场景中，通常仅查询月内数据且查询语句复杂。使用原本的MySQL方案时，需要将一张表拆分为多张表才能实现较好的性能。但这样的操作会使业务逻辑和使用逻辑变得更加复杂，无法满足业务需求，同时，存储成本很高，不符合整体业务诉求。</p>
+<p>在切入 OceanBase 后，2025年5月单表存储数据近 10 亿，内存占用 29.5GB，在响应耗时最大的update 场景中耗时8毫秒，符合我们的预期，而在其他场景如 select、insert 场景的耗时更低。对于业务操作整体耗时，OceanBase方案可以控制在10毫秒内，完全满足业务要求。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/01.png" alt="海量数据低延迟查询性能数据"></p>
+<p>该场景中，我们的经验是：由于 OceanBase 为原生分布式架构，建议大家针对需要手动分表的场景使用分区能力，降低一线人员的改造成本和业务逻辑设计成本。另外对于复杂查询语句，例如 in 值太多的情况，需绑定执行计划，避免全表扫描导致执行时间过长。</p>
+<h3 id="场景2：数仓加工高性能读写"><a href="#场景2：数仓加工高性能读写" class="headerlink" title="场景2：数仓加工高性能读写"></a>场景2：数仓加工高性能读写</h3><p>实时数仓的高性能读写是另一个需要优化的业务场景，涉及 10w 写 + 36w 读，其中查询涉及 TP 点查 + AP 聚合关联查询，并且存量数据和增量数据分别是两种存储系统。原本我们使用 MySQL 的 DDBS 分布式存储进行增量数据的实时读写，这是因为在存储数据量较多时，访问存量数据带来的性能压力较大。而对于存量数据，则使用 Eggroll 存储，但由于 Eggroll 是磁盘型存储，即一个简易的基于 RocksDB 的分布式架构，扩缩容周期相对较长。</p>
+<p>下图显示了我们的数仓加工链路，在改造前，业务数据源通过 Kafka、Flink，在 ODS 层读写MySQL，然后读 Eggroll，再经过 Kafka 多轮的写，链路从 ODS 层到 DWD 层再到 DWS 层。开发该数据链路的人员既要熟悉 DDBS 架构、Eggroll 架构，还要清楚从 Kafka 到 Flink 再到 Hive 的整条链路，涉及多个引擎和链路加工，交付周期非常长。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/02.png" alt="数仓加工链路改造前后对比"></p>
+<p>经过改造后，我们将 DDBS 和 Eggroll 切换为 OceanBase ，在整体架构、交付效率、扩缩容、成本等方面都取得了巨大收益。</p>
+<ul>
+<li>架构精简：原本维护两套存储引擎变成了维护一套交互链路，撰写这部分代码的同学只需要熟悉一套逻辑和接口就可以完成整个链路工作。</li>
+<li>交付效率翻倍：除了撰写代码的效率提升外，学习成本也大幅降低，开发周期从6天缩短到3天左右，交付效率翻倍。</li>
+<li>扩缩容效率提升：原来一个扩容可能是要天级别甚至周级别才能完成，切换到支持在线扩缩容的 OceanBase 后，可以实现小时级扩容。</li>
+<li>成本收益3倍以上：DDBS 及 Eggroll 的压缩比并不高，切换到 OceanBase 后，压缩比可以做到 4:1，带来的成本收益非常大，加上性能收益，整体成本收益达到3倍以上。</li>
+</ul>
+<p>当然，在本次改造过程中，我们也积累了一些技术实践经验，供大家参考。</p>
+<p>一是在使用 OceanBase 的过程中应尽量避免跨分区的 RPC 通信问题，如果 RPC 通信次数较高，查询性能下降会比较明显，需要对业务模型做尽量合理的设计，例如 SQL 中要带分区信息，尽量命中本地节点以便取得更极致的性能表现。</p>
+<p>二是热点数据的写冲突。由于 Flink 的数据是实时同步的，如果我们更新一个变量，变量也会实时读写，导致热点数据的写冲突及性能下降，因此建议开启 Early Lock Release 特性，整个性能表现会更加优秀。</p>
+<p>三是存量数据高压力写对结果点查的影响，由于批量存量数据需要每天更新入库，会和正常的业务请求发生资源争抢，导致业务请求的时间变长。我们的解决方案是，对存量写任务进行资源隔离与管控，进一步解决问题。</p>
+<p>后续我们计划使用 obbinlog 代替现有 Kafka 的数据传输链路，与OceanBase社区合作优化obbinlog的性能，实现基于 Flink和OceanBase 及其工具的监控链路，降低实时数仓加工链路的架构复杂度，进一步提升查询效率和交付效率。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/03.png" alt="基于 obbinlog 的链路规划"></p>
+<p>此外，我们也期望 AP 聚合关联查的延迟问题能被解决，所以未来会探索OceanBase 的行列混存。目前，我们关注到 OceanBase已经发布面向AP的第一个 LTS 版本——V4.3.5，后续将持续关注该版本的完善情况。</p>
+<h3 id="场景3：变量数据高吞吐写入"><a href="#场景3：变量数据高吞吐写入" class="headerlink" title="场景3：变量数据高吞吐写入"></a>场景3：变量数据高吞吐写入</h3><p>度小满存在很多变量有 T+1 加工的场景，加工完成后需要进行变量入库，供在线业务查询。我们的原方案是使用 HBase 的 Bulkload 能力更新到存储引擎 Eggroll 上，当 Eggroll 切换到 OceanBase 后，开始使用 OceanBase 的 Obloader 脚本。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/04.png" alt="变量数据高吞吐写入方案"></p>
+<p>目前，在使用Obloader 方案时也遇到一些问题。由于 DGS 是我们内部自研的对象存储，协议独特，不能完全兼容 Obloader 脚本，需要我们先将其下载到本地再用脚本入库，效率较低。但由于我们在更新 T+1 数据时，需要把一天之内完成所有数据的全量写入，单个脚本入库数据量太大，时效性要求很高。当效率不足以支撑时，会导致一天内需要写入的数据写不进去，因此当前的方案无法满足实际业务需求。</p>
+<p>对此， OceanBase 官方为我们推荐了旁路 SDK 方式，直接对接自研 DGS 协议，远程读取直接入库，避免了一次落盘操作。同时针对超大数据量场景，利用 K8S 弹性能力，动态启动多进程分片入库，提升了整个吞吐量，确保了该场景下业务的适配性。</p>
+<h3 id="场景4：标量过滤‌-‌向量检索的混合查询"><a href="#场景4：标量过滤‌-‌向量检索的混合查询" class="headerlink" title="场景4：标量过滤‌+‌向量检索的混合查询"></a>场景4：标量过滤‌+‌向量检索的混合查询</h3><p>在AI大潮下，标量过滤+向量检索的混合查询将成为常态。对于该场景，我们当前使用 Elasticsearch 支撑，而我们将积极探索切换为 OceanBase 方案的可能性，并开启了性能测试。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/05.png" alt="向量混合查询测试方案"></p>
+<p>在性能测试中，我们使用了两种业界常用的测试集：</p>
+<ul>
+<li>数据集：cohere 768 1M（768维，100W向量），在 Limit 10、召回率 0.9、索引类型为 HNSW、并发 50 的情况下进行基础性能对比，OceanBase 性能是 Elasticsearch 的1.24倍。</li>
+<li>数据集：cohere 1536 500K（1536维，50W向量），在 Limit 10、召回率 0.9、索引类型为 HNSW、并发 50 的情况下进行基础性能对比，OceanBase 性能是 Elasticsearch 的1.04倍。</li>
+</ul>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/06.png" alt="OceanBase 与 Elasticsearch 向量检索性能对比"></p>
+<p>从测试结果来看，OceanBase 在 AI 场景中会有 10%～20% 的性能提升。我们已联合业务方进行试点，后续会进一步完成OceanBase在 AI 场景的落地。</p>
+<h3 id="场景5：极致的-KV-读写性能"><a href="#场景5：极致的-KV-读写性能" class="headerlink" title="场景5：极致的 KV 读写性能"></a>场景5：极致的 KV 读写性能</h3><p>在我们的 KV 场景中，前端面临 120w QPS 的查询压力，并且会映射到底层存储。我们搭建了 OceanBase 三节点，经过测试，OceanBase能够做到 60w QPS 的性能支持，平均延迟 1 毫秒左右，且可以持久化存储，完全满足我们的业务需求。同时 OceanBase 存量数据在磁盘中也能够持久化存储，提升了系统的稳定性和可用性，相较于原本的 CKV 方案，优势明显。因此，我们计划近期在KV场景正式上线OceanBase。</p>
+<p><img data-src="/img/7-16-duxiaoman-database-selection/07.png" alt="KV 场景性能测试结果"></p>
+<h2 id="总结与展望"><a href="#总结与展望" class="headerlink" title="总结与展望"></a>总结与展望</h2><p>引入 OceanBase 对度小满来说，不仅是替换传统关系型数据库解决性能和成本问题，更大的意义在于：将关系型&#x2F;KV 型&#x2F; AI 向量型等众多在线存储技术栈进行统一，实现开发与运维的双重提效。</p>
+<p>进一步展望，我们对 OceanBase 的内部测试表明其性能优于其他主流向量数据库，但这些结果尚未获得独立的第三方验证，如 VectorDBBench 第三方基准测试项目。我们希望 OceanBase 做进一步的验证，同时也期待和 OceanBase 的专家做更深入的探讨，并最终应用到真实的业务中。</p>
+<blockquote>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星 ✨ 吧！你的每一个Star，都是我们努力的动力。</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vY2VhbmJhc2U=">https://github.com/oceanbase/oceanbase<i class="fa fa-external-link-alt"></i></span></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B/" rel="tag"># 数据库选型</a>
+              <a href="/tags/%E5%BA%A6%E5%B0%8F%E6%BB%A1/" rel="tag"># 度小满</a>
+              <a href="/tags/%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93/" rel="tag"># 实时数仓</a>
+              <a href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag"># KV存储</a>
+              <a href="/tags/%E9%87%91%E8%9E%8D%E7%A7%91%E6%8A%80/" rel="tag"># 金融科技</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-11-oceanbase-mcp-advisor/" rel="prev" title="技术实操：基于 OceanBase 打造 MCP 顾问">
+                  <i class="fa fa-angle-left"></i> 技术实操：基于 OceanBase 打造 MCP 顾问
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-18-okctl-mcp-server-design/" rel="next" title="OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解">
+                  OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

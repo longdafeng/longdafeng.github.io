@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文系统梳理 OceanBase 数据库的故障分类与成因，提出问题识别、数据收集、问题定位、方案制定、验证五步诊断调优流程，并介绍内部视图、日志分析以及 OCP、OAS、obdiag 等关键工具与方法。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 数据库诊断与调优的关键技术与方法">
+<meta property="og:url" content="https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文系统梳理 OceanBase 数据库的故障分类与成因，提出问题识别、数据收集、问题定位、方案制定、验证五步诊断调优流程，并介绍内部视图、日志分析以及 OCP、OAS、obdiag 等关键工具与方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-09-17T22:52:45.000Z">
+<meta property="article:modified_time" content="2025-09-18T22:52:45.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="SQL 优化">
+<meta property="article:tag" content="obdiag">
+<meta property="article:tag" content="性能调优">
+<meta property="article:tag" content="数据库诊断">
+<meta property="article:tag" content="日志分析">
+<meta name="twitter:card" content="summary_large_image">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/","path":"2025/2025-09-18-oceanbase-diagnosis-tuning/","title":"OceanBase 数据库诊断与调优的关键技术与方法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 数据库诊断与调优的关键技术与方法 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81OceanBase-%E6%95%85%E9%9A%9C%E5%88%86%E7%B1%BB%E5%8F%8A%E6%88%90%E5%9B%A0"><span class="nav-number">2.</span> <span class="nav-text">一、OceanBase 故障分类及成因</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89SQL%E7%B1%BB%E6%95%85%E9%9A%9C%E5%8F%8A%E6%88%90%E5%9B%A0"><span class="nav-number">2.1.</span> <span class="nav-text">（一）SQL类故障及成因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E9%9D%9ESQL%E7%B1%BB%E6%95%85%E9%9A%9C%E5%8F%8A%E6%88%90%E5%9B%A0"><span class="nav-number">2.2.</span> <span class="nav-text">（二）非SQL类故障及成因</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E8%AF%8A%E6%96%AD%E4%B8%8E%E8%B0%83%E4%BC%98%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">二、诊断与调优的流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%AF%8A%E6%96%AD%E4%B8%8E%E8%B0%83%E4%BC%98%E7%9A%84%E5%85%B3%E9%94%AE%E6%8A%80%E6%9C%AF%E4%B8%8E%E6%96%B9%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">三、诊断与调优的关键技术与方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%86%85%E9%83%A8%E8%A7%86%E5%9B%BE"><span class="nav-number">4.1.</span> <span class="nav-text">（一）内部视图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90"><span class="nav-number">4.2.</span> <span class="nav-text">（二）日志分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E5%91%A8%E8%BE%B9%E5%B7%A5%E5%85%B7"><span class="nav-number">4.3.</span> <span class="nav-text">（三）周边工具</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">5.</span> <span class="nav-text">结语</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 数据库诊断与调优的关键技术与方法 | Longda's Interesting World">
+      <meta itemprop="description" content="本文系统梳理 OceanBase 数据库的故障分类与成因，提出问题识别、数据收集、问题定位、方案制定、验证五步诊断调优流程，并介绍内部视图、日志分析以及 OCP、OAS、obdiag 等关键工具与方法。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 数据库诊断与调优的关键技术与方法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-18 06:52:45" itemprop="dateCreated datePublished" datetime="2025-09-18T06:52:45+08:00">2025-09-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">汤庆</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>14 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文系统梳理 OceanBase 数据库的故障分类与成因，提出问题识别、数据收集、问题定位、方案制定、验证五步诊断调优流程，并介绍内部视图、日志分析以及 OCP、OAS、obdiag 等关键工具与方法。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 数据库诊断与调优的关键技术与方法","description":"本文系统梳理 OceanBase 数据库的故障分类与成因，提出问题识别、数据收集、问题定位、方案制定、验证五步诊断调优流程，并介绍内部视图、日志分析以及 OCP、OAS、obdiag 等关键工具与方法。","image":"https://ilongda.com/img/my.jpg","wordCount":3873,"datePublished":"2025-09-17T22:52:45.000Z","dateModified":"2025-09-18T22:52:45.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/"},"url":"https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/","inLanguage":"zh-CN","keywords":["OceanBase","OCP","数据库诊断","obdiag","性能调优","日志分析","SQL 优化"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 数据库诊断与调优的关键技术与方法","item":"https://ilongda.com/2025/2025-09-18-oceanbase-diagnosis-tuning/"}]}</script>
+<p>本文摘自<span class="exturl" data-url="aHR0cHM6Ly9vcGVuLm9jZWFuYmFzZS5jb20vbGVhcm5pbmc/c2Vzc2lvbmlkPSNlYm9vaw==">《OceanBase社区版在泛互场景的应用案例研究》电子书<i class="fa fa-external-link-alt"></i></span>，点击链接即可获取完整版内容。</p>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>在分布式数据库领域，OceanBase 凭借其原生分布式架构和金融级高可用能力，已成为超大规模数据处理的核心基础设施。然而，分布式架构的复杂性也带来了诊断调优的挑战。与传统单机数据库不同，OceanBase 的故障可能涉及多节点协同、网络延迟、资源分配不均等复杂因素。本文聚焦于体系化的诊断调优方法论，旨在通过结构化流程与关键技术，帮助开发者建立”数据驱动、工具赋能”的诊断调优体系。</p>
+<span id="more"></span>
+
+<h2 id="一、OceanBase-故障分类及成因"><a href="#一、OceanBase-故障分类及成因" class="headerlink" title="一、OceanBase 故障分类及成因"></a>一、OceanBase 故障分类及成因</h2><p>OceanBase 数据库的故障可以大致分为两大类：SQL类故障和非SQL类故障。</p>
+<h3 id="（一）SQL类故障及成因"><a href="#（一）SQL类故障及成因" class="headerlink" title="（一）SQL类故障及成因"></a>（一）SQL类故障及成因</h3><p>SQL类故障主要涉及数据库查询、事务处理等与SQL语句直接相关的操作。这类故障通常会导致查询响应时间延长、数据不一致或事务失败等问题。以下是几种常见的SQL类故障及其原因。</p>
+<p><strong>1. 查询性能低下。</strong></p>
+<p>这可能是由于SQL语句编写不当，如缺少必要的索引、使用了低效的连接方式（如嵌套循环连接代替哈希连接）、或者对大数据量进行了不必要的全表扫描；也可能是优化器给出了不合理的执行计划，比如统计信息过时或未更新，数据分布变化后未重新收集统计信息等。</p>
+<p><strong>2. 锁争用。</strong></p>
+<p>当多个事务试图同时访问或修改相同的数据时，可能会发生锁争用的情况。如果事务隔离级别设置不当，可能导致长时间持有锁，进而影响其他事务的执行，造成系统整体性能下降。</p>
+<p><strong>3. 事务处理错误。</strong></p>
+<p>包括事务未能正确提交或回滚、死锁等问题。这些问题往往源于并发控制机制的设计缺陷或应用程序逻辑错误，例如未正确处理异常情况下的事务状态恢复。</p>
+<p><strong>4. SQL注入攻击。</strong></p>
+<p>尽管这不是技术性故障，但它是利用SQL语法漏洞进行恶意操作的一种安全威胁。缺乏有效的输入验证和参数化查询是此类问题的主要原因。</p>
+<h3 id="（二）非SQL类故障及成因"><a href="#（二）非SQL类故障及成因" class="headerlink" title="（二）非SQL类故障及成因"></a>（二）非SQL类故障及成因</h3><p>非SQL类故障则涵盖了与硬件资源、网络通信、配置管理等因素有关的问题。这些故障虽然不直接关联到SQL语句本身，但同样会影响数据库的整体性能和可用性。</p>
+<p><strong>1. 硬件资源限制。</strong></p>
+<p>包括CPU、内存、磁盘I&#x2F;O等方面的瓶颈。随着数据量的增长，若硬件资源配置不足，则可能出现CPU过载、内存溢出或磁盘读写速度缓慢等问题。</p>
+<p><strong>2. 网络问题。</strong></p>
+<p>网络延迟、丢包或带宽不足都会影响分布式数据库中节点间的数据同步和通信效率。特别是在跨数据中心部署场景下，网络质量的好坏直接影响到OceanBase集群的稳定性。</p>
+<p><strong>3. 配置错误。</strong></p>
+<p>错误的参数设置，如缓存大小、连接池上限、日志级别等，可能导致系统性能不佳甚至出现故障。合理的配置应基于具体的业务需求和工作负载特征来调整。</p>
+<p><strong>4. 软件兼容性和版本问题。</strong></p>
+<p>不同版本之间的兼容性问题或是存在已知bug也可能引发故障。定期更新和打补丁是预防此类问题的有效手段之一。</p>
+<p><strong>5. 外部依赖和服务中断。</strong></p>
+<p>依赖于第三方服务（如消息队列、外部API等）的正常运作，如果这些服务出现问题，也会间接影响OceanBase数据库的功能和性能。</p>
+<h2 id="二、诊断与调优的流程"><a href="#二、诊断与调优的流程" class="headerlink" title="二、诊断与调优的流程"></a>二、诊断与调优的流程</h2><p>为了有效地进行 OceanBase 数据库的诊断调优，我们推荐遵循五个步骤：问题识别、数据收集、问题定位、解决方案制定、验证。每个步骤都至关重要，共同构成了一个闭环的诊断调优过程。</p>
+<p>第一步：问题识别。这是整个流程的基础。在这个阶段，需要明确数据库存在的问题，如响应时间变慢、服务不可用等。可以通过用户的反馈、应用日志、数据库自身的监控指标等多种渠道获取线索。关键在于快速确定问题的大致范围，以便后续有针对性地进行深入调查。</p>
+<p>第二步：数据收集。这一阶段的目标是从数据库及相关环境中搜集足够的信息用于分析。数据来源广泛，包括但不限于数据库性能视图（如 <code>v$session</code>、<code>v$sql</code> 等）、操作系统级别的监控工具（如 top、iostat 等）、网络流量分析工具等。特别需要注意的是，收集数据时要尽量保持原始环境不变，以免干扰结果的真实性。同时，应记录数据采集的时间点，这对于后续的对比分析尤为重要。</p>
+<p>第三步：问题定位。基于前面收集的数据，开始对问题进行细致的分析。这个阶段可能涉及多个层面的考量，从应用程序层到数据库层再到操作系统层。例如，通过分析查询执行计划来检查SQL语句的效率，利用AWR报告查看数据库的整体性能趋势，或是借助trace文件追踪具体的操作行为。此阶段的目标是精确找到问题的根源，确定是某个具体的SQL语句、参数配置还是硬件资源限制导致了性能瓶颈。</p>
+<p>第四步：解决方案制定。一旦确定了问题的根本原因，下一步就是设计相应的解决方案。这可能包括优化SQL语句、调整数据库参数、升级硬件设施等。制定方案时要考虑其实现的可行性、成本效益比以及对现有业务的影响。特别是对于在线生产环境，任何变更都需要谨慎评估，必要时先在测试环境中进行模拟测试。</p>
+<p>第五步：验证。所有提出的解决方案在正式实施前都应该在一个可控的环境中先行验证其有效性。验证过程中不仅要确认问题是否得到了解决，还要观察是否有新的问题产生。只有当新方案经过充分验证且证明有效后，才能将其应用于生产环境。此外，建议定期回顾整个调优过程，总结经验教训，不断完善调优策略。</p>
+<h2 id="三、诊断与调优的关键技术与方法"><a href="#三、诊断与调优的关键技术与方法" class="headerlink" title="三、诊断与调优的关键技术与方法"></a>三、诊断与调优的关键技术与方法</h2><p>在数据库的诊断调优过程中，掌握一些关键技术与方法对于准确识别问题并实施有效的优化措施至关重要。以下是一些常用的工具和技术，它们在不同的调优场景中发挥着重要作用。</p>
+<h3 id="（一）内部视图"><a href="#（一）内部视图" class="headerlink" title="（一）内部视图"></a>（一）内部视图</h3><p>表1是OceanBase中常用的内部视图及其用途说明。</p>
+<p>表1 常用的内部视图及其用途</p>
+<table>
+<thead>
+<tr>
+<th>视图名称</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>gv$ob_plan_cache_plan_stat</strong></td>
+<td>查看SQL执行计划缓存状态，包括执行次数、平均执行时间等信息。</td>
+</tr>
+<tr>
+<td><strong>gv$ob_sql_audit</strong></td>
+<td>记录所有SQL请求的审计信息，用于分析慢查询和性能瓶颈。</td>
+</tr>
+<tr>
+<td><strong>gv$ob_memstore</strong></td>
+<td>显示当前MemStore（内存存储）使用情况，有助于了解内存使用状况和优化配置。</td>
+</tr>
+<tr>
+<td><strong>gv$latch</strong></td>
+<td>提供关于latch（轻量级锁）的信息，帮助识别锁争用问题。</td>
+</tr>
+<tr>
+<td><strong>gv$sysstat</strong></td>
+<td>包含系统级别的统计信息，如I&#x2F;O操作数、事务提交次数等。</td>
+</tr>
+<tr>
+<td><strong>gv$session</strong></td>
+<td>展示当前活动会话的信息，对于监控并发连接和诊断阻塞问题很有帮助。</td>
+</tr>
+<tr>
+<td><strong>gv$partition</strong></td>
+<td>提供分区表的相关信息，包括分区的数量、大小和分布情况，便于管理和优化。</td>
+</tr>
+</tbody></table>
+<p>这些视图提供了对OceanBase数据库不同方面的洞察，从查询性能到系统健康状态，再到资源管理，是进行日常监控和故障排查的重要工具。更多详细视图见官方文档。</p>
+<h3 id="（二）日志分析"><a href="#（二）日志分析" class="headerlink" title="（二）日志分析"></a>（二）日志分析</h3><p>日志分析中最重要的就是OceanBase本身的日志。OceanBase 数据库日志模块所属的日志文件分为 <code>observer.log</code>、<code>election.log</code> 和 <code>rootservice.log</code> 三种类型（见表2），默认打印 INFO 级别以上的日志。每类日志文件自动生成一个带有 <code>.wf</code> 后缀的 WARNING 日志文件（<code>observer.log.wf</code>、<code>election.log.wf</code>、<code>rootservice.log.wf</code>），只打印了 WARN 级别以上的日志。</p>
+<p>表2 日志文件的三种类型</p>
+<table>
+<thead>
+<tr>
+<th>日志名称</th>
+<th>日志路径</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动和运行日志（<code>observer.log</code>、<code>observer.log.wf</code>）</td>
+<td>OBServer 服务器的 <code>$work_dir/log</code> 目录下。</td>
+</tr>
+<tr>
+<td>选举模块日志（<code>election.log</code>、<code>election.log.wf</code>）</td>
+<td>OBServer 服务器的 <code>$work_dir/log</code> 目录下。</td>
+</tr>
+<tr>
+<td>RootService 日志（<code>rootservice.log</code>、<code>rootservice.log.wf</code>）</td>
+<td>OBServer 服务器的 <code>$work_dir/log</code> 目录下。</td>
+</tr>
+</tbody></table>
+<p>OceanBase 数据库日志划分了六个日志级别，含义如表3所示。表中的日志级别从高到低依次排列。</p>
+<p>表3 数据库日志级别</p>
+<table>
+<thead>
+<tr>
+<th>日志级别</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ERROR</td>
+<td>严重错误。用于记录系统的故障信息，且必须进行故障排除，否则系统不可用。</td>
+</tr>
+<tr>
+<td>USER_ERROR</td>
+<td>用户输入导致的错误。</td>
+</tr>
+<tr>
+<td>WARN</td>
+<td>警告。用于记录可能会出现的潜在错误。</td>
+</tr>
+<tr>
+<td>INFO</td>
+<td>提示。用于记录系统运行的当前状态，该信息为正常信息。</td>
+</tr>
+<tr>
+<td>TRACE</td>
+<td>与 INFO 相比更细致化地记录事件消息。</td>
+</tr>
+<tr>
+<td>DEBUG</td>
+<td>调试信息。用于调试时更详细地了解系统运行状态，包括当前调用的函数名、参数、变量、函数调用返回值等。</td>
+</tr>
+</tbody></table>
+<h3 id="（三）周边工具"><a href="#（三）周边工具" class="headerlink" title="（三）周边工具"></a>（三）周边工具</h3><p>在数据库诊断调优的过程中，善用工具是实现高效工作的关键。无论是通过OCP（OceanBase Cloud Platform）实现全面的监控与管理，利用OAS（OceanBase Audit System）进行深入的安全审计和诊断分析，还是借助obdiag快速获取详细的诊断信息，都能够显著提升运维工作效率和准确性。合理运用专业工具，不仅可以帮助我们迅速定位问题、深入分析原因，还能指导我们采取最有效的优化措施，从而达到事半功倍的效果。以下是OceanBase 诊断调优常用工具的概览：</p>
+<p><strong>1. OCP (OceanBase 云平台)</strong></p>
+<ul>
+<li>资源管理：提供 OceanBase 集群，租户，主机，软件包等资源对象的全生命周期管理，包括管理，安装、运维、性能监控、配置、升级等功能。</li>
+<li>监控告警：全局监控及告警设置，支持所有资源对象不同维度，实时准确的监控告警需求，支持自定义告警，满足定制化的告警需求。</li>
+<li>备份恢复：支持集群和租户表级别全量备份、增量备份及日志备份，支持周期性备份任务、多地备份，支持在备份周期内任意时间点的恢复，支持多种云平台介质的备份恢复。</li>
+<li>自治服务：日常运维的过程中，在 “发现-诊断-定位-优化&#x2F;应急” 的链路上更好的人工或者自动化处理，极大的降低用户运维 OceanBase 的成本。</li>
+</ul>
+<p><strong>2. OAS (OceanBase 诊断自治工具)</strong></p>
+<ul>
+<li>实时诊断：基于对系统和数据库全方位的监控数据，实现从异常事件的自动检测，问题识别、根因分析到优化建议的诊断全链路闭环。</li>
+<li>SQL 诊断：根据 SQL 运行特征将 SQL 分为可疑 SQL、TopSQL、SlowSQL 和 ParallelSQL，当 SQL 执行过程中出现异常时，OAS 提供给对 SQL 进行异常定位和根因分析，以及优化建议。</li>
+<li>事务诊断：OAS 自动识别数据库系统中被阻塞，影响业务系统运行的长事务和悬挂事务等，提供处理方案。</li>
+<li>会话管理：会话管理提供查看租户会话、会话统计和会话批量管理。会话管理提供实时检测死锁事件和处理死锁能力。</li>
+<li>容量分析：容量中心可以直观的查看集群、租户、数据库、表甚至包括索引的资源使用整体情况及使用趋势，提示客户是否存在容量风险，便于客户及时的进行扩容等操作，预测未来存储空间的使用情况供参考。</li>
+<li>优化中心：优化中心提供了自定义时间内的 TopSQL 以及对应 SQL 表结构、索引结构的自动检查，看是否有优化点并且给出优化建议。</li>
+</ul>
+<p><strong>3. obdiag（敏捷诊断工具）</strong></p>
+<ul>
+<li>一键集群巡检：使用 obdiag check 命令可帮助 OceanBase 数据库集群相关状态巡检，发现已存在或可能会导致集群出现异常问题的原因分析并提供运维建议。</li>
+<li>一键分析：使用 obdiag analyze 命令支持对 OceanBase 的日志进行一键分析，找出发生过的错误信息；一键全链路诊断分析，内存分析，参数分析等等。</li>
+<li>一键信息收集：使用 obdiag gather 命令可帮助 OceanBase 数据库相关的诊断信息收集。目前支持基础诊断信息收集和基于场景的诊断信息一键收集。</li>
+<li>一键根因分析：使用 obdiag rca 命令可帮助 OceanBase 数据库相关的诊断信息分析，目前支持对 OceanBase 的异常场景进行分析，找出可能导致问题的原因。</li>
+</ul>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>诊断调优是一项需要持续迭代的工程实践，其核心在于建立”监控-分析-优化-预防”的闭环体系。<strong>数据库诊断调优的价值，不在于解决了多少已发生的故障，而在于能否让系统具备”自愈能力”与”抗风险韧性”</strong>——当硬件故障、软件缺陷、人为失误成为系统的”输入参数”而非”致命威胁”；当每一次危机都转化为防御体系的升级契机，这才是OceanBase诊断调优方法论的精髓所在。正如《孙子兵法》所言：”善战者，无智名，无勇功”，最高明的诊断调优，是让风险消弭于无形。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个 Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/OCP/" rel="tag"># OCP</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%8A%E6%96%AD/" rel="tag"># 数据库诊断</a>
+              <a href="/tags/obdiag/" rel="tag"># obdiag</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" rel="tag"># 性能调优</a>
+              <a href="/tags/%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" rel="tag"># 日志分析</a>
+              <a href="/tags/SQL-%E4%BC%98%E5%8C%96/" rel="tag"># SQL 优化</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-12-ai-robot-language-developer/" rel="prev" title="当智能机器人说“黑哥们语言是不通的”，作为开发者的你该如何应对？">
+                  <i class="fa fa-angle-left"></i> 当智能机器人说“黑哥们语言是不通的”，作为开发者的你该如何应对？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-19-ubuntu-vm-deploy-oceanbase/" rel="next" title="在 Ubuntu 虚拟机中部署 OceanBase 数据库">
+                  在 Ubuntu 虚拟机中部署 OceanBase 数据库 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

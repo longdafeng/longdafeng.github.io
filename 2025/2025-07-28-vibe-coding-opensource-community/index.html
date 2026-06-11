@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文以 OceanBase 社区开发者的真实体验，演示如何借助 Cursor 与 OceanBase MCP Server，通过自然语言对话完成建表、插入数据，并在 5 分钟内生成一个连接 OceanBase 的 FastAPI 后端服务，感受 Vibe Coding 带来的全新开发范式。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vibe Coding 时代的开源社区开发新体验">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文以 OceanBase 社区开发者的真实体验，演示如何借助 Cursor 与 OceanBase MCP Server，通过自然语言对话完成建表、插入数据，并在 5 分钟内生成一个连接 OceanBase 的 FastAPI 后端服务，感受 Vibe Coding 带来的全新开发范式。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/01.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/02.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/03.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/04.png">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/05.png">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/06.png">
+<meta property="og:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/07.png">
+<meta property="article:published_time" content="2025-07-28T08:21:18.000Z">
+<meta property="article:modified_time" content="2025-07-28T11:40:55.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 编程">
+<meta property="article:tag" content="Cursor">
+<meta property="article:tag" content="FastAPI">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="Vibe Coding">
+<meta property="article:tag" content="开源社区">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-28-vibe-coding-opensource-community/01.jpeg">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/","path":"2025/2025-07-28-vibe-coding-opensource-community/","title":"Vibe Coding 时代的开源社区开发新体验"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Vibe Coding 时代的开源社区开发新体验 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#01-Vibe-Coding%EF%BC%9A%E4%BB%8E%E2%80%9D%E7%A0%81%E5%86%9C%E2%80%9D%E5%88%B0%E2%80%9D%E4%BB%A3%E7%A0%81%E6%8C%87%E6%8C%A5%E5%AE%B6%E2%80%9D"><span class="nav-number">1.</span> <span class="nav-text">01. Vibe Coding：从”码农”到”代码指挥家”</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Vibe Coding 时代的开源社区开发新体验 | Longda's Interesting World">
+      <meta itemprop="description" content="本文以 OceanBase 社区开发者的真实体验，演示如何借助 Cursor 与 OceanBase MCP Server，通过自然语言对话完成建表、插入数据，并在 5 分钟内生成一个连接 OceanBase 的 FastAPI 后端服务，感受 Vibe Coding 带来的全新开发范式。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vibe Coding 时代的开源社区开发新体验
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-28 16:21:18" itemprop="dateCreated datePublished" datetime="2025-07-28T16:21:18+08:00">2025-07-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>9 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文以 OceanBase 社区开发者的真实体验，演示如何借助 Cursor 与 OceanBase MCP Server，通过自然语言对话完成建表、插入数据，并在 5 分钟内生成一个连接 OceanBase 的 FastAPI 后端服务，感受 Vibe Coding 带来的全新开发范式。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Vibe Coding 时代的开源社区开发新体验","description":"本文以 OceanBase 社区开发者的真实体验，演示如何借助 Cursor 与 OceanBase MCP Server，通过自然语言对话完成建表、插入数据，并在 5 分钟内生成一个连接 OceanBase 的 FastAPI 后端服务，感受 Vibe Coding 带来的全新开发范式。","image":"https://ilongda.com/img/7-28-vibe-coding-opensource-community/01.jpeg","wordCount":2508,"datePublished":"2025-07-28T08:21:18.000Z","dateModified":"2025-07-28T11:40:55.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/"},"url":"https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/","inLanguage":"zh-CN","keywords":["OceanBase","MCP","Vibe Coding","Cursor","FastAPI","AI 编程","开源社区"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"Vibe Coding 时代的开源社区开发新体验","item":"https://ilongda.com/2025/2025-07-28-vibe-coding-opensource-community/"}]}</script>
+<h3 id="01-Vibe-Coding：从”码农”到”代码指挥家”"><a href="#01-Vibe-Coding：从”码农”到”代码指挥家”" class="headerlink" title="01. Vibe Coding：从”码农”到”代码指挥家”"></a>01. Vibe Coding：从”码农”到”代码指挥家”</h3><p>你是否曾感觉，日常开发中很大一部分时间都耗费在了编写那些”理所当然”的模板代码上？比如，为了一个简单的数据模型，你需要写 CURD（增删改查）的 API、定义数据结构、配置数据库连接…… 这些工作重要但重复，消磨着我们的创造力。</p>
+<p>现在，想象一下这样的场景：</p>
+<p>你打开一个 AI 代码编辑器，对它说：”嘿，帮我创建一个用户服务，需要能连接到我的 OceanBase 数据库，表结构包含用户ID、姓名和邮箱。”</p>
+<p>几秒钟后，一个功能完整的后端服务代码框架就出现在你眼前。</p>
+<p>这就是 <strong>Vibe Coding</strong>（或称 Vibe-Driven Development）的魅力。它代表了一种编程理念的转变：<strong>开发者从代码的繁琐执行者，转变为描述意图的指挥家</strong>。我们只需提供”Vibe”，剩下的交给 AI。</p>
+<span id="more"></span>
+
+<p>AI 驱动的开发工具生态正在迅速壮大，不同的工具针对不同的开发工作流各有侧重。为了让大家对当前的主流工具有个全局的了解，我们整理了以下速览表。</p>
+<p>下表总结了 Cursor、Claude Code 这二款主流 Vibe Coding 工具的特性，以便读者快速了解其差异和优势。</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th><strong>Cursor</strong></th>
+<th><strong>Claude Code</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>类型</td>
+<td>IDE</td>
+<td>CLI</td>
+</tr>
+<tr>
+<td>核心优势</td>
+<td>实时补全代码<br>代码库上下文感知<br>自然语言编辑<br>可视化开发</td>
+<td>深度推理<br>多文件重构<br>Git集成<br>终端原生<br>处理复杂任务</td>
+</tr>
+</tbody></table>
+<p>正如表格所示，每款工具都有其独特的优势。我们今天选择 <strong>Cursor</strong> 具体分享将自然语言指令转化为功能代码的实践。</p>
+<p>而要让 Cursor 理解并操作专业的数据库系统，我们需要一座桥梁。这座桥梁，就是 <strong>OceanBase MCP Server</strong>。</p>
+<h4 id="02-链接的桥梁：OceanBase-MCP-Server"><a href="#02-链接的桥梁：OceanBase-MCP-Server" class="headerlink" title="02. 链接的桥梁：OceanBase MCP Server"></a>02. 链接的桥梁：OceanBase MCP Server</h4><p>OceanBase MCP Server 是一个实现了 MCP (Machine-Readable Command Protocol) 协议的服务，它为大模型和 OceanBase 数据库之间提供了一座高效沟通的桥梁。简单来说，它让 Cursor 这样的 AI 工具获得了直接与 OceanBase 数据库”对话”和执行 SQL 的超能力。</p>
+<p>这个项目已经在 GitHub 上完全开源，欢迎大家来 Star 和贡献：</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9tY3Atb2NlYW5iYXNl">https://github.com/oceanbase/mcp-oceanbase<i class="fa fa-external-link-alt"></i></span> ✨</p>
+<p>今天，我们就将以 OceanBase 社区开发者的真实体验，带你走一遍完整的流程，看看当 Cursor 遇上分布式数据库 OceanBase，会碰撞出怎样惊艳的火花。</p>
+<h4 id="03-实践出真知：用-Vibe-Coding-5分钟搭个后端服务"><a href="#03-实践出真知：用-Vibe-Coding-5分钟搭个后端服务" class="headerlink" title="03. 实践出真知：用 Vibe Coding 5分钟搭个后端服务"></a>03. 实践出真知：用 Vibe Coding 5分钟搭个后端服务</h4><p>我们将用一个简单的例子，展示如何通过自然语言对话，让 Cursor 借助 OceanBase MCP Server，从零开始创建一个连接 OceanBase 数据库的 FastAPI 后端应用。</p>
+<p><strong>前提条件</strong></p>
+<p>在开始之前，请确保你的电脑上已经安装：</p>
+<ul>
+<li>Git 可根据自己的操作系统进行下载安装</li>
+<li>Python 3.11 或以上版本</li>
+<li>Cursor 客户端，可以在 Cursor 下载页，根据自己的操作系统选择合适的版本进行安装</li>
+<li>Python 包管理器 uv</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，使用 uv –version 验证安装是否成功。</p>
+<p><strong>第一步：配置 OceanBase MCP Server</strong></p>
+<p>首先，我们需要让 Cursor 知道如何指挥我们的 OceanBase 数据库。</p>
+<p><strong>克隆 OceanBase MCP Server 源码</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/mcp-oceanbase.git</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装 MCP Server 依赖</strong>，进入 mcp-oceanbase 目录，使用 uv 创建虚拟环境并安装依赖。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进入项目目录</span></span><br><span class="line"><span class="built_in">cd</span> mcp-oceanbase</span><br><span class="line"><span class="comment"># 创建并激活虚拟环境</span></span><br><span class="line">uv venv</span><br><span class="line"><span class="built_in">source</span> .venv/bin/activate</span><br><span class="line"><span class="comment"># 安装依赖</span></span><br><span class="line">uv pip install .</span><br></pre></td></tr></table></figure>
+
+<p><strong>在 Cursor 中配置 OceanBase MCP Server</strong>。首先，手动创建一个新的工作目录（比如叫 cursor-fastapi-demo），并用 Cursor 打开它。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/01.jpeg" alt="用 Cursor 打开工作目录"></p>
+<p>在 Cursor 中，使用快捷键 Cmd + L (macOS) 或 Ctrl + L (Windows) 唤起聊天框。</p>
+<p>点击聊天框右上角的齿轮(⚙️)图标，选择 MCP Tools。</p>
+<p>点击 Add Custom MCP 填写配置文件。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/02.jpeg" alt="Add Custom MCP 配置"></p>
+<p>⏰ 提示：请务必将上面配置中的 &#x2F;path&#x2F;to&#x2F;your&#x2F;mcp-oceanbase 和所有 your_ob_* 占位符替换为你的 OceanBase 数据库真实信息。</p>
+<p>配置无误后，你会看到 OceanBase 工具显示为”可使用”状态。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/03.jpeg" alt="OceanBase MCP 工具可使用状态"></p>
+<p><strong>验证连接</strong>，让我们用自然语言测试一下连接。在聊天框中输入：</p>
+<p>“test 库中有多少张表”</p>
+<p>Cursor 会调用我们配置的 OceanBase 工具，并生成相应的 SQL 语句。</p>
+<p>如果一切顺利，Cursor 会返回表数量。这说明，我们的 AI 助手已经成功连接到了 OceanBase 数据库。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/04.png" alt="验证连接成功"></p>
+<h4 id="04-Vibe-Coding-Time：使用-FastAPI-快速创建-RESTful-API-风格的项目"><a href="#04-Vibe-Coding-Time：使用-FastAPI-快速创建-RESTful-API-风格的项目" class="headerlink" title="04. Vibe Coding Time：使用 FastAPI 快速创建 RESTful API 风格的项目"></a>04. Vibe Coding Time：使用 FastAPI 快速创建 RESTful API 风格的项目</h4><p><strong>用一句话创建数据库表</strong></p>
+<p>创建一个 customer 表，主键是 ID，包含 name，age，telephone，location 字段。</p>
+<p>Cursor 立刻生成了标准的 <code>CREATE TABLE</code> 语句。确认无误，点击 <strong>Run Tool</strong>，表就建好了。</p>
+<p>告别手写 DDL 的繁琐！</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/05.png" alt="用一句话创建数据库表"></p>
+<p><strong>再用一句话插入测试数据</strong></p>
+<p>插入10条测试数据</p>
+<p>Cursor 再次大显身手，不仅生成了 <code>INSERT</code> 语句，还贴心地编造了 10 条看起来很真实的测试数据。点击 <strong>Run Tool</strong>，数据填充完毕。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/06.png" alt="插入测试数据"></p>
+<p><strong>创建 FastAPI 项目</strong></p>
+<p>这是见证奇迹的时刻。我们来个高难度的：</p>
+<p>创建一个 FastAPI 项目，生成基于 customer 表的 RESTful API</p>
+<p>Cursor 开始”疯狂输出”，在左侧文件浏览器中，它自动创建了 main.py 和 requirements.txt 两个文件。</p>
+<p>点击 Accept All 接受所有变更。AI 生成的代码可能每次略有不同，有时需要微调，但这已经为我们节省了至少半小时的工作量。</p>
+<p><img data-src="/img/7-28-vibe-coding-opensource-community/07.png" alt="创建 FastAPI 项目"></p>
+<p><strong>启动并验证</strong></p>
+<p>现在，我们只需在 Cursor 的终端中，按照常规流程启动这个应用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建并激活新的虚拟环境</span></span><br><span class="line">uv venv</span><br><span class="line"><span class="built_in">source</span> .venv/bin/activate</span><br><span class="line"><span class="comment"># 根据 AI 生成的 requirements.txt 安装依赖</span></span><br><span class="line">uv pip install -r requirements.txt</span><br><span class="line"><span class="comment"># 启动 FastAPI 服务！</span></span><br><span class="line">uvicorn main:app --reload</span><br></pre></td></tr></table></figure>
+
+<p>服务启动成功！最后，打开另一个终端窗口，用 <code>curl</code> 命令来访问我们刚刚由 AI 创建的 API，看看是否能从 OceanBase 数据库中取回数据：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:8000/customers</span><br></pre></td></tr></table></figure>
+
+<p>你会看到类似下面这样格式的 JSON 数据被返回：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:8000/customers[&#123;&quot;id&quot;:1,&quot;name&quot;:&quot;Alice&quot;,&quot;age&quot;:28,&quot;telephone&quot;:&quot;1234567890&quot;,&quot;location&quot;:&quot;Beijing&quot;&#125;,&#123;&quot;id&quot;:2,&quot;name&quot;:&quot;Bob&quot;,&quot;age&quot;:32,&quot;telephone&quot;:&quot;2345678901&quot;,&quot;location&quot;:&quot;Shanghai&quot;&#125;,&#123;&quot;id&quot;:3,&quot;name&quot;:&quot;Charlie&quot;,&quot;age&quot;:25,&quot;telephone&quot;:&quot;3456789012&quot;,&quot;location&quot;:&quot;Guangzhou&quot;&#125;,&#123;&quot;id&quot;:4,&quot;name&quot;:&quot;David&quot;,&quot;age&quot;:40,&quot;telephone&quot;:&quot;4567890123&quot;,&quot;location&quot;:&quot;Shenzhen&quot;&#125;,&#123;&quot;id&quot;:5,&quot;name&quot;:&quot;Eve&quot;,&quot;age&quot;:22,&quot;telephone&quot;:&quot;5678901234&quot;,&quot;location&quot;:&quot;Chengdu&quot;&#125;,&#123;&quot;id&quot;:6,&quot;name&quot;:&quot;Frank&quot;,&quot;age&quot;:35,&quot;telephone&quot;:&quot;6789012345&quot;,&quot;location&quot;:&quot;Wuhan&quot;&#125;,&#123;&quot;id&quot;:7,&quot;name&quot;:&quot;Grace&quot;,&quot;age&quot;:30,&quot;telephone&quot;:&quot;7890123456&quot;,&quot;location&quot;:&quot;Hangzhou&quot;&#125;,&#123;&quot;id&quot;:8,&quot;name&quot;:&quot;Heidi&quot;,&quot;age&quot;:27,&quot;telephone&quot;:&quot;8901234567&quot;,&quot;location&quot;:&quot;Nanjing&quot;&#125;,&#123;&quot;id&quot;:9,&quot;name&quot;:&quot;Ivan&quot;,&quot;age&quot;:29,&quot;telephone&quot;:&quot;9012345678&quot;,&quot;location&quot;:&quot;Tianjin&quot;&#125;,&#123;&quot;id&quot;:10,&quot;name&quot;:&quot;Judy&quot;,&quot;age&quot;:31,&quot;telephone&quot;:&quot;0123456789&quot;,&quot;location&quot;:&quot;Chongqing&quot;&#125;]</span><br></pre></td></tr></table></figure>
+
+<p>成功了！从一个空目录开始，我们仅仅通过与 AI 的几次对话，就完成了一个功能齐全、连接 OceanBase 数据库、包含增删改查所有接口的 FastAPI 后端服务。</p>
+<p><strong>附上 AI 生成的核心代码 <code>main.py</code>：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI, HTTPException, Depends</span><br><span class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">List</span></span><br><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine, Column, Integer, String</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.ext.declarative <span class="keyword">import</span> declarative_base</span><br><span class="line"><span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> sessionmaker, Session</span><br><span class="line"></span><br><span class="line"><span class="comment"># OceanBase 连接配置（请根据实际情况修改）</span></span><br><span class="line">DATABASE_URL = <span class="string">&quot;mysql://user:password@host:port/test&quot;</span></span><br><span class="line"></span><br><span class="line">engine = create_engine(DATABASE_URL, echo=<span class="literal">True</span>)</span><br><span class="line">SessionLocal = sessionmaker(autocommit=<span class="literal">False</span>, autoflush=<span class="literal">False</span>, bind=engine)</span><br><span class="line">Base = declarative_base()</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Customer</span>(<span class="title class_ inherited__">Base</span>):</span><br><span class="line">   __tablename__ = <span class="string">&quot;customer&quot;</span>    </span><br><span class="line">   <span class="built_in">id</span> = Column(Integer, primary_key=<span class="literal">True</span>, index=<span class="literal">True</span>)    </span><br><span class="line">   name = Column(String(<span class="number">100</span>))    </span><br><span class="line">   age = Column(Integer)    </span><br><span class="line">   telephone = Column(String(<span class="number">20</span>))    </span><br><span class="line">   location = Column(String(<span class="number">100</span>))</span><br><span class="line">   </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomerCreate</span>(<span class="title class_ inherited__">BaseModel</span>):    </span><br><span class="line">    <span class="built_in">id</span>: <span class="built_in">int</span>    </span><br><span class="line">    name: <span class="built_in">str</span>    </span><br><span class="line">    age: <span class="built_in">int</span>    </span><br><span class="line">    telephone: <span class="built_in">str</span>    </span><br><span class="line">    location: <span class="built_in">str</span></span><br><span class="line">    </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomerUpdate</span>(<span class="title class_ inherited__">BaseModel</span>):    </span><br><span class="line">    name: <span class="built_in">str</span> = <span class="literal">None</span>    </span><br><span class="line">    age: <span class="built_in">int</span> = <span class="literal">None</span>    </span><br><span class="line">    telephone: <span class="built_in">str</span> = <span class="literal">None</span>    </span><br><span class="line">    location: <span class="built_in">str</span> = <span class="literal">None</span></span><br><span class="line">    </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomerOut</span>(<span class="title class_ inherited__">BaseModel</span>):    </span><br><span class="line">    <span class="built_in">id</span>: <span class="built_in">int</span>    </span><br><span class="line">    name: <span class="built_in">str</span>    </span><br><span class="line">    age: <span class="built_in">int</span>    </span><br><span class="line">    telephone: <span class="built_in">str</span>    </span><br><span class="line">    location: <span class="built_in">str</span>    </span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Config</span>:        </span><br><span class="line">        orm_mode = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_db</span>():    </span><br><span class="line">    db = SessionLocal()    </span><br><span class="line">    <span class="keyword">try</span>:        </span><br><span class="line">        <span class="keyword">yield</span> db    </span><br><span class="line">    <span class="keyword">finally</span>:        </span><br><span class="line">        db.close()</span><br><span class="line">        </span><br><span class="line">app = FastAPI()</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.post(<span class="params"><span class="string">&quot;/customers/&quot;</span>, response_model=CustomerOut</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">create_customer</span>(<span class="params">customer: CustomerCreate, db: Session = Depends(<span class="params">get_db</span>)</span>):    </span><br><span class="line">    db_customer = Customer(**customer.<span class="built_in">dict</span>())    </span><br><span class="line">    db.add(db_customer)    </span><br><span class="line">    <span class="keyword">try</span>:        </span><br><span class="line">        db.commit()        </span><br><span class="line">        db.refresh(db_customer)    </span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:        </span><br><span class="line">        db.rollback()        </span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">400</span>, detail=<span class="built_in">str</span>(e))    </span><br><span class="line">    <span class="keyword">return</span> db_customer</span><br><span class="line">    </span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/customers/&quot;</span>, response_model=<span class="type">List</span>[CustomerOut]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">read_customers</span>(<span class="params">skip: <span class="built_in">int</span> = <span class="number">0</span>, limit: <span class="built_in">int</span> = <span class="number">100</span>, db: Session = Depends(<span class="params">get_db</span>)</span>):    </span><br><span class="line">    <span class="keyword">return</span> db.query(Customer).offset(skip).limit(limit).<span class="built_in">all</span>()</span><br><span class="line">    </span><br><span class="line"><span class="meta">@app.get(<span class="params"><span class="string">&quot;/customers/&#123;customer_id&#125;&quot;</span>, response_model=CustomerOut</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">read_customer</span>(<span class="params">customer_id: <span class="built_in">int</span>, db: Session = Depends(<span class="params">get_db</span>)</span>):    </span><br><span class="line">    customer = db.query(Customer).<span class="built_in">filter</span>(Customer.<span class="built_in">id</span> == customer_id).first()    </span><br><span class="line">    <span class="keyword">if</span> customer <span class="keyword">is</span> <span class="literal">None</span>:        </span><br><span class="line">       <span class="keyword">raise</span> HTTPException(status_code=<span class="number">404</span>, detail=<span class="string">&quot;Customer not found&quot;</span>)    </span><br><span class="line">    <span class="keyword">return</span> customer</span><br><span class="line">    </span><br><span class="line"><span class="meta">@app.put(<span class="params"><span class="string">&quot;/customers/&#123;customer_id&#125;&quot;</span>, response_model=CustomerOut</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">update_customer</span>(<span class="params">customer_id: <span class="built_in">int</span>, customer: CustomerUpdate, db: Session = Depends(<span class="params">get_db</span>)</span>):    </span><br><span class="line">    db_customer = db.query(Customer).<span class="built_in">filter</span>(Customer.<span class="built_in">id</span> == customer_id).first()    </span><br><span class="line">    <span class="keyword">if</span> db_customer <span class="keyword">is</span> <span class="literal">None</span>:        </span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">404</span>, detail=<span class="string">&quot;Customer not found&quot;</span>)    </span><br><span class="line">    <span class="keyword">for</span> var, value <span class="keyword">in</span> <span class="built_in">vars</span>(customer).items():        </span><br><span class="line">        <span class="keyword">if</span> value <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:            </span><br><span class="line">            <span class="built_in">setattr</span>(db_customer, var, value)    </span><br><span class="line">    db.commit()    </span><br><span class="line">    db.refresh(db_customer)    </span><br><span class="line">    <span class="keyword">return</span> db_customer</span><br><span class="line">    </span><br><span class="line"><span class="meta">@app.delete(<span class="params"><span class="string">&quot;/customers/&#123;customer_id&#125;&quot;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">delete_customer</span>(<span class="params">customer_id: <span class="built_in">int</span>, db: Session = Depends(<span class="params">get_db</span>)</span>):    </span><br><span class="line">    db_customer = db.query(Customer).<span class="built_in">filter</span>(Customer.<span class="built_in">id</span> == customer_id).first()    </span><br><span class="line">    <span class="keyword">if</span> db_customer <span class="keyword">is</span> <span class="literal">None</span>:        </span><br><span class="line">        <span class="keyword">raise</span> HTTPException(status_code=<span class="number">404</span>, detail=<span class="string">&quot;Customer not found&quot;</span>)    </span><br><span class="line">    db.delete(db_customer)    </span><br><span class="line">    db.commit()    </span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;ok&quot;</span>: <span class="literal">True</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="05-结论：拥抱新范式，释放新潜能"><a href="#05-结论：拥抱新范式，释放新潜能" class="headerlink" title="05. 结论：拥抱新范式，释放新潜能"></a>05. 结论：拥抱新范式，释放新潜能</h4><p>这次体验让我们深刻感受到，AI 驱动的 Vibe Coding 已然可以落地。我们不再需要为数据库的重复性工作而烦恼，而是可以将更多精力投入到业务逻辑的创新和系统架构的思考上。</p>
+<p>这，或许就是 AI 时代，开发者最大的价值所在。</p>
+<p><strong>欢迎大家来体验 OceanBase MCP Server！</strong></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9tY3Atb2NlYW5iYXNl">https://github.com/oceanbase/mcp-oceanbase<i class="fa fa-external-link-alt"></i></span></p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/Vibe-Coding/" rel="tag"># Vibe Coding</a>
+              <a href="/tags/Cursor/" rel="tag"># Cursor</a>
+              <a href="/tags/FastAPI/" rel="tag"># FastAPI</a>
+              <a href="/tags/AI-%E7%BC%96%E7%A8%8B/" rel="tag"># AI 编程</a>
+              <a href="/tags/%E5%BC%80%E6%BA%90%E7%A4%BE%E5%8C%BA/" rel="tag"># 开源社区</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-24-mcp-obcloud-workflow/" rel="prev" title="AI替代传统GUI：基于 MCP 的 OBCloud 工作流">
+                  <i class="fa fa-angle-left"></i> AI替代传统GUI：基于 MCP 的 OBCloud 工作流
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-29-extreme-cost-reduction-analysis/" rel="next" title="OceanBase：如何做到从硬件到存储再到运维的极致降本？">
+                  OceanBase：如何做到从硬件到存储再到运维的极致降本？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

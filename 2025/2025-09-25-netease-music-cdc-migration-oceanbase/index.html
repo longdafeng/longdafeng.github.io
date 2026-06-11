@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="网易云音乐分享PB级分库分表数据库DDB迁移至原生分布式数据库OceanBase的实践：基于自研CDC服务NDC实现业务无感、零数据丢失的平滑迁移，正向同步效率达GB&#x2F;s，存储空间降低至少1&#x2F;4。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案">
+<meta property="og:url" content="https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="网易云音乐分享PB级分库分表数据库DDB迁移至原生分布式数据库OceanBase的实践：基于自研CDC服务NDC实现业务无感、零数据丢失的平滑迁移，正向同步效率达GB&#x2F;s，存储空间降低至少1&#x2F;4。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/06.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/07.png">
+<meta property="og:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/08.png">
+<meta property="article:published_time" content="2025-09-25T01:16:00.000Z">
+<meta property="article:modified_time" content="2025-09-25T01:16:00.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Binlog">
+<meta property="article:tag" content="CDC">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="数据库迁移">
+<meta property="article:tag" content="网易云音乐">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/","path":"2025/2025-09-25-netease-music-cdc-migration-oceanbase/","title":"分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%81%E7%A7%BB%E8%83%8C%E6%99%AF%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">迁移背景与核心挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93-DDB-%E7%8E%B0%E7%8A%B6"><span class="nav-number">1.1.</span> <span class="nav-text">分布式数据库 DDB 现状</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9%E4%BB%8EDDB%E8%BF%81%E7%A7%BB%E5%88%B0-OceanBase%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">为什么选择从DDB迁移到 OceanBase？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%81%E7%A7%BB-OceanBase-%E9%9D%A2%E4%B8%B4%E7%9A%84%E6%A0%B8%E5%BF%83%E6%8C%91%E6%88%98"><span class="nav-number">1.3.</span> <span class="nav-text">迁移 OceanBase 面临的核心挑战</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%81%E7%A7%BB%E6%9E%B6%E6%9E%84%E4%B8%8E%E9%80%82%E9%85%8D%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">迁移架构与适配工作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E7%A0%94-CDC-%E6%9C%8D%E5%8A%A1%E2%80%94%E2%80%94NDC-%E6%9E%B6%E6%9E%84"><span class="nav-number">2.1.</span> <span class="nav-text">自研 CDC 服务——NDC 架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NDC-%E8%BF%81%E7%A7%BB%E6%96%B9%E6%A1%88"><span class="nav-number">2.2.</span> <span class="nav-text">NDC 迁移方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%94%AF%E6%8C%81%E8%BF%81%E7%A7%BB-OceanBase-%E7%9A%84%E9%80%82%E9%85%8D%E4%BC%98%E5%8C%96"><span class="nav-number">2.3.</span> <span class="nav-text">支持迁移 OceanBase 的适配优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93%E5%89%8D%E8%BF%9B%E5%B1%95%E4%B8%8E%E6%9C%AA%E6%9D%A5%E8%A7%84%E5%88%92"><span class="nav-number">3.</span> <span class="nav-text">当前进展与未来规划</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案 | Longda's Interesting World">
+      <meta itemprop="description" content="网易云音乐分享PB级分库分表数据库DDB迁移至原生分布式数据库OceanBase的实践：基于自研CDC服务NDC实现业务无感、零数据丢失的平滑迁移，正向同步效率达GB&#x2F;s，存储空间降低至少1&#x2F;4。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-09-25 09:16:00" itemprop="dateCreated datePublished" datetime="2025-09-25T09:16:00+08:00">2025-09-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">吕娅婷</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>13 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">网易云音乐分享PB级分库分表数据库DDB迁移至原生分布式数据库OceanBase的实践：基于自研CDC服务NDC实现业务无感、零数据丢失的平滑迁移，正向同步效率达GB/s，存储空间降低至少1/4。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案","description":"网易云音乐分享PB级分库分表数据库DDB迁移至原生分布式数据库OceanBase的实践：基于自研CDC服务NDC实现业务无感、零数据丢失的平滑迁移，正向同步效率达GB/s，存储空间降低至少1/4。","image":"https://ilongda.com/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png","wordCount":3509,"datePublished":"2025-09-25T01:16:00.000Z","dateModified":"2025-09-25T01:16:00.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/"},"url":"https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","数据库迁移","分库分表","网易云音乐","CDC","Binlog"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案","item":"https://ilongda.com/2025/2025-09-25-netease-music-cdc-migration-oceanbase/"}]}</script>
+<p>编者按：作为一款专注于发现和分享的音乐产品，网易云音乐引领音乐产品从“播放器时代”进入“在线社区时代”，为用户打造全新的音乐生活。在大体量的业务数据背后，是何种技术方案在支撑？本文分享网易云音乐PB级分库分表架构向原生分布式数据库架构迁移的技术优化经验。</p>
+<p>作者：吕娅婷，网易云音乐资深平台开发工程师</p>
+<h2 id="迁移背景与核心挑战"><a href="#迁移背景与核心挑战" class="headerlink" title="迁移背景与核心挑战"></a>迁移背景与核心挑战</h2><h3 id="分布式数据库-DDB-现状"><a href="#分布式数据库-DDB-现状" class="headerlink" title="分布式数据库 DDB 现状"></a>分布式数据库 DDB 现状</h3><p>网易云音乐使用最多的数据库是其内部自研的分布式 DDB。DDB 非原生分布式数据库，而是基于 MySQL 存储节点搭建的中间件，其具有以下特点：</p>
+<span id="more"></span>
+
+<ul>
+<li>分库分表中间件：两级映射，自定义哈希。使用 MySQL 服务器作为底层数据存储节点，实现了自动路由。</li>
+<li>标准化：SQL 兼容、全局自增 ID、兼容 MySQL 通信协议。</li>
+<li>分布式事务：基于 2PC 协议保障数据一致性。</li>
+<li>弹性扩缩容：通过 NDC 工具实现在线数据迁移（全量&#x2F;增量），支持断点续传。</li>
+<li>高可用：使用常见的 MySQL 主从复制实现高可用以及读写分离，同时也支持单元化。</li>
+<li>SQL 统计：支持 SQL 模式、SQL 频度、慢 SQL 及多维度 QPS 统计等。</li>
+</ul>
+<p>作为网易云音乐主要的 OLTP 方案，DDB 拥有较大的数据体量，其数据流架构如图1所示。从图中可以看出，通过 DBI JAR 包这个访问接口向上层应用程序提供服务。整个数据处理流程为：当上层应用程序下发 SQL 后，由 DBI 进行解析生成语法树，而通过语法树生成的执行计划由执行器直接下发到底层 MySQL。多个 MySQL 节点的结果汇聚到 DBI 进行处理，最后返回上层应用程序。</p>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图1 DDB架构</p>
+<p>除了 DBI JAR 包（类似 SDK 方式），我们还提供了 QS（Query Server）方式，可将其理解为一个 Proxy。QS 兼容 MySQL 协议，可作为 Proxy 单独部署，相当于一个 MySQL 实体库，支持命令行和应用接口这两种访问方式，进而使应用程序可以像访问 MySQL 一样访问 QS。</p>
+<p>在图1中，用户通过控制流可以实现 DDL 处理和元数据分发同步，Master 节点会将元数据同步到 MetaStore 即元数据库中，然后将元数据变更通知到每一个 DBI 的应用层。DBI 和应用集成的方式虽然缩短了整个数据链路，但也带来了一些运维问题，比如当 DBI 数量较多、底层节点发生大批量切换或更改时，整体操作较为耗时，且若部分 DBI 未及时感知，可能影响该应用的读取或写入。</p>
+<p>DDB 作为一个久经考验的数据库，在使用过程中也存在一些痛点问题。</p>
+<ul>
+<li>PB 级数据存储，缺少高效压缩。目前底层 MySQL 节点是5.7版本，不支持高效压缩，通常情况下计算资源还有剩余，存储资源就已经遇到瓶颈，资源利用率极低。</li>
+<li>扩缩容流程复杂、耗时。DBA 每年大概要花费 20% 以上的精力进行扩缩容，人力成本很高。</li>
+<li>分钟级故障切换。尽管当前我们已经多次优化故障切换，但也只能达到分钟级。</li>
+<li>更新操作引发从库延迟，数据复制性能存在瓶颈。在 MySQL 主从复制模式下，如果有大批量更新，MySQL Binlog 性能存在一定瓶颈，复制延迟，对于数据敏感业务不友好。</li>
+<li>缺失延续性维护。由于版本迭代成本很高，后续很难进行版本变更。</li>
+</ul>
+<p>基于上述痛点，我们决定将 DDB 切换到原生分布式数据库 OceanBase。</p>
+<h3 id="为什么选择从DDB迁移到-OceanBase？"><a href="#为什么选择从DDB迁移到-OceanBase？" class="headerlink" title="为什么选择从DDB迁移到 OceanBase？"></a>为什么选择从DDB迁移到 OceanBase？</h3><p>OceanBase 是一款原生分布式数据库（见图2），采用单机分布式一体化架构设计，在弹性扩展、高可用、多活容灾、存储引擎、分布式事务、HTAP、多种主流数据库兼容性、多租户等多个方面都有关键性的技术突破，并在复杂而严苛的金融核心业务场景中久经考验。</p>
+<ul>
+<li>资源成本：实测发现存储空间可降低至少 1&#x2F;4。</li>
+<li>高可用：实现自动故障恢复，RTO&lt;8秒。</li>
+<li>高效复制：底层基于 Paxos 协议实现高效复制。</li>
+<li>兼容性与稳定性：兼容 MySQL 协议，迁移成本低。</li>
+<li>运维成本：同样由于兼容 MySQL 协议，运维成本低。</li>
+<li>社区红利：社区生态健全、活跃度高。</li>
+</ul>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/02.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图2 OceanBase产品形态</p>
+<p>从产品特性和应用案例来初步判断，我们认为OceanBase能够解决我们使用DDB时面临的问题。</p>
+<h3 id="迁移-OceanBase-面临的核心挑战"><a href="#迁移-OceanBase-面临的核心挑战" class="headerlink" title="迁移 OceanBase 面临的核心挑战"></a>迁移 OceanBase 面临的核心挑战</h3><p>然而，DDB和OceanBase 作为两个由不同企业研发、架构差异较大的数据库产品，使我们在迁移过程中遇到了四个挑战。</p>
+<p><strong>异构数据同步挑战。</strong> 数据库内部的数据传输工具互相不支持，无法直接实现数据同步，因此需要将 DDB 的分片逻辑改造成 OceanBase 的分区，同时实现分布式事务跨节点一致性保障。</p>
+<p><strong>业务无感迁移挑战。</strong> 迁移过程需要实现业务无感，源端发生 DDL 变更或者 MySQL 节点主从切换时，必须保证在线切换不阻塞迁移。迁移过程对迁移组件本身的高可用也有高要求，需要做到不停服升级，而OceanBase提供的迁移工具——OMS 暂不支持（后续计划支持）。</p>
+<p><strong>反向迁移效率挑战。</strong> 从 DDB 到 OceanBase 的正向迁移数据最快能达到 GB&#x2F;s 的速度，但反向迁移在大表场景和大流量场景下同步效率较低。同时也需要支持 TB 级数据快速比对。</p>
+<p><strong>运维效率挑战。</strong> 整个迁移过程中可能会创建上千个同步任务，如果依靠人工运维，效率低下。</p>
+<h2 id="迁移架构与适配工作"><a href="#迁移架构与适配工作" class="headerlink" title="迁移架构与适配工作"></a>迁移架构与适配工作</h2><p>由于数据迁移涉及正向同步和反向同步这两个长期的同步任务，对链路稳定性及低延时性要求很高，因此我们开始了严谨的迁移架构与适配工作。</p>
+<h3 id="自研-CDC-服务——NDC-架构"><a href="#自研-CDC-服务——NDC-架构" class="headerlink" title="自研 CDC 服务——NDC 架构"></a>自研 CDC 服务——NDC 架构</h3><p>首先，我们自研的CDC 服务——NDC 架构，类似 DTS，可以实现端到端的全量迁移、增量迁移和数据订阅的服务系统。</p>
+<ul>
+<li>NDC 大致可以分为源端系统、NDC 集群、目标端系统三部分。源端系统目前主要支持网易内部 OLTP 类型数据库和 OceanBase，目标端支持 OLTP 和 OLAP 类型数据库、以及消息队列 Kafka 等。</li>
+<li>NDC 拉取源端系统的全量或增量数据，经过转化和过滤写入目标系统中。</li>
+<li>NDC 支持全量、增量同步&#x2F;迁移；提供结构、全量数据、快速不一致复检等多模式校验，确保源和目标的一致性。如图3所示，在 NDC 内部：Dashboard 是应用入口；Center 用于元数据管理；Engine 节点是无状态的，负责拉取源端 Binlog 等信息，然后将数据进行解析，同步到目标库。</li>
+</ul>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/03.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图3 NDC架构</p>
+<h3 id="NDC-迁移方案"><a href="#NDC-迁移方案" class="headerlink" title="NDC 迁移方案"></a>NDC 迁移方案</h3><p>使用NDC 进行数据迁移同样涉及正向同步、反向同步，正向同步指从 DDB 到 OceanBase，反向同步指从 OceanBase 到 DDB。由于涉及部分回滚场景，因此需要保证反向同步也是稳定、安全的。</p>
+<h4 id="1-正向同步"><a href="#1-正向同步" class="headerlink" title="1.正向同步"></a>1.正向同步</h4><p>正向同步主要支持如下能力：</p>
+<ul>
+<li>并行解析 Binlog。以 MySQL 为单位并行拉取、解析可以加快解析速度，同时每个 MySQL 的并行拉取解析进程是随意无状态的，可以被分布到多个机器中，极大提高资源利用率。</li>
+<li>一拉多推模式，即一次解析多次使用，减少对源端的侵入。因为在上游建立 MySQL Dump 链路对源端有感，如果 MySQL 库或 DDB 表有很多订阅需求，需要在源库建立几十个链接，不管是主库还是从库，都会产生影响和侵入，因此一拉多推模式实现只拉一次解析却能多次使用，减少了对源端的侵入。</li>
+<li>支持表内并发写，不同索引数据并发写。单个MySQL内部，可以通过表、索引维度进行并发，因此最终的表并发数是该表分布的MySQL 数量乘以每个MySQL子任务内部设置的并发数，实际并发非常高，同时可以利用不同机器资源去运行同一张表的不同的MySQL级任务。</li>
+<li>自动响应上游切换，自动感知主从切换、节点变更等。可以自动感知上游 MySQL的主从切换以及节点变更，不需要人力运维。</li>
+</ul>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/04.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图4 正向同步方案</p>
+<h4 id="2-反向同步：Binlog-or-CDC"><a href="#2-反向同步：Binlog-or-CDC" class="headerlink" title="2.反向同步：Binlog or CDC?"></a>2.反向同步：Binlog or CDC?</h4><p>Binlog 模式是我们最早支持的同步模式，简单易用、稳定性高、兼容性强。大致流程如下：</p>
+<ul>
+<li>BC 模块拉取 Clog 并将其转换为 Binlog 格式，转换后将其写入 Binlog 文件。</li>
+<li>MySQL Binlog 生态工具发起 Binlog 订阅请求到 OBProxy，OBProxy 将其转发至 OBLogproxy。</li>
+<li>OBLogproxy 接收 Binlog 订阅请求后启动 BD 模块，读取 Binlog 文件并对外提供订阅服务，即 Binlog Dump 服务。</li>
+</ul>
+<p>相当于为了使下游使用方便，兼容了 MySQL 的 Binlog，将 OceanBase 产生的 Clog 多转了一层转为 Binlog，但由于链路增加，效率会比较低。去年 Binlog 解析模式的效率是 25MB&#x2F;每秒，对我们来说是无法接受的，后来 OceanBase 团队将这个值优化到了 140MB&#x2F;每秒，暂时满足了业务需求。</p>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/05.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图5 Binlog同步模式</p>
+<p>相比 Binlog 模式，CDC 模式更简单，因为不需要将 Clog 转换为 Binlog，直接拉取 Clog，使用OBLogClient 启动，具体流程如下：</p>
+<ul>
+<li>OBLogClient 启动后需要发送消息到 OBLogProxy，需指定要订阅的用户、库表、增量链路位点等信息。</li>
+<li>OBLogProxy 鉴权通过后，启动 OBLogreader 子进程，并将连接等相关信息传递至 OBLogreader 子进程。</li>
+<li>OBLogreader 启动后会提取并解析 Clog，按照一定的数据格式发送至下游来完成数据订阅。</li>
+</ul>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/06.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图6 CDC同步模式</p>
+<h4 id="OBCDC-or-OBLogProxy？"><a href="#OBCDC-or-OBLogProxy？" class="headerlink" title="OBCDC or OBLogProxy？"></a>OBCDC or OBLogProxy？</h4><p>我们对 OBCDC 和 OBLogProxy 也做了调研，两个方案都属于 CDC 模式，OBCDC 是持续迭代版本的 OBLogProxy。</p>
+<ul>
+<li>OBCDC：以动态库的形式对外提供 OceanBase 数据库实时增量（事务）数据。通过 RPC 向 OceanBase 数据库请求各分区的 Clog（Redo）日志。</li>
+<li>OBLogProxy：OBCDC 的代理，OBLogProxy 调用 OBCDC，作为 OBCDC 的消费者获取 OceanBase 数据库的增量事务数据。</li>
+</ul>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/07.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图7 OBCDC 和 OBLogProxy 方案对比</p>
+<p>虽然CDC模式省去了binlog生成及解析的额外成本，但由于技术栈、兼容性及可维护性的考量（OceanBase 在 4.2.0版本后将不继续维护 CDC 模式），两种形式都非理想解决方案，因此我们最终并未采用CDC模式。</p>
+<p>目前我们基本上实现了业务无感迁移、零数据丢失、正向同步效率GB&#x2F;s，反向百+MB&#x2F;s。</p>
+<p><img data-src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/08.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
+<p>图8 正向迁移、反向迁移流程</p>
+<h3 id="支持迁移-OceanBase-的适配优化"><a href="#支持迁移-OceanBase-的适配优化" class="headerlink" title="支持迁移 OceanBase 的适配优化"></a>支持迁移 OceanBase 的适配优化</h3><p>在迁移过程中，我们共完成了如下方面的适配和优化工作。</p>
+<ul>
+<li>驱动适配：JDBC 驱动版本降至8.0.25版本。</li>
+<li>语法适配：移除 OceanBase 暂未支持的 DML 或语法（如 insert、ignore 语法）。</li>
+<li>Binlog 解析适配：移除 RotateLogEvent 的 Checksum 校验。</li>
+<li>反向双模式：CDC 及 Binlog 双增量模式、内存队列及消息队列双缓存模式应对不同流量场景，提升反向同步速度。</li>
+<li>元数据变更感知：提升 DDB 为源端时底层 MySQL 发生主从切换的 NDC 感知及响应速度。</li>
+</ul>
+<p>后续我们也计划实现通过 AI 迁移，即基于 MCP 的多 Agent 实现 NDC 工具的智能化运维，降低迁移过程中长期同步任务的运维成本。目前还处于早期迁移阶段，相关工作正在进行中。</p>
+<h2 id="当前进展与未来规划"><a href="#当前进展与未来规划" class="headerlink" title="当前进展与未来规划"></a>当前进展与未来规划</h2><p>当前网易云音乐各业务已经逐步开始使用 NDC 进行验证、线上同步、双跑等相关落地，部分业务已完成迁移，周边基础设施也开始陆续跟进，验证了系统是成熟可用的。但为了业务的稳定切换，我们的切换周期相对比较长，还有很多工作要做。</p>
+<p>后续我们会进入核心试点和大规模迁移阶段，进一步完善 OceanBase 及周边生态的体系化建设，包括工单、部署、测试、调优、运维等。虽然我们在起步阶段，却已经接受了 OceanBase 社区很多的帮助，在此也非常感谢 OceanBase 的支持帮助。</p>
+<blockquote>
+<p>最后为大家推荐这个 OceanBase 开源负责人老纪的公众号「老纪的技术唠嗑局」，会持续更新和 #<strong>数据库</strong>、#<strong>AI</strong>、#<strong>技术架构</strong> 相关的各种技术内容。欢迎感兴趣的朋友们关注！</p>
+<p>「老纪的技术唠嗑局」不仅希望能持续给大家带来有价值的技术分享，也希望能和大家一起为开源社区贡献一份力量。如果你对 OceanBase 开源社区认可，点亮一颗小星星✨吧！你的每一个Star，都是我们努力的动力。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%81%E7%A7%BB/" rel="tag"># 数据库迁移</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" rel="tag"># 分库分表</a>
+              <a href="/tags/%E7%BD%91%E6%98%93%E4%BA%91%E9%9F%B3%E4%B9%90/" rel="tag"># 网易云音乐</a>
+              <a href="/tags/CDC/" rel="tag"># CDC</a>
+              <a href="/tags/Binlog/" rel="tag"># Binlog</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-09-24-oceanbase-vector-db-guide/" rel="prev" title="OceanBase 向量数据库使用指南">
+                  <i class="fa fa-angle-left"></i> OceanBase 向量数据库使用指南
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-10-11-ai-gaibian-shujuku-chanpin/" rel="next" title="AI改变数据库产品实践探索 - obloader agent与OceanBase Agent">
+                  AI改变数据库产品实践探索 - obloader agent与OceanBase Agent <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

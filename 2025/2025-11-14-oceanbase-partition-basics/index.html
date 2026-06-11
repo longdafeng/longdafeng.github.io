@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文系统介绍 OceanBase 分区基础知识，涵盖分区在分区裁剪、数据维护与数据分布中的作用，Hash、Range、List 三种基础分区方式的适用场景与设计要点，以及动态分区、自动分区分裂、二级分区组合等灵活的分区管理能力。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 分区基础知识">
+<meta property="og:url" content="https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文系统介绍 OceanBase 分区基础知识，涵盖分区在分区裁剪、数据维护与数据分布中的作用，Hash、Range、List 三种基础分区方式的适用场景与设计要点，以及动态分区、自动分区分裂、二级分区组合等灵活的分区管理能力。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-partition-basics/01.png">
+<meta property="article:published_time" content="2025-11-13T22:24:42.000Z">
+<meta property="article:modified_time" content="2025-11-13T22:24:42.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分区表">
+<meta property="article:tag" content="分区裁剪">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="动态分区">
+<meta property="article:tag" content="数据分布">
+<meta property="article:tag" content="自动分区分裂">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-partition-basics/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/","path":"2025/2025-11-14-oceanbase-partition-basics/","title":"OceanBase 分区基础知识"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 分区基础知识 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-%E4%B8%AD%E5%88%86%E5%8C%BA%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">OceanBase 中分区的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E8%A3%81%E5%89%AA%E6%8F%90%E5%8D%87%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87"><span class="nav-number">2.1.</span> <span class="nav-text">分区裁剪提升查询效率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E4%BD%9C%E4%B8%BA%E6%95%B0%E6%8D%AE%E7%BB%B4%E6%8A%A4%E5%8D%95%E5%85%83"><span class="nav-number">2.2.</span> <span class="nav-text">分区作为数据维护单元</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%8C%BA%E4%BD%9C%E4%B8%BA%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83%E5%8D%95%E5%85%83"><span class="nav-number">3.</span> <span class="nav-text">分区作为数据分布单元</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-%E7%9A%84%E5%9F%BA%E7%A1%80%E5%88%86%E5%8C%BA%E6%96%B9%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">OceanBase 的基础分区方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%81%B5%E6%B4%BB%E7%9A%84%E5%88%86%E5%8C%BA%E7%AE%A1%E7%90%86%E8%83%BD%E5%8A%9B"><span class="nav-number">4.</span> <span class="nav-text">灵活的分区管理能力</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%B4%E6%8A%A4"><span class="nav-number">4.1.</span> <span class="nav-text">数据维护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83"><span class="nav-number">4.2.</span> <span class="nav-text">数据分布</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E6%95%B0%E6%8D%AE%E7%BB%B4%E6%8A%A4%E5%92%8C%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83%E7%AE%A1%E7%90%86"><span class="nav-number">4.3.</span> <span class="nav-text">混合数据维护和数据分布管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B8%E5%9E%8B%E7%9A%84%E8%87%AA%E5%8A%A8%E5%88%86%E5%8C%BA%E7%AE%A1%E7%90%86%E6%96%B9%E5%BC%8F"><span class="nav-number">4.4.</span> <span class="nav-text">典型的自动分区管理方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 分区基础知识 | Longda's Interesting World">
+      <meta itemprop="description" content="本文系统介绍 OceanBase 分区基础知识，涵盖分区在分区裁剪、数据维护与数据分布中的作用，Hash、Range、List 三种基础分区方式的适用场景与设计要点，以及动态分区、自动分区分裂、二级分区组合等灵活的分区管理能力。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 分区基础知识
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-11-14 06:24:42" itemprop="dateCreated datePublished" datetime="2025-11-14T06:24:42+08:00">2025-11-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">兹拉坦</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>4.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>18 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文系统介绍 OceanBase 分区基础知识，涵盖分区在分区裁剪、数据维护与数据分布中的作用，Hash、Range、List 三种基础分区方式的适用场景与设计要点，以及动态分区、自动分区分裂、二级分区组合等灵活的分区管理能力。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 分区基础知识","description":"本文系统介绍 OceanBase 分区基础知识，涵盖分区在分区裁剪、数据维护与数据分布中的作用，Hash、Range、List 三种基础分区方式的适用场景与设计要点，以及动态分区、自动分区分裂、二级分区组合等灵活的分区管理能力。","image":"https://ilongda.com/img/oceanbase-partition-basics/01.png","wordCount":5069,"datePublished":"2025-11-13T22:24:42.000Z","dateModified":"2025-11-13T22:24:42.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/"},"url":"https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","分区表","自动分区分裂","分区裁剪","数据分布","动态分区"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 分区基础知识","item":"https://ilongda.com/2025/2025-11-14-oceanbase-partition-basics/"}]}</script>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>分析型业务通常需要对海量数据进行分析计算，这对数据库的查询能力，以及数据管理能力都有很高的要求。OceanBase 通过分区技术，将一张表的数据按照分区键水平拆分成多个数据子集，有助于提升查询效率和数据管理能力：</p>
+<p><strong>1.查询效率提升：</strong> 分区裁剪能减少无关数据的扫描</p>
+<p><strong>2.数据维护：</strong> 支持按照分区粒度进行数据管理，比如数据归档、清理等</p>
+<p><strong>3.数据分布：</strong> 按照分区粒度进行数据分布，能够将数据打散到多个节点上，具备良好的可扩展性</p>
+<p>本文首先对分区在 OceanBase 的作用进行介绍，接着描述了 OceanBase 中的基础分区方式以及它们的适用场景，最后讨论了 OceanBase 的灵活分区管理能力如何应用于数据维护、数据管理等业务场景。</p>
+<span id="more"></span>
+
+<h2 id="OceanBase-中分区的作用"><a href="#OceanBase-中分区的作用" class="headerlink" title="OceanBase 中分区的作用"></a>OceanBase 中分区的作用</h2><p>在 OceanBase 中，分区是水平分片的基本单位，是数据分布、负载均衡和并行操作的最小物理单元。一张大表被逻辑地分割成多个更小、更易管理的独立块，每个分区（甚至分区的不同副本）都可以分散存储在集群中不同的 OBServer 节点上。</p>
+<p>这种设计为分析型业务带来了根本性的优势：当单一节点的存储或计算能力成为瓶颈时，可以通过增加节点并重新分布分区的方式，实现近乎线性的水平扩展，从而处理 PB 级别的数据量。</p>
+<h3 id="分区裁剪提升查询效率"><a href="#分区裁剪提升查询效率" class="headerlink" title="分区裁剪提升查询效率"></a>分区裁剪提升查询效率</h3><p>使用分区后，指定分区列进行查询时，在某些场景下能够裁剪出满足查询条件的分区，使得查询无须查询那些不满足条件的分区。</p>
+<p>参考如下例子，我们在列 c2 上创建 hash 分区，指定 c2&#x3D;1 的查询条件，能够裁剪出只需要查询分区 p1。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 创建一张四个 hash 分区的表格 t1，分区键为 c2</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t1(c1 <span class="type">int</span>, c2 <span class="type">int</span>) <span class="keyword">partition</span> <span class="keyword">by</span> hash(c2) partitions <span class="number">4</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 指定 c2=1 查询，裁剪出分区 p1</span></span><br><span class="line">explain <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1 <span class="keyword">where</span> c2 <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> Query Plan                                                                         <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span>                                    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="operator">|</span>ID<span class="operator">|</span>OPERATOR       <span class="operator">|</span>NAME<span class="operator">|</span>EST.ROWS<span class="operator">|</span>EST.TIME(us)<span class="operator">|</span>                                    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="comment">-----------------------------------------------                                    |</span></span><br><span class="line"><span class="operator">|</span> <span class="operator">|</span><span class="number">0</span> <span class="operator">|</span><span class="keyword">TABLE</span> <span class="keyword">FULL</span> SCAN<span class="operator">|</span>t1  <span class="operator">|</span><span class="number">1</span>       <span class="operator">|</span><span class="number">3</span>           <span class="operator">|</span>                                    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span>                                    <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Outputs <span class="operator">&amp;</span> filters:                                                                 <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="comment">-------------------------------------                                              |</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">0</span> <span class="operator">-</span> output([t1.c1], [t1.c2]), <span class="keyword">filter</span>([t1.c2 <span class="operator">=</span> <span class="number">1</span>]), rowset<span class="operator">=</span><span class="number">16</span>                     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>       access([t1.c2], [t1.c1]), partitions(p1)                                     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>       is_index_back<span class="operator">=</span><span class="literal">false</span>, is_global_index<span class="operator">=</span><span class="literal">false</span>, filter_before_indexback[<span class="literal">false</span>],  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>       range_key([t1.__pk_increment]), <span class="keyword">range</span>(MIN ; MAX)always <span class="literal">true</span>                  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------------------------------------------------------+</span></span><br></pre></td></tr></table></figure>
+
+<p>分区裁剪可以过滤掉不需要的数据，但分区数太多可能也会导致其他的问题，例如元数据量过多、分区裁剪的效率可能降低等等，因此，在 OceanBase 的列存表中建议单个分区的行数 &gt;&#x3D; 100W 行。</p>
+<h3 id="分区作为数据维护单元"><a href="#分区作为数据维护单元" class="headerlink" title="分区作为数据维护单元"></a>分区作为数据维护单元</h3><p>在数据库运维中，将分区作为基本的数据维护单元，能较大地简化日常管理流程，例如数据清理场景、分区级收集统计信息等。以数据清理场景为例，当数据按时间进行分区后，清理过期数据就不再需要逐行删除，而是直接通过删除整个历史分区来实现，这种操作仅仅只需要修改元数据，还能彻底释放磁盘空间，避免了传统的 DML 删除操作产生的性能开销。通过分区键（如时间）将数据自然归类，使维护操作从”逐行扫描”变为”批量处理”，极大地提升了管理效率，降低了运维的复杂度。</p>
+<h2 id="分区作为数据分布单元"><a href="#分区作为数据分布单元" class="headerlink" title="分区作为数据分布单元"></a>分区作为数据分布单元</h2><p>分区作为 OceanBase 的数据分布单元，每个分区的副本可以放置在不同的 OBServer 节点，以实现存储和计算的扩展。</p>
+<p><strong>1.存储的扩展：</strong> 当创建一个分区表时，这些分区及其副本可以根据集群的资源情况，由 OceanBase 自动调度到不同的物理节点上。这意味着单张表的容量不再受限于单机磁盘，而是整个集群的存储容量，当集群的存储空间不足时，通过加节点就能够实现扩展。</p>
+<p><strong>2.计算的并行化：</strong> 这是分析型业务实现高性能的关键因素之一，当一个查询（特别是涉及全表扫描或大规模聚合的查询）被执行时，OceanBase 的优化器会识别出查询涉及的分区。查询任务可以被分解成多个子任务，并下推到各个数据分区所在的节点上并行执行。例如，一个 SUM() 操作会在每个分区本地先计算小计，然后将中间结果汇总得到最终总和，这充分利用了多节点的计算能力，从而显著加速查询。</p>
+<h3 id="OceanBase-的基础分区方式"><a href="#OceanBase-的基础分区方式" class="headerlink" title="OceanBase 的基础分区方式"></a>OceanBase 的基础分区方式</h3><p>目前 OceanBase 中支持三大类基础的分区方式，包括 Hash&#x2F;Key，Range&#x2F;Range Columns 和 List&#x2F;List Columns，三种分区方式各自的使用场景有所不同。</p>
+<h4 id="HASH-KEY-分区"><a href="#HASH-KEY-分区" class="headerlink" title="HASH&#x2F;KEY 分区"></a>HASH&#x2F;KEY 分区</h4><p>一般适用于分区列 NDV（不同值的种类）较大，且难以划分出明确范围的情况。优点是容易让没有特定规则的数据也能够在不同的分区内均匀分布，缺点是在范围查询时难以进行分区裁剪。</p>
+<p><strong>适用场景举例：</strong> 无明显查询模式，需均匀分布数据到多个节点（如用户 ID、交易 ID）。</p>
+<p><strong>设计要点：</strong></p>
+<ul>
+<li>分区键选择：<ul>
+<li>NDV（唯一值数量）远大于分区数（如用户 ID 的 NDV 应远大于分区数）。</li>
+<li>优先选择无倾斜（或只有少量倾斜）的整型&#x2F;时间列（如 user_id、order_time，或者自增列）。</li>
+<li>高频查询条件字段（如 user_id 作为 Join 关键字）。</li>
+</ul>
+</li>
+<li>分区数推荐：<ul>
+<li>确保分区数匹配集群的机器数量，避免资源分配不均衡</li>
+</ul>
+</li>
+</ul>
+<p><strong>示例场景（Hash 分区使用场景）</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Hash 分区，按 user_id 均匀分布</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> customer(</span><br><span class="line">  user_id <span class="type">BIGINT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  login_time <span class="type">TIMESTAMP</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  customer_name <span class="type">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  phone_num <span class="type">BIGINT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  city_name <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  sex <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  id_number <span class="type">VARCHAR</span>(<span class="number">18</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  home_address <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  office_address <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  age <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> HASH(user_id) PARTITIONS <span class="number">128</span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Range-Range-Columns-分区"><a href="#Range-Range-Columns-分区" class="headerlink" title="Range&#x2F;Range Columns 分区"></a>Range&#x2F;Range Columns 分区</h4><p>一般适用于分区键容易划分出明确的范围的情况，例如可以把记录流水信息的大表，根据表示信息时间的列做 RANGE 分区。</p>
+<p><strong>适用场景举例：</strong></p>
+<ul>
+<li>数据按时间&#x2F;数值范围增长（如 order_time, price）。</li>
+<li>需快速裁剪历史数据（如仅查询最近一个月数据）。</li>
+</ul>
+<p><strong>设计要点：</strong></p>
+<ul>
+<li>分区键选择：<ul>
+<li>时间字段（如 order_time）或连续数值字段。</li>
+<li>分区边界需与业务查询条件对齐（如按天&#x2F;月划分）。</li>
+</ul>
+</li>
+<li>分区数推荐：<ul>
+<li>根据数据增长设置分区，例如按照月份分区。</li>
+</ul>
+</li>
+</ul>
+<p><strong>示例场景（Range&#x2F;Range Columns 分区示例）</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 创建系统日志表，按日志时间进行月度 RANGE 分区，支持快速查询与数据归档</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> system_logs(</span><br><span class="line">    log_id <span class="type">BIGINT</span>,</span><br><span class="line">    log_date <span class="type">TIMESTAMP</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    log_level <span class="type">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">    source_system <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    log_message TEXT,</span><br><span class="line">    client_ip <span class="type">VARCHAR</span>(<span class="number">15</span>)</span><br><span class="line">)</span><br><span class="line"><span class="comment">-- 主分区：按月 RANGE 分区，使用日期直接表达分区边界</span></span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> COLUMNS(log_date)</span><br><span class="line">(</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202001 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-02-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202002 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-03-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202003 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-04-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202004 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-05-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202005 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-06-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202006 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-07-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202007 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-08-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202008 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-09-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202009 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-10-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202010 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-11-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202011 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2020-12-01&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_202012 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2021-01-01&#x27;</span>),</span><br><span class="line">    <span class="comment">-- 默认分区处理未来数据或时间格式异常的记录</span></span><br><span class="line">    <span class="keyword">PARTITION</span> p_future <span class="keyword">VALUES</span> LESS THAN (MAXVALUE)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h4 id="List-List-Columns-分区"><a href="#List-List-Columns-分区" class="headerlink" title="List&#x2F;List Columns 分区"></a>List&#x2F;List Columns 分区</h4><p>一般适用于需要显式控制各行数据如何映射到具体的某一个分区时，优点是可以对无序或无关的数据集进行精准分区，缺点是在范围查询时难以进行分区裁剪。</p>
+<p><strong>适用场景举例：</strong></p>
+<ul>
+<li>离散型字段（如地区、渠道类型）。</li>
+<li>需按固定类别快速裁剪数据（如查询华东地区用户）。</li>
+</ul>
+<p><strong>设计要点：</strong></p>
+<ul>
+<li>分区键选择：<ul>
+<li>离散值且数量有限（如 region 字段仅有 [‘east’,’west’,’south’,’north’]）。</li>
+<li>分区值需覆盖所有可能取值，避免遗漏。</li>
+</ul>
+</li>
+<li>分区数限制：<ul>
+<li>根据业务逻辑进行配置分区数</li>
+</ul>
+</li>
+</ul>
+<p><strong>示例场景（List&#x2F;List Columns 分区使用场景）</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> orders_by_region(</span><br><span class="line">    order_id <span class="type">BIGINT</span> COMMENT <span class="string">&#x27;订单唯一标识&#x27;</span>,</span><br><span class="line">    region_code <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">PRIMARY</span> KEY COMMENT <span class="string">&#x27;区域代码（1=north/china, 2=east/china, 3=south/china, 4=west/china）&#x27;</span>,</span><br><span class="line">    customer_id <span class="type">BIGINT</span> COMMENT <span class="string">&#x27;客户ID&#x27;</span>,</span><br><span class="line">    order_time DATETIME COMMENT <span class="string">&#x27;订单创建时间&#x27;</span>,</span><br><span class="line">    product_category <span class="type">VARCHAR</span>(<span class="number">50</span>) COMMENT <span class="string">&#x27;商品类别&#x27;</span>,</span><br><span class="line">    order_amount <span class="type">DECIMAL</span>(<span class="number">18</span>,<span class="number">2</span>) COMMENT <span class="string">&#x27;订单金额&#x27;</span>,</span><br><span class="line">    payment_status <span class="type">VARCHAR</span>(<span class="number">20</span>) COMMENT <span class="string">&#x27;支付状态（如：PAID, UNPAID）&#x27;</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> LIST(region_code)  <span class="comment">-- 改为整数类型分区键</span></span><br><span class="line">(</span><br><span class="line">    <span class="keyword">PARTITION</span> p_north <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">1</span>),  <span class="comment">-- 区域代码1对应north/china</span></span><br><span class="line">    <span class="keyword">PARTITION</span> p_east <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">2</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_south <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">3</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_west <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">4</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p_other <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="keyword">DEFAULT</span>)  <span class="comment">-- 默认分区处理未知区域</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h2 id="灵活的分区管理能力"><a href="#灵活的分区管理能力" class="headerlink" title="灵活的分区管理能力"></a>灵活的分区管理能力</h2><p>OceanBase 有非常灵活的分区管理能力，从数据管理的角度来看，它既有数据维护的功能，也有数据分布的功能；从使用方式来讲，它有手动管理和自动管理两种方式；从分区的层次来考虑，它支持一级分区和二级分区组合使用，通过不同的组合，满足用户对于数据管理的不同需求。</p>
+<p>本节将从数据维护和数据分布两个角度来展开，同时在两个角度中考虑使用方式以及分区的层次的能力组合。</p>
+<h3 id="数据维护"><a href="#数据维护" class="headerlink" title="数据维护"></a>数据维护</h3><p>业务层通常按照时间维度来管理分区，方便做数据的归档，清理等操作，我们从业务的完整的数据生命周期流程来结合来描述我们的手动分区管理能力。</p>
+<p><strong>1.业务建表：</strong> 创建按照时间分区的表格，提前创建未来一段时间需要的分区</p>
+<p><strong>2.业务导数：</strong> 导入数据</p>
+<p><strong>3.业务运行：</strong> 随着时间的推进，可能提前创建的分区不足，继续提前创建未来一段时间需要的分区</p>
+<p><strong>4.定期数据清理：</strong> 当数据积累到一定时间后，可能之前的数据就不需要了，此时可以删除不需要的分区</p>
+<p>以下是上述使用场景的具体例子：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 创建分区表（按天分区，预创建未来7天分区）</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> business_data(</span><br><span class="line">    id <span class="type">BIGINT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">    event_time DATETIME <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    metric_value <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    <span class="keyword">PRIMARY</span> KEY (id, event_time)</span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> COLUMNS(event_time)</span><br><span class="line">(</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231025 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-26&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231026 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-27&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231027 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-28&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231028 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-29&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231029 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-30&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231030 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-31&#x27;</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p20231031 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-01&#x27;</span>)  <span class="comment">-- 预创建未来7天分区</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 导入数据，这里略过</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 预创建未来7天分区</span></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> business_data <span class="keyword">ADD</span> <span class="keyword">PARTITION</span>(</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231101 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-02&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231102 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-03&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231103 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-04&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231104 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-05&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231105 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-06&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231106 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-07&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231107 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-11-08&#x27;</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. 定期数据清理，例如数据到期后，删除7天的数据</span></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> business_data <span class="keyword">DROP</span> <span class="keyword">PARTITION</span> p20231025, p20231026, p20231027, p20231028, p20231029, p20231030, p20231031;</span><br></pre></td></tr></table></figure>
+
+<p>由于数据在不停地写入，手工维护预创建分区和定期清理分区还是比较麻烦的。为了简化这个流程，OceanBase 提供了动态分区功能，支持按固定时间分区，预创建多长时间的分区和保留多久的历史分区等功能，对于上面的例子，假如我们需要保留 30 天数据，每次预创建 7 天的分区，那么使用如下语法来进行创建：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 创建分区表，设置动态分区策略</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1(</span><br><span class="line">    id <span class="type">BIGINT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">    event_time DATETIME <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    metric_value <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    <span class="keyword">PRIMARY</span> KEY (id, event_time)</span><br><span class="line">)</span><br><span class="line">DYNAMIC_PARTITION_POLICY(</span><br><span class="line">  ENABLE <span class="operator">=</span> <span class="literal">true</span>,</span><br><span class="line">  TIME_UNIT <span class="operator">=</span> <span class="string">&#x27;day&#x27;</span>,</span><br><span class="line">  PRECREATE_TIME <span class="operator">=</span> <span class="string">&#x27;7day&#x27;</span>,</span><br><span class="line">  EXPIRE_TIME <span class="operator">=</span> <span class="string">&#x27;30day&#x27;</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> COLUMNS(event_time)</span><br><span class="line">(</span><br><span class="line">  <span class="keyword">PARTITION</span> p20231025 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2023-10-26&#x27;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>除了 Range 分区模式外，业务也可以按照业务需求选择其他基础分区方式。</p>
+<h3 id="数据分布"><a href="#数据分布" class="headerlink" title="数据分布"></a>数据分布</h3><p>分区也可以作为数据分布管理的单元，通常情况下为了数据打散，一般使用 HASH 分区的方式，它有如下优势：</p>
+<ol>
+<li>它通常能实现比较好的数据打散的需求，也能够做比较准确的分区裁剪；</li>
+<li>对于需要 join 的多张表格，如果按照 join 键进行 hash 分区，并且分区数也保持一致，此时配合 OceanBase table group 能力，能够实现相同 hash 规则的对应下标的分区绑定在一起，从而使得 join 时能够使用 Partition Wised Join，避免数据 shuffle。</li>
+</ol>
+<p>Hash 分区也存在部分问题：</p>
+<ol>
+<li>Hash 分区的分区数设置之后，修改分区数是一个比较重的操作，涉及到整张表的数据重写，所以，一般设置好 Hash 分区的分区数之后，就一般不再变化，比较难以实现可扩展；</li>
+<li>对于分区键上的范围查询，无法裁剪出分区，需要访问所有的分区，可能会存在读放大。</li>
+</ol>
+<p>为了解决 HASH 分区可扩展性以及范围查询的问题，OceanBase 已经支持行存表的自动分区分裂能力，在未来版本中还将提供两种列存表自动分区分裂的模式：堆表分区分裂模式和聚集索引（clustering key）表分区分裂模式。</p>
+<p>堆表分区分裂模式基于堆表的隐藏主键列进行自动分区，由于隐藏主键在分区分裂模式下是随机生成的，并且当租户的机器资源扩展或缩容时，会自动扩充或者缩减对应的分区数，使得该模式能够自动地进行扩展，具备比较好的可扩展性。不过，该模式下数据行是随机分布在任意一个分区的，因此是无法进行分区裁剪的，所以查询性能上可能不是最优，该模式适合对性能要求不高，且不希望提供手动分区或者自动分区键的情况，但又希望表能够自动地扩展。</p>
+<p>聚集索引表分区分裂模式基于用户指定的聚集键进行自动分区，按照数据量进行自动地切分合适大小的分区，当租户的机器资源扩展或者缩容时，由于分裂的分区数已经足够多时，就可以将这些分区重新进行均衡。该模式由于按照聚集键进行自动拆分，当查询能够指定聚集键查询，无论是点查还是范围查询，能够进行分区裁剪，查询性能是比较优的，并且也能够根据机器资源进行自适应地扩展或者缩容。同时聚集索引表自动分裂也能够对支持多张需要 join 的表配置 table group，其中自动分裂的键可以配置为 join 键，也能实现 Partition Wised Join。</p>
+<p>为了方便大家理解，Hash、堆表分区分裂和聚集索引表分区分裂三种方式的特点对比如下：</p>
+<p><img data-src="/img/oceanbase-partition-basics/01.png" alt="Hash、堆表分区分裂和聚集索引表分区分裂三种方式的特点对比"></p>
+<p>除了上述分区方式，业务也可以按照业务需求选择其他的基础分区方式。</p>
+<h3 id="混合数据维护和数据分布管理"><a href="#混合数据维护和数据分布管理" class="headerlink" title="混合数据维护和数据分布管理"></a>混合数据维护和数据分布管理</h3><p>我们也可以以二级分区的方式，同时支持数据维护和数据分布的需求，通常使用比较多的场景为一级分区用于数据维护的需求，二级分区用于数据分布的需求，每种需求可以使用对应需求所支持的方式进行组合。</p>
+<h4 id="典型的手动分区管理方式"><a href="#典型的手动分区管理方式" class="headerlink" title="典型的手动分区管理方式"></a>典型的手动分区管理方式</h4><ol>
+<li>一级分区：<ul>
+<li>类型选择：使用 Range 或者 List 分区，匹配高频查询条件（如时间范围、地区）。</li>
+<li>分区数建议：根据查询条件时间分布、数据维护的需求设置合理范围（如按月分区保留 12 个月，或按地区分为 4 个 List 分区）。</li>
+</ul>
+</li>
+<li>二级分区：<ul>
+<li>类型选择：使用 Hash 分区，保证数据打散。</li>
+<li>分区数推荐：<ul>
+<li>如果只有一个一级分区写入，那么一级分区的二级分区数需要满足写入打散的资源诉求</li>
+<li>如果有多个一级分区能够写入，那么能写入的一级分区数 * 二级分区数满足写入打散的资源诉求即可</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>以下是 Range + Hash 和 List + Hash 的两个场景案例：</p>
+<p><strong>1.Range + Hash：</strong> 一级选择 Range 分区，指定 order_date 后，可以快速过滤掉不需要扫描数据的分区，也能够通过分区管理操作快速进行数据维护，二级选择 Hash 分区，可以将当月的写入或者读取打散到 8 个分区中，避免热点。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> orders(</span><br><span class="line">    user_id <span class="type">BIGINT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;用户ID（二级分区键）&#x27;</span>,</span><br><span class="line">    order_date <span class="type">DATE</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;下单日期（一级分区键）&#x27;</span>,</span><br><span class="line">    amount <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;订单金额&#x27;</span>,</span><br><span class="line">    status TINYINT <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;状态: 0-取消 1-待支付 2-已支付 3-已发货 4-已完成&#x27;</span>,</span><br><span class="line">    region_code <span class="type">CHAR</span>(<span class="number">6</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;地区编码（前2位省码）&#x27;</span>,</span><br><span class="line">    product_id <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;商品ID&#x27;</span>,</span><br><span class="line">    payment_method <span class="type">VARCHAR</span>(<span class="number">20</span>) COMMENT <span class="string">&#x27;支付方式&#x27;</span>,</span><br><span class="line">    created_at <span class="type">TIMESTAMP</span>(<span class="number">6</span>) <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span>(<span class="number">6</span>) COMMENT <span class="string">&#x27;记录创建时间&#x27;</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> COLUMNS(order_date)</span><br><span class="line">SUBPARTITION <span class="keyword">BY</span> HASH(user_id) SUBPARTITIONS <span class="number">8</span></span><br><span class="line">(</span><br><span class="line">  <span class="keyword">PARTITION</span> p202501 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2025-02-01&#x27;</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p202502 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2025-03-01&#x27;</span>),</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">PARTITION</span> p202601 <span class="keyword">VALUES</span> LESS THAN (<span class="string">&#x27;2026-02-01&#x27;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p><strong>2.List + Hash：</strong> 一级选择 List 分区，指定省份能够裁剪到相应的分区，也可以按照省维度进行数据维护，二级选择 Hash&#x2F;Key 分区，可以将省的读写流量打散到多个分区中，实现负载均衡。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 一级分区：LIST 按省划分（31个省级行政区）</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> social_insurance_records(</span><br><span class="line">    record_id <span class="type">BIGINT</span>,</span><br><span class="line">    province_code <span class="type">INT</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,  <span class="comment">-- 省级编码（如11北京，31上海）</span></span><br><span class="line">    payment_date <span class="type">DATE</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    user_id <span class="type">VARCHAR</span>(<span class="number">32</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    amount <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)</span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> LIST(province_code)  <span class="comment">-- 一级LIST分区</span></span><br><span class="line">SUBPARTITION <span class="keyword">BY</span> KEY(user_id) SUBPARTITIONS <span class="number">16</span>  <span class="comment">-- 二级HASH分区</span></span><br><span class="line">(</span><br><span class="line">  <span class="keyword">PARTITION</span> p_beijing <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">11</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p_shanghai <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">31</span>),</span><br><span class="line">  <span class="keyword">PARTITION</span> p_tianjin <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">12</span>),</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">PARTITION</span> p_xizang <span class="keyword">VALUES</span> <span class="keyword">IN</span> (<span class="number">54</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="典型的自动分区管理方式"><a href="#典型的自动分区管理方式" class="headerlink" title="典型的自动分区管理方式"></a>典型的自动分区管理方式</h3><ol>
+<li><strong>一级分区</strong>：选择动态分区，配置按固定时间分区，预创建多长时间的分区和保留多久的历史分区等参数；</li>
+<li><strong>二级分区</strong>：选择自动 Range 分区分裂，能够自动地进行分裂，无须配置分区个数或者分区规则。</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>目前 OceanBase 支持了常见的基础分区方式，通过基础分区方式的组合使用，能够满足业务的数据维护、数据分布以及提升查询效率等需求。动态分区对按照时间进行分区数据维护的通用需求提供了标准的自动化管理能力，减少用户对数据维护的代价，未来我们将加强自动分区的管理能力，支持列存表的自动分区分裂，减少当前数据分布手工维护的代价、可扩展性等问题，进一步提升列存表的数据管理自动化管理能力，使得分析型业务场景能更容易使用 OceanBase。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E5%88%86%E5%8C%BA%E8%A1%A8/" rel="tag"># 分区表</a>
+              <a href="/tags/%E8%87%AA%E5%8A%A8%E5%88%86%E5%8C%BA%E5%88%86%E8%A3%82/" rel="tag"># 自动分区分裂</a>
+              <a href="/tags/%E5%88%86%E5%8C%BA%E8%A3%81%E5%89%AA/" rel="tag"># 分区裁剪</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E5%B8%83/" rel="tag"># 数据分布</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E5%88%86%E5%8C%BA/" rel="tag"># 动态分区</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-13-vivo-database-technology/" rel="prev" title="vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈">
+                  <i class="fa fa-angle-left"></i> vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-11-18-ai-memory-explained/" rel="next" title="用最纯粹的白话，解析 AI Memory">
+                  用最纯粹的白话，解析 AI Memory <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

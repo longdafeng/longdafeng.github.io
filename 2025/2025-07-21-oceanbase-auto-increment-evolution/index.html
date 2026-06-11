@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint&#x2F;int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase 的自增列进化史及最佳实践">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint&#x2F;int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/01.png">
+<meta property="og:image" content="https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/02.png">
+<meta property="og:image" content="https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/03.png">
+<meta property="og:image" content="https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/04.png">
+<meta property="article:published_time" content="2025-07-21T09:06:50.000Z">
+<meta property="article:modified_time" content="2025-07-21T10:04:54.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MySQL 兼容">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="Sequence">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="数据库运维">
+<meta property="article:tag" content="最佳实践">
+<meta property="article:tag" content="自增列">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","path":"2025/2025-07-21-oceanbase-auto-increment-evolution/","title":"OceanBase 的自增列进化史及最佳实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 的自增列进化史及最佳实践 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%AC%E6%96%87%E5%86%85%E5%AE%B9%E5%A4%A7%E7%BA%B2"><span class="nav-number">1.</span> <span class="nav-text">本文内容大纲</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#OceanBase-%E4%B8%AD%E8%87%AA%E5%A2%9E%E5%88%97%E7%9A%84%E8%BF%9B%E5%8C%96%E5%8F%B2%EF%BC%88Evolutionary-History%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">OceanBase 中自增列的进化史（Evolutionary History）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-0-0-%E7%89%88%E6%9C%AC"><span class="nav-number">2.1.</span> <span class="nav-text">4.0.0 版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-2-%E7%89%88%E6%9C%AC"><span class="nav-number">2.2.</span> <span class="nav-text">4.2.2 版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-3-%E5%8F%8A%E4%BB%A5%E4%B8%8A%E7%89%88%E6%9C%AC"><span class="nav-number">2.3.</span> <span class="nav-text">4.2.3 及以上版本</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%A2%9E%E5%80%BC%E8%B5%B7%E7%82%B9%E6%94%AF%E6%8C%81%E6%94%B9%E5%B0%8F"><span class="nav-number">2.3.1.</span> <span class="nav-text">自增值起点支持改小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%A2%9E%E5%80%BC-cache-size-%E6%94%AF%E6%8C%81%E5%9C%A8%E8%A1%A8%E7%BA%A7%E5%88%AB%E8%AE%BE%E7%BD%AE"><span class="nav-number">2.3.2.</span> <span class="nav-text">自增值 cache size 支持在表级别设置</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-OceanBase-%E8%87%AA%E5%A2%9E%E5%88%97%E7%9A%84%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%EF%BC%88Best-Practice%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">使用 OceanBase 自增列的最佳实践（Best Practice）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E9%9C%80%E8%A6%81%E5%B0%86%E8%87%AA%E5%A2%9E%E5%88%97%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%AE%BE%E7%BD%AE%E4%B8%BA-bigint%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">什么情况下需要将自增列数据类型设置为 bigint？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E5%85%81%E8%AE%B8%E8%87%AA%E5%A2%9E%E5%88%97%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BF%9D%E6%8C%81%E4%B8%BA-int%EF%BC%9F"><span class="nav-number">3.2.</span> <span class="nav-text">什么情况下允许自增列数据类型保持为 int？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E5%8F%AF%E4%BB%A5%E5%B0%86%E8%87%AA%E5%A2%9E%E5%88%97%E6%94%B9%E4%B8%BA-noorder%EF%BC%9F"><span class="nav-number">3.3.</span> <span class="nav-text">什么情况下可以将自增列改为 noorder？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%83%85%E5%86%B5%E4%B8%8B%E5%8F%AF%E4%BB%A5%E6%94%B9%E5%B0%8F%E8%87%AA%E5%A2%9E%E5%88%97-cache%EF%BC%9F"><span class="nav-number">3.4.</span> <span class="nav-text">什么情况下可以改小自增列 cache？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%A2%9E%E5%88%97%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE"><span class="nav-number">3.5.</span> <span class="nav-text">自增列相关配置</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%99%84%E5%BD%95"><span class="nav-number">4.</span> <span class="nav-text">附录</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%A2%9E%E5%88%97%E8%B7%B3%E5%8F%98%E4%B9%8B%E8%B0%9C%EF%BC%88Rethinking-in-Auto-Increment%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">自增列跳变之谜（Rethinking in Auto Increment）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NOORDER-%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.1.1.</span> <span class="nav-text">NOORDER 模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ORDER-%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.1.2.</span> <span class="nav-text">ORDER 模式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL-%E6%A8%A1%E5%BC%8F%E4%B8%8B%E7%9A%84%E6%89%A9%E5%B1%95%E5%8A%9F%E8%83%BD-%E2%80%94%E2%80%94-%E5%BA%8F%E5%88%97%EF%BC%88Sequence%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">MySQL 模式下的扩展功能 —— 序列（Sequence）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E5%AE%9A%E4%B9%89"><span class="nav-number">5.1.</span> <span class="nav-text">功能定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E5%85%A5%E5%8E%9F%E5%9B%A0"><span class="nav-number">5.2.</span> <span class="nav-text">引入原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E8%AF%AD%E6%B3%95"><span class="nav-number">5.3.</span> <span class="nav-text">相关语法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">5.4.</span> <span class="nav-text">适用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">5.5.</span> <span class="nav-text">常见问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%8F%E5%88%97%EF%BC%88sequence%EF%BC%89%E5%92%8C%E8%87%AA%E5%A2%9E%E5%88%97%EF%BC%88increment-column%EF%BC%89%E7%9A%84%E5%BC%82%E5%90%8C%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.5.1.</span> <span class="nav-text">序列（sequence）和自增列（increment column）的异同是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E5%9F%BA%E4%BA%8E%E6%80%A7%E8%83%BD%E5%BC%80%E9%94%80%E8%80%83%E8%99%91%EF%BC%8C%E5%88%9B%E5%BB%BA%E5%BA%8F%E5%88%97%E6%97%B6%E9%9C%80%E8%A6%81%E5%A6%82%E4%BD%95%E8%AE%BE%E7%BD%AE%E7%9B%B8%E5%85%B3%E5%B1%9E%E6%80%A7%EF%BC%9F"><span class="nav-number">5.5.2.</span> <span class="nav-text">如果基于性能开销考虑，创建序列时需要如何设置相关属性？</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 的自增列进化史及最佳实践 | Longda's Interesting World">
+      <meta itemprop="description" content="本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint&#x2F;int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 的自增列进化史及最佳实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-07-21 17:06:50" itemprop="dateCreated datePublished" datetime="2025-07-21T17:06:50+08:00">2025-07-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">兹拉坦</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5.6k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>21 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint/int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 的自增列进化史及最佳实践","description":"本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint/int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。","image":"https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/01.png","wordCount":5773,"datePublished":"2025-07-21T09:06:50.000Z","dateModified":"2025-07-21T10:04:54.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"},"url":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","自增列","MySQL 兼容","Sequence","数据库运维","最佳实践"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase 的自增列进化史及最佳实践","item":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"}]}</script>
+<blockquote>
+<p>如果创建表时需要某个数值列的值不重复并且保持递增，这就是<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzM3OTUyOQ==">自增列<i class="fa fa-external-link-alt"></i></span>。</p>
+<p>自增列的列类型需要被定义为 AUTO_INCREMENT。</p>
+</blockquote>
+<h1 id="本文内容大纲"><a href="#本文内容大纲" class="headerlink" title="本文内容大纲"></a>本文内容大纲</h1><ul>
+<li>OceanBase 中自增列的进化史（Evolutionary History）</li>
+<li>使用 OceanBase 自增列的最佳实践（Best Practice）</li>
+<li>附录<ul>
+<li>自增列跳变之谜（Rethinking in Auto Increment）</li>
+<li>MySQL 模式下的扩展功能 —— 序列（Sequence）</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>建议大家选择感兴趣的部分进行阅读。</p>
+<p>也欢迎大家在评论区留言，对本文的内容进行批评和指正~</p>
+</blockquote>
+<span id="more"></span>
+
+<h1 id="OceanBase-中自增列的进化史（Evolutionary-History）"><a href="#OceanBase-中自增列的进化史（Evolutionary-History）" class="headerlink" title="OceanBase 中自增列的进化史（Evolutionary History）"></a>OceanBase 中自增列的进化史（Evolutionary History）</h1><h2 id="4-0-0-版本"><a href="#4-0-0-版本" class="headerlink" title="4.0.0 版本"></a>4.0.0 版本</h2><p>OceanBase 的 MySQL 模式下，自增列支持指定两种不同的自增模式，可以通过组户级配置项 <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMjAxNTU4OQ==">default_auto_increment_mode<i class="fa fa-external-link-alt"></i></span> 控制默认模式，也可在建表时指定 auto_increment_mode。默认为 order。</p>
+<ul>
+<li><strong>ORDER</strong>：底层是基于集中缓存的自增列，自增列全局递增，更好地兼容 MySQL 行为。</li>
+</ul>
+<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/01.png" alt="ORDER 模式示意图"></p>
+<ul>
+<li><strong>NOORDER</strong>：分布式缓存的自增列，只保证全局唯一，分区表拥有更好的性能（只保证分区内自增，不保证全局自增）。</li>
+</ul>
+<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/02.png" alt="NOORDER 模式示意图"></p>
+<h2 id="4-2-2-版本"><a href="#4-2-2-版本" class="headerlink" title="4.2.2 版本"></a>4.2.2 版本</h2><p><strong>INTEGER 列类型增长支持 Online 方式：</strong></p>
+<p>对于主键列 &#x2F; 分区键 &#x2F; 索引列 &#x2F; 被生成列依赖的列 &#x2F; 有 Check 约束的列，列类型如果为整型，当列类型修改为取值范围更大的整形列类型时（如 INT -&gt; BIGINT），在 V4.2.1 版本中是通过双表双写的 Offline DDL 实现，转换过程中会加表锁，阻塞读写。</p>
+<p>但从 V4.2.2 版本开始，将 Offline DDL 改进为 Online DDL，整型列类型增长将不再影响业务写入。</p>
+<h2 id="4-2-3-及以上版本"><a href="#4-2-3-及以上版本" class="headerlink" title="4.2.3 及以上版本"></a>4.2.3 及以上版本</h2><h3 id="自增值起点支持改小"><a href="#自增值起点支持改小" class="headerlink" title="自增值起点支持改小"></a>自增值起点支持改小</h3><p>当减小一个表的自增字段的值时，需注意以下情况：<br>如果表中已存在数据并且自增列中的最大值不小于新指定的 <code>AUTO_INCREMENT</code> 值时，新的 <code>AUTO_INCREMENT</code> 值将自动调整为表中自增列现有最大值的下一个取值。</p>
+<p>例如，自增列当前的最大值为 5，当前 <code>AUTO_INCREMENT</code> 的值是 8，而 <code>AUTO_INCREMENT</code> 设置为介于 0 到 6 之间的任何值，语句执行成功后，实际的 <code>AUTO_INCREMENT</code> 值都会被调整为 6。和原生 MySQL 行为兼容。</p>
+<h3 id="自增值-cache-size-支持在表级别设置"><a href="#自增值-cache-size-支持在表级别设置" class="headerlink" title="自增值 cache size 支持在表级别设置"></a>自增值 cache size 支持在表级别设置</h3><p>在 4.2.3 之前的版本，所有表的 cache size 都会以 <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzM4MTQxNA==">auto_increment_cache_size<i class="fa fa-external-link-alt"></i></span> 设置的值作为每个节点缓存的自增值的个数。</p>
+<p>为了灵活控制不同表采用不同的缓存策略，新增 auto_increment_cache_size 表级 option，可以在建表&#x2F;修改表时指定某张表的自增值 cache size。</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>NOORDER 模式（最佳性能）</th>
+<th>ORDER 模式（最大兼容）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>多机多分区生成自增列值</td>
+<td>不同机器分别缓存自增区间，表内整体插入的数据顺序会跳变。但全表自增值不会因跳变而”浪费”。</td>
+<td>所有的节点都在 leader 申请自增值，所以不会跳变，但性能比 noorder 差。</td>
+</tr>
+<tr>
+<td>显式指定自增列值（insert、insert on duplicate、replace）</td>
+<td>如果显式往自增列插入指定值，插入后会刷新各节点自增值缓存区间，以保证后续生成的自增值都不会小于该值。存在因缓存刷新导致的自增值跳变和”浪费”。</td>
+<td>不会跳变。</td>
+</tr>
+<tr>
+<td>insert on duplicate&#x2F;replace into 场景不指定自增列</td>
+<td>早期版本需要刷新全局 cache。目前各分支的最新版本都无需再刷新。不会因这个场景特殊跳变。</td>
+<td>早期版本需要刷新全局 cache。目前各分支的最新版本都无需再刷新。不会因这个场景特殊跳变。</td>
+</tr>
+<tr>
+<td>机器重启&#x2F;宕机</td>
+<td>机器重启或宕机后，无法复用宕机前的剩余缓存值区间，需要重新获取。存在因机器重启&#x2F;宕机导致的自增值跳变和”浪费”。</td>
+<td>在 leader 节点维护了缓存区间，当 leader 节点发生重启&#x2F;宕机时，该区间内未使用的自增值不会被继续使用，从而发生跳变和”浪费”。注意，这里跳变的场景仅发生在 leader 节点，其它 follower 节点由于不保存缓存，即使宕机也不会影响自增值的生成连续性。</td>
+</tr>
+<tr>
+<td>主动切主（如升降配、升级 OBServer）</td>
+<td>老版本每次切主时会丢弃当前缓存区间，重新获取。存在自增值跳变和”浪费”。4.2.3 版本开始，优化为正常切主不跳变，但需要注意：切主会影响 server 的可用性，刚切主完成部分 insert 请求可能会存在重试的情况，这样可能会有小范围的数据跳跃。</td>
+<td>老版本发生切主时，会把原始 leader 的缓存区间清理，从而发生跳变和”浪费”。4.2.3 版本开始，优化为正常切主不跳变，但需要注意：切主会影响 server 的可用性，刚切主完成部分 insert 请求可能会存在重试的情况，这样可能会有小范围的数据跳跃。</td>
+</tr>
+</tbody></table>
+<h1 id="使用-OceanBase-自增列的最佳实践（Best-Practice）"><a href="#使用-OceanBase-自增列的最佳实践（Best-Practice）" class="headerlink" title="使用 OceanBase 自增列的最佳实践（Best Practice）"></a>使用 OceanBase 自增列的最佳实践（Best Practice）</h1><h2 id="什么情况下需要将自增列数据类型设置为-bigint？"><a href="#什么情况下需要将自增列数据类型设置为-bigint？" class="headerlink" title="什么情况下需要将自增列数据类型设置为 bigint？"></a>什么情况下需要将自增列数据类型设置为 bigint？</h2><ul>
+<li>业务本身数据增长快，保留数据周期长。</li>
+<li>客户不在意建表使用 bigint 还是 int。</li>
+<li>leader 打散，机器切主的概率变大（宕机、random 负载均衡等），跳变的概率变大。</li>
+<li>noorder 模式，需要显式指定自增列值。</li>
+</ul>
+<h2 id="什么情况下允许自增列数据类型保持为-int？"><a href="#什么情况下允许自增列数据类型保持为-int？" class="headerlink" title="什么情况下允许自增列数据类型保持为 int？"></a>什么情况下允许自增列数据类型保持为 int？</h2><ul>
+<li>业务数据量本身远小于 int 上限。</li>
+<li>从 MySQL 迁移过来，客户坚持使用 int 类型，否则应用存在兼容性问题。</li>
+<li>单机场景，切主的场景很少。</li>
+<li>有一定的监控运维能力，自增值个数接近上限时进行运维处理，如重建表导数、或 int 改 bigint（4.2.2 开始 online）等。</li>
+</ul>
+<h2 id="什么情况下可以将自增列改为-noorder？"><a href="#什么情况下可以将自增列改为-noorder？" class="headerlink" title="什么情况下可以将自增列改为 noorder？"></a>什么情况下可以将自增列改为 noorder？</h2><ul>
+<li>当用户无自增列表级有序需求，并期望优化高并发操作的性能时，可以将 order 修改为 noorder。</li>
+<li>当用户有自增列表级有序需求，但是 leader 都在一个 OBServer 上时，且期望优化高并发操作的性能时，可以将 order 修改为 noorder。</li>
+</ul>
+<h2 id="什么情况下可以改小自增列-cache？"><a href="#什么情况下可以改小自增列-cache？" class="headerlink" title="什么情况下可以改小自增列 cache？"></a>什么情况下可以改小自增列 cache？</h2><ul>
+<li>跳变问题比较突出。</li>
+<li>业务流量很低。</li>
+<li>性能不敏感。</li>
+<li>性能要求有一点高，但是为单机模式，leader 集中在 1 个节点。</li>
+</ul>
+<h2 id="自增列相关配置"><a href="#自增列相关配置" class="headerlink" title="自增列相关配置"></a>自增列相关配置</h2><table>
+<thead>
+<tr>
+<th>GLOBAL 系统变量</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>auto_increment_cache_size</td>
+<td>用于设置缓存的自增值个数</td>
+<td>4.0 开始默认 100w</td>
+</tr>
+<tr>
+<td>auto_increment_increment</td>
+<td>用于设置自增步长</td>
+<td>默认为 1，也支持 session 级设置</td>
+</tr>
+<tr>
+<td>auto_increment_offset</td>
+<td>用于确定自增列的起始值</td>
+<td>默认为 1，也支持 session 级设置</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>租户级配置项</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>default_auto_increment_mode</td>
+<td>用于设置默认的自增列自增模式。order：自增列数据保持连续且递增；noorder：自增列只保证自增值唯一</td>
+<td>4.0 之前，只支持 noorder；4.0 及之后版本，新增该配置项，开始支持 order 模式，默认也为 order。</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>表 option</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AUTO_INCREMENT_MODE</td>
+<td>自增列为 order 还是 noorder 模式。</td>
+<td>未指定时取 default_auto_increment_mode 配置项设置的值。</td>
+</tr>
+<tr>
+<td>auto_increment_cache_size</td>
+<td>控制内存中自增列一次申请缓存的个数。</td>
+<td>未指定时取 auto_increment_cache_size 系统变量设置的值。</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>SQL MODE</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NO_AUTO_VALUE_ON_ZERO</td>
+<td>指定该 SQL MODE 时，自增列插入 0 设置为 0，而不去取下一个自增值</td>
+<td>非默认的 SQL MODE</td>
+</tr>
+</tbody></table>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><h2 id="自增列跳变之谜（Rethinking-in-Auto-Increment）"><a href="#自增列跳变之谜（Rethinking-in-Auto-Increment）" class="headerlink" title="自增列跳变之谜（Rethinking in Auto Increment）"></a>自增列跳变之谜（Rethinking in Auto Increment）</h2><p>OceanBase MySQL 模式下的自增列，设计行为尽可能和 MySQL 兼容，对用户提供了如下特性：</p>
+<ul>
+<li>向自增列主动插入一个值 i 后，后继这张<strong>表上</strong>自动生成的值都需要比 i 大。</li>
+<li><strong>每个分区上</strong>自动生成的值，总是单调递增的。</li>
+</ul>
+<p>单机数据库（例如 MySQL）中的自增列，直接移植到分布式数据库（例如 OceanBase）中后，在用的过程中，会观测到 “跳” 的情况。</p>
+<blockquote>
+<p>以下内容为 OceanBase 自增列跳变原理，感兴趣的朋友可以选择性地进行阅读。</p>
+<p>内容出自：<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMTQzMTAzMSMyLXRpdGxlLSVFOCU4NyVBQSVFNSVBMiU5RSVFNSU4OCU5NyVFNyU5QSU4NCVFOCVCNyVCMyVFNSU4RiU5OA==">OceanBase 官网文档 “自增列的跳变”<i class="fa fa-external-link-alt"></i></span>。</p>
+</blockquote>
+<p>在 MySQL 数据库中，自增列是数据库表中的一种列属性，它可以自动生成一个唯一的、递增的值，用于表示该行数据的唯一标识。OceanBase 数据库作为分布式数据库，其数据库表通常分布在多台不同的机器上，在尽可能与 MySQL 数据库兼容的同时还需要保证分布式多机场景下自增列生成的性能，从而会出现自增值生成过程中的跳变问题。</p>
+<p>在 OceanBase 数据库中，自增列支持两种自增模式，即 NOORDER 模式和 ORDER 模式，默认为 ORDER 模式。其中：</p>
+<ul>
+<li>ORDER 模式：基于集中缓存的自增列。设置为该模式后，自增列的值全局递增。</li>
+<li>NOORDER 模式：基于分布式缓存的自增列，设置为该模式后，仅保证自增列的值全局唯一。</li>
+</ul>
+<p>下面从这两个模式来分别介绍自增值在生成过程中是如何发生跳变的。</p>
+<h3 id="NOORDER-模式"><a href="#NOORDER-模式" class="headerlink" title="NOORDER 模式"></a>NOORDER 模式</h3><p>OceanBase 数据库 V4.x 版本中通过指定 <code>AUTO_INCREMENT_MODE = &#39;NOORDER&#39;</code> 创建的表，以及 V4.0.0（不含该版本）以下版本中创建的所有含自增列的表，均为 NOORDER 模式的自增表。</p>
+<p>对于 NOORDER 模式的自增列，其内部原理如下图所示。</p>
+<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/03.png" alt="NOORDER 模式内部原理"></p>
+<p>从上图可知，NOORDER 模式的自增列，其数据结构分为以下两部分：</p>
+<ul>
+<li>内部表：负责持久化当前已经使用的自增值位点。</li>
+<li>缓存：记录在内部结构中的一段自增值区间，通过向内部表申请获得。</li>
+</ul>
+<p>NOORDER 模式的自增列中的每一个 OBServer 节点之间均保持独立，各节点可以自主从内部表获取自增区间记录到机器缓存中，从而加速自增值的生成。下面以几个典型场景为例，介绍 NOORDER 模式下自增值出现跳变的原因。</p>
+<h4 id="场景-1：多机多分区生成自增值"><a href="#场景-1：多机多分区生成自增值" class="headerlink" title="场景 1：多机多分区生成自增值"></a>场景 1：多机多分区生成自增值</h4><p>假设 <code>auto_increment_cache_size</code> 的值为 100，当分区表所在的 OBServer 节点 OBServer1、OBServer2 和 OBServer3 分别按以下顺序先后接收到 <code>insert into values (null)</code> 的请求时，它们内部的处理逻辑如下：</p>
+<ol>
+<li>OBServer1 发现自身没有缓存时，向内部表申请一段自增区间 [1,100]，并且生成一个自增值 1。</li>
+<li>OBServer2 发现自身没有缓存时，向内部表申请一段自增区间 [101,200]，并且生成一个自增值 101。</li>
+<li>OBServer3 发现自身没有缓存时，向内部表申请一段自增区间 [201,300]，并且生成一个自增值 201。</li>
+<li>OBServer1 使用缓存 [2,100] 生成自增值 2。</li>
+<li>OBServer2 使用缓存 [102,200] 生成自增值 102。</li>
+</ol>
+<p>……</p>
+<p>这样，表内插入数据的顺序就是 <code>1，101，201，2，102，...</code>，可以发现，自增值总是在发生跳变。</p>
+<h4 id="场景-2：通过-INSERT-语句插入指定的最大值"><a href="#场景-2：通过-INSERT-语句插入指定的最大值" class="headerlink" title="场景 2：通过 INSERT 语句插入指定的最大值"></a>场景 2：通过 <code>INSERT</code> 语句插入指定的最大值</h4><p>在 MySQL 数据库中，如果显式地向自增表中插入指定值，则后续生成的自增值都不会小于该值。</p>
+<p>在 OceanBase 数据库的分布式场景下，当插入一个指定值且该值比自增表中其他值都大（即最大值）时，不仅 OBServer 节点自身需要知道当前插入了一个最大值，还需要同步给其它 OBServer 节点和内部表，该同步动作非常耗时，为了避免每次指定最大值时都执行同步操作，系统会在插入一个最大值时放弃当前的缓存，这样从当前值开始到下一个缓存值前都不需要再进行同步。</p>
+<p>例如，当分区表所在的 OBServer1、OBServer2、OBServer3 分别按以下顺序先后接收到显式指定递增序列（<code>1, 2, 3, ...</code>）的请求时，并且假设这些机器上均保存了缓存：</p>
+<ol>
+<li>OBServer1 接收到值 1，放弃缓存 [1,100]，重新从内部表获取到一段新的缓存区间 [301,400]，并且把 101 作为一个同步值同步到内部表和其它 OBServer 节点。</li>
+<li>OBServer2 接收到值 2，对比发现该值比当前的缓存区间 [101,200] 中的值小，不做操作。</li>
+<li>OBServer3 接收到值 3，对比发现该值比当前的缓存区间 [201,300] 中的值小，不做操作。</li>
+<li>OBServer1 接收到值 4，对比发现该值比当前的缓存区间 [301,400] 中的值小，不做操作。 …</li>
+</ol>
+<p>这样，如果插入部分值后，继续使用自增列来生成序列，就会发生自增值跳变。例如，OBServer1 的第一个区间 [1,100] 都没有使用而是直接跳到了 301。</p>
+<p>除了多机环境，单机环境下，插入指定的最大值时，也会出现自增值跳变的问题。示例如下：</p>
+<ol>
+<li>创建一个含自增列的表 <code>t1</code>。</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obclient<span class="operator">&gt;</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1 (c1 <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span> auto_increment) AUTO_INCREMENT_MODE<span class="operator">=</span><span class="string">&#x27;NOORDER&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>同时，<code>auto_increment_cache_size</code> 的值为 100。</p>
+<ol start="2">
+<li>向该表中多次插入数据。</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obclient<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">VALUES</span>(<span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obclient<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">VALUES</span>(<span class="number">3</span>);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obclient<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">VALUES</span>(<span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>插入成功后，查看表中的数据。</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obclient<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> t1;</span><br></pre></td></tr></table></figure>
+
+<p>查询结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">+-----+</span><br><span class="line">| c1  |</span><br><span class="line">+-----+</span><br><span class="line">|   1 |</span><br><span class="line">|   3 |</span><br><span class="line">| 101 |</span><br><span class="line">+-----+</span><br></pre></td></tr></table></figure>
+
+<p>根据查询结果，发现自增列从 3 跳到了 101。</p>
+<h4 id="场景-3：机器重启或宕机"><a href="#场景-3：机器重启或宕机" class="headerlink" title="场景 3：机器重启或宕机"></a>场景 3：机器重启或宕机</h4><p>自增列的缓存是一个内存结构，如果 OBServer 节点的机器发生了重启或宕机，该机器上未使用完的缓存区间不会写回内部表，这就导致未使用的这部分区间不会再被使用。例如，假设 OBServer1 上初始自增列的缓存区间为 [1,100]，并且已经生成了自增值 1 和 2。此时，如果 OBServer1 发生了宕机，重启后，该机器上的缓存区间就变成了新的区间 [101,200]，同时下一次的自增值为 101，最终自增值的顺序就是 <code>1，2，101，...</code>，即发生了跳变。</p>
+<h3 id="ORDER-模式"><a href="#ORDER-模式" class="headerlink" title="ORDER 模式"></a>ORDER 模式</h3><p>为了避免 NOORDER 模式中所提到的 <strong>多机多分区生成自增值</strong> 和 <strong>通过 <code>INSERT</code> 语句插入指定的最大值</strong> 等比较常用的使用场景下发生自增值跳变的问题，OceanBase 数据库在 V4.x 版本开始新增了 ORDER 模式的自增列，并且该模式为创建表后的默认模式，能更好地兼容 MySQL 数据库。</p>
+<p>对于 ORDER 模式的自增列，其内部原理如下图所示。</p>
+<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/04.png" alt="ORDER 模式内部原理"></p>
+<p>与 NOORDER 模式相比，ORDER 模式的自增列会在所有 OBServer 节点中选取当前集群的 Leader 作为自增列服务的 Leader，其它作为 Follower 的 OBServer 节点需要通过发送 RPC 请求来从作为 Leader 的 OBServer 节点处申请自增值，而作为 Leader 的 OBServer 节点会从内部表申请自增区间来作为自增缓存。</p>
+<p>例如，同样在多机多分区场景中，假设自增列的 <code>auto_increment_cache_size</code> 为 100，当分区表所在的 OBServer 节点 OBServer1、OBServer2 和 OBServer3 分别按以下顺序先后接收到 <code>insert into values (null)</code> 的请求时，它们内部的处理逻辑如下：</p>
+<ol>
+<li>OBServer1 发现自身不是 Leader，发送 RPC 请求给 OBServer2，OBServer2 从内部表申请一段自增区间 [1,100]，并给 OBServer1 返回一个自增值 1。</li>
+<li>OBServer2 发现自身是 Leader，并且存在缓存区间 [2,100]，直接生成一个自增值 2。</li>
+<li>OBServer3 发现自身不是 Leader，发送 RPC 请求给 OBServer2，OBServer2 发现存在缓存区间 [3,100]，并给 OBServer3 返回一个自增值 3。</li>
+</ol>
+<p>……</p>
+<p>由此可见，ORDER 模式下，由于所有 OBServer 节点都从 Leader 处申请自增值，所以大部分情况下与单机场景一样，系统总是能生成连续的自增值序列。但是，在并发较高的多机场景，ORDER 模式的性能会比 NOORDER 模式差。</p>
+<p>对于 ORDER 模式的自增列，虽然已经解决了 <strong>多机多分区生成自增值</strong> 和 <strong>通过 <code>INSERT</code> 语句插入指定的最大值</strong> 等场景下自增值跳变的问题，但是在作为 Leader 的 OBServer 节点的机器重启或宕机、发生切主的场景下，仍然会发生自增值的跳变。</p>
+<h4 id="场景-1：机器重启或宕机"><a href="#场景-1：机器重启或宕机" class="headerlink" title="场景 1：机器重启或宕机"></a>场景 1：机器重启或宕机</h4><p>在 ORDER 模式中，作为 Leader 的 OBServer 节点上保存了内存下的缓存区间，当作为 Leader 的 OBServer 节点的机器发生重启或宕机时，该区间内未使用的自增值不会被继续使用，而是使用新的缓存区间，从而导致自增值发生跳变。</p>
+<blockquote>
+<p><strong>注意</strong></p>
+<p>该场景下，仅作为 Leader 的 OBServer 节点发生重启或宕机时，才会发生自增值跳变的问题，其他作为 Follower 的 OBServer 节点由于不保存缓存，即使发生了宕机也不会影响自增值生成的连续性。</p>
+</blockquote>
+<h4 id="场景-2：切主"><a href="#场景-2：切主" class="headerlink" title="场景 2：切主"></a>场景 2：切主</h4><p>假设 OBServer2 上的初始自增列的缓存区间为 [1,100]，并且已经生成了自增值 1 和 2，当集群内发生切主时，按照常规处理逻辑：</p>
+<ol>
+<li>切主到 OBServer1，OBServer1 从内部表申请一段新的自增区间 [101,200]，继续生成自增值 101 和 102。</li>
+<li>OBServer2 机器重启成功后，再次切回到 OBServer2，继续用上一次的缓存区间 [3,100]，生成自增值 3 和 4。</li>
+</ol>
+<p>由此可知，从 101 到 3 发生了自增值不递增的问题。</p>
+<p>为了避免上述来回切主从而导致的自增值不递增的问题，OceanBase 数据库会在切主时，将原 Leader 的 OBServer 节点上的缓存区间清理掉，从而导致自增值发生了跳变。</p>
+<h1 id="MySQL-模式下的扩展功能-——-序列（Sequence）"><a href="#MySQL-模式下的扩展功能-——-序列（Sequence）" class="headerlink" title="MySQL 模式下的扩展功能 —— 序列（Sequence）"></a>MySQL 模式下的扩展功能 —— 序列（Sequence）</h1><h2 id="功能定义"><a href="#功能定义" class="headerlink" title="功能定义"></a>功能定义</h2><p>在 OceanBase 数据库中，序列（Sequence）是数据库按照一定规则生成的唯一且通常是递增的数值。通常被用于生成唯一标识符。</p>
+<h2 id="引入原因"><a href="#引入原因" class="headerlink" title="引入原因"></a>引入原因</h2><p>OceanBase 存在很多用户，业务原本跑在 DB2 &#x2F; Oracle 上，但是后续准备选择 MySQL 的技术路线，需要从 DB2 &#x2F; Oracle 向 OceanBase MySQL 模式的租户进行迁移。</p>
+<p>为了降低客户对之前在 DB2 &#x2F; Oracle 中大量使用 sequence 的业务进行改造的复杂度，OceanBase 在 MySQL 模式下支持了和 Oracle 行为兼容的 sequence 功能。</p>
+<h2 id="相关语法"><a href="#相关语法" class="headerlink" title="相关语法"></a>相关语法</h2><p>详见 OceanBase 官网中的<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMDY0MTg4MA==">《创建和管理序列》<i class="fa fa-external-link-alt"></i></span>章节，语法和 Oracle 保持兼容，本文中不再赘述。</p>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ol>
+<li>从 DB2 &#x2F; Oracle 向 OceanBase MySQL 模式的租户进行迁移的场景。</li>
+<li>自增列（increment column）和表绑定的特性无法满足业务使用要求。序列（sequence）不和表绑定，可独立创建，也可跨表使用。</li>
+<li>自增列（increment column）没有 CYCLE 能力，达到 MAXVALUE 后会罢工的特性无法满足业务使用要求。序列（sequence）支持循环序列，有 CYCLE 能力。</li>
+</ol>
+<h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="序列（sequence）和自增列（increment-column）的异同是什么？"><a href="#序列（sequence）和自增列（increment-column）的异同是什么？" class="headerlink" title="序列（sequence）和自增列（increment column）的异同是什么？"></a>序列（sequence）和自增列（increment column）的异同是什么？</h3><ol>
+<li>自增列（increment column）和表绑定。序列（sequence）不和表绑定，可独立创建，也可跨表使用。</li>
+<li>自增列（increment column）没有 CYCLE 能力。序列（sequence）支持循环序列，有 CYCLE 能力。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line">-- 创建一张含有自增列 id 的表，自增列（increment column）和表强绑定</span><br><span class="line">obclient [test]&gt; CREATE TABLE t1(id bigint not null auto_increment primary key, name varchar(50));</span><br><span class="line">Query OK, 0 rows affected (0.489 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; INSERT INTO t1(name) VALUES(&#x27;A&#x27;),(&#x27;B&#x27;),(&#x27;C&#x27;);</span><br><span class="line">Query OK, 3 rows affected (0.036 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT * FROM t1;</span><br><span class="line">+----+------+</span><br><span class="line">| id | name |</span><br><span class="line">+----+------+</span><br><span class="line">|  1 | A    |</span><br><span class="line">|  2 | B    |</span><br><span class="line">|  3 | C    |</span><br><span class="line">+----+------+</span><br><span class="line">3 rows in set (0.021 sec)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-- 创建一个序列，起始值是 1，最小值是 1，最大值是 5，步长是 2，序列的值不循环生成</span><br><span class="line">obclient [test]&gt; CREATE SEQUENCE seq1 START WITH 1 MINVALUE 1 MAXVALUE 5 INCREMENT BY 2 NOCYCLE;</span><br><span class="line">Query OK, 0 rows affected (0.073 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq1.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       1 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.012 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq1.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       3 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.004 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq1.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       5 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.004 sec)</span><br><span class="line"></span><br><span class="line">-- 如果设置 NOCYCLE，达到 MAXVALUE 后，无法继续生成更大的序列</span><br><span class="line">obclient [test]&gt; SELECT seq1.nextval FROM DUAL;</span><br><span class="line">ERROR 4332 (HY000): sequence exceeds MAXVALUE and cannot be instantiated</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-- 再创建一个序列，起始值是 1，最小值是 1，最大值是 5，步长是 2，序列的值循环生成（在内存中预分配的自增值个数是 2）</span><br><span class="line">obclient [test]&gt; CREATE SEQUENCE seq7 START WITH 1 MINVALUE 1 MAXVALUE 5 INCREMENT BY 2 CYCLE CACHE 2;</span><br><span class="line">Query OK, 0 rows affected (0.095 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq7.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       1 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.009 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq7.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       3 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.005 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq7.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       5 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.005 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; SELECT seq7.nextval FROM DUAL;</span><br><span class="line">+---------+</span><br><span class="line">| nextval |</span><br><span class="line">+---------+</span><br><span class="line">|       1 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set (0.001 sec)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-- 序列除了可用于顶层 SELECT，还可用在 INSERT 与 UPDATE 中</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; create table t2(c1 int);</span><br><span class="line">Query OK, 0 rows affected (0.192 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; insert into t2 values(seq7.nextval);</span><br><span class="line">Query OK, 1 row affected (0.009 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; select * from t2;</span><br><span class="line">+------+</span><br><span class="line">| c1   |</span><br><span class="line">+------+</span><br><span class="line">|    3 |</span><br><span class="line">+------+</span><br><span class="line">1 row in set (0.001 sec)</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; update t2 set c1 = seq7.nextval;</span><br><span class="line">Query OK, 1 row affected (0.010 sec)</span><br><span class="line">Rows matched: 1  Changed: 1  Warnings: 0</span><br><span class="line"></span><br><span class="line">obclient [test]&gt; select * from t2;</span><br><span class="line">+------+</span><br><span class="line">| c1   |</span><br><span class="line">+------+</span><br><span class="line">|    5 |</span><br><span class="line">+------+</span><br><span class="line">1 row in set (0.001 sec)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>序列和自增列这里还存在一个区别</p>
+<ul>
+<li>创建序列时，默认为 NOORDER 属性（为了和 Oracle 行为兼容）。</li>
+<li>创建自增列时，默认为 ORDER 属性（为了和 MySQL 行为兼容）。</li>
+</ul>
+</blockquote>
+<h3 id="如果基于性能开销考虑，创建序列时需要如何设置相关属性？"><a href="#如果基于性能开销考虑，创建序列时需要如何设置相关属性？" class="headerlink" title="如果基于性能开销考虑，创建序列时需要如何设置相关属性？"></a>如果基于性能开销考虑，创建序列时需要如何设置相关属性？</h3><p>创建序列时，如果设置 ORDER 属性，为了保证全局有序，每一次获取 NEXTVALUE 的操作都需要到中心节点去更新一张特定的内部表，在高并发场景下，可能会存在较高的锁冲突。如果不要求序列值递增，只要求唯一，建议将序列的属性设置为 NOORDER。</p>
+<p>同时，对性能要求较高时，还应该关注 CACHE &#x2F; NOCACHE 这个属性。</p>
+<ul>
+<li>NOCACHE：表示 OBServer 内不缓存自增值。这种模式下每次调用 NEXTVAL 都会触发一次内部表 SELECT 与 UPDATE，会影响数据库的性能。</li>
+<li>CACHE：用来指定每个 OBServer 内存中缓存的自增值个数，默认值为 20。</li>
+</ul>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>在创建序列时，由于默认的 CACHE 值过小，需要手动声明。单机 TPS 为 100 时，CACHE SIZE 建议设置为 360000。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E8%87%AA%E5%A2%9E%E5%88%97/" rel="tag"># 自增列</a>
+              <a href="/tags/MySQL-%E5%85%BC%E5%AE%B9/" rel="tag"># MySQL 兼容</a>
+              <a href="/tags/Sequence/" rel="tag"># Sequence</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/" rel="tag"># 数据库运维</a>
+              <a href="/tags/%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" rel="tag"># 最佳实践</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-18-okctl-mcp-server-design/" rel="prev" title="OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解">
+                  <i class="fa fa-angle-left"></i> OceanBase on K8s 遇上 AI——okctl-mcp-server设计详解
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/2025-07-22-obcp-v4-mock-exam-analysis/" rel="next" title="OBCP V4 官网模拟题分析（含答案）">
+                  OBCP V4 官网模拟题分析（含答案） <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">483k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">29:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

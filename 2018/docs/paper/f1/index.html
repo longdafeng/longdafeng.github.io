@@ -202,18 +202,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-count">207</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">271</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -350,7 +350,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"《F1 Query -- Declarative Querying at Scale》","description":"Google F1 Query 论文笔记：Spanner/BigQuery 胶水式 HTAP 架构分析，及 OLTP 点查与 OLAP 统一查询层设计反思","image":"https://ilongda.com/assets/f1_arc.png","wordCount":1018,"datePublished":"2018-12-26T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.962Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2018/docs/paper/f1/"},"url":"https://ilongda.com/2018/docs/paper/f1/","inLanguage":"zh-CN","keywords":["论文","数据库"],"articleSection":["论文","数据库"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"《F1 Query -- Declarative Querying at Scale》","description":"Google F1 Query 论文笔记：Spanner/BigQuery 胶水式 HTAP 架构分析，及 OLTP 点查与 OLAP 统一查询层设计反思","image":"https://ilongda.com/assets/f1_arc.png","wordCount":1018,"datePublished":"2018-12-26T11:42:57.000Z","dateModified":"2026-06-09T08:46:25.962Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2018/docs/paper/f1/"},"url":"https://ilongda.com/2018/docs/paper/f1/","inLanguage":"zh-CN","keywords":["数据库","论文"],"articleSection":["论文","数据库"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"论文","item":"https://ilongda.com/categories/论文/"},{"@type":"ListItem","position":3,"name":"《F1 Query -- Declarative Querying at Scale》","item":"https://ilongda.com/2018/docs/paper/f1/"}]}</script>
 <h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>论文是很早以前看的， 后来把笔记梳理一下。<br>F1 就是一套胶水系统， 将oltp和olap 系统粘在一起提供一个统一接口层和服务层， 类似数据库里面的HTAP系统， 但数据库htap系统往往是自身提供oltp和olap 服务， 而f1 是通过不同的系统来达到htap的效果。<br>F1 有一个背景就是现有很多数据库系统，如spanner， bigquery， dremel， 如果让应用无缝的在这么多系统中切换，一套接口，一套服务完成所有的事情。<br>今天的 TiDB 有一点点f1 的味道， 上层tidb server + tikv， tispark +  tiflash，不过tidb 朝着tidb server + tikv&#x2F;tiflash的方向演进， 融合程度更高一些， 不过f1 在oltp 上主要是依赖spanner 来完成。<br>曾经的hybriddb 更类似f1 这种架构。 </p>
 <p>坦白讲： 这种胶水系统没有什么前途， 对于oltp 业务， 对时延是非常敏感， 增加一层胶水系统， 不仅让时延增长很多，而且带来不确定性， 动不动抖动一下， 这些对oltp都是无法接受的， 因此粘合的场景是大数据的和olap的业务， 对于中小型企业， 大数据的系统太复杂， 一个olap 就够用，看看aws 上redshift 大行其道，就知道这个事实， 如果粘合多个olap，那就更不现实， 哪家公司没事干运行一大堆各式各样的olap系统， olap系统基本上就是赢者通吃， 没有那么多一个业务要跑好几个olap系统的， 所以这种胶水系统是没有什么前途的。 最后，google自己的员工透露到现在为止f1 已经事实上失败了。 </p>
@@ -431,8 +431,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
               <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
           </div>
 
         
@@ -487,14 +487,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">197k</span>
+    <span title="Word count total">483k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">11:57</span>
+    <span title="Reading time total">29:16</span>
   </span>
 </div>
 <div class="busuanzi-count">
