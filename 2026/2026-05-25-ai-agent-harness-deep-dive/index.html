@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh_CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -16,16 +16,14 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文译介 Akshay Pachaar 的长文《The Anatomy of an Agent Harness》，系统拆解 Anthropic、OpenAI、LangChain 的 Agent Harness 架构：编排循环、工具、记忆、上下文管理等 12 个核心组件，以及定义 Harness 的 7 个关键决策。">
-<meta property="og:type" content="website">
+<meta property="og:type" content="article">
 <meta property="og:title" content="深度“解剖”AI Agent Harness">
-<meta property="og:url" content="https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/index.html">
+<meta property="og:url" content="https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="本文译介 Akshay Pachaar 的长文《The Anatomy of an Agent Harness》，系统拆解 Anthropic、OpenAI、LangChain 的 Agent Harness 架构：编排循环、工具、记忆、上下文管理等 12 个核心组件，以及定义 Harness 的 7 个关键决策。">
 <meta property="og:locale" content="zh_CN">
@@ -65,14 +63,11 @@
 <link rel="canonical" href="https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/","path":"2026/2026-05-25-ai-agent-harness-deep-dive/","title":"深度“解剖”AI Agent Harness"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/","path":"2026/2026-05-25-ai-agent-harness-deep-dive/","title":"深度“解剖”AI Agent Harness"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>深度“解剖”AI Agent Harness | Longda's Interesting World</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
@@ -84,24 +79,21 @@
 
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
   <script src="/js/third-party/tags/pdf.js" defer></script>
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
   <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
-  <script src="/js/third-party/fancybox.js" defer></script>
 
 
   <script src="/js/third-party/addtoany.js" defer></script>
@@ -114,11 +106,11 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
   <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/"}</script>
   <script src="/js/third-party/quicklink.js" defer></script>
 
@@ -128,14 +120,14 @@
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+<body itemscope itemtype="http://schema.org/WebPage">
   <div class="headband"></div>
 
   <main class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -149,11 +141,11 @@
       <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -162,9 +154,9 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
       <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
       </li>
   </ul>
@@ -179,7 +171,7 @@
           <i class="fa fa-search"></i>
         </span>
         <div class="search-input-container">
-          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
         </div>
         <span class="popup-btn-close" role="button">
           <i class="fa fa-times-circle"></i>
@@ -201,10 +193,10 @@
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
-          Table of Contents
+          文章目录
         </li>
         <li class="sidebar-nav-overview">
-          Overview
+          站点概览
         </li>
       </ul>
 
@@ -219,40 +211,40 @@
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
-  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
           <span class="site-state-item-count">258</span>
-          <span class="site-state-item-name">posts</span>
+          <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
         <span class="site-state-item-count">29</span>
-        <span class="site-state-item-name">categories</span></a>
+        <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
         <span class="site-state-item-count">399</span>
-        <span class="site-state-item-name">tags</span></a>
+        <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
 </div>
   <div class="links-of-author animated">
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
         <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
@@ -261,7 +253,7 @@
 
         </div>
       </div>
-        <div class="back-to-top animated" role="button" aria-label="Back to top">
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
           <i class="fa fa-arrow-up"></i>
           <span>0%</span>
         </div>
@@ -271,15 +263,62 @@
     <div class="sidebar-inner sidebar-blogroll">
       <div class="links-of-blogroll animated">
         <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-          Links
+          链接
         </div>
         <ul class="links-of-blogroll-list">
             <li class="links-of-blogroll-item">
-              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
             </li>
         </ul>
       </div>
     </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-03-10-agent-skills-teams-architecture-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-03-10</time>
+        <br>
+      Agent / Skills / Teams 架构演进流程及技术选型之道
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-02-25-openclaw-humanlike-ai/" rel="bookmark">
+        <time class="popular-posts-time">2026-02-25</time>
+        <br>
+      OpenClaw 是怎么让 AI 变得“像人”的？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-26-langchain-harness-allinone-data-base/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-26</time>
+        <br>
+      LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-18-langchain-builds-database/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-18</time>
+        <br>
+      LangChain "不务正业"，居然从零造了个数据库？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-13-shanghai-oceanbase-langchain-meetup-preview/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-13</time>
+        <br>
+      上海来了！5.30 OceanBase × LangChain 重磅联手，首发「AgentSeek」定义企业级智能体开发新范式
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
   </aside>
 
 
@@ -295,7 +334,7 @@
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-05-25-ai-agent-harness-deep-dive/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -305,7 +344,7 @@
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="Longda's Interesting World">
-      <meta itemprop="description" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
@@ -323,49 +362,49 @@
       <span class="post-meta-item-icon">
         <i class="far fa-calendar"></i>
       </span>
-      <span class="post-meta-item-text">Posted on</span>
+      <span class="post-meta-item-text">发表于</span>
 
-      <time title="Created: 2026-05-25 08:58:12" itemprop="dateCreated datePublished" datetime="2026-05-25T08:58:12+08:00">2026-05-25</time>
+      <time title="创建时间：2026-05-25 08:58:12" itemprop="dateCreated datePublished" datetime="2026-05-25T08:58:12+08:00">2026-05-25</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-user"></i>
       </span>
-      <span class="post-meta-item-text">Written by: </span>
+      <span class="post-meta-item-text">原作者：</span>
       <span itemprop="name">兹拉坦</span>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
-      <span class="post-meta-item-text">In</span>
+      <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
           <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
         </span>
     </span>
 
   
-    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="far fa-eye"></i>
       </span>
-      <span class="post-meta-item-text">Views: </span>
+      <span class="post-meta-item-text">阅读次数：</span>
       <span id="busuanzi_value_page_pv"></span>
     </span>
     <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
+    <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
         <i class="far fa-file-word"></i>
       </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>2.2k</span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.4k</span>
     </span>
-    <span class="post-meta-item" title="Reading time">
+    <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>8 mins.</span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
     </span>
 </div>
 
@@ -384,8 +423,8 @@
 </blockquote>
 <h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>在这个 OceanBase 社区公众号上，兹拉坦向来没有把一份儿外文资料翻译成中文后直接发布的习惯。因为我们希望每篇文章都是在自己阅读之后，把理解的东西提炼出来分享给大家。但今天的这篇文章，是个特例。</p>
 <p>Akshay Pachaar 前段儿时间，在推特上发了一篇长文《The Anatomy of an Agent Harness》，系统地拆解了 Anthropic、OpenAI、LangChain 等公司的 Agent Harness 架构设计。这篇文章也是截至目前为止，兹拉坦读到过的，讲 Harness 最为清晰和全面的。而且这篇文章现在已经有 139 万的阅读量了。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/01.png" alt="图片"></p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/02.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/01.png" alt="Akshay Pachaar 推特长文《The Anatomy of an Agent Harness》" decoding="async"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/02.png" alt="原推文 139 万阅读量数据展示" loading="lazy" decoding="async"></p>
 <span id="more"></span>
 
 <p>也欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。</p>
@@ -396,38 +435,38 @@
 <h2 id="什么是-Agent-Harness？"><a href="#什么是-Agent-Harness？" class="headerlink" title="什么是 Agent Harness？"></a>什么是 Agent Harness？</h2><p>Harness 这个词虽然 2026 年初才正式叫开，但背后的理念早就有了。<strong>Harness</strong> 就是套在大模型外面的那一整套软件架构：编排循环、工具、记忆、上下文管理、状态持久化、错误处理、护栏……全算。</p>
 <p>Anthropic 在 Claude Code 文档里说得很直白：SDK 就是“驱动 Claude Code 的 Agent Harness”。OpenAI 的 Codex 团队也是一个意思。LangChain 的 Vivek Trivedy 给出的定义：<strong>“如果你不是模型本身，那你就是 Harness。”</strong> 简单粗暴。</p>
 <p>很多人分不清这俩概念：<strong>“AI 智能体”</strong>（Agent）是你看到的那个表现；<strong>“Harness”</strong> 是幕后那台机器。<strong>当有人说“我做了一个智能体”，其实他是说“我搭了一套 Harness，然后把模型接上去了”。</strong></p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/03.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/03.png" alt="AI 智能体与幕后 Harness 关系图解" loading="lazy" decoding="async"></p>
 <p>Beren Millidge 打了个特别到位的比方：裸奔的大模型就是一颗没有内存、没有硬盘、也没有输入输出的 CPU。<strong>上下文窗口</strong>是内存，<strong>外部数据库</strong>是硬盘，<strong>工具集成</strong>是设备驱动。而<strong>Harness</strong>，就是操作系统。“我们重新发明了冯·诺依曼架构”。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/04.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/04.png" alt="大模型类比冯·诺依曼架构的操作系统图解" loading="lazy" decoding="async"></p>
 <h2 id="工程化的三个层次"><a href="#工程化的三个层次" class="headerlink" title="工程化的三个层次"></a>工程化的三个层次</h2><ul>
 <li><strong>提示词工程</strong>：把喂给模型的指令写好。</li>
 <li><strong>上下文工程</strong>：管好模型在什么时候能看到什么。</li>
 <li><strong>Harness 工程</strong>：前两者全包，再加上整个应用架构——工具编排、状态持久化、错误恢复、验证循环、安全执行、生命周期管理。</li>
 </ul>
 <p>Harness 可不是什么提示词套壳（AI Wrapper），它是让智能体真正能自主行动的完整系统。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/05.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/05.png" alt="提示词工程、上下文工程与 Harness 工程三层次对比" loading="lazy" decoding="async"></p>
 <h2 id="生产级-Harness-的-12-个核心组件"><a href="#生产级-Harness-的-12-个核心组件" class="headerlink" title="生产级 Harness 的 12 个核心组件"></a>生产级 Harness 的 12 个核心组件</h2><p>综合 Anthropic、OpenAI、LangChain 和一线从业者的经验，生产级 Harness 由 12 个核心组件构成。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/06.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/06.png" alt="生产级 Harness 的 12 个核心组件全景图" loading="lazy" decoding="async"></p>
 <h3 id="1-编排循环-The-Orchestration-Loop"><a href="#1-编排循环-The-Orchestration-Loop" class="headerlink" title="1. 编排循环 (The Orchestration Loop)"></a>1. 编排循环 (The Orchestration Loop)</h3><p>“思考 - 行动 - 观察”（TAO）循环：拼提示词 → 调大模型 → 解析输出 → 执行工具调用 → 喂回结果 → 再来，直到任务完成。代码层面就是一个 <code>while</code> 循环。Anthropic 管自家运行时叫“笨循环”。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/07.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/07.png" alt="思考-行动-观察 TAO 编排循环流程图" loading="lazy" decoding="async"></p>
 <h3 id="2-工具-Tools"><a href="#2-工具-Tools" class="headerlink" title="2. 工具 (Tools)"></a>2. 工具 (Tools)</h3><p>工具是智能体的“手”。Claude Code 提供了六大类工具：文件操作、搜索、执行、网页访问、代码分析和子智能体创建。OpenAI 的 Agents SDK 支持函数工具、托管工具以及 MCP 服务器工具。</p>
 <h3 id="3-记忆-Memory"><a href="#3-记忆-Memory" class="headerlink" title="3. 记忆 (Memory)"></a>3. 记忆 (Memory)</h3><p><strong>短期记忆</strong>就是一次会话里的对话历史。<strong>长期记忆</strong>跨会话存在：Anthropic 用 MEMORY.md，LangGraph 用 JSON 存储，OpenAI 用 SQLite 或 Redis。Claude Code 搞了三层记忆架构。重要原则：<strong>智能体把自己的记忆当“提示”看，行动前必须拿实际状态验证</strong>。</p>
 <h3 id="4-上下文管理-Context-Management"><a href="#4-上下文管理-Context-Management" class="headerlink" title="4. 上下文管理 (Context Management)"></a>4. 上下文管理 (Context Management)</h3><p>这是很多智能体悄悄翻车的重灾区。<strong>上下文腐烂</strong>：关键信息一旦落到窗口中间位置，模型表现就会掉 30% 以上——斯坦福管这叫“迷失在中间”。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/08.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/08.png" alt="上下文腐烂与迷失在中间问题示意图" loading="lazy" decoding="async"></p>
 <p>生产环境应对策略：压缩（Compaction）、观察掩码（Observation Masking）、即时检索（Just-in-time Retrieval）、子智能体委托。</p>
 <h3 id="5-提示词构建-Prompt-Construction"><a href="#5-提示词构建-Prompt-Construction" class="headerlink" title="5. 提示词构建 (Prompt Construction)"></a>5. 提示词构建 (Prompt Construction)</h3><p>分层的：系统提示词、工具定义、记忆文件、对话历史，最后是当前用户消息。</p>
 <h3 id="6-输出解析-Output-Parsing"><a href="#6-输出解析-Output-Parsing" class="headerlink" title="6. 输出解析 (Output Parsing)"></a>6. 输出解析 (Output Parsing)</h3><p>现代 Harness 用<strong>原生工具调用</strong>：模型直接返回结构化的 <code>tool_calls</code> 对象。</p>
 <h3 id="7-状态管理-State-Management"><a href="#7-状态管理-State-Management" class="headerlink" title="7. 状态管理 (State Management)"></a>7. 状态管理 (State Management)</h3><p>LangGraph 把状态建模成类型化字典，关键步骤自动存档。Claude Code 拿 Git 提交当存档点。</p>
 <h3 id="8-错误处理-Error-Handling"><a href="#8-错误处理-Error-Handling" class="headerlink" title="8. 错误处理 (Error Handling)"></a>8. 错误处理 (Error Handling)</h3><p>10 个步骤，每步 99% 成功率，全流程成功率只剩 90.4%。LangGraph 分四类错误处理。</p>
 <h3 id="9-护栏与安全-Guardrails-and-Safety"><a href="#9-护栏与安全-Guardrails-and-Safety" class="headerlink" title="9. 护栏与安全 (Guardrails and Safety)"></a>9. 护栏与安全 (Guardrails and Safety)</h3><p>OpenAI 搞三层防线。Anthropic 把“权限执行”和“模型推理”拆开——模型决定想干什么，Harness 决定让不让干。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/09.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/09.png" alt="Harness 护栏与安全多层防线架构图" loading="lazy" decoding="async"></p>
 <h3 id="10-验证循环-Verification-Loops"><a href="#10-验证循环-Verification-Loops" class="headerlink" title="10. 验证循环 (Verification Loops)"></a>10. 验证循环 (Verification Loops)</h3><p>“能 Demo”和“能上线”的分水岭。Claude Code 创造者 Boris Cherny 说过，让模型验证自己的活儿，产出质量能翻 2~3 倍。</p>
 <h3 id="11-子智能体编排-Subagent-Orchestration"><a href="#11-子智能体编排-Subagent-Orchestration" class="headerlink" title="11. 子智能体编排 (Subagent Orchestration)"></a>11. 子智能体编排 (Subagent Orchestration)</h3><p>Claude Code 支持三种玩法：克隆（Fork）、队友（Teammate）、工作树（Worktree）。</p>
 <h2 id="循环运作：步进式演练"><a href="#循环运作：步进式演练" class="headerlink" title="循环运作：步进式演练"></a>循环运作：步进式演练</h2><p>零件认全了，看看它们在一次循环里是怎么配合干活的。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/10.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/10.png" alt="Harness 七步循环步进式演练流程图" loading="lazy" decoding="async"></p>
 <p>七步循环：提示词组装 → 模型推理 → 输出分类 → 工具执行 → 结果打包 → 上下文更新 → 循环。</p>
 <p>退出条件：模型给出无工具调用回复、达到最大轮次、Token 预算用完、护栏触发、用户中断。Anthropic 还开发了“Ralph 循环”两阶段方案用于跨窗口长任务。</p>
-<h2 id="现实中的框架是怎么落地的"><a href="#现实中的框架是怎么落地的" class="headerlink" title="现实中的框架是怎么落地的"></a>现实中的框架是怎么落地的</h2><p><img data-src="/img/ai-agent-harness-deep-dive/11.png" alt="图片"></p>
+<h2 id="现实中的框架是怎么落地的"><a href="#现实中的框架是怎么落地的" class="headerlink" title="现实中的框架是怎么落地的"></a>现实中的框架是怎么落地的</h2><p><img src="/img/ai-agent-harness-deep-dive/11.png" alt="Anthropic、OpenAI、LangGraph 等框架落地对比图" loading="lazy" decoding="async"></p>
 <ul>
 <li><strong>Anthropic（Claude Agent SDK）</strong>：<code>query()</code> 函数暴露 Harness，运行时“笨循环”</li>
 <li><strong>OpenAI（Agents SDK）</strong>：代码优先路线，Codex Harness 分三层</li>
@@ -435,9 +474,9 @@
 <li><strong>CrewAI</strong>：基于角色的多智能体协作</li>
 <li><strong>AutoGen</strong>：微软出品，五种编排模式</li>
 </ul>
-<h2 id="“脚手架”-The-Scaffolding-Metaphor"><a href="#“脚手架”-The-Scaffolding-Metaphor" class="headerlink" title="“脚手架” (The Scaffolding Metaphor)"></a>“脚手架” (The Scaffolding Metaphor)</h2><p><img data-src="/img/ai-agent-harness-deep-dive/12.png" alt="图片"></p>
+<h2 id="“脚手架”-The-Scaffolding-Metaphor"><a href="#“脚手架”-The-Scaffolding-Metaphor" class="headerlink" title="“脚手架” (The Scaffolding Metaphor)"></a>“脚手架” (The Scaffolding Metaphor)</h2><p><img src="/img/ai-agent-harness-deep-dive/12.png" alt="Harness 脚手架隐喻与协同进化原则配图" loading="lazy" decoding="async"></p>
 <p><strong>协同进化原则</strong>：现在的模型在训练时，就已经把 Harness 考虑在内了。检验标准：换更强模型，性能提升而不需要增加 Harness 复杂度。</p>
-<h2 id="定义-Harness-的-7-个关键决策"><a href="#定义-Harness-的-7-个关键决策" class="headerlink" title="定义 Harness 的 7 个关键决策"></a>定义 Harness 的 7 个关键决策</h2><p><img data-src="/img/ai-agent-harness-deep-dive/13.png" alt="图片"></p>
+<h2 id="定义-Harness-的-7-个关键决策"><a href="#定义-Harness-的-7-个关键决策" class="headerlink" title="定义 Harness 的 7 个关键决策"></a>定义 Harness 的 7 个关键决策</h2><p><img src="/img/ai-agent-harness-deep-dive/13.png" alt="定义 Harness 的 7 个关键决策概览图" loading="lazy" decoding="async"></p>
 <ol>
 <li><strong>单智能体 vs. 多智能体</strong>：先把单智能体潜力榨干</li>
 <li><strong>ReAct vs. 先规划后执行</strong>：LLMCompiler 比顺序 ReAct 快 3.6 倍</li>
@@ -448,21 +487,21 @@
 <li><strong>Harness 的厚度</strong>：多少逻辑写死，多少留给模型</li>
 </ol>
 <h2 id="Harness-即产品"><a href="#Harness-即产品" class="headerlink" title="Harness 即产品"></a>Harness 即产品</h2><p>两个同模型智能体性能天差地别——差就差在 Harness 上。TerminalBench 证明光换 Harness 排名能蹿 20 多位。<strong>Harness 永远不会消失。即便是最强的模型，也需要 Harness 帮它管窗口、跑代码、存状态、验结果。</strong></p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/14.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/14.png" alt="Harness 即产品：同模型不同 Harness 性能差异" loading="lazy" decoding="async"></p>
 <h2 id="小编评注"><a href="#小编评注" class="headerlink" title="小编评注"></a>小编评注</h2><p><strong>因为 Agent 时代会产生大量高频、半结构化、带上下文、需要回放和比较的过程性数据。</strong></p>
 <p>现在有一个非常“刺眼”的问题：通用 Agent 把运行时数据落到 JSONL &#x2F; Markdown &#x2F; SQLite 等外围文件中。很多公司被 Postgres + pgvector + Redis + ClickHouse + LangSmith + JSONL 的运维成本搞疯了。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/15.png" alt="图片"></p>
-<p>LangChain 为 LangSmith 自研了 SmithDB。详见：<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ5MTE3MiZpZHg9MSZzbj1jNTJlYmIyZmRhZDRlMDgyMzFiZjJmZjdlZWNmNTBmOCZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">LangChain “不务正业”，居然从零造了个数据库？<i class="fa fa-external-link-alt"></i></span></p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/16.jpg" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/15.png" alt="Agent 运行时数据散落多组件的运维困境配图" loading="lazy" decoding="async"></p>
+<p>LangChain 为 LangSmith 自研了 SmithDB。详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491172&idx=1&sn=c52ebb2fdad4e08231bf2ff7eecf50f8&scene=21#wechat_redirect">LangChain “不务正业”，居然从零造了个数据库？</a></p>
+<p><img src="/img/ai-agent-harness-deep-dive/16.jpg" alt="LangChain 自研 SmithDB 相关文章封面" loading="lazy" decoding="async"></p>
 <p>Agent 的 context、execution history、task、observability 与 footprint，应该直接沉淀到数据库中。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/17.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/17.png" alt="Agent 过程性数据沉淀到数据库的架构示意图" loading="lazy" decoding="async"></p>
 <h2 id="What’s-more"><a href="#What’s-more" class="headerlink" title="What’s more?"></a>What’s more?</h2><p>5 月 30 日，OceanBase × LangChain Meetup 上会重磅发布 AgentSeek。</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/18.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/18.png" alt="OceanBase × LangChain Meetup 发布 AgentSeek 预告" loading="lazy" decoding="async"></p>
 <p>AgentSeek 拥有 OB4AI + SeekVFS + SeekContext，可以把 context &#x2F; trace &#x2F; tool I&#x2F;O &#x2F; footprint 作为数据库原生对象承接。</p>
 <p>点击下方图片，查看活动详情：</p>
-<p><img data-src="/img/ai-agent-harness-deep-dive/19.png" alt="图片"></p>
+<p><img src="/img/ai-agent-harness-deep-dive/19.png" alt="5 月 30 日上海 Meetup 活动详情海报" loading="lazy" decoding="async"></p>
 <p>时间：5 月 30 日；地点：上海市浦东新区张江科学之门 T1 (模力·源) 35 楼</p>
-<p>原文链接：《The Anatomy of an Agent Harness》: <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9ha3NoYXlfcGFjaGFhci9zdGF0dXMvMjA0MTE0Njg5OTMxOTk3MTkyMg==">https://x.com/akshay_pachaar&#x2F;status&#x2F;2041146899319971922<i class="fa fa-external-link-alt"></i></span></p>
+<p>原文链接：《The Anatomy of an Agent Harness》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/akshay_pachaar/status/2041146899319971922">https://x.com/akshay_pachaar&#x2F;status&#x2F;2041146899319971922</a></p>
 
     </div>
 
@@ -472,7 +511,7 @@
 
     <footer class="post-footer">
           <div class="followme">
-  <span>Welcome to my other publishing channels</span>
+  <span>欢迎关注我的其它发布渠道</span>
 
   <div class="social-list">
 
@@ -533,7 +572,7 @@
   <footer class="footer">
     <div class="footer-inner">
 
-  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
   <div class="copyright">
@@ -549,15 +588,15 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Word count total: </span>
-    <span title="Word count total">644k</span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">647k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-      <span>Reading time total &asymp;</span>
-    <span title="Reading time total">39:02</span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">39:15</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -565,7 +604,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
-      <span class="site-uv" title="Total Visitors">
+      <span class="site-uv" title="总访客量">
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
@@ -573,7 +612,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
-      <span class="site-pv" title="Total Views">
+      <span class="site-pv" title="总访问量">
         <span id="busuanzi_value_site_pv"></span>
       </span>
     </span>

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh_CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -16,16 +16,14 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。">
-<meta property="og:type" content="website">
+<meta property="og:type" content="article">
 <meta property="og:title" content="OceanBase PoC 经验总结（二）—— AP 业务">
-<meta property="og:url" content="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/index.html">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。">
 <meta property="og:locale" content="zh_CN">
@@ -51,14 +49,11 @@
 <link rel="canonical" href="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/","path":"2025/2025-07-07-oceanbase-poc-ap-business/","title":"OceanBase PoC 经验总结（二）—— AP 业务"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/","path":"2025/2025-07-07-oceanbase-poc-ap-business/","title":"OceanBase PoC 经验总结（二）—— AP 业务"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>OceanBase PoC 经验总结（二）—— AP 业务 | Longda's Interesting World</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
@@ -70,24 +65,21 @@
 
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
   <script src="/js/third-party/tags/pdf.js" defer></script>
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
   <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
-  <script src="/js/third-party/fancybox.js" defer></script>
 
 
   <script src="/js/third-party/addtoany.js" defer></script>
@@ -100,11 +92,11 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
   <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"}</script>
   <script src="/js/third-party/quicklink.js" defer></script>
 
@@ -114,14 +106,14 @@
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+<body itemscope itemtype="http://schema.org/WebPage">
   <div class="headband"></div>
 
   <main class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -135,11 +127,11 @@
       <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -148,9 +140,9 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
       <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
       </li>
   </ul>
@@ -165,7 +157,7 @@
           <i class="fa fa-search"></i>
         </span>
         <div class="search-input-container">
-          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
         </div>
         <span class="popup-btn-close" role="button">
           <i class="fa fa-times-circle"></i>
@@ -187,10 +179,10 @@
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
-          Table of Contents
+          文章目录
         </li>
         <li class="sidebar-nav-overview">
-          Overview
+          站点概览
         </li>
       </ul>
 
@@ -205,40 +197,40 @@
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
-  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
           <span class="site-state-item-count">258</span>
-          <span class="site-state-item-name">posts</span>
+          <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
         <span class="site-state-item-count">29</span>
-        <span class="site-state-item-name">categories</span></a>
+        <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
         <span class="site-state-item-count">399</span>
-        <span class="site-state-item-name">tags</span></a>
+        <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
 </div>
   <div class="links-of-author animated">
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
         <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
@@ -247,7 +239,7 @@
 
         </div>
       </div>
-        <div class="back-to-top animated" role="button" aria-label="Back to top">
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
           <i class="fa fa-arrow-up"></i>
           <span>0%</span>
         </div>
@@ -257,15 +249,62 @@
     <div class="sidebar-inner sidebar-blogroll">
       <div class="links-of-blogroll animated">
         <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-          Links
+          链接
         </div>
         <ul class="links-of-blogroll-list">
             <li class="links-of-blogroll-item">
-              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
             </li>
         </ul>
       </div>
     </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-01-vector-database-best-practices/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-01</time>
+        <br>
+      OceanBase 花三年时间整理出的向量数据库最佳实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-06-oceanbase-merge-on-write/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-06</time>
+        <br>
+      应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-10-31-baili-mycat-qianyi-oceanbase/" rel="bookmark">
+        <time class="popular-posts-time">2025-10-31</time>
+        <br>
+      分库分表MyCat架构迁移至OceanBase | 百丽核心财务系统迁移经验总结
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-10-16-qifu-fenkufenbiao-gaizao/" rel="bookmark">
+        <time class="popular-posts-time">2025-10-16</time>
+        <br>
+      怎么避免无意义劳动 - 奇富科技基于OceanBase摈弃分库分表后代码改造成本节省90%
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-09-25-netease-music-cdc-migration-oceanbase/" rel="bookmark">
+        <time class="popular-posts-time">2025-09-25</time>
+        <br>
+      分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
   </aside>
 
 
@@ -281,7 +320,7 @@
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +330,7 @@
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="Longda's Interesting World">
-      <meta itemprop="description" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
@@ -309,49 +348,49 @@
       <span class="post-meta-item-icon">
         <i class="far fa-calendar"></i>
       </span>
-      <span class="post-meta-item-text">Posted on</span>
+      <span class="post-meta-item-text">发表于</span>
 
-      <time title="Created: 2025-07-07 15:42:37" itemprop="dateCreated datePublished" datetime="2025-07-07T15:42:37+08:00">2025-07-07</time>
+      <time title="创建时间：2025-07-07 15:42:37" itemprop="dateCreated datePublished" datetime="2025-07-07T15:42:37+08:00">2025-07-07</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-user"></i>
       </span>
-      <span class="post-meta-item-text">Written by: </span>
+      <span class="post-meta-item-text">原作者：</span>
       <span itemprop="name">兹拉坦</span>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
-      <span class="post-meta-item-text">In</span>
+      <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
           <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
         </span>
     </span>
 
   
-    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="far fa-eye"></i>
       </span>
-      <span class="post-meta-item-text">Views: </span>
+      <span class="post-meta-item-text">阅读次数：</span>
       <span id="busuanzi_value_page_pv"></span>
     </span>
     <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
+    <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
         <i class="far fa-file-word"></i>
       </span>
-      <span class="post-meta-item-text">Word count in article: </span>
+      <span class="post-meta-item-text">本文字数：</span>
       <span>4k</span>
     </span>
-    <span class="post-meta-item" title="Reading time">
+    <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>15 mins.</span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>15 分钟</span>
     </span>
 </div>
 
@@ -364,10 +403,10 @@
     
     <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase PoC 经验总结（二）—— AP 业务","description":"本文总结了 OceanBase AP 业务 PoC 的实践经验，围绕业务平迁策略与数据库对象设计展开，涵盖数据聚集、数据分布、合并策略、分区管理、排序规则、索引、行存列存选择及增量数据常见问题与解决方式。","image":"https://ilongda.com/img/7-7-oceanbase-poc-ap-business/01.png","wordCount":3917,"datePublished":"2025-07-07T07:42:37.000Z","dateModified":"2025-07-07T10:51:02.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"},"url":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/","inLanguage":"zh-CN","keywords":["OceanBase","列存","PoC","OLAP","分区设计","表结构设计","数据库迁移"],"articleSection":["实战分享"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase PoC 经验总结（二）—— AP 业务","item":"https://ilongda.com/2025/2025-07-07-oceanbase-poc-ap-business/"}]}</script>
-<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>前段时间，OceanBase 社区公众号转载了庆涛大佬的一篇<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTU3MCZpZHg9MSZzbj04YzRjZWM1OWVjMzY1OGNlMWI0NzQ4MmQ2Nzg2MWEzYiZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《OceanBase PoC 经验总结（一）》<i class="fa fa-external-link-alt"></i></span>，为大家介绍了他积累的大量 OceanBase PoC 经验。不过庆涛日理万机，之前预告的一篇和 SQL 有关的 PoC 文章还在持续打磨中。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>前段时间，OceanBase 社区公众号转载了庆涛大佬的一篇<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247485570&idx=1&sn=8c4cec59ec3658ce1b47482d67861a3b&scene=21#wechat_redirect">《OceanBase PoC 经验总结（一）》</a>，为大家介绍了他积累的大量 OceanBase PoC 经验。不过庆涛日理万机，之前预告的一篇和 SQL 有关的 PoC 文章还在持续打磨中。</p>
 <p>虽说好饭不怕晚，但我还是先替庆涛给大家提前加个餐，拿自己的狗尾续个貂。</p>
 <p>这篇 OceanBase AP 业务的 PoC 经验总结，是我在白华大佬做相关技术分享时记录的一个笔记，主要是业务平迁和数据库对象设计，不会涉及太多运维。</p>
-<p><img data-src="/img/7-7-oceanbase-poc-ap-business/01.png" alt="PoC 经验总结"></p>
+<p><img src="/img/7-7-oceanbase-poc-ap-business/01.png" alt="PoC 经验总结" decoding="async"></p>
 <blockquote>
 <p>PoC（Proof of Concept）的含义是：</p>
 <p>概念验证，是一种验证某个理论或解决方案是否可行的过程或实践。</p>
@@ -431,21 +470,21 @@
 <ul>
 <li>按时间聚集（堆表默认）：</li>
 </ul>
-<p><img data-src="/img/7-7-oceanbase-poc-ap-business/02.png" alt="按时间聚集（堆表默认）"></p>
+<p><img src="/img/7-7-oceanbase-poc-ap-business/02.png" alt="按时间聚集（堆表默认）" loading="lazy" decoding="async"></p>
 <ul>
 <li>按用户聚集（索引组织表，主键为 user）：</li>
 </ul>
-<p><img data-src="/img/7-7-oceanbase-poc-ap-business/03.png" alt="按用户聚集（索引组织表）"></p>
+<p><img src="/img/7-7-oceanbase-poc-ap-business/03.png" alt="按用户聚集（索引组织表）" loading="lazy" decoding="async"></p>
 <ul>
 <li>按时间聚集 + 分区:</li>
 </ul>
-<p><img data-src="/img/7-7-oceanbase-poc-ap-business/04.png" alt="按时间聚集 + 分区"></p>
+<p><img src="/img/7-7-oceanbase-poc-ap-business/04.png" alt="按时间聚集 + 分区" loading="lazy" decoding="async"></p>
 <p>在常见的 AP 数据库中，有一些是通过 clustered key 进行数据聚集，还有个别的数据库数据聚集方式相对复杂，会分成很多层次。因为不同数据库的数据聚集方式可能都有一些出入，所以把某些 AP 数据库里的索引直接平迁到 OceanBase 里作为主键，可能并不合适。需要先理解原数据库的数据聚集方式，以及分片是怎么拆到多个机器上的，否则可能会出问题。</p>
 <h2 id="数据分布"><a href="#数据分布" class="headerlink" title="数据分布"></a>数据分布</h2><p>数据分布这里，可以简单理解成怎么把数据分布到多台机器上去。除了 share storage 的数据库，其他都是要考虑数据分布的。</p>
 <p>很多 AP 数据库都有分区（partition）+ 数据分布（distributed key）。其中分区（partition）是用于做数据管理的，例如可以把用于存放三年之前旧数据的分区给 drop 掉。而数据分布式单独设计的。<strong>当原数据库的表有 partition + distributed key 的时候，就需要在 OceanBase 中的对应表中设计分区键了。数据分区方式参考原数据库即可，例如 partition by 对应一级分区，distributed by 对应二级分区。</strong></p>
 <p>这里再介绍一个 AP 场景非常典型的表结构设计：堆表 (4.3.5.1 OLAP 模式默认为堆表) + 时间纬度一级 range 分区 + 业务纬度二级 hash 分区。</p>
 <p>在 OceanBase 中，除了分区，还有 tablegroup、复制表、primary zone 等概念，这里不再一一解析。</p>
-<h2 id="合并策略"><a href="#合并策略" class="headerlink" title="合并策略"></a>合并策略</h2><p>这里需要了解的就是 OceanBase 中 buffer 表的自适应合并优化配置，详见：<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4NTQ1OCZpZHg9MSZzbj1jZDJmYzYxN2EyNDA2ZDAxODkxZDgyNzM0OGY1MGZjYSZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《在 OceanBase 中，如何应对存储引擎的读放大问题？》<i class="fa fa-external-link-alt"></i></span></p>
+<h2 id="合并策略"><a href="#合并策略" class="headerlink" title="合并策略"></a>合并策略</h2><p>这里需要了解的就是 OceanBase 中 buffer 表的自适应合并优化配置，详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247485458&idx=1&sn=cd2fc617a2406d01891d827348f50fca&scene=21#wechat_redirect">《在 OceanBase 中，如何应对存储引擎的读放大问题？》</a></p>
 <p>我上面这篇公众号文章的标题起的不好，有点儿文不对题，但想改的时候已经晚了，实际就是在介绍表级配置项 table mode 五种不同档位的合并策略。</p>
 <h2 id="分区管理"><a href="#分区管理" class="headerlink" title="分区管理"></a>分区管理</h2><p>OceanBase 的分区管理这里，最常见的一般都是手动设置分区。在 AP 场景中最最常见的一般是上面提到过的一级 range 分区（时间维度），二级 hash 分区。</p>
 <p>除此以外，OceanBase 还有一些自动分区的能力：</p>
@@ -480,7 +519,7 @@
 <li>索引：AP 场景尽量不使用建索引优化，根据原系统已有的索引，可按需创建少量必要的索引。</li>
 <li>复制表：会影响写入性能，按需来。</li>
 </ol>
-<h1 id="行存-列存各自的优势"><a href="#行存-列存各自的优势" class="headerlink" title="行存 &#x2F; 列存各自的优势"></a>行存 &#x2F; 列存各自的优势</h1><p><img data-src="/img/7-7-oceanbase-poc-ap-business/05.png" alt="行存 &#x2F; 列存"></p>
+<h1 id="行存-列存各自的优势"><a href="#行存-列存各自的优势" class="headerlink" title="行存 &#x2F; 列存各自的优势"></a>行存 &#x2F; 列存各自的优势</h1><p><img src="/img/7-7-oceanbase-poc-ap-business/05.png" alt="行存 &#x2F; 列存" loading="lazy" decoding="async"></p>
 <p>列存的实现只要知道这两点：</p>
 <ul>
 <li>只有基线数据（major sstable）是列存。增量数据 memtable、转储的 sstable 都是行存。</li>
@@ -537,7 +576,7 @@
 
     <footer class="post-footer">
           <div class="followme">
-  <span>Welcome to my other publishing channels</span>
+  <span>欢迎关注我的其它发布渠道</span>
 
   <div class="social-list">
 
@@ -598,7 +637,7 @@
   <footer class="footer">
     <div class="footer-inner">
 
-  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
   <div class="copyright">
@@ -614,15 +653,15 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Word count total: </span>
-    <span title="Word count total">644k</span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">647k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-      <span>Reading time total &asymp;</span>
-    <span title="Reading time total">39:02</span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">39:15</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -630,7 +669,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
-      <span class="site-uv" title="Total Visitors">
+      <span class="site-uv" title="总访客量">
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
@@ -638,7 +677,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
-      <span class="site-pv" title="Total Views">
+      <span class="site-pv" title="总访问量">
         <span id="busuanzi_value_site_pv"></span>
       </span>
     </span>

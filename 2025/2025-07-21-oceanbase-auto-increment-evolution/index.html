@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh_CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -16,16 +16,14 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint&#x2F;int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。">
-<meta property="og:type" content="website">
+<meta property="og:type" content="article">
 <meta property="og:title" content="OceanBase 的自增列进化史及最佳实践">
-<meta property="og:url" content="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/index.html">
+<meta property="og:url" content="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint&#x2F;int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。">
 <meta property="og:locale" content="zh_CN">
@@ -50,14 +48,11 @@
 <link rel="canonical" href="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","path":"2025/2025-07-21-oceanbase-auto-increment-evolution/","title":"OceanBase 的自增列进化史及最佳实践"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","path":"2025/2025-07-21-oceanbase-auto-increment-evolution/","title":"OceanBase 的自增列进化史及最佳实践"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>OceanBase 的自增列进化史及最佳实践 | Longda's Interesting World</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
@@ -69,24 +64,21 @@
 
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
   <script src="/js/third-party/tags/pdf.js" defer></script>
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
   <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
-  <script src="/js/third-party/fancybox.js" defer></script>
 
 
   <script src="/js/third-party/addtoany.js" defer></script>
@@ -99,11 +91,11 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
   <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"}</script>
   <script src="/js/third-party/quicklink.js" defer></script>
 
@@ -113,14 +105,14 @@
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+<body itemscope itemtype="http://schema.org/WebPage">
   <div class="headband"></div>
 
   <main class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -134,11 +126,11 @@
       <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -147,9 +139,9 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
       <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
       </li>
   </ul>
@@ -164,7 +156,7 @@
           <i class="fa fa-search"></i>
         </span>
         <div class="search-input-container">
-          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
         </div>
         <span class="popup-btn-close" role="button">
           <i class="fa fa-times-circle"></i>
@@ -186,10 +178,10 @@
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
-          Table of Contents
+          文章目录
         </li>
         <li class="sidebar-nav-overview">
-          Overview
+          站点概览
         </li>
       </ul>
 
@@ -204,40 +196,40 @@
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
-  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
           <span class="site-state-item-count">258</span>
-          <span class="site-state-item-name">posts</span>
+          <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
         <span class="site-state-item-count">29</span>
-        <span class="site-state-item-name">categories</span></a>
+        <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
         <span class="site-state-item-count">399</span>
-        <span class="site-state-item-name">tags</span></a>
+        <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
 </div>
   <div class="links-of-author animated">
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
         <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
@@ -246,7 +238,7 @@
 
         </div>
       </div>
-        <div class="back-to-top animated" role="button" aria-label="Back to top">
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
           <i class="fa fa-arrow-up"></i>
           <span>0%</span>
         </div>
@@ -256,15 +248,62 @@
     <div class="sidebar-inner sidebar-blogroll">
       <div class="links-of-blogroll animated">
         <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-          Links
+          链接
         </div>
         <ul class="links-of-blogroll-list">
             <li class="links-of-blogroll-item">
-              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
             </li>
         </ul>
       </div>
     </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-17-didi-oceanbase-ops-practice/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-17</time>
+        <br>
+      OceanBase 在滴滴大规模运维经验以及新功能落地实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-21</time>
+        <br>
+      不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-16-pharma-crm-database-upgrade/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-16</time>
+        <br>
+      千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-21-oceanbase-session-id-mystery/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-21</time>
+        <br>
+      OceanBase Session ID 之谜
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-14-oceanbase-partition-basics/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-14</time>
+        <br>
+      OceanBase 分区基础知识
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
   </aside>
 
 
@@ -280,7 +319,7 @@
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -290,7 +329,7 @@
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="Longda's Interesting World">
-      <meta itemprop="description" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
@@ -308,49 +347,49 @@
       <span class="post-meta-item-icon">
         <i class="far fa-calendar"></i>
       </span>
-      <span class="post-meta-item-text">Posted on</span>
+      <span class="post-meta-item-text">发表于</span>
 
-      <time title="Created: 2025-07-21 17:06:50" itemprop="dateCreated datePublished" datetime="2025-07-21T17:06:50+08:00">2025-07-21</time>
+      <time title="创建时间：2025-07-21 17:06:50" itemprop="dateCreated datePublished" datetime="2025-07-21T17:06:50+08:00">2025-07-21</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-user"></i>
       </span>
-      <span class="post-meta-item-text">Written by: </span>
+      <span class="post-meta-item-text">原作者：</span>
       <span itemprop="name">兹拉坦</span>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
-      <span class="post-meta-item-text">In</span>
+      <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
           <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
         </span>
     </span>
 
   
-    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="far fa-eye"></i>
       </span>
-      <span class="post-meta-item-text">Views: </span>
+      <span class="post-meta-item-text">阅读次数：</span>
       <span id="busuanzi_value_page_pv"></span>
     </span>
     <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
+    <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
         <i class="far fa-file-word"></i>
       </span>
-      <span class="post-meta-item-text">Word count in article: </span>
+      <span class="post-meta-item-text">本文字数：</span>
       <span>5.6k</span>
     </span>
-    <span class="post-meta-item" title="Reading time">
+    <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>21 mins.</span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>21 分钟</span>
     </span>
 </div>
 
@@ -361,10 +400,10 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 的自增列进化史及最佳实践","description":"本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint/int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。","image":"https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/01.png","wordCount":5773,"datePublished":"2025-07-21T09:06:50.000Z","dateModified":"2025-07-21T10:04:54.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"},"url":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","自增列","MySQL 兼容","Sequence","数据库运维","最佳实践"],"articleSection":["实战分享"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 的自增列进化史及最佳实践","description":"本文梳理 OceanBase 自增列从 4.0.0 到 4.2.3 各版本的功能演进，对比 ORDER 与 NOORDER 两种自增模式的原理与跳变行为，总结 bigint/int 选型、模式切换、cache size 调优等最佳实践，并介绍 MySQL 模式下的序列（Sequence）扩展功能。","image":"https://ilongda.com/img/7-21-oceanbase-auto-increment-evolution/01.png","wordCount":5773,"datePublished":"2025-07-21T09:06:50.000Z","dateModified":"2025-07-21T10:04:54.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"},"url":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/","inLanguage":"zh-CN","keywords":["分布式数据库","OceanBase","自增列","MySQL 兼容","Sequence","数据库运维","最佳实践"],"articleSection":["实战分享"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase 的自增列进化史及最佳实践","item":"https://ilongda.com/2025/2025-07-21-oceanbase-auto-increment-evolution/"}]}</script>
 <blockquote>
-<p>如果创建表时需要某个数值列的值不重复并且保持递增，这就是<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzM3OTUyOQ==">自增列<i class="fa fa-external-link-alt"></i></span>。</p>
+<p>如果创建表时需要某个数值列的值不重复并且保持递增，这就是<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000003379529">自增列</a>。</p>
 <p>自增列的列类型需要被定义为 AUTO_INCREMENT。</p>
 </blockquote>
 <h1 id="本文内容大纲"><a href="#本文内容大纲" class="headerlink" title="本文内容大纲"></a>本文内容大纲</h1><ul>
@@ -382,21 +421,21 @@
 </blockquote>
 <span id="more"></span>
 
-<h1 id="OceanBase-中自增列的进化史（Evolutionary-History）"><a href="#OceanBase-中自增列的进化史（Evolutionary-History）" class="headerlink" title="OceanBase 中自增列的进化史（Evolutionary History）"></a>OceanBase 中自增列的进化史（Evolutionary History）</h1><h2 id="4-0-0-版本"><a href="#4-0-0-版本" class="headerlink" title="4.0.0 版本"></a>4.0.0 版本</h2><p>OceanBase 的 MySQL 模式下，自增列支持指定两种不同的自增模式，可以通过组户级配置项 <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMjAxNTU4OQ==">default_auto_increment_mode<i class="fa fa-external-link-alt"></i></span> 控制默认模式，也可在建表时指定 auto_increment_mode。默认为 order。</p>
+<h1 id="OceanBase-中自增列的进化史（Evolutionary-History）"><a href="#OceanBase-中自增列的进化史（Evolutionary-History）" class="headerlink" title="OceanBase 中自增列的进化史（Evolutionary History）"></a>OceanBase 中自增列的进化史（Evolutionary History）</h1><h2 id="4-0-0-版本"><a href="#4-0-0-版本" class="headerlink" title="4.0.0 版本"></a>4.0.0 版本</h2><p>OceanBase 的 MySQL 模式下，自增列支持指定两种不同的自增模式，可以通过组户级配置项 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002015589">default_auto_increment_mode</a> 控制默认模式，也可在建表时指定 auto_increment_mode。默认为 order。</p>
 <ul>
 <li><strong>ORDER</strong>：底层是基于集中缓存的自增列，自增列全局递增，更好地兼容 MySQL 行为。</li>
 </ul>
-<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/01.png" alt="ORDER 模式示意图"></p>
+<p><img src="/img/7-21-oceanbase-auto-increment-evolution/01.png" alt="ORDER 模式示意图" decoding="async"></p>
 <ul>
 <li><strong>NOORDER</strong>：分布式缓存的自增列，只保证全局唯一，分区表拥有更好的性能（只保证分区内自增，不保证全局自增）。</li>
 </ul>
-<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/02.png" alt="NOORDER 模式示意图"></p>
+<p><img src="/img/7-21-oceanbase-auto-increment-evolution/02.png" alt="NOORDER 模式示意图" loading="lazy" decoding="async"></p>
 <h2 id="4-2-2-版本"><a href="#4-2-2-版本" class="headerlink" title="4.2.2 版本"></a>4.2.2 版本</h2><p><strong>INTEGER 列类型增长支持 Online 方式：</strong></p>
 <p>对于主键列 &#x2F; 分区键 &#x2F; 索引列 &#x2F; 被生成列依赖的列 &#x2F; 有 Check 约束的列，列类型如果为整型，当列类型修改为取值范围更大的整形列类型时（如 INT -&gt; BIGINT），在 V4.2.1 版本中是通过双表双写的 Offline DDL 实现，转换过程中会加表锁，阻塞读写。</p>
 <p>但从 V4.2.2 版本开始，将 Offline DDL 改进为 Online DDL，整型列类型增长将不再影响业务写入。</p>
 <h2 id="4-2-3-及以上版本"><a href="#4-2-3-及以上版本" class="headerlink" title="4.2.3 及以上版本"></a>4.2.3 及以上版本</h2><h3 id="自增值起点支持改小"><a href="#自增值起点支持改小" class="headerlink" title="自增值起点支持改小"></a>自增值起点支持改小</h3><p>当减小一个表的自增字段的值时，需注意以下情况：<br>如果表中已存在数据并且自增列中的最大值不小于新指定的 <code>AUTO_INCREMENT</code> 值时，新的 <code>AUTO_INCREMENT</code> 值将自动调整为表中自增列现有最大值的下一个取值。</p>
 <p>例如，自增列当前的最大值为 5，当前 <code>AUTO_INCREMENT</code> 的值是 8，而 <code>AUTO_INCREMENT</code> 设置为介于 0 到 6 之间的任何值，语句执行成功后，实际的 <code>AUTO_INCREMENT</code> 值都会被调整为 6。和原生 MySQL 行为兼容。</p>
-<h3 id="自增值-cache-size-支持在表级别设置"><a href="#自增值-cache-size-支持在表级别设置" class="headerlink" title="自增值 cache size 支持在表级别设置"></a>自增值 cache size 支持在表级别设置</h3><p>在 4.2.3 之前的版本，所有表的 cache size 都会以 <span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMzM4MTQxNA==">auto_increment_cache_size<i class="fa fa-external-link-alt"></i></span> 设置的值作为每个节点缓存的自增值的个数。</p>
+<h3 id="自增值-cache-size-支持在表级别设置"><a href="#自增值-cache-size-支持在表级别设置" class="headerlink" title="自增值 cache size 支持在表级别设置"></a>自增值 cache size 支持在表级别设置</h3><p>在 4.2.3 之前的版本，所有表的 cache size 都会以 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000003381414">auto_increment_cache_size</a> 设置的值作为每个节点缓存的自增值的个数。</p>
 <p>为了灵活控制不同表采用不同的缓存策略，新增 auto_increment_cache_size 表级 option，可以在建表&#x2F;修改表时指定某张表的自增值 cache size。</p>
 <table>
 <thead>
@@ -533,7 +572,7 @@
 <p>单机数据库（例如 MySQL）中的自增列，直接移植到分布式数据库（例如 OceanBase）中后，在用的过程中，会观测到 “跳” 的情况。</p>
 <blockquote>
 <p>以下内容为 OceanBase 自增列跳变原理，感兴趣的朋友可以选择性地进行阅读。</p>
-<p>内容出自：<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMTQzMTAzMSMyLXRpdGxlLSVFOCU4NyVBQSVFNSVBMiU5RSVFNSU4OCU5NyVFNyU5QSU4NCVFOCVCNyVCMyVFNSU4RiU5OA==">OceanBase 官网文档 “自增列的跳变”<i class="fa fa-external-link-alt"></i></span>。</p>
+<p>内容出自：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001431031#2-title-%E8%87%AA%E5%A2%9E%E5%88%97%E7%9A%84%E8%B7%B3%E5%8F%98">OceanBase 官网文档 “自增列的跳变”</a>。</p>
 </blockquote>
 <p>在 MySQL 数据库中，自增列是数据库表中的一种列属性，它可以自动生成一个唯一的、递增的值，用于表示该行数据的唯一标识。OceanBase 数据库作为分布式数据库，其数据库表通常分布在多台不同的机器上，在尽可能与 MySQL 数据库兼容的同时还需要保证分布式多机场景下自增列生成的性能，从而会出现自增值生成过程中的跳变问题。</p>
 <p>在 OceanBase 数据库中，自增列支持两种自增模式，即 NOORDER 模式和 ORDER 模式，默认为 ORDER 模式。其中：</p>
@@ -544,7 +583,7 @@
 <p>下面从这两个模式来分别介绍自增值在生成过程中是如何发生跳变的。</p>
 <h3 id="NOORDER-模式"><a href="#NOORDER-模式" class="headerlink" title="NOORDER 模式"></a>NOORDER 模式</h3><p>OceanBase 数据库 V4.x 版本中通过指定 <code>AUTO_INCREMENT_MODE = &#39;NOORDER&#39;</code> 创建的表，以及 V4.0.0（不含该版本）以下版本中创建的所有含自增列的表，均为 NOORDER 模式的自增表。</p>
 <p>对于 NOORDER 模式的自增列，其内部原理如下图所示。</p>
-<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/03.png" alt="NOORDER 模式内部原理"></p>
+<p><img src="/img/7-21-oceanbase-auto-increment-evolution/03.png" alt="NOORDER 模式内部原理" loading="lazy" decoding="async"></p>
 <p>从上图可知，NOORDER 模式的自增列，其数据结构分为以下两部分：</p>
 <ul>
 <li>内部表：负责持久化当前已经使用的自增值位点。</li>
@@ -599,7 +638,7 @@
 <h4 id="场景-3：机器重启或宕机"><a href="#场景-3：机器重启或宕机" class="headerlink" title="场景 3：机器重启或宕机"></a>场景 3：机器重启或宕机</h4><p>自增列的缓存是一个内存结构，如果 OBServer 节点的机器发生了重启或宕机，该机器上未使用完的缓存区间不会写回内部表，这就导致未使用的这部分区间不会再被使用。例如，假设 OBServer1 上初始自增列的缓存区间为 [1,100]，并且已经生成了自增值 1 和 2。此时，如果 OBServer1 发生了宕机，重启后，该机器上的缓存区间就变成了新的区间 [101,200]，同时下一次的自增值为 101，最终自增值的顺序就是 <code>1，2，101，...</code>，即发生了跳变。</p>
 <h3 id="ORDER-模式"><a href="#ORDER-模式" class="headerlink" title="ORDER 模式"></a>ORDER 模式</h3><p>为了避免 NOORDER 模式中所提到的 <strong>多机多分区生成自增值</strong> 和 <strong>通过 <code>INSERT</code> 语句插入指定的最大值</strong> 等比较常用的使用场景下发生自增值跳变的问题，OceanBase 数据库在 V4.x 版本开始新增了 ORDER 模式的自增列，并且该模式为创建表后的默认模式，能更好地兼容 MySQL 数据库。</p>
 <p>对于 ORDER 模式的自增列，其内部原理如下图所示。</p>
-<p><img data-src="/img/7-21-oceanbase-auto-increment-evolution/04.png" alt="ORDER 模式内部原理"></p>
+<p><img src="/img/7-21-oceanbase-auto-increment-evolution/04.png" alt="ORDER 模式内部原理" loading="lazy" decoding="async"></p>
 <p>与 NOORDER 模式相比，ORDER 模式的自增列会在所有 OBServer 节点中选取当前集群的 Leader 作为自增列服务的 Leader，其它作为 Follower 的 OBServer 节点需要通过发送 RPC 请求来从作为 Leader 的 OBServer 节点处申请自增值，而作为 Leader 的 OBServer 节点会从内部表申请自增区间来作为自增缓存。</p>
 <p>例如，同样在多机多分区场景中，假设自增列的 <code>auto_increment_cache_size</code> 为 100，当分区表所在的 OBServer 节点 OBServer1、OBServer2 和 OBServer3 分别按以下顺序先后接收到 <code>insert into values (null)</code> 的请求时，它们内部的处理逻辑如下：</p>
 <ol>
@@ -625,7 +664,7 @@
 <h1 id="MySQL-模式下的扩展功能-——-序列（Sequence）"><a href="#MySQL-模式下的扩展功能-——-序列（Sequence）" class="headerlink" title="MySQL 模式下的扩展功能 —— 序列（Sequence）"></a>MySQL 模式下的扩展功能 —— 序列（Sequence）</h1><h2 id="功能定义"><a href="#功能定义" class="headerlink" title="功能定义"></a>功能定义</h2><p>在 OceanBase 数据库中，序列（Sequence）是数据库按照一定规则生成的唯一且通常是递增的数值。通常被用于生成唯一标识符。</p>
 <h2 id="引入原因"><a href="#引入原因" class="headerlink" title="引入原因"></a>引入原因</h2><p>OceanBase 存在很多用户，业务原本跑在 DB2 &#x2F; Oracle 上，但是后续准备选择 MySQL 的技术路线，需要从 DB2 &#x2F; Oracle 向 OceanBase MySQL 模式的租户进行迁移。</p>
 <p>为了降低客户对之前在 DB2 &#x2F; Oracle 中大量使用 sequence 的业务进行改造的复杂度，OceanBase 在 MySQL 模式下支持了和 Oracle 行为兼容的 sequence 功能。</p>
-<h2 id="相关语法"><a href="#相关语法" class="headerlink" title="相关语法"></a>相关语法</h2><p>详见 OceanBase 官网中的<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2NzL2NvbW1vbi1vY2VhbmJhc2UtZGF0YWJhc2UtY24tMTAwMDAwMDAwMDY0MTg4MA==">《创建和管理序列》<i class="fa fa-external-link-alt"></i></span>章节，语法和 Oracle 保持兼容，本文中不再赘述。</p>
+<h2 id="相关语法"><a href="#相关语法" class="headerlink" title="相关语法"></a>相关语法</h2><p>详见 OceanBase 官网中的<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000000641880">《创建和管理序列》</a>章节，语法和 Oracle 保持兼容，本文中不再赘述。</p>
 <h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ol>
 <li>从 DB2 &#x2F; Oracle 向 OceanBase MySQL 模式的租户进行迁移的场景。</li>
 <li>自增列（increment column）和表绑定的特性无法满足业务使用要求。序列（sequence）不和表绑定，可独立创建，也可跨表使用。</li>
@@ -664,7 +703,7 @@
 
     <footer class="post-footer">
           <div class="followme">
-  <span>Welcome to my other publishing channels</span>
+  <span>欢迎关注我的其它发布渠道</span>
 
   <div class="social-list">
 
@@ -681,8 +720,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
               <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
               <a href="/tags/%E8%87%AA%E5%A2%9E%E5%88%97/" rel="tag"># 自增列</a>
               <a href="/tags/MySQL-%E5%85%BC%E5%AE%B9/" rel="tag"># MySQL 兼容</a>
               <a href="/tags/Sequence/" rel="tag"># Sequence</a>
@@ -725,7 +764,7 @@
   <footer class="footer">
     <div class="footer-inner">
 
-  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
   <div class="copyright">
@@ -741,15 +780,15 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Word count total: </span>
-    <span title="Word count total">644k</span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">647k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-      <span>Reading time total &asymp;</span>
-    <span title="Reading time total">39:02</span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">39:15</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -757,7 +796,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
-      <span class="site-uv" title="Total Visitors">
+      <span class="site-uv" title="总访客量">
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
@@ -765,7 +804,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
-      <span class="site-pv" title="Total Views">
+      <span class="site-pv" title="总访问量">
         <span id="busuanzi_value_site_pv"></span>
       </span>
     </span>

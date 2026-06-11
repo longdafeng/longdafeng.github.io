@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh_CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -16,16 +16,14 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
     <meta name="description" content="本文解读 OceanBase 向量索引混合查询的原理与使用，包括 Pre-filtering、In-filtering、Iterative-Ann 三种标量过滤方式的选择，以及全文与向量的融合排序方法和产品规划。">
-<meta property="og:type" content="website">
+<meta property="og:type" content="article">
 <meta property="og:title" content="向量索引的混合查询方法，你选对了吗？">
-<meta property="og:url" content="https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/index.html">
+<meta property="og:url" content="https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/">
 <meta property="og:site_name" content="Longda&#39;s Interesting World">
 <meta property="og:description" content="本文解读 OceanBase 向量索引混合查询的原理与使用，包括 Pre-filtering、In-filtering、Iterative-Ann 三种标量过滤方式的选择，以及全文与向量的融合排序方法和产品规划。">
 <meta property="og:locale" content="zh_CN">
@@ -61,14 +59,11 @@
 <link rel="canonical" href="https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/","path":"2025/2025-08-19-vector-index-hybrid-query/","title":"向量索引的混合查询方法，你选对了吗？"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/","path":"2025/2025-08-19-vector-index-hybrid-query/","title":"向量索引的混合查询方法，你选对了吗？"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>向量索引的混合查询方法，你选对了吗？ | Longda's Interesting World</title>
   
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
-  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
-  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
 
   <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
   <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
@@ -80,24 +75,21 @@
 
 
   
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
 <script src="/js/third-party/search/local-search.js" defer></script>
 
-  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
   <script src="/js/third-party/tags/pdf.js" defer></script>
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
   <script src="/js/third-party/tags/mermaid.js" defer></script>
 
 
-  <script src="/js/third-party/fancybox.js" defer></script>
 
 
   <script src="/js/third-party/addtoany.js" defer></script>
@@ -110,11 +102,11 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
   <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/"}</script>
   <script src="/js/third-party/quicklink.js" defer></script>
 
@@ -124,14 +116,14 @@
 <link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+<body itemscope itemtype="http://schema.org/WebPage">
   <div class="headband"></div>
 
   <main class="main">
     <div class="column">
       <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+    <div class="toggle" aria-label="切换导航栏" role="button">
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
         <span class="toggle-line"></span>
@@ -145,11 +137,11 @@
       <p class="site-title">Longda's Interesting World</p>
       <i class="logo-line"></i>
     </a>
-      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
         <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
@@ -158,9 +150,9 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
       <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
         </a>
       </li>
   </ul>
@@ -175,7 +167,7 @@
           <i class="fa fa-search"></i>
         </span>
         <div class="search-input-container">
-          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
         </div>
         <span class="popup-btn-close" role="button">
           <i class="fa fa-times-circle"></i>
@@ -197,10 +189,10 @@
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
-          Table of Contents
+          文章目录
         </li>
         <li class="sidebar-nav-overview">
-          Overview
+          站点概览
         </li>
       </ul>
 
@@ -215,40 +207,40 @@
           <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
   <p class="site-author-name" itemprop="name">Longda Feng</p>
-  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
           <span class="site-state-item-count">258</span>
-          <span class="site-state-item-name">posts</span>
+          <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
         <span class="site-state-item-count">29</span>
-        <span class="site-state-item-name">categories</span></a>
+        <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
         <span class="site-state-item-count">399</span>
-        <span class="site-state-item-name">tags</span></a>
+        <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
 </div>
   <div class="links-of-author animated">
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
-        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
       </span>
       <span class="links-of-author-item">
         <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
@@ -257,7 +249,7 @@
 
         </div>
       </div>
-        <div class="back-to-top animated" role="button" aria-label="Back to top">
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
           <i class="fa fa-arrow-up"></i>
           <span>0%</span>
         </div>
@@ -267,15 +259,62 @@
     <div class="sidebar-inner sidebar-blogroll">
       <div class="links-of-blogroll animated">
         <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
-          Links
+          链接
         </div>
         <ul class="links-of-blogroll-list">
             <li class="links-of-blogroll-item">
-              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
             </li>
         </ul>
       </div>
     </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-19-oceanbase-vector-index-optimization/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-19</time>
+        <br>
+      OceanBase 向量索引优化指南
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-07-database-evolution-vector-hybrid-search/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-07</time>
+        <br>
+      AI 时代的数据库进化论 —— 从向量到混合检索
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-06-26-oceanbase-vector-db-ai-search/" rel="bookmark">
+        <time class="popular-posts-time">2025-06-26</time>
+        <br>
+      OceanBase 向量数据库让 AI 检索效率暴增 45 倍，AI Agent 开发成本砍半
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-31-zuoyebang-vector-database-multicloud/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-31</time>
+        <br>
+      作业帮 AI 业务的数据底座：OceanBase 向量数据库多云部署方案与架构设计优化
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-11-dify-oceanbase-seekdb-guide/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-11</time>
+        <br>
+      喂饭级教程 II —— Dify x OceanBase seekdb 使用指南
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
   </aside>
 
 
@@ -291,7 +330,7 @@
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://ilongda.com/2025/2025-08-19-vector-index-hybrid-query/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -301,7 +340,7 @@
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="Longda's Interesting World">
-      <meta itemprop="description" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
@@ -319,49 +358,49 @@
       <span class="post-meta-item-icon">
         <i class="far fa-calendar"></i>
       </span>
-      <span class="post-meta-item-text">Posted on</span>
+      <span class="post-meta-item-text">发表于</span>
 
-      <time title="Created: 2025-08-19 06:15:57" itemprop="dateCreated datePublished" datetime="2025-08-19T06:15:57+08:00">2025-08-19</time>
+      <time title="创建时间：2025-08-19 06:15:57" itemprop="dateCreated datePublished" datetime="2025-08-19T06:15:57+08:00">2025-08-19</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-user"></i>
       </span>
-      <span class="post-meta-item-text">Written by: </span>
+      <span class="post-meta-item-text">原作者：</span>
       <span itemprop="name">舸灏</span>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
-      <span class="post-meta-item-text">In</span>
+      <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
           <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
         </span>
     </span>
 
   
-    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
       <span class="post-meta-item-icon">
         <i class="far fa-eye"></i>
       </span>
-      <span class="post-meta-item-text">Views: </span>
+      <span class="post-meta-item-text">阅读次数：</span>
       <span id="busuanzi_value_page_pv"></span>
     </span>
     <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
+    <span class="post-meta-item" title="本文字数">
       <span class="post-meta-item-icon">
         <i class="far fa-file-word"></i>
       </span>
-      <span class="post-meta-item-text">Word count in article: </span>
+      <span class="post-meta-item-text">本文字数：</span>
       <span>3.5k</span>
     </span>
-    <span class="post-meta-item" title="Reading time">
+    <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>13 mins.</span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>13 分钟</span>
     </span>
 </div>
 
@@ -388,53 +427,53 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t1(</span><br><span class="line">id <span class="type">int</span> <span class="keyword">primary</span> key,</span><br><span class="line">score <span class="keyword">double</span>,</span><br><span class="line">position GEOMETRY <span class="keyword">NOT</span> <span class="keyword">NULL</span> SRID <span class="number">0</span>,</span><br><span class="line">comment_vector vector(<span class="number">3</span>),</span><br><span class="line">spatial index idxg (position),</span><br><span class="line">vector index idxv(comment_vector )</span><br><span class="line"><span class="keyword">with</span> (distance<span class="operator">=</span>l2, type<span class="operator">=</span>hnsw, lib<span class="operator">=</span>vsag)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 
 <p>对应的查询 SQL 如下：</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/01.png" alt="查询 SQL 示例"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/01.png" alt="查询 SQL 示例" decoding="async"></p>
 <p>在进行这类混合查询时，带上标量条件的方法和普通 SQL 没有任何区别，即直接将查询条件放到 where 后即可。但使用向量索引是有语法要求的，需要 order by，然后使用向量索引对应的 distance 表达式，并在其后加上 approximate 关键词。如果不加上 approximate 关键词，则会进行全表扫描进行精确查询，而不会使用向量索引。</p>
 <p>在上文 SQL 中我们加上了 Hint（即 &#x2F;*+index(t1 idxg) *&#x2F;）指定了向量检索时使用空间索引，此处就引出了第一种带标量过滤的查询方式，即 Pre-filtering（前过滤）。</p>
 <p>在实际使用时，如果没有特殊要求，不需要指定 hint，OceanBase 会依据统计信息自动选择最合适的标量索引和查询方式。</p>
 <h3 id="查询方式1：Pre-filtering（前过滤）"><a href="#查询方式1：Pre-filtering（前过滤）" class="headerlink" title="查询方式1：Pre-filtering（前过滤）"></a>查询方式1：Pre-filtering（前过滤）</h3><p>Pre-filtering 是指先进行标量过滤的一种查询方式。</p>
 <p>例如在上文的例子中，我们通过 hint 指定在进行向量检索前，先查询空间索引，获得所有满足 st_intersects 条件的数据。每一个向量都对应一个唯一 ID 作为其标识，这些唯一 ID 会被用来构造 bitmap。bitmap 则会作为向量检索的上下文。在向量检索的过程中，每找到一个候选向量，就会校验其 ID 是否在 bitmap 中，如果不在，则说明其不满足标量过滤条件，需要继续查找下一个候选向量，直到找到 limit K 个结果。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/02.png" alt="Pre-filtering 前过滤原理"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/02.png" alt="Pre-filtering 前过滤原理" loading="lazy" decoding="async"></p>
 <p><strong>Pre-filtering 的优点是，在 Filter rate 高时，会通过标量索引过滤掉大部分数据，减少后续的向量计算开销。</strong> 然而，当标量过滤性不太好时候，Pre-filtering 就不是最合适的过滤方式了。例如100万数据，过滤条件只能筛掉其中的50%，那么扫描索引表以及构造 bitmap 的代价仍然是非常大的。当然在一些特定场景，比如过滤条件是简单的 range，会有一些优化。另外，如果过滤条件非常复杂，又没有标量索引可用的情况下，在做 Pre-filtering 进行标量过滤，就相当于对主表进行全表扫描，对每行数据还要执行过滤条件表达式计算，会导致性能不佳。</p>
 <h3 id="查询方式2：In-filtering-with-extra-info（中过滤）"><a href="#查询方式2：In-filtering-with-extra-info（中过滤）" class="headerlink" title="查询方式2：In-filtering with extra info（中过滤）"></a>查询方式2：In-filtering with extra info（中过滤）</h3><p>为了解决 bitmap 构造代价大的问题，OceanBase 引入了 In-filtering，即在向量索引过程中校验标量条件。这种方法需要将过滤字段加入到向量索引中，即作为每个向量的额外信息（extra info）。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/03.png" alt="In-filtering with extra info 中过滤原理"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/03.png" alt="In-filtering with extra info 中过滤原理" loading="lazy" decoding="async"></p>
 <p>In-filtering with extra info 的优点是，不用先构造 bitmap，所以没有额外的 I&#x2F;O 开销，<strong>适用于 Filter rate 中高的场景。但这种方式会占用额外内存，使用成本较高，也要求过滤条件相对简单。</strong></p>
 <h3 id="查询方式3：Iterative-Ann（迭代式）"><a href="#查询方式3：Iterative-Ann（迭代式）" class="headerlink" title="查询方式3：Iterative-Ann（迭代式）"></a>查询方式3：Iterative-Ann（迭代式）</h3><p>为了应对前面两种方案不适用的情况，OceanBase 还实现了一种迭代式过滤的查询方法：Iterative-Ann，这种方法会使用多次迭代来完成查询，每一次迭代会返回向量距离最近的一批数据，然后再进行标量条件的校验，过滤掉不满足条件的数据。之后依据缺少的数据量，估算下一次迭代需要返回的向量近似最近邻结果的数量，调整参数再进行一轮查询，直到返回 limit K 条结果。为此我们改造了传统的后过滤实现，在向量索引的查询中记录上下文，在前次迭代后，如果发现满足过滤条件的数据量不足，就可以通过上下文继续查找，把下一批的数据迭代出来。</p>
 <p>这种查询方式适用于 Filter rate 中低，过滤条件复杂的场景，在这类场景下，Iterative-Ann 的计算量反而最少，性能会更好，也不会出现传统后过滤方法少数据的问题。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/04.png" alt="Iterative-Ann 迭代式过滤原理"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/04.png" alt="Iterative-Ann 迭代式过滤原理" loading="lazy" decoding="async"></p>
 <p><strong>Iterative-Ann 不适合 Filter rate 高的场景。</strong> 在选择性非常好的情况下，比如100万数据中可能只有100条数据是满足过滤条件的，此时使用 Iterative-Ann，由于向量索引只关注向量距离的相似性，可能需要迭代很多轮，甚至计算完大部分向量后才能找到满足的过滤条件。</p>
 <h3 id="如何选择合适的查询方法？"><a href="#如何选择合适的查询方法？" class="headerlink" title="如何选择合适的查询方法？"></a>如何选择合适的查询方法？</h3><p>上述三种查询方法分别适合不同的使用场景，那么应该如何选择合适的过滤方法呢？</p>
 <p>在 OceanBase 早期版本中，只能通过加 Hint 进行方法选择。OceanBase V4.3.5_bp2 实现了比较完备的基于代价估计的路径选择。下图是 OceanBase V4.3.5_bp2 和 Milvus 2.5.11 的 Vectordbbench 性能测试对比。测试在 Cohere 768D 100万数据集、top 100、recall 98%时，通过自动选择计划，在不同过滤条件下的性能。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/05.png" alt="OceanBase 与 Milvus 性能对比（一）"></p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/06.png" alt="OceanBase 与 Milvus 性能对比（二）"></p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/07.png" alt="OceanBase 与 Milvus 性能对比（三）"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/05.png" alt="OceanBase 与 Milvus 性能对比（一）" loading="lazy" decoding="async"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/06.png" alt="OceanBase 与 Milvus 性能对比（二）" loading="lazy" decoding="async"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/07.png" alt="OceanBase 与 Milvus 性能对比（三）" loading="lazy" decoding="async"></p>
 <p>上图中纵坐标分别是 QPS 或 RECALL (召回率)，横坐标是过滤率，0表示过滤率为0%（无过滤条件）、99则表示过滤掉99%的数据。可以看到，不管是性能还是召回率，OceanBase 表现更优。</p>
 <p>同样，对比其他向量数据库，OceanBase 的表现也毫不逊色。下图是我们在 AWS 基于 16C64G 的服务器，使用开源向量数据库评分工具 Vectordbbench 对几个主流的开源向量数据库进行性能测试的结果。测试数据集分别为：768维、100万的数据集；1536维、50万的数据集。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/08.png" alt="主流开源向量数据库性能测试对比"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/08.png" alt="主流开源向量数据库性能测试对比" loading="lazy" decoding="async"></p>
 <p>图中的横轴代表召回率，纵轴代表 QPS，可以看到，在同等召回率下，OceanBase 的表现仍然出色，已经达到了开源向量数据库的领先水平。</p>
 <p>OceanBase 具备计划缓存的能力，可以减少 SQL 硬解析的开销，复用之前生成的执行计划，但如果过滤条件的参数发生比较大的改变，会导致命中的计划不一定合适。如下图所示，假设 c1 列有索引，在 c1&lt;10 时，满足过滤条件的数据量极少，会生成 pre-filter 计划。但当过滤参数变成 c1&lt;100000 时，再命中前过滤计划就明显不合适了，此时由于过滤掉的数据很少，扫描索引表以及生成 bitmap 的代价会很大。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/09.png" alt="计划缓存与过滤参数变化示例"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/09.png" alt="计划缓存与过滤参数变化示例" loading="lazy" decoding="async"></p>
 <p>因此我们在 OceanBase V4.3.5_bp3 版本实现了执行期的自适应方法选择。例如上文原本计划前过滤，在条件发生改变后，会优先尝试前过滤，但在执行过程中如果发现耗时及预期行数已经超过前过滤的阈值时，OceanBase 会提前终止，并自动切换到迭代式过滤，从而保证性能相对好。同时我们也实现了执行期的统计，如果某个计划总是从前过滤切换到迭代式过滤，则会把计划的倾向性改为迭代式过滤，实现查询整体最优。</p>
 <p>OceanBase V4.3.5_bp3 相较于 OceanBase V4.3.5_bp2 拥有更强的性能，如下图所示，我们在本地环境针对二者进行性能对比：</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/10.png" alt="V4.3.5_bp3 与 V4.3.5_bp2 性能对比"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/10.png" alt="V4.3.5_bp3 与 V4.3.5_bp2 性能对比" loading="lazy" decoding="async"></p>
 <p>OceanBase V4.3.5_bp3 不仅整体性能提高了10%，且避免了在不同过滤率下需要清理 PlanCache 才能重新生成最优执行计划的问题。</p>
 <h2 id="二、全文与向量的混合查询"><a href="#二、全文与向量的混合查询" class="headerlink" title="二、全文与向量的混合查询"></a>二、全文与向量的混合查询</h2><h3 id="全文索引和向量索引"><a href="#全文索引和向量索引" class="headerlink" title="全文索引和向量索引"></a>全文索引和向量索引</h3><p>全文索引和向量索引所擅长的场景并不相同，两者之间不是替代关系。</p>
 <p>以查询“广州及周边一日游，适合拍照打卡但人少”的索引条件为例。全文索引能保证匹配到的结果带有指定的分词，例如“一日游”。但对于“适合拍照打卡但人少”的条件，由于查询语句中没有包含“无商业开发”等内容，全文索引就无法匹配到含义相近、但文字完全不同的内容，因此对“适合拍照打卡但人少”的查询结果不够精准。而向量索引可以基于“适合拍照打卡但人少”的含义匹配到“无商业开发”、“原始风貌”等内容，但因为向量不一定能精确表达数字，所以无法保证查询结果只包含“一日游”。在有某些专业术语的场景下也是类似。</p>
 <p>因此产生了全文和向量索引结合使用的需求。全文和向量混合查询的一个问题在于，如何进行融合排序，向量索引每一种距离算法的值域范围都不相同，例如 Cosine 距离的值域范围是[0, 2]，IP 和 L2 则可能会是一个比较大的数，而全文索引 BM25 的相关性得分范围也是不确定的。</p>
 <h3 id="不同索引综合排序方法-rerank）"><a href="#不同索引综合排序方法-rerank）" class="headerlink" title="不同索引综合排序方法 (rerank）"></a>不同索引综合排序方法 (rerank）</h3><p>OceanBase 计划提供三种排序方法，倒数排序融合（Reciprocal rank fusion），加权求和（Weighted sum），还有基于 Rerank 模型的排序。这三种排序方法分别适用于不同场景。</p>
 <h4 id="倒数排序融合（Reciprocal-rank-fusion）"><a href="#倒数排序融合（Reciprocal-rank-fusion）" class="headerlink" title="倒数排序融合（Reciprocal rank fusion）"></a>倒数排序融合（Reciprocal rank fusion）</h4><p>如果用户没有相关先验知识，可以直接使用倒数排序方法。倒数排序方法只根据结果集中的排名对其进行评分，不需要做分数归一化。当然这种排序方法也可以指定各路检索的权重。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/11.png" alt="倒数排序融合公式"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/11.png" alt="倒数排序融合公式" loading="lazy" decoding="async"></p>
 <p>例如：</p>
 <p>结果 A： 词项匹配排名：1 → 得分 &#x3D; 1&#x2F;(1+60)≈0.0164 语义搜索排名：3 → 得分 &#x3D; 1&#x2F;(3+60)≈0.01593 总得分 &#x3D; 0.0164+0.0159&#x3D;0.0323</p>
 <p>结果B： …</p>
 <h4 id="加权求和（Weighted-sum）"><a href="#加权求和（Weighted-sum）" class="headerlink" title="加权求和（Weighted sum）"></a>加权求和（Weighted sum）</h4><p>加权求和需要将不同索引查询的结果分别归一化，再进行加权计算。需要用户对数据有一定的先验知识才能设定合适的权重。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/12.png" alt="加权求和公式"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/12.png" alt="加权求和公式" loading="lazy" decoding="async"></p>
 <p>例如向量权重0.7，全文权重0.3。</p>
 <h4 id="使用-Rerank-模型"><a href="#使用-Rerank-模型" class="headerlink" title="使用 Rerank 模型"></a>使用 Rerank 模型</h4><p>使用 Rerank 模型，是目前排序效果最好的方法。但由于模型调用比较慢，代价比较大，适用于小 Top K 的场景，不适用于搜索结果集比较大的场景。</p>
 <h3 id="如何使用混合查询"><a href="#如何使用混合查询" class="headerlink" title="如何使用混合查询"></a>如何使用混合查询</h3><p>在 OceanBase 当前版本中使用混合查询的方式如下所示，需要将每一路全文或向量作为一个子查询，然后将分数进行加权计算，或倒数排序计算。</p>
 <p>OceanBase V4.4.1 计划提供功能更完善，更易用的融合查询接口，不需要用户手动来写复杂的子查询语法或进行分数计算。</p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/13.png" alt="混合查询 SQL 示例（一）"></p>
-<p><img data-src="/img/8-19-vector-index-hybrid-query/14.png" alt="混合查询 SQL 示例（二）"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/13.png" alt="混合查询 SQL 示例（一）" loading="lazy" decoding="async"></p>
+<p><img src="/img/8-19-vector-index-hybrid-query/14.png" alt="混合查询 SQL 示例（二）" loading="lazy" decoding="async"></p>
 <h2 id="产品未来规划"><a href="#产品未来规划" class="headerlink" title="产品未来规划"></a>产品未来规划</h2><p>未来，我们将持续优化标量&#x2F;全文&#x2F;多向量混合查询的功能、易用性和性能。</p>
 <ul>
 <li>全文和多向量混合查询。<ul>
@@ -464,7 +503,7 @@
 
     <footer class="post-footer">
           <div class="followme">
-  <span>Welcome to my other publishing channels</span>
+  <span>欢迎关注我的其它发布渠道</span>
 
   <div class="social-list">
 
@@ -526,7 +565,7 @@
   <footer class="footer">
     <div class="footer-inner">
 
-  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
       <img src="https://beian.miit.gov.cn" alt>
   </div>
   <div class="copyright">
@@ -542,15 +581,15 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-      <span>Word count total: </span>
-    <span title="Word count total">644k</span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">647k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-      <span>Reading time total &asymp;</span>
-    <span title="Reading time total">39:02</span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">39:15</span>
   </span>
 </div>
 <div class="busuanzi-count">
@@ -558,7 +597,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-user"></i>
       </span>
-      <span class="site-uv" title="Total Visitors">
+      <span class="site-uv" title="总访客量">
         <span id="busuanzi_value_site_uv"></span>
       </span>
     </span>
@@ -566,7 +605,7 @@
       <span class="post-meta-item-icon">
         <i class="fa fa-eye"></i>
       </span>
-      <span class="site-pv" title="Total Views">
+      <span class="site-pv" title="总访问量">
         <span id="busuanzi_value_site_pv"></span>
       </span>
     </span>
