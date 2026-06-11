@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="介绍基于 Flink 与 OceanBase OBKV-HBase 的实时数据写入方案：完全兼容 HBase API，支持缓冲批量写入与流批一体，并给出建表、Flink SQL 映射、Kafka 实时写入示例及性能调优与排错实践。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案">
+<meta property="og:url" content="https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="介绍基于 Flink 与 OceanBase OBKV-HBase 的实时数据写入方案：完全兼容 HBase API，支持缓冲批量写入与流批一体，并给出建表、Flink SQL 映射、Kafka 实时写入示例及性能调优与排错实践。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-04-24T13:06:08.000Z">
+<meta property="article:modified_time" content="2026-04-24T13:06:08.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Flink">
+<meta property="article:tag" content="Flink SQL">
+<meta property="article:tag" content="HBase">
+<meta property="article:tag" content="OBKV-HBase">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="实时数仓">
+<meta property="article:tag" content="数据迁移">
+<meta name="twitter:card" content="summary_large_image">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/","path":"2026/2026-04-24-hbase-to-oceanbase-flink-migration/","title":"从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%A0%E9%9C%80%E8%A6%81%E5%85%B3%E6%B3%A8%E8%BF%99%E4%B8%AA%E6%96%B9%E6%A1%88%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">为什么你需要关注这个方案？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%80%EF%BC%9AHBase-%E8%BF%81%E7%A7%BB%E7%9A%84%E2%80%9D%E6%9C%80%E5%90%8E%E4%B8%80%E5%85%AC%E9%87%8C%E2%80%9D"><span class="nav-number">1.1.</span> <span class="nav-text">场景一：HBase 迁移的”最后一公里”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%BA%8C%EF%BC%9A%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93%E5%BB%BA%E8%AE%BE%E4%B8%AD%E7%9A%84%E2%80%9D%E6%95%B0%E6%8D%AE%E5%85%A5%E6%B9%96%E2%80%9D"><span class="nav-number">1.2.</span> <span class="nav-text">场景二：实时数仓建设中的”数据入湖”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%89%EF%BC%9AAI-LLM-%E5%BA%94%E7%94%A8%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8"><span class="nav-number">1.3.</span> <span class="nav-text">场景三：AI&#x2F;LLM 应用中的数据存储</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8A%BF%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9-OceanBase-OBKV-HBase%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">核心优势：为什么选择 OceanBase OBKV-HBase？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%9A%80-%E5%85%BC%E5%AE%B9-HBase-API"><span class="nav-number">2.1.</span> <span class="nav-text">🚀 兼容 HBase API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%9A%A1-%E9%AB%98%E6%80%A7%E8%83%BD%E5%AE%9E%E6%97%B6%E5%86%99%E5%85%A5"><span class="nav-number">2.2.</span> <span class="nav-text">⚡ 高性能实时写入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%94%84-%E6%B5%81%E6%89%B9%E4%B8%80%E4%BD%93"><span class="nav-number">2.3.</span> <span class="nav-text">🔄 流批一体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%9B%A1%EF%B8%8F-%E4%BC%81%E4%B8%9A%E7%BA%A7%E5%8F%AF%E9%9D%A0%E6%80%A7"><span class="nav-number">2.4.</span> <span class="nav-text">🛡️ 企业级可靠性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B"><span class="nav-number">3.</span> <span class="nav-text">快速开始</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-1%EF%BC%9A%E5%88%9B%E5%BB%BA-HBase-%E8%A1%A8"><span class="nav-number">3.1.</span> <span class="nav-text">步骤 1：创建 HBase 表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-2-4%EF%BC%9A%E5%90%AF%E5%8A%A8-Flink-%E2%86%92-%E5%88%9B%E5%BB%BA%E6%98%A0%E5%B0%84%E8%A1%A8"><span class="nav-number">3.2.</span> <span class="nav-text">步骤 2-4：启动 Flink → 创建映射表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-5-6%EF%BC%9A%E5%86%99%E5%85%A5%E6%B5%8B%E8%AF%95%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%AA%8C%E8%AF%81"><span class="nav-number">3.3.</span> <span class="nav-text">步骤 5-6：写入测试数据并验证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="nav-number">4.</span> <span class="nav-text">配置参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%85%E9%9C%80%E5%8F%82%E6%95%B0"><span class="nav-number">4.1.</span> <span class="nav-text">必需参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.2.</span> <span class="nav-text">连接模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98"><span class="nav-number">4.3.</span> <span class="nav-text">性能调优</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">使用示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E-Kafka-%E5%AE%9E%E6%97%B6%E5%86%99%E5%85%A5"><span class="nav-number">5.1.</span> <span class="nav-text">从 Kafka 实时写入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="nav-number">6.</span> <span class="nav-text">最佳实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="nav-number">6.1.</span> <span class="nav-text">性能优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E6%8E%92%E6%9F%A5"><span class="nav-number">6.2.</span> <span class="nav-text">错误排查</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E4%BF%A1%E6%81%AF"><span class="nav-number">7.</span> <span class="nav-text">参考信息</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案 | Longda's Interesting World">
+      <meta itemprop="description" content="介绍基于 Flink 与 OceanBase OBKV-HBase 的实时数据写入方案：完全兼容 HBase API，支持缓冲批量写入与流批一体，并给出建表、Flink SQL 映射、Kafka 实时写入示例及性能调优与排错实践。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-24 21:06:08" itemprop="dateCreated datePublished" datetime="2026-04-24T21:06:08+08:00">2026-04-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%94%A8%E6%88%B7%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index"><span itemprop="name">用户实践</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">介绍基于 Flink 与 OceanBase OBKV-HBase 的实时数据写入方案：完全兼容 HBase API，支持缓冲批量写入与流批一体，并给出建表、Flink SQL 映射、Kafka 实时写入示例及性能调优与排错实践。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案","description":"介绍基于 Flink 与 OceanBase OBKV-HBase 的实时数据写入方案：完全兼容 HBase API，支持缓冲批量写入与流批一体，并给出建表、Flink SQL 映射、Kafka 实时写入示例及性能调优与排错实践。","image":"https://ilongda.com/img/my.jpg","wordCount":1129,"datePublished":"2026-04-24T13:06:08.000Z","dateModified":"2026-04-24T13:06:08.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/"},"url":"https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/","inLanguage":"zh-CN","keywords":["OceanBase","实时数仓","数据迁移","HBase","Flink","OBKV-HBase","Flink SQL"],"articleSection":["用户实践"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"用户实践","item":"https://ilongda.com/categories/用户实践/"},{"@type":"ListItem","position":3,"name":"从 HBase 迁移到 OceanBase：Flink 实时数据写入的终极方案","item":"https://ilongda.com/2026/2026-04-24-hbase-to-oceanbase-flink-migration/"}]}</script>
+<p><strong>你正在为 HBase 运维成本高昂而发愁吗？</strong></p>
+<p><strong>你是否在寻找实时数据流的最佳落地存储方案？</strong></p>
+<p><strong>Flink + OceanBase OBKV-HBase，可能是你一直在等的答案！</strong></p>
+<h2 id="为什么你需要关注这个方案？"><a href="#为什么你需要关注这个方案？" class="headerlink" title="为什么你需要关注这个方案？"></a>为什么你需要关注这个方案？</h2><h3 id="场景一：HBase-迁移的”最后一公里”"><a href="#场景一：HBase-迁移的”最后一公里”" class="headerlink" title="场景一：HBase 迁移的”最后一公里”"></a>场景一：HBase 迁移的”最后一公里”</h3><p>如果你的团队正在考虑从 HBase 迁移到 OceanBase，但担心：现有的 Flink 实时数据流如何无缝迁移？HBase API 兼容性如何保证？迁移后吞吐、延迟和稳定性能否满足线上要求？</p>
+<p><strong>这个方案正是为你准备的！</strong> OceanBase OBKV-HBase 完全兼容 HBase API，配合 Flink 连接器，可让你平滑的进行迁移。</p>
+<span id="more"></span>
+
+<h3 id="场景二：实时数仓建设中的”数据入湖”"><a href="#场景二：实时数仓建设中的”数据入湖”" class="headerlink" title="场景二：实时数仓建设中的”数据入湖”"></a>场景二：实时数仓建设中的”数据入湖”</h3><p>如果你正在构建实时数仓，需要将 Kafka 中的实时数据流写入宽表存储、支持高并发写入并满足近实时查询与分析需求、保证数据一致性和可靠性。</p>
+<p><strong>Flink + OceanBase 组合能完美解决你的痛点！</strong> Flink 负责流式处理，OceanBase 负责在线存储与查询。</p>
+<h3 id="场景三：AI-LLM-应用中的数据存储"><a href="#场景三：AI-LLM-应用中的数据存储" class="headerlink" title="场景三：AI&#x2F;LLM 应用中的数据存储"></a>场景三：AI&#x2F;LLM 应用中的数据存储</h3><p>在 AI 时代，OceanBase 的 HBase 模式天然支持灵活的表结构，配合 Flink 的实时处理能力，可以轻松构建 AI 应用的数据底座。</p>
+<h2 id="核心优势：为什么选择-OceanBase-OBKV-HBase？"><a href="#核心优势：为什么选择-OceanBase-OBKV-HBase？" class="headerlink" title="核心优势：为什么选择 OceanBase OBKV-HBase？"></a>核心优势：为什么选择 OceanBase OBKV-HBase？</h2><h3 id="🚀-兼容-HBase-API"><a href="#🚀-兼容-HBase-API" class="headerlink" title="🚀 兼容 HBase API"></a>🚀 兼容 HBase API</h3><p>对于熟悉 HBase 的开发者，<strong>迁移成本几乎为零</strong>！只需修改连接配置即可无缝切换。</p>
+<h3 id="⚡-高性能实时写入"><a href="#⚡-高性能实时写入" class="headerlink" title="⚡ 高性能实时写入"></a>⚡ 高性能实时写入</h3><p>支持缓冲批量写入：批处理场景高吞吐数据导入，实时场景延迟低至毫秒级。</p>
+<h3 id="🔄-流批一体"><a href="#🔄-流批一体" class="headerlink" title="🔄 流批一体"></a>🔄 流批一体</h3><p>既支持 Flink 的流式写入，也支持批处理写入，一套系统满足多种需求。</p>
+<h3 id="🛡️-企业级可靠性"><a href="#🛡️-企业级可靠性" class="headerlink" title="🛡️ 企业级可靠性"></a>🛡️ 企业级可靠性</h3><p>完善的容错机制，OceanBase 原生高可用，支持多副本高可用与强一致能力。</p>
+<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><p>OBKV-HBase 是 OceanBase 提供的兼容 HBase 接口的宽表数据库。Flink OBKV HBase 连接器（flink-connector-obkv-hbase）基于 obkv-hbase-client-java 实现，支持通过 Flink SQL 将数据实时写入 OceanBase 的 HBase 模式表。</p>
+<h3 id="步骤-1：创建-HBase-表"><a href="#步骤-1：创建-HBase-表" class="headerlink" title="步骤 1：创建 HBase 表"></a>步骤 1：创建 HBase 表</h3><p>在 OceanBase 中，HBase 表通过命名规范映射：每个 column family 对应一张物理表，格式为 <code>hbase_table_name$family_name</code>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `user_info$basic` (</span><br><span class="line">  `K` <span class="type">varbinary</span>(<span class="number">1024</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,    <span class="comment">-- rowkey</span></span><br><span class="line">  `Q` <span class="type">varbinary</span>(<span class="number">256</span>)  <span class="keyword">NOT</span> <span class="keyword">NULL</span>,    <span class="comment">-- qualifier</span></span><br><span class="line">  `T` <span class="type">bigint</span>(<span class="number">20</span>)      <span class="keyword">NOT</span> <span class="keyword">NULL</span>,    <span class="comment">-- timestamp</span></span><br><span class="line">  `V` <span class="type">varbinary</span>(<span class="number">1024</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>, <span class="comment">-- value</span></span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`K`, `Q`, `T`)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="步骤-2-4：启动-Flink-→-创建映射表"><a href="#步骤-2-4：启动-Flink-→-创建映射表" class="headerlink" title="步骤 2-4：启动 Flink → 创建映射表"></a>步骤 2-4：启动 Flink → 创建映射表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> user_info_sink (</span><br><span class="line">  rowkey STRING,</span><br><span class="line">  basic <span class="type">ROW</span><span class="operator">&lt;</span>name STRING, age <span class="type">INT</span><span class="operator">&gt;</span>,</span><br><span class="line">  contact <span class="type">ROW</span><span class="operator">&lt;</span>email STRING, phone STRING<span class="operator">&gt;</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (rowkey) <span class="keyword">NOT</span> ENFORCED</span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">  <span class="string">&#x27;connector&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;obkv-hbase&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;odp-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;true&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;odp-ip&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;odp-port&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;2885&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;schema-name&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;your_database&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;table-name&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;user_info&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;username&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;user@tenant#cluster&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;password&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;your_password&#x27;</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="步骤-5-6：写入测试数据并验证"><a href="#步骤-5-6：写入测试数据并验证" class="headerlink" title="步骤 5-6：写入测试数据并验证"></a>步骤 5-6：写入测试数据并验证</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> user_info_sink <span class="keyword">VALUES</span></span><br><span class="line">  (<span class="string">&#x27;user001&#x27;</span>, <span class="type">ROW</span>(<span class="string">&#x27;Alice&#x27;</span>, <span class="number">25</span>), <span class="type">ROW</span>(<span class="string">&#x27;alice@example.com&#x27;</span>, <span class="string">&#x27;13800138000&#x27;</span>)),</span><br><span class="line">  (<span class="string">&#x27;user002&#x27;</span>, <span class="type">ROW</span>(<span class="string">&#x27;Bob&#x27;</span>, <span class="number">30</span>), <span class="type">ROW</span>(<span class="string">&#x27;bob@example.com&#x27;</span>, <span class="string">&#x27;13900139000&#x27;</span>));</span><br></pre></td></tr></table></figure>
+
+<h2 id="配置参数"><a href="#配置参数" class="headerlink" title="配置参数"></a>配置参数</h2><h3 id="必需参数"><a href="#必需参数" class="headerlink" title="必需参数"></a>必需参数</h3><ul>
+<li>connector: 固定值 obkv-hbase</li>
+<li>username: 格式 user@tenant#cluster</li>
+<li>password: 用户密码</li>
+<li>schema-name: 数据库名</li>
+<li>table-name: HBase 表名</li>
+</ul>
+<h3 id="连接模式"><a href="#连接模式" class="headerlink" title="连接模式"></a>连接模式</h3><p><strong>Config URL 模式（直连）</strong>：需要 url、sys.username、sys.password<br><strong>ODP 模式（代理）</strong>：设置 odp-mode&#x3D;true、odp-ip、odp-port</p>
+<h3 id="性能调优"><a href="#性能调优" class="headerlink" title="性能调优"></a>性能调优</h3><ul>
+<li>sync-write: 是否同步写入（默认 false，推荐使用缓冲区）</li>
+<li>buffer-flush.buffer-size: 缓冲区大小（默认 1000 行）</li>
+<li>buffer-flush.interval: 刷新间隔（默认 1s）</li>
+<li>max-retries: 最大重试次数（默认 3）</li>
+</ul>
+<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><h3 id="从-Kafka-实时写入"><a href="#从-Kafka-实时写入" class="headerlink" title="从 Kafka 实时写入"></a>从 Kafka 实时写入</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> kafka_source (</span><br><span class="line">  user_id STRING, user_name STRING, age <span class="type">INT</span>,</span><br><span class="line">  email STRING, phone STRING, event_time <span class="type">TIMESTAMP</span>(<span class="number">3</span>),</span><br><span class="line">  WATERMARK <span class="keyword">FOR</span> event_time <span class="keyword">AS</span> event_time <span class="operator">-</span> <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span></span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">  <span class="string">&#x27;connector&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;topic&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;user-events&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;properties.bootstrap.servers&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;localhost:9092&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;format&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;json&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> user_hbase_sink</span><br><span class="line"><span class="keyword">SELECT</span> user_id,</span><br><span class="line">  <span class="type">ROW</span>(user_name, age) <span class="keyword">AS</span> profile,</span><br><span class="line">  <span class="type">ROW</span>(email, phone) <span class="keyword">AS</span> contact</span><br><span class="line"><span class="keyword">FROM</span> kafka_source;</span><br></pre></td></tr></table></figure>
+
+<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h2><h3 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h3><ul>
+<li>高吞吐批处理：buffer-size&#x3D;5000, interval&#x3D;5s</li>
+<li>低延迟实时：buffer-size&#x3D;500, interval&#x3D;500ms</li>
+<li>超低延迟：sync-write&#x3D;true</li>
+</ul>
+<h3 id="错误排查"><a href="#错误排查" class="headerlink" title="错误排查"></a>错误排查</h3><ul>
+<li>连接失败：检查网络、验证用户名密码、确认 ODP 配置</li>
+<li>写入失败：检查 Flink 日志、验证表结构、确认权限</li>
+<li>性能慢：增大缓冲区、提高并行度、检查集群负载</li>
+</ul>
+<h2 id="参考信息"><a href="#参考信息" class="headerlink" title="参考信息"></a>参考信息</h2><ul>
+<li>OceanBase 官方文档：<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmNvbS9kb2Nz">https://www.oceanbase.com/docs<i class="fa fa-external-link-alt"></i></span></li>
+<li>Flink 官方文档：<span class="exturl" data-url="aHR0cHM6Ly9uaWdodGxpZXMuYXBhY2hlLm9yZy9mbGluay9mbGluay1kb2NzLXN0YWJsZS8=">https://nightlies.apache.org/flink/flink-docs-stable/<i class="fa fa-external-link-alt"></i></span></li>
+<li>GitHub：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9mbGluay1jb25uZWN0b3Itb2NlYW5iYXNl">https://github.com/oceanbase/flink-connector-oceanbase<i class="fa fa-external-link-alt"></i></span></li>
+<li>obkv-hbase-client-java：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9vYmt2LWhiYXNlLWNsaWVudC1qYXZh">https://github.com/oceanbase/obkv-hbase-client-java<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+<p>感谢生态团队孙朝阳老师、赵明远老师的专业指导。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93/" rel="tag"># 实时数仓</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag"># 数据迁移</a>
+              <a href="/tags/HBase/" rel="tag"># HBase</a>
+              <a href="/tags/Flink/" rel="tag"># Flink</a>
+              <a href="/tags/OBKV-HBase/" rel="tag"># OBKV-HBase</a>
+              <a href="/tags/Flink-SQL/" rel="tag"># Flink SQL</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-16-ai-concepts-relationship-diagram/" rel="prev" title="Token、Harness、OpenClaw、RAG、MCP、Agent到底啥关系？看完这张图全明白">
+                  <i class="fa fa-angle-left"></i> Token、Harness、OpenClaw、RAG、MCP、Agent到底啥关系？看完这张图全明白
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-25-surviving-ai-era-conversation/" rel="next" title="跟 AI 聊一聊：如何在 AI 乱世中活下去？">
+                  跟 AI 聊一聊：如何在 AI 乱世中活下去？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

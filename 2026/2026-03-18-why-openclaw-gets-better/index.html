@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="深度解读 OpenClaw &quot;越用越好用&quot;的本质：通过 SOUL&#x2F;USER&#x2F;AGENTS&#x2F;SKILL&#x2F;MEMORY 等 md 数据文件的读写闭环，把对话经验沉淀为可检索的知识，让 agent 随使用不断进化；并附实操建议与 OceanBase 社区课程《Easy Data x AI》上线预告。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OpenClaw 为什么越用越好用？">
+<meta property="og:url" content="https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="深度解读 OpenClaw &quot;越用越好用&quot;的本质：通过 SOUL&#x2F;USER&#x2F;AGENTS&#x2F;SKILL&#x2F;MEMORY 等 md 数据文件的读写闭环，把对话经验沉淀为可检索的知识，让 agent 随使用不断进化；并附实操建议与 OceanBase 社区课程《Easy Data x AI》上线预告。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/01.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/02.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/03.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/04.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/05.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/06.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/07.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/08.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/09.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/10.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/11.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/12.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/13.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/14.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/15.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/16.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/17.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/18.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/19.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/20.png">
+<meta property="og:image" content="https://ilongda.com/img/why-openclaw-gets-better/21.png">
+<meta property="article:published_time" content="2026-03-18T01:22:03.000Z">
+<meta property="article:modified_time" content="2026-03-18T01:22:03.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="OpenClaw">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="Skill">
+<meta property="article:tag" content="数据飞轮">
+<meta property="article:tag" content="知识管理">
+<meta property="article:tag" content="记忆系统">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/why-openclaw-gets-better/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/","path":"2026/2026-03-18-why-openclaw-gets-better/","title":"OpenClaw 为什么越用越好用？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OpenClaw 为什么越用越好用？ | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BE%88%E5%A4%9A%E4%BA%BA%E8%A7%89%E5%BE%97-OpenClaw-%E4%B8%8D%E5%A5%BD%E7%94%A8%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">为什么很多人觉得 OpenClaw 不好用？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E7%9A%84%E4%BD%BF%E7%94%A8%E5%A7%BF%E5%8A%BF%E4%B8%80%EF%BC%9A%E6%8A%8A-Agent-%E5%BD%93%E6%88%90%E9%80%9A%E6%89%8D"><span class="nav-number">1.1.</span> <span class="nav-text">错误的使用姿势一：把 Agent 当成通才</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E7%9A%84%E4%BD%BF%E7%94%A8%E5%A7%BF%E5%8A%BF%E4%BA%8C%EF%BC%9A%E6%B2%A1%E6%9C%89%E2%80%9D%E5%9F%B9%E8%AE%AD%E2%80%9D%E4%BD%A0%E7%9A%84-Agent"><span class="nav-number">1.2.</span> <span class="nav-text">错误的使用姿势二：没有”培训”你的 Agent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E7%9A%84%E4%BD%BF%E7%94%A8%E5%A7%BF%E5%8A%BF%E4%B8%89%EF%BC%9A%E6%A8%A1%E5%9E%8B%E6%B2%A1%E9%80%89%E5%AF%B9"><span class="nav-number">1.3.</span> <span class="nav-text">错误的使用姿势三：模型没选对</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenClaw-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%87%AA%E6%88%91%E8%BF%9B%E5%8C%96%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F"><span class="nav-number">2.</span> <span class="nav-text">OpenClaw 的核心机制：一个自我进化的数据系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AA%A8%E6%9E%B6%EF%BC%9A7-%E4%B8%AA%E6%A0%B8%E5%BF%83%E6%95%B0%E6%8D%AE"><span class="nav-number">3.</span> <span class="nav-text">骨架：7 个核心数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-SOUL-md-%E2%80%94-Agent-%E6%98%AF%E8%B0%81"><span class="nav-number">3.1.</span> <span class="nav-text">1. SOUL.md — Agent 是谁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-USER-md-%E2%80%94-%E7%94%A8%E6%88%B7%E6%98%AF%E8%B0%81"><span class="nav-number">3.2.</span> <span class="nav-text">2. USER.md — 用户是谁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-AGENTS-md-%E2%80%94-%E5%81%9A%E4%BA%8B%E7%9A%84%E8%A7%84%E7%9F%A9%E5%92%8C%E8%B8%A9%E8%BF%87%E7%9A%84%E5%9D%91"><span class="nav-number">3.3.</span> <span class="nav-text">3. AGENTS.md — 做事的规矩和踩过的坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-TOOLS-md-%E2%80%94-%E7%8E%AF%E5%A2%83%E5%A4%87%E5%BF%98"><span class="nav-number">3.4.</span> <span class="nav-text">4. TOOLS.md — 环境备忘</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-SKILL-md-%C3%97-N-%E2%80%94-%E5%90%84%E9%A2%86%E5%9F%9F%E7%9A%84%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="nav-number">3.5.</span> <span class="nav-text">5. SKILL.md × N — 各领域的操作手册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-memory-md-%E2%80%94-%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BF%86"><span class="nav-number">3.6.</span> <span class="nav-text">6. memory&#x2F;*.md — 日常记忆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-MEMORY-md-%E2%80%94-%E6%8F%90%E7%82%BC%E5%90%8E%E7%9A%84%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86"><span class="nav-number">3.7.</span> <span class="nav-text">7. MEMORY.md — 提炼后的长期记忆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%80%E8%82%89%EF%BC%9A%E7%94%A8%E6%88%B7%E5%92%8C-Agent-%E5%85%B1%E5%90%8C%E7%94%9F%E9%95%BF%E5%87%BA%E6%9D%A5%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E6%96%87%E4%BB%B6"><span class="nav-number">3.8.</span> <span class="nav-text">血肉：用户和 Agent 共同生长出来的自定义文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%88%91%E8%BF%9B%E5%8C%96%E7%9A%84%E9%97%AD%E7%8E%AF"><span class="nav-number">4.</span> <span class="nav-text">自我进化的闭环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%99%E6%84%8F%E5%91%B3%E7%9D%80%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">这意味着什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenClaw-%E5%AE%9E%E6%93%8D%E5%BB%BA%E8%AE%AE"><span class="nav-number">6.</span> <span class="nav-text">OpenClaw 实操建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">7.</span> <span class="nav-text">结语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#What%E2%80%99s-more"><span class="nav-number">8.</span> <span class="nav-text">What’s more?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-%E7%A4%BE%E5%8C%BA%E8%AF%BE%E7%A8%8B%E3%80%8AEasy-Data-X-AI%E3%80%8B%E4%B8%8A%E7%BA%BF%E9%A2%84%E5%91%8A"><span class="nav-number">8.1.</span> <span class="nav-text">OceanBase 社区课程《Easy Data X AI》上线预告</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%B8%BA%E5%A4%A7%E5%AE%B6%E5%B8%A6%E6%9D%A5%E8%BF%99%E5%A5%97%E8%AF%BE%E7%A8%8B%EF%BC%9F"><span class="nav-number">8.2.</span> <span class="nav-text">为什么要为大家带来这套课程？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AB-Easy%EF%BC%9F"><span class="nav-number">8.3.</span> <span class="nav-text">为什么叫 Easy？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E9%97%A8%E8%AF%BE%E7%A8%8B%E9%80%82%E5%90%88%E8%B0%81%EF%BC%9F"><span class="nav-number">8.4.</span> <span class="nav-text">这门课程适合谁？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BE%E7%A8%8B%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="nav-number">8.5.</span> <span class="nav-text">课程整体架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B4%9E%E5%AF%9F%E5%85%88%E8%A1%8C"><span class="nav-number">8.6.</span> <span class="nav-text">洞察先行</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OpenClaw 为什么越用越好用？ | Longda's Interesting World">
+      <meta itemprop="description" content="深度解读 OpenClaw &quot;越用越好用&quot;的本质：通过 SOUL&#x2F;USER&#x2F;AGENTS&#x2F;SKILL&#x2F;MEMORY 等 md 数据文件的读写闭环，把对话经验沉淀为可检索的知识，让 agent 随使用不断进化；并附实操建议与 OceanBase 社区课程《Easy Data x AI》上线预告。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenClaw 为什么越用越好用？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-18 09:22:03" itemprop="dateCreated datePublished" datetime="2026-03-18T09:22:03+08:00">2026-03-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">老纪的技术唠嗑局</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>18 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">深度解读 OpenClaw "越用越好用"的本质：通过 SOUL/USER/AGENTS/SKILL/MEMORY 等 md 数据文件的读写闭环，把对话经验沉淀为可检索的知识，让 agent 随使用不断进化；并附实操建议与 OceanBase 社区课程《Easy Data x AI》上线预告。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OpenClaw 为什么越用越好用？","description":"深度解读 OpenClaw \"越用越好用\"的本质：通过 SOUL/USER/AGENTS/SKILL/MEMORY 等 md 数据文件的读写闭环，把对话经验沉淀为可检索的知识，让 agent 随使用不断进化；并附实操建议与 OceanBase 社区课程《Easy Data x AI》上线预告。","image":"https://ilongda.com/img/why-openclaw-gets-better/01.png","wordCount":5124,"datePublished":"2026-03-18T01:22:03.000Z","dateModified":"2026-03-18T01:22:03.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/"},"url":"https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/","inLanguage":"zh-CN","keywords":["AI Agent","RAG","OpenClaw","记忆系统","知识管理","数据飞轮","Skill"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"OpenClaw 为什么越用越好用？","item":"https://ilongda.com/2026/2026-03-18-why-openclaw-gets-better/"}]}</script>
+<blockquote>
+<p>OceanBase 社区在 3 月 23 日会上线一套在线课程《Easy Data x AI》，在第一节课程开始之前，我们想先和大家进行一次课前闲聊。</p>
+</blockquote>
+<p><img data-src="/img/why-openclaw-gets-better/01.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>最近深度使用了 OpenClaw，基本上每天都要跟它交流几个小时，也慢慢摸索出了一些经验。</p>
+<p>看到不少人说 OpenClaw 不好用，我想先聊聊 “不好用” 的原因，再深入拆解一个我认为被大多数人忽略的核心问题 —— OpenClaw 越用越好用的本质到底是什么?</p>
+<p><strong>开门见山，先直接说结论：是数据。</strong></p>
+<p>这不是调侃，是我读完它的源码之后得出的判断，下面展开说。</p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”，在这里，我们会持续为大家更新与 #AI 相关的有趣技术内容！</p>
+<span id="more"></span>
+
+<h2 id="为什么很多人觉得-OpenClaw-不好用？"><a href="#为什么很多人觉得-OpenClaw-不好用？" class="headerlink" title="为什么很多人觉得 OpenClaw 不好用？"></a>为什么很多人觉得 OpenClaw 不好用？</h2><p>在聊 OpenClaw 的核心机制之前，先排除几个常见的”用法问题”。很多人说不好用，其实不是产品的问题，大概率都是使用姿势不对。</p>
+<p><img data-src="/img/why-openclaw-gets-better/02.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="错误的使用姿势一：把-Agent-当成通才"><a href="#错误的使用姿势一：把-Agent-当成通才" class="headerlink" title="错误的使用姿势一：把 Agent 当成通才"></a>错误的使用姿势一：把 Agent 当成通才</h3><p>很多人的用法是：配一个 agent，什么都让它干。写代码找它，写文案找它，做数据分析还找它。</p>
+<p>仔细想想，现实世界里是不是每个公司都分岗位？每个专家都专精一个或几个领域？AI agent 也是一样的。</p>
+<p>OpenClaw 支持多 Agent 架构，你可以配置多个 agent，每个负责一个领域。而且从代码层面来看，这不只是”分工”那么简单——每个 agent 有<strong>独立的 workspace 目录、独立的 memory 数据库、独立的 session 历史</strong>。</p>
+<p>也就是说，一个专门做代码审查的 agent，它积累的所有经验都是关于代码审查的，不会被你让它帮你写周报的那些对话污染掉。</p>
+<p>这就像一个公司里，让每个员工专注一个领域，他的经验积累是垂直的、深度的，而不是水平的、稀薄的。</p>
+<h3 id="错误的使用姿势二：没有”培训”你的-Agent"><a href="#错误的使用姿势二：没有”培训”你的-Agent" class="headerlink" title="错误的使用姿势二：没有”培训”你的 Agent"></a>错误的使用姿势二：没有”培训”你的 Agent</h3><p><strong>这是今天我想展开讲一讲的部分。</strong></p>
+<p>很多人装好 OpenClaw，开箱就用，觉得效果一般，然后就下了结论说不好用。但你想想，你招一个新员工，他第一天来上班你就指望他跟干了三年的老员工一样好使？</p>
+<p>Agent 需要培训。需要跟它多对话，告诉它你的偏好，让它了解你的工作场景，跟它一起踩坑然后把经验固化下来。</p>
+<p>这个过程，用 OpenClaw 的术语叫 “形成 SOP”，用更技术的话说，叫<strong>积累 workspace 数据文件</strong>。</p>
+<p>这就是 OpenClaw 越用越好用的核心机制，也是这个话题的重点。</p>
+<h3 id="错误的使用姿势三：模型没选对"><a href="#错误的使用姿势三：模型没选对" class="headerlink" title="错误的使用姿势三：模型没选对"></a>错误的使用姿势三：模型没选对</h3><p>这里的关键认知是：OpenClaw 本身不生产智能，它是一个让 AI 模型发挥得更好的框架。框架再好，底层模型不行，上限就在那里。</p>
+<p>就像你给一个实习生写了一份非常详尽的操作手册，他可能还是做不好；但你给一个高级工程师同样的手册，他能做到远超你预期的水平。</p>
+<h2 id="OpenClaw-的核心机制：一个自我进化的数据系统"><a href="#OpenClaw-的核心机制：一个自我进化的数据系统" class="headerlink" title="OpenClaw 的核心机制：一个自我进化的数据系统"></a>OpenClaw 的核心机制：一个自我进化的数据系统</h2><p><img data-src="/img/why-openclaw-gets-better/03.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>我去读了 OpenClaw 的源码，把整个 “越用越好用” 的机制拆解清楚了。</p>
+<p>说白了，它的架构可以用一句话概括：<strong>每次对话前，把一堆 md 数据文件拼进 prompt；对话后，让 agent 把新学到的东西写回这些 md 数据文件。</strong></p>
+<p>就这么简单。但这个简单的循环，构成了一个威力巨大的飞轮。</p>
+<blockquote>
+<p>说明：</p>
+<p>这里 markdown 估计自己也没想到，如今居然能被用来承载 AI 时代的记忆数据。</p>
+<p>当然，只用 md 文件也会引入一些问题，比如：</p>
+<ul>
+<li>加载的 md 文件中涉及大量数据，会占据上下文长度（上下文过载），进而导致消耗 token；</li>
+<li>云上 agent 使用 md 存储数据，难以进行版本管理；</li>
+<li>等等等等。</li>
+</ul>
+<p>这里暂时不对此进行展开。</p>
+</blockquote>
+<h2 id="骨架：7-个核心数据"><a href="#骨架：7-个核心数据" class="headerlink" title="骨架：7 个核心数据"></a>骨架：7 个核心数据</h2><p>OpenClaw 给每个 agent 的 workspace 预设了 7 类核心数据：</p>
+<p><img data-src="/img/why-openclaw-gets-better/04.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="1-SOUL-md-—-Agent-是谁"><a href="#1-SOUL-md-—-Agent-是谁" class="headerlink" title="1. SOUL.md — Agent 是谁"></a>1. SOUL.md — Agent 是谁</h3><p>这个文件定义了 agent 的人格：语气、风格、边界、价值观。有意思的是，模板里写着一句话：”This file is yours to evolve. As you learn who you are, update it.”——这个文件是你自己的，随着你了解自己，去更新它。</p>
+<p>也就是说，agent 的”人格”不是你一次写死的，是它在跟你互动的过程中，自己慢慢调整的。它发现你喜欢简洁直接的回答，就会把这个偏好写进自己的灵魂文件里。</p>
+<p><img data-src="/img/why-openclaw-gets-better/05.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="2-USER-md-—-用户是谁"><a href="#2-USER-md-—-用户是谁" class="headerlink" title="2. USER.md — 用户是谁"></a>2. USER.md — 用户是谁</h3><p>这是 agent 对你的画像：你的名字、时区、工作习惯、技术偏好、沟通风格。每次对话中 agent 了解到关于你的新信息，就会更新这个文件。用得越久，这个画像越精准，agent 就越”懂你”。</p>
+<p><img data-src="/img/why-openclaw-gets-better/06.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="3-AGENTS-md-—-做事的规矩和踩过的坑"><a href="#3-AGENTS-md-—-做事的规矩和踩过的坑" class="headerlink" title="3. AGENTS.md — 做事的规矩和踩过的坑"></a>3. AGENTS.md — 做事的规矩和踩过的坑</h3><p>这是最关键的一个文件。它定义了 agent 的行为规范，更重要的是，<strong>记录了所有踩过的坑</strong>。</p>
+<p>我在源码里看到它的模板有一条明确的指令：”When you learn a lesson → update AGENTS.md”、”When you make a mistake → document it so future-you doesn’t repeat it.”</p>
+<p>翻译成人话就是：你犯了一个错，把它记下来，这样以后的你就不会再犯。 这就是为什么 OpenClaw 越用越好——不是因为模型变聪明了，是因为 AGENTS.md 里的踩坑记录越来越多。每一条记录都是一次错误的代价换来的经验，被固化成了一行文字，从此永远生效。</p>
+<p><img data-src="/img/why-openclaw-gets-better/07.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="4-TOOLS-md-—-环境备忘"><a href="#4-TOOLS-md-—-环境备忘" class="headerlink" title="4. TOOLS.md — 环境备忘"></a>4. TOOLS.md — 环境备忘</h3><p>记录你的工作环境：SSH 主机名、摄像头设备名、文件路径习惯等。agent 踩坑后自己补充。</p>
+<p><img data-src="/img/why-openclaw-gets-better/08.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="5-SKILL-md-×-N-—-各领域的操作手册"><a href="#5-SKILL-md-×-N-—-各领域的操作手册" class="headerlink" title="5. SKILL.md × N — 各领域的操作手册"></a>5. SKILL.md × N — 各领域的操作手册</h3><p>每个 SKILL.md 定义了一个特定领域的操作规范。OpenClaw 内置了 52 个 skill，涵盖 GitHub issue 管理、邮件处理、健康检查、代码审查等。</p>
+<p>更关键的是，你可以自己写 skill。比如你每周都要出一份特定格式的周报，你可以把格式要求、数据来源、输出模板写成一个 SKILL.md，放到 workspace 里。从此 agent 每次做周报都会按照这个规范来，不需要你每次重新描述。</p>
+<p>Skill 的加载有优先级：内置的优先级最低，workspace 里用户自定义的优先级最高。也就是说你可以覆盖任何内置 skill 的行为。</p>
+<p><img data-src="/img/why-openclaw-gets-better/09.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="6-memory-md-—-日常记忆"><a href="#6-memory-md-—-日常记忆" class="headerlink" title="6. memory&#x2F;*.md — 日常记忆"></a>6. memory&#x2F;*.md — 日常记忆</h3><p>Agent 每天会写一个日期命名的 md 文件，记录当天的对话要点、做了什么、学到什么。这些文件会被索引到 SQLite 数据库里，支持全文搜索和向量检索。</p>
+<p><img data-src="/img/why-openclaw-gets-better/10.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="7-MEMORY-md-—-提炼后的长期记忆"><a href="#7-MEMORY-md-—-提炼后的长期记忆" class="headerlink" title="7. MEMORY.md — 提炼后的长期记忆"></a>7. MEMORY.md — 提炼后的长期记忆</h3><p>Agent 会定期把 daily memory 里的重要内容提炼到这个数据文件里。相当于从日记中整理出来的笔记精华。这个文件每次对话都会被加载进 prompt，所以 agent 的”长期记忆”就存在这里。</p>
+<p><img data-src="/img/why-openclaw-gets-better/11.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="血肉：用户和-Agent-共同生长出来的自定义文件"><a href="#血肉：用户和-Agent-共同生长出来的自定义文件" class="headerlink" title="血肉：用户和 Agent 共同生长出来的自定义文件"></a>血肉：用户和 Agent 共同生长出来的自定义文件</h3><p>以上 7 类数据是框架预设的骨架。但 workspace 本质就是一个普通文件夹，agent 有文件读写能力，它可以在里面创建任何它需要的文件和目录。</p>
+<p>比如一个帮你管理项目的 agent，用久了它的 workspace 里可能长出这样的结构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">workspace/</span><br><span class="line">├── SOUL.md</span><br><span class="line">├── USER.md</span><br><span class="line">├── AGENTS.md</span><br><span class="line">├── TOOLS.md</span><br><span class="line">├── MEMORY.md</span><br><span class="line">├── memory/</span><br><span class="line">│   ├── 2026-03-01.md</span><br><span class="line">│   └── 2026-03-02.md</span><br><span class="line">├── projects/</span><br><span class="line">│   ├── project-alpha/</span><br><span class="line">│   │   ├── progress.md</span><br><span class="line">│   │   ├── decisions.md</span><br><span class="line">│   │   └── risks.md</span><br><span class="line">│   └── project-beta/</span><br><span class="line">│       └── progress.md</span><br><span class="line">├── templates/</span><br><span class="line">│   ├── weekly-report.md</span><br><span class="line">│   └── meeting-notes.md</span><br><span class="line">└── contacts/</span><br><span class="line">    └── team-preferences.md</span><br></pre></td></tr></table></figure>
+
+<p>这些额外的文件没有任何 schema 约束，完全是 agent 在使用过程中自己组织出来的。每个人的 agent 最终长出来的形态不一样，取决于你跟它聊了什么、做了什么、在哪些领域用它。</p>
+<p><strong>这意味着你的 agent 是真正 “私人定制” 的——不是你在设置页面勾选了几个选项，是它通过几百次对话的数据，自己生长出了一套只适合你的知识数据体系。</strong></p>
+<h2 id="自我进化的闭环"><a href="#自我进化的闭环" class="headerlink" title="自我进化的闭环"></a>自我进化的闭环</h2><p>上面说的都是静态的文件结构，真正有意思的是这些文件是怎么被维护和更新的。OpenClaw 设计了一个 agent 自我进化的闭环：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">对话开始</span><br><span class="line">  → 加载 workspace 所有核心 md 文件到 system prompt</span><br><span class="line"></span><br><span class="line">  → agent 根据用户问题，先 memory_search 检索相关记忆</span><br><span class="line"></span><br><span class="line">  → agent 执行任务</span><br><span class="line"></span><br><span class="line">  → 任务中学到新东西 / 犯了错 / 发现了用户新偏好</span><br><span class="line"></span><br><span class="line">  → agent 把数据写回相关文件（AGENTS.md / USER.md / memory/*.md / MEMORY.md）</span><br><span class="line"></span><br><span class="line">  → 文件变更触发 Memory 索引重建（全文索引 + 向量索引）</span><br><span class="line"></span><br><span class="line">  → 对话结束</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">下次对话开始</span><br><span class="line"></span><br><span class="line">  → 加载更新后的 md 文件数据</span><br><span class="line"></span><br><span class="line">  → 搜索到新索引的记忆</span><br><span class="line"></span><br><span class="line">  → agent 行为更精准</span><br><span class="line"></span><br><span class="line">  → 循环</span><br></pre></td></tr></table></figure>
+
+<p>注意这里面有两层循环：</p>
+<ul>
+<li><strong>外层循环：数据读写。</strong> 每次对话加载，对话中更新。这是”经验”层面的积累——agent 知道了哪些事该做、哪些事不该做、你喜欢什么、你的环境是什么样的。</li>
+<li><strong>内层循环：向量索引检索。</strong> 当 memory 文件越来越多，agent 不可能把所有内容都塞进 prompt（有 token 限制），所以 OpenClaw 分别用不同数据库的全文搜索能力和向量检索能力做了一个搜索引擎。agent 每次对话前被指令要求先搜索相关记忆再回答，这样即使积累了几百个 memory 文件，也能找到相关的信息。</li>
+</ul>
+<p><strong>两层循环合在一起，就是一个完整的 “学习-记忆-检索-应用” 系统。而这个系统最宝贵的，就是使用过程中存储的数据。</strong></p>
+<p><img data-src="/img/why-openclaw-gets-better/12.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h2 id="这意味着什么？"><a href="#这意味着什么？" class="headerlink" title="这意味着什么？"></a>这意味着什么？</h2><p>理解了 OpenClaw 的这套机制之后，可以获得几个推论：</p>
+<ol>
+<li><strong>你的 Agent 的价值，都在数据里。</strong> 代码是公开的，模型是通用的。真正属于你的、不可替代的部分，是你 workspace 里那堆数据。那些数据里编码了你的偏好、你的工作流、你踩过的坑、你的项目上下文。换台电脑，把 workspace 文件夹拷过去，体验原封不动。删掉这些数据，一切从零开始。</li>
+<li><strong>调教 Agent 就是写数据。</strong> 不需要学编程，不需要理解 prompt engineering 的技术细节。你只需要用自然语言把你的经验、偏好、规范写成 md 文件，放到 workspace 里就行了。OpenClaw 的代码会自动把它们在合适的时机注入到 prompt 中。甚至你不需要自己写——你跟 agent 对话的过程中，它自己就会把学到的东西写成 md。你要做的只是在它犯错时纠正它，它会自己记住。</li>
+<li><strong>Agent 之间的差距就是数据的差距。</strong> 两个人用同样版本的 OpenClaw、同样的模型，体验可能天差地别。差别就在于他们各自 workspace 里积累了什么。一个人用了三个月，workspace 里有几十个 skill、上百条踩坑记录、完善的用户画像；另一个人刚装上，workspace 只有默认模板。这跟现实世界的专家差距是一样的——两个人智商差不多（模型一样），差距在于积累的经验和知识（md 数据文件）。</li>
+<li><strong>这可能是 AI Agent 产品的通用范式。OpenClaw 做的这套 “数据即知识” 的架构，是很有普适性的。任何 AI agent 产品，如果想要做到 “越用越好用”，最终都要解决知识持久化和检索的问题。</strong></li>
+</ol>
+<p>OpenClaw 中的数据，承载的就是一个不断进化的专家系统——它知道你是谁、你要什么、怎么做你的事、哪些坑不能踩。</p>
+<h2 id="OpenClaw-实操建议"><a href="#OpenClaw-实操建议" class="headerlink" title="OpenClaw 实操建议"></a>OpenClaw 实操建议</h2><p>最后为大家提供几个实操层面的建议：</p>
+<p><img data-src="/img/why-openclaw-gets-better/13.png" alt="OpenClaw 为什么越用越好用？"></p>
+<ul>
+<li><strong>主动引导 Agent 形成 SOP。</strong> 不要等 agent 自己慢慢摸索，在你已经有成熟工作流的领域，直接告诉它”以后这类任务都按照这个流程来”，让它写成 SKILL.md。</li>
+<li><strong>定期审查 workspace 文件。</strong> Agent 自己写的东西不一定都对，定期看看 AGENTS.md、USER.md 里有没有过时或者不准确的数据，及时修正。</li>
+<li><strong>善用多 Agent。</strong> 不同领域配不同 agent，让每个 agent 的知识积累保持垂直和纯粹。一个专做代码的 agent 比一个什么都做的 agent 好用得多。</li>
+<li><strong>备份你的 workspace。</strong> 这是你最有价值的数字资产之一。建议用 Git 管理（OpenClaw 默认就是 Git 跟踪的），定期推到远程仓库。</li>
+<li><strong>选对模型。</strong> 一堆精心打磨的 md 文件喂给一个弱模型，效果也有限。</li>
+</ul>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>OpenClaw 的源码有几十万行，但让它”越用越好用”的核心机制，说穿了就是<strong>数据</strong>的读写循环。代码提供了管道——渠道接入、模型调用、工具执行、memory 索引。但流过管道的水，是那些不断积累的数据。</p>
+<p>换句话说：<strong>OpenClaw 的代码框架决定了它能做什么，数据决定了它做得多好。</strong> 而后者，是你和你的 agent 一起，在一次次对话中攒出来的。</p>
+<p><img data-src="/img/why-openclaw-gets-better/14.png" alt="OpenClaw 为什么越用越好用？"></p>
+<hr>
+<h2 id="What’s-more"><a href="#What’s-more" class="headerlink" title="What’s more?"></a>What’s more?</h2><p><img data-src="/img/why-openclaw-gets-better/15.png" alt="OpenClaw 为什么越用越好用？"></p>
+<blockquote>
+<p>在 OpenClaw 的运行机制背后，数据是关键中的关键。</p>
+<p>我们即将上线的社区课程，会从 “数据” 这个视角为大家进一步展开。</p>
+</blockquote>
+<h3 id="OceanBase-社区课程《Easy-Data-X-AI》上线预告"><a href="#OceanBase-社区课程《Easy-Data-X-AI》上线预告" class="headerlink" title="OceanBase 社区课程《Easy Data X AI》上线预告"></a>OceanBase 社区课程《Easy Data X AI》上线预告</h3><p><img data-src="/img/why-openclaw-gets-better/16.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="为什么要为大家带来这套课程？"><a href="#为什么要为大家带来这套课程？" class="headerlink" title="为什么要为大家带来这套课程？"></a>为什么要为大家带来这套课程？</h3><p>最近和身边的同事和朋友聊天，几乎所有人都在讨论模型——哪个模型更强、哪个模型更便宜、哪个模型多模态能力更好。</p>
+<p>但我们从和用户的沟通中发现，真实业务场景中模型的回答不准确，绝大多数场景都不是模型不行，而是它根本就没拿到正确的数据。</p>
+<p>AI 助手不够个性化，不是模型不懂你，而是它根本没有关于你的数据。</p>
+<p>Agent 做不好复杂任务，不是推理能力不足，而是它调用的知识和技能的数据基础有缺陷……</p>
+<p>现在 AI 爱好者认知的空白主要在于：<strong>大家很多没有看到 AI 能力的另一半——数据</strong>。</p>
+<p>大多数人只盯着前者，我们这门课程会结合后者（Data），<strong>讲清 Data 在 GenAI&#x2F;Agent 中扮演的角色</strong>——给大家呈现一个以数据为视角的完整认知框架。</p>
+<p>我们这套 Easy Data x AI 的课程，希望能为大家建立一个 AI 时代的认知基础：<strong>AI 产品的能力上限 &#x3D; 数据质量 × 模型能力</strong>。</p>
+<p><img data-src="/img/why-openclaw-gets-better/17.png" alt="OpenClaw 为什么越用越好用？"></p>
+<h3 id="为什么叫-Easy？"><a href="#为什么叫-Easy？" class="headerlink" title="为什么叫 Easy？"></a>为什么叫 Easy？</h3><p>我们这是一门面向普罗大众的科普课程，不是传统的工程实训。</p>
+<p>课程名叫”Easy Data x AI”，”Easy”是对学习者的承诺——轻量、清晰、有即时收获；”Data x AI”是课程的视角——从数据的角度解释 AI 应用的效果差异。</p>
+<blockquote>
+<p><strong>“Easy”的准确含义</strong>：Easy 是认知门槛低，不是内容浅薄。</p>
+<p>课程会引用 CoALA 论文框架、ReAct 模式等业界前沿概念，但每个概念都用日常类比和直觉案例讲透，不需要学习者预先具备学术背景。</p>
+</blockquote>
+<h3 id="这门课程适合谁？"><a href="#这门课程适合谁？" class="headerlink" title="这门课程适合谁？"></a>这门课程适合谁？</h3><blockquote>
+<p>双轨并行，论道与习术</p>
+</blockquote>
+<p>为了满足不同角色的学习需求，我们将课程精心设计为两条路径：”道篇”与”术篇”。</p>
+<h4 id="道篇"><a href="#道篇" class="headerlink" title="道篇"></a>道篇</h4><blockquote>
+<p>悟其道（零基础 AI 爱好者和产品决策者的”心法篇”）</p>
+</blockquote>
+<p>“道篇” ：在这里，我们不谈代码，只论道 —— 建立判断力，理解基础原理，学习做出正确的判断和选择。</p>
+<p><img data-src="/img/why-openclaw-gets-better/18.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>学习”道篇”的同学平时不需要写代码，但需要有足够的认知深度来进行一些判断和决策。</p>
+<p>这条路径适合希望了解 AI 技术的爱好者，以及需要能够与 AI 技术团队对话，理解 Agent、RAG、Memory、Skill、MCP 这些概念在产品设计中的含义，能够评估一个 AI 功能的可行性，知道数据层的选择如何影响产品体验的产品决策者。</p>
+<h4 id="术篇"><a href="#术篇" class="headerlink" title="术篇"></a>术篇</h4><blockquote>
+<p>用其术（开发者的”功法篇”）</p>
+</blockquote>
+<p>“术篇” ：在这里，我们以可运行的代码和可观察的结果为核心，让你在动手实践中建立工程直觉。</p>
+<p><img data-src="/img/why-openclaw-gets-better/19.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>不用担心，我们会把代码体验控制在”五分钟跑通”的量级。深度工程细节一律放入”延伸阅读”，不让主线超载。</p>
+<p>这条路径适合已经能够调用 LLM API，但对如何构建完整 AI 应用（知识库、记忆、Agent）缺乏系统认知，希望可以立即上手并看到效果的工具和清晰的架构参考，而不是理论框架的开发者。</p>
+<h3 id="课程整体架构"><a href="#课程整体架构" class="headerlink" title="课程整体架构"></a>课程整体架构</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">公共基础篇</span><br><span class="line">├── F1：大模型的本质与边界</span><br><span class="line">└── F2：AI Agent 的完整图景</span><br><span class="line">    ├── 道篇（P1-P5）</span><br><span class="line">    │   ├── P1：找准 Agent 的用武之地 —— AI Agent 场景识别</span><br><span class="line">    │   ├── P2：让 Agent 会查资料 —— RAG 产品设计</span><br><span class="line">    │   ├── P3：让 Agent 真正记住你 —— 记忆系统设计</span><br><span class="line">    │   ├── P4：把经验变可复用 —— Skill 与知识管理</span><br><span class="line">    │   └── P5：用数据验证价值 —— 案例与度量</span><br><span class="line">    └── 术篇（D1-D5）</span><br><span class="line">        ├── D1：打通 Agent 与数据 —— 大模型 API 入门</span><br><span class="line">        ├── D2：一个系统搞定 —— 统一 AI Native 数据层实战</span><br><span class="line">        ├── D3：实践出真知 —— Agentic RAG 实战</span><br><span class="line">        ├── D4：记哪些、忘哪些？—— Agent 记忆系统开发</span><br><span class="line">        └── D5：授 AI 以渔 —— 综合实战，从 Skill 开发到 MCP 标准化</span><br></pre></td></tr></table></figure>
+
+<p>课程更新时间为：2026 &#x2F; 3 &#x2F; 23 ~ 2026 &#x2F; 5 &#x2F; 20。</p>
+<p>一共 12 节课，公共基础篇 2 节 + 道篇 5 节 + 术篇 5 节。</p>
+<p>道篇和术篇，每周会分别更新一期。</p>
+<table>
+<thead>
+<tr>
+<th>篇章</th>
+<th>课程编号</th>
+<th>上线时间</th>
+<th>课程标题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>公共基础篇</td>
+<td>F1</td>
+<td>3 &#x2F; 23</td>
+<td>大模型的本质与边界</td>
+</tr>
+<tr>
+<td>公共基础篇</td>
+<td>F2</td>
+<td>3 &#x2F; 30</td>
+<td>AI Agent 的完整图景</td>
+</tr>
+<tr>
+<td>道篇</td>
+<td>P1</td>
+<td>4 &#x2F; 8</td>
+<td>找准 Agent 的用武之地 —— AI Agent 场景识别</td>
+</tr>
+<tr>
+<td>道篇</td>
+<td>P2</td>
+<td>4 &#x2F; 15</td>
+<td>让 Agent 会查资料 —— RAG 产品设计</td>
+</tr>
+<tr>
+<td>道篇</td>
+<td>P3</td>
+<td>4 &#x2F; 22</td>
+<td>让 Agent 真正记住你 —— 记忆系统设计</td>
+</tr>
+<tr>
+<td>道篇</td>
+<td>P4</td>
+<td>4 &#x2F; 29</td>
+<td>把经验变可复用 —— Skill 与知识管理</td>
+</tr>
+<tr>
+<td>道篇</td>
+<td>P5</td>
+<td>5 &#x2F; 11</td>
+<td>用数据验证价值 —— 案例与度量</td>
+</tr>
+<tr>
+<td>术篇</td>
+<td>D1</td>
+<td>4 &#x2F; 13</td>
+<td>打通 Agent 与数据 —— 大模型 API 入门</td>
+</tr>
+<tr>
+<td>术篇</td>
+<td>D2</td>
+<td>4 &#x2F; 20</td>
+<td>一个系统搞定 —— 统一 AI Native 数据层实战</td>
+</tr>
+<tr>
+<td>术篇</td>
+<td>D3</td>
+<td>4 &#x2F; 27</td>
+<td>实践出真知 —— Agentic RAG 实战</td>
+</tr>
+<tr>
+<td>术篇</td>
+<td>D4</td>
+<td>5 &#x2F; 6</td>
+<td>记哪些、忘哪些？—— Agent 记忆系统开发</td>
+</tr>
+<tr>
+<td>术篇</td>
+<td>D5</td>
+<td>5 &#x2F; 13</td>
+<td>授 AI 以渔 —— 综合实战，从 Skill 开发到 MCP 标准化</td>
+</tr>
+<tr>
+<td>结营仪式</td>
+<td>-</td>
+<td>5 &#x2F; 20</td>
+<td>结营仪式</td>
+</tr>
+</tbody></table>
+<h3 id="洞察先行"><a href="#洞察先行" class="headerlink" title="洞察先行"></a>洞察先行</h3><p>我们相信，当你看懂了数据，才是真正看懂了 AI 的未来。《Easy Data x AI》的核心哲学是”洞察先行”，每一节课程都力求传递一个核心洞察。我们希望这些凝练的观点，能成为您认知工具箱里的一部分。</p>
+<p>无论你是零基础的 AI 爱好者，还是需要建立 AI 判断力的产品决策者，还是渴望动手实践的工程师，我们都诚挚地邀请你加入《Easy Data x AI》第一季课程。</p>
+<p>在这里，你将收获的不仅是知识与技能，更会获得一个看待 AI 产品的全新视角。</p>
+<p>最后，欢迎各位对 AI 感兴趣的老师加入 Data x AI 交流群，和我们一起学习，一起玩耍~</p>
+<p><img data-src="/img/why-openclaw-gets-better/20.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>这套课程稍后也会在 github 上进行更新，欢迎各位老师们以提 issue 和 pr 的形式，参与课程的讨论和共建。</p>
+<p><img data-src="/img/why-openclaw-gets-better/21.png" alt="OpenClaw 为什么越用越好用？"></p>
+<p>也欢迎各位对课程感兴趣的老师，点击文末的 “阅读原文”，预约我们的社区课程~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/OpenClaw/" rel="tag"># OpenClaw</a>
+              <a href="/tags/%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F/" rel="tag"># 记忆系统</a>
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%AE%A1%E7%90%86/" rel="tag"># 知识管理</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E9%A3%9E%E8%BD%AE/" rel="tag"># 数据飞轮</a>
+              <a href="/tags/Skill/" rel="tag"># Skill</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-11-openclaw-mac-six-agents/" rel="prev" title="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+                  <i class="fa fa-angle-left"></i> OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-19-powermem-1-0-0-release/" rel="next" title="给 OpenClaw 装上长期记忆 —— PowerMem 1.0.0 正式发布">
+                  给 OpenClaw 装上长期记忆 —— PowerMem 1.0.0 正式发布 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

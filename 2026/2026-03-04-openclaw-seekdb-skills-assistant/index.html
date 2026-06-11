@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文介绍如何在个人 AI 助手 OpenClaw 中通过 pip 或 ClawHub 安装 seekdb Agent Skills，加载 seekdb 官方文档技能，让助手用自然语言回答 seekdb 部署、向量搜索、混合搜索与生态集成等常见问题。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OpenClaw + seekdb skills：打造个人 seekdb 助手">
+<meta property="og:url" content="https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文介绍如何在个人 AI 助手 OpenClaw 中通过 pip 或 ClawHub 安装 seekdb Agent Skills，加载 seekdb 官方文档技能，让助手用自然语言回答 seekdb 部署、向量搜索、混合搜索与生态集成等常见问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/02.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/03.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/04.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/05.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/06.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/07.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/08.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/09.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/10.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/11.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/12.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/13.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/14.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/15.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/16.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/17.png">
+<meta property="article:published_time" content="2026-03-03T18:16:07.000Z">
+<meta property="article:modified_time" content="2026-03-03T18:16:07.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 助手">
+<meta property="article:tag" content="Agent Skills">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="OpenClaw">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量搜索">
+<meta property="article:tag" content="混合搜索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/openclaw-seekdb-skills-assistant/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/","path":"2026/2026-03-04-openclaw-seekdb-skills-assistant/","title":"OpenClaw + seekdb skills：打造个人 seekdb 助手"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OpenClaw + seekdb skills：打造个人 seekdb 助手 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-OpenClaw-%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">什么是 OpenClaw ？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-seekdb-%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">什么是 seekdb ？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-seekdb-Agent-Skill"><span class="nav-number">3.</span> <span class="nav-text">什么是 seekdb Agent Skill</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-OpenClaw"><span class="nav-number">4.</span> <span class="nav-text">安装 OpenClaw</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%9A%E8%BF%87-pip-%E5%AE%89%E8%A3%85-seekdb-Agent-Skill"><span class="nav-number">5.</span> <span class="nav-text">通过 pip 安装 seekdb Agent Skill</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%9A%E8%BF%87-ClawHub-%E5%AE%89%E8%A3%85-seekdb-Agent-Skill"><span class="nav-number">6.</span> <span class="nav-text">通过 ClawHub 安装 seekdb Agent Skill</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%80%E5%A7%8B%E5%AF%B9%E8%AF%9D"><span class="nav-number">7.</span> <span class="nav-text">开始对话</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%9F%A5%E7%9C%8B%E4%B8%8B%E5%BD%93%E5%89%8D%E9%83%BD%E6%9C%89%E4%BB%80%E4%B9%88%E6%8A%80%E8%83%BD"><span class="nav-number">7.1.</span> <span class="nav-text">1. 查看下当前都有什么技能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%86%8D%E6%89%93%E5%BC%80-TUI"><span class="nav-number">7.2.</span> <span class="nav-text">2. 再打开 TUI</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%AF%A2%E9%97%AE%E5%A6%82%E4%BD%95%E9%83%A8%E7%BD%B2-seekdb"><span class="nav-number">7.3.</span> <span class="nav-text">3. 询问如何部署 seekdb</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E8%B5%84%E6%96%99"><span class="nav-number">8.</span> <span class="nav-text">相关资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OpenClaw + seekdb skills：打造个人 seekdb 助手 | Longda's Interesting World">
+      <meta itemprop="description" content="本文介绍如何在个人 AI 助手 OpenClaw 中通过 pip 或 ClawHub 安装 seekdb Agent Skills，加载 seekdb 官方文档技能，让助手用自然语言回答 seekdb 部署、向量搜索、混合搜索与生态集成等常见问题。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenClaw + seekdb skills：打造个人 seekdb 助手
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-04 02:16:07" itemprop="dateCreated datePublished" datetime="2026-03-04T02:16:07+08:00">2026-03-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文介绍如何在个人 AI 助手 OpenClaw 中通过 pip 或 ClawHub 安装 seekdb Agent Skills，加载 seekdb 官方文档技能，让助手用自然语言回答 seekdb 部署、向量搜索、混合搜索与生态集成等常见问题。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OpenClaw + seekdb skills：打造个人 seekdb 助手","description":"本文介绍如何在个人 AI 助手 OpenClaw 中通过 pip 或 ClawHub 安装 seekdb Agent Skills，加载 seekdb 官方文档技能，让助手用自然语言回答 seekdb 部署、向量搜索、混合搜索与生态集成等常见问题。","image":"https://ilongda.com/img/openclaw-seekdb-skills-assistant/01.webp","wordCount":1924,"datePublished":"2026-03-03T18:16:07.000Z","dateModified":"2026-03-03T18:16:07.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/"},"url":"https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/","inLanguage":"zh-CN","keywords":["OceanBase","seekdb","混合搜索","向量搜索","OpenClaw","Agent Skills","AI 助手"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"OpenClaw + seekdb skills：打造个人 seekdb 助手","item":"https://ilongda.com/2026/2026-03-04-openclaw-seekdb-skills-assistant/"}]}</script>
+<blockquote>
+<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+</blockquote>
+<p>这篇文章为大家介绍如何在 <strong>OpenClaw</strong> 中加载 <strong>seekdb Agent Skills</strong>，让它能够随时基于 seekdb 官方文档回答开发者有关 seekdb 部署、向量搜索、混合搜索、集成方式等常见问题。</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/01.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<h1 id="什么是-OpenClaw-？"><a href="#什么是-OpenClaw-？" class="headerlink" title="什么是 OpenClaw ？"></a>什么是 OpenClaw ？</h1><p>OpenClaw 实在太火了，其实可以不介绍。但为了保证内容的完整性，还是象征性地介绍下~</p>
+<p><strong>OpenClaw</strong> 是一款运行在你自己设备上的<strong>个人 AI 助手</strong>。它在你已有的沟通渠道上与你对话（如 WhatsApp、Telegram、Slack、Discord、Signal、iMessage、WebChat 等），也支持通过本地 TUI 或 Web 界面直接聊天。</p>
+<span id="more"></span>
+
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/02.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<p>特点概览：</p>
+<ul>
+<li><strong>本地优先</strong>：数据与对话由你掌控，可完全在本地或自建环境中运行。</li>
+<li><strong>多渠道</strong>：同一助手可接入多种即时通讯与开发工具。</li>
+<li><strong>可扩展</strong>：通过 <strong>Skill（技能）</strong> 为助手注入领域知识或工具能力。</li>
+</ul>
+<h1 id="什么是-seekdb-？"><a href="#什么是-seekdb-？" class="headerlink" title="什么是 seekdb ？"></a>什么是 seekdb ？</h1><p>seekdb 是 OceanBase 推出的 AI 原生数据库，可以运行在各种设备上。</p>
+<p>它将关系型数据、向量、全文、JSON、GIS 等多种数据类型统一在单一引擎中，支持通过一条 SQL 完成向量搜索 + 全文搜索 + 关系查询的混合操作。</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/03.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<p>特点概览：</p>
+<ul>
+<li>AI 原生：内置 embedding 生成、重排序、LLM 推理能力，数据库内完成 RAG 工作流。</li>
+<li>混合搜索：向量搜索 + 全文搜索 + 关系查询，一条 SQL 搞定所有。</li>
+<li>轻量易部署：最低 1 核 CPU + 2GB 内存即可运行，支持嵌入式、Docker、RPM 多种部署方式。</li>
+<li>MySQL 兼容：兼容 MySQL 语法与生态，支持完整 ACID 事务，学习成本低。</li>
+<li>开源免费：Apache 2.0 许可，代码开源在 GitHub。</li>
+</ul>
+<h1 id="什么是-seekdb-Agent-Skill"><a href="#什么是-seekdb-Agent-Skill" class="headerlink" title="什么是 seekdb Agent Skill"></a>什么是 seekdb Agent Skill</h1><p><strong>seekdb Agent Skill</strong> 是一组与 <strong>seekdb</strong> 向量数据库相关的 Agent 技能，用于增强 AI 助手在 seekdb 场景下的能力。本 Skill 包由 seekdb 生态插件提供，支持多种 AI 工具（如 OpenClaw、Claude Code、Cursor、Codex 等）。</p>
+<p>当前主要包含三类技能：</p>
+<ol>
+<li><strong>seekdb-docs（文档技能）</strong><ul>
+<li>内置 seekdb 官方文档知识库，支持基于内容的语义检索。</li>
+<li>涵盖快速入门、开发指南（向量搜索、混合搜索、AI 函数等）、SDK&#x2F;API 参考、多模型数据、集成与部署运维、实践教程等。</li>
+<li>助手在回答「如何部署 seekdb」「如何使用向量搜索」等问题时，会优先查阅远程文档，失败时回退到本地文档。</li>
+</ul>
+</li>
+<li><strong>importing-to-seekdb（导入技能）</strong><ul>
+<li>将 CSV&#x2F;Excel 导入 seekdb，支持可选列向量化（如 all-MiniLM-L6-v2），便于后续语义搜索。</li>
+<li>支持预览、批量导入与集合管理。</li>
+</ul>
+</li>
+<li><strong>querying-from-seekdb（查询技能）</strong><ul>
+<li>对 seekdb 进行标量&#x2F;混合搜索，支持元数据过滤与 RRF 排序，并可导出为 CSV&#x2F;Excel。</li>
+</ul>
+</li>
+</ol>
+<p>本文以 <strong>OpenClaw + seekdb 文档技能</strong> 为例，介绍如何安装、加载技能并通过自然语言向助手提问（如「how to deploy seekdb」等），助手会基于该 Skill 检索文档并给出解答。</p>
+<hr>
+<h1 id="安装-OpenClaw"><a href="#安装-OpenClaw" class="headerlink" title="安装 OpenClaw"></a>安装 OpenClaw</h1><p>小编的 OpenClaw 是让 Qwen Code 直接替我安装的。</p>
+<p>Qwen Code 是 Claude Code 的平替产品，默认的 Qwen3-Coder 模型免费额度是每日 2000 次请求，正常使用场景都够用，顺带在这里一起推荐给大家。</p>
+<p>环境要求：<strong>Node.js ≥ 22</strong>。</p>
+<ol>
+<li>一键安装脚本</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -fsSL https://openclaw.ai/install.sh | bash</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>先选择 QuickStart，后面有需要可以再手动配置</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/04.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="3">
+<li>选择一个 provider，在下一步输入 API Key，并选择一个模型</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/05.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="4">
+<li>目前用不到，可以先跳过</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/06.webp" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="5">
+<li>选择不配置 skill，后面再配置。这里显示的几个配置信息很重要:</li>
+</ol>
+<ul>
+<li>openclaw.json：OpenClaw 的配置文件，所有的配置都写入了这个文件，可以手动编辑这个 JSON 文件来修改配置</li>
+<li>Workspace 路径：~&#x2F;.openclaw&#x2F;workspace，OpenClaw 的默认操作目录，后面的 skill 也要放到这个文件夹下</li>
+<li>sessions：是与会话持久化有关的目录，OpenClaw 的会话在关闭终端时不会结束，当你再次打开终端时会继续上次的会话，除非输入「&#x2F;new」，才会开启一个新会话</li>
+</ul>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/07.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="6">
+<li>Hooks 是 OpenClaw 在执行特定操作（如启动、开启新会话）时运行的指令，可以在每个上面敲击空格多选，进行开启</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/08.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="7">
+<li>这里选择使用 TUI，也可以使用 <span class="exturl" data-url="aHR0cDovLzEyNy4wLjAuMToxODc4OS8/dG9rZW49">http://127.0.0.1:18789?token=<i class="fa fa-external-link-alt"></i></span>… 打开 Web UI</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/09.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ol start="8">
+<li>输入「what skills do you have?」，可以看到这里并没有 seekdb 相关的 skill。输入「&#x2F;exit」，先退出。</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/10.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<p>更多细节见官方：快速入门、安装说明。</p>
+<h1 id="通过-pip-安装-seekdb-Agent-Skill"><a href="#通过-pip-安装-seekdb-Agent-Skill" class="headerlink" title="通过 pip 安装 seekdb Agent Skill"></a>通过 pip 安装 seekdb Agent Skill</h1><p>seekdb Agent Skill 以 <strong>Python 包</strong>形式发布在 PyPI，通过 <code>pip</code> 安装后，运行交互式安装器将技能安装到 OpenClaw 的工作区。</p>
+<ol>
+<li>安装 Python 包</li>
+</ol>
+<p><strong>注意：Ubuntu 等系统可能无法直接运行下面的命令，如果有报错，请先创建虚拟环境</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install seekdb-agent-skills</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>运行交互式安装器</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">seekdb-agent-skills</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>在安装器中操作</li>
+</ol>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/11.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<ul>
+<li><strong>选择工具</strong>：在列表中选择 <strong>OpenClaw</strong>。</li>
+<li><strong>确认安装路径</strong>：安装器会将技能安装到 <code>~/.openclaw/workspace/skills</code>，确认即可。</li>
+<li><strong>选择技能</strong>：默认勾选了 <strong>seekdb</strong>（文档技能），可以直接点击 Enter 键确认。</li>
+<li>用方向键与 Space 多选，Enter 确认，安装器会把对应技能目录复制到 OpenClaw 工作区。</li>
+</ul>
+<p>安装完成后，如果在 Web 页面需要点击「New session」，如果在 TUI 需要输入「&#x2F;new」，以便加载新技能（OpenClaw 会扫描 <code>~/.openclaw/workspace/skills</code> 下的技能）。</p>
+<ol start="4">
+<li>确认技能是否已安装，有多种确认方式</li>
+</ol>
+<p>命令行中确认：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw skills</span><br></pre></td></tr></table></figure>
+
+<p>预期输出如下：</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/12.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<p>Web UI 确认：</p>
+<p>点击 Skills 选项卡，输入 seekdb 进行查询</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/13.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<h1 id="通过-ClawHub-安装-seekdb-Agent-Skill"><a href="#通过-ClawHub-安装-seekdb-Agent-Skill" class="headerlink" title="通过 ClawHub 安装 seekdb Agent Skill"></a>通过 ClawHub 安装 seekdb Agent Skill</h1><p>除 pip 外，你也可以通过 ClawHub 安装 seekdb Agent Skill。</p>
+<p>两种安装方式的区别在于：ClawHub 不支持下载大量文件，在 ClawHub 上的 seekdb Agent Skill 仅提供<strong>远程模式</strong>（从 GitHub 拉取文档），不包含本地文档，使用前需能访问 GitHub；而通过 PyPI 安装的版本则同时支持<strong>本地模式</strong>和<strong>远程模式</strong>，可在无网络或 GitHub 不可用时回退到本地文档。</p>
+<ol>
+<li>安装 clawhub</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g clawhub</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>安装 seekdb-docs 技能</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clawhub install seekdb-docs</span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，验证技能是否已安装的方式与 pip 相同：可在命令行执行 <code>openclaw skills</code> 查看技能列表，或在 Web UI 中点击 Skills 选项卡、输入 seekdb 进行查询。</p>
+<h1 id="开始对话"><a href="#开始对话" class="headerlink" title="开始对话"></a>开始对话</h1><p>说明：这里 OpenClaw 的实际表现，会和模型的选择有较大的关系。</p>
+<h3 id="1-查看下当前都有什么技能"><a href="#1-查看下当前都有什么技能" class="headerlink" title="1. 查看下当前都有什么技能"></a>1. 查看下当前都有什么技能</h3><p>输入「what skills do you have?」，显示了 seekdb-docs 的技能</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/14.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<h3 id="2-再打开-TUI"><a href="#2-再打开-TUI" class="headerlink" title="2. 再打开 TUI"></a>2. 再打开 TUI</h3><p>因为 OpenClaw 的 Web UI 页面和 TUI 指向的是同一个会话，这个问题我们打开 TUI</p>
+<p>输入下面的命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw tui</span><br></pre></td></tr></table></figure>
+
+<p>我们并没有输入任何问题，打开 TUI，就把在 Web UI 上问的问题带进来了</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/15.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<h3 id="3-询问如何部署-seekdb"><a href="#3-询问如何部署-seekdb" class="headerlink" title="3. 询问如何部署 seekdb"></a>3. 询问如何部署 seekdb</h3><p>输入「how to deploy seekdb?」，它正确回答了 seekdb 的部署方式。</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/16.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<p>你还可以继续追问，例如：</p>
+<ol>
+<li>「how to use vector search in seekdb?」</li>
+<li>「seekdb 支持哪些 AI 框架集成？」</li>
+<li>「如何在 seekdb 中实现混合搜索？」等等。</li>
+</ol>
+<p>只要问题与 seekdb 文档相关，OpenClaw 都会优先使用这套 Skills 来进行解答和执行相关的任务。</p>
+<p><img data-src="/img/openclaw-seekdb-skills-assistant/17.png" alt="OpenClaw + seekdb skills：打造个人 seekdb 助手"></p>
+<h1 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h1><ul>
+<li>seekdb 官网：<span class="exturl" data-url="aHR0cHM6Ly9vY2VhbmJhc2UuYWkvemgtQ04v">https://oceanbase.ai/zh-CN/<i class="fa fa-external-link-alt"></i></span></li>
+<li>seekdb 项目仓库：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span></li>
+<li>seekdb 官方文档：<span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmFpL2RvY3Mv">https://www.oceanbase.ai/docs/<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%90%9C%E7%B4%A2/" rel="tag"># 向量搜索</a>
+              <a href="/tags/OpenClaw/" rel="tag"># OpenClaw</a>
+              <a href="/tags/Agent-Skills/" rel="tag"># Agent Skills</a>
+              <a href="/tags/AI-%E5%8A%A9%E6%89%8B/" rel="tag"># AI 助手</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-03-seekdb-ai-data-sandbox/" rel="prev" title="从 Vibe Coding 到 AI Agent，OceanBase seekdb 打造 AI 时代毫秒级数据沙箱">
+                  <i class="fa fa-angle-left"></i> 从 Vibe Coding 到 AI Agent，OceanBase seekdb 打造 AI 时代毫秒级数据沙箱
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-10-agent-skills-teams-architecture-evolution/" rel="next" title="Agent &#x2F; Skills &#x2F; Teams 架构演进流程及技术选型之道">
+                  Agent / Skills / Teams 架构演进流程及技术选型之道 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

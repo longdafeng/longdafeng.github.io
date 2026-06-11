@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="bubseek 是建立在 bub 框架与 OceanBase seekdb 之上的自驱动洞察 Agent。只需一句提示词，它就能自主对接数据源、定制可视化看板、执行分析并输出报告；同时其自身的 tape 足迹存入 seekdb，被再次分析后反哺团队洞察。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="bubseek —— 让 Agent 的足迹，变成团队的洞察">
+<meta property="og:url" content="https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="bubseek 是建立在 bub 框架与 OceanBase seekdb 之上的自驱动洞察 Agent。只需一句提示词，它就能自主对接数据源、定制可视化看板、执行分析并输出报告；同时其自身的 tape 足迹存入 seekdb，被再次分析后反哺团队洞察。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/02.gif">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/03.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/04.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/05.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/06.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/07.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/08.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/09.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/10.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/11.webp">
+<meta property="og:image" content="https://ilongda.com/img/bubseek-agent-insights/12.webp">
+<meta property="article:published_time" content="2026-04-14T17:43:50.000Z">
+<meta property="article:modified_time" content="2026-04-14T17:43:50.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="bub">
+<meta property="article:tag" content="bubseek">
+<meta property="article:tag" content="marimo">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="数据分析">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/bubseek-agent-insights/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/","path":"2026/2026-04-15-bubseek-agent-insights/","title":"bubseek —— 让 Agent 的足迹，变成团队的洞察"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>bubseek —— 让 Agent 的足迹，变成团队的洞察 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#bub-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">bub 是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bubseek-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">bubseek 是什么？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bubseek-%E7%9A%84%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84%E5%92%8C%E7%8E%B0%E7%8A%B6"><span class="nav-number">3.</span> <span class="nav-text">bubseek 的技术架构和现状</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BB%A1%E8%B6%B3%E5%AE%9A%E5%88%B6%E5%8C%96%E6%95%B0%E6%8D%AE%E9%9C%80%E6%B1%82"><span class="nav-number">3.1.</span> <span class="nav-text">满足定制化数据需求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%8A%E9%9C%80%E6%B1%82%E5%8F%98%E6%88%90%E6%8F%90%E7%A4%BA%E8%AF%8D"><span class="nav-number">3.1.1.</span> <span class="nav-text">把需求变成提示词</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B2%A1%E6%9C%89%E6%8E%92%E6%9C%9F%EF%BC%8C%E5%8F%AA%E6%9C%89%E8%BF%AD%E4%BB%A3"><span class="nav-number">3.1.2.</span> <span class="nav-text">没有排期，只有迭代</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%8A-Agent-%E7%9A%84%E8%B6%B3%E8%BF%B9%E5%8F%98%E6%88%90%E5%9B%A2%E9%98%9F%E6%B4%9E%E5%AF%9F"><span class="nav-number">3.2.</span> <span class="nav-text">把 Agent 的足迹变成团队洞察</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90-Agent-%E5%B0%B1%E6%98%AF%E5%9C%A8%E5%88%86%E6%9E%90%E5%9B%A2%E9%98%9F"><span class="nav-number">3.2.1.</span> <span class="nav-text">分析 Agent 就是在分析团队</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E9%9C%80%E8%A6%81%E4%B8%93%E9%97%A8%E7%9A%84%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">3.2.2.</span> <span class="nav-text">不需要专门的分析工具</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bubseek-%E5%85%B3%E9%94%AE%E7%89%B9%E6%80%A7"><span class="nav-number">4.</span> <span class="nav-text">bubseek 关键特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E6%B8%A0%E9%81%93%E6%94%AF%E6%8C%81"><span class="nav-number">4.1.</span> <span class="nav-text">多渠道支持</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%BB%E9%87%8F%E5%8C%96%E6%95%B0%E6%8D%AE%E6%B6%88%E8%B4%B9"><span class="nav-number">4.2.</span> <span class="nav-text">轻量化数据消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E7%94%9F%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7"><span class="nav-number">4.3.</span> <span class="nav-text">内生可观测性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%9F%E4%B8%80%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7"><span class="nav-number">4.4.</span> <span class="nav-text">统一的数据底座</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B"><span class="nav-number">4.5.</span> <span class="nav-text">快速开始</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2-seekdb"><span class="nav-number">4.5.1.</span> <span class="nav-text">部署 seekdb</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2-bubseek"><span class="nav-number">4.5.2.</span> <span class="nav-text">部署 bubseek</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">5.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="bubseek —— 让 Agent 的足迹，变成团队的洞察 | Longda's Interesting World">
+      <meta itemprop="description" content="bubseek 是建立在 bub 框架与 OceanBase seekdb 之上的自驱动洞察 Agent。只需一句提示词，它就能自主对接数据源、定制可视化看板、执行分析并输出报告；同时其自身的 tape 足迹存入 seekdb，被再次分析后反哺团队洞察。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          bubseek —— 让 Agent 的足迹，变成团队的洞察
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-15 01:43:50" itemprop="dateCreated datePublished" datetime="2026-04-15T01:43:50+08:00">2026-04-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">老纪的技术唠嗑局</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.5k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>13 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">bubseek 是建立在 bub 框架与 OceanBase seekdb 之上的自驱动洞察 Agent。只需一句提示词，它就能自主对接数据源、定制可视化看板、执行分析并输出报告；同时其自身的 tape 足迹存入 seekdb，被再次分析后反哺团队洞察。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"bubseek —— 让 Agent 的足迹，变成团队的洞察","description":"bubseek 是建立在 bub 框架与 OceanBase seekdb 之上的自驱动洞察 Agent。只需一句提示词，它就能自主对接数据源、定制可视化看板、执行分析并输出报告；同时其自身的 tape 足迹存入 seekdb，被再次分析后反哺团队洞察。","image":"https://ilongda.com/img/bubseek-agent-insights/01.webp","wordCount":3507,"datePublished":"2026-04-14T17:43:50.000Z","dateModified":"2026-04-14T17:43:50.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/"},"url":"https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/","inLanguage":"zh-CN","keywords":["OceanBase","Agent","seekdb","bubseek","bub","数据分析","marimo"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"bubseek —— 让 Agent 的足迹，变成团队的洞察","item":"https://ilongda.com/2026/2026-04-15-bubseek-agent-insights/"}]}</script>
+<blockquote>
+<p>造一个人人都喜欢的 Agent 很难，但是帮助别人来做一个他&#x2F;她&#x2F;它喜欢的 Agent 也很不错~</p>
+</blockquote>
+<blockquote>
+<p>🔍 bubseek 的”记忆宝库”正是由 seekdb 守护的哦！如果你也想为自己的 Agent 找个靠谱的数据管家，欢迎来 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 逛逛，说不定会有惊喜发现～</p>
+</blockquote>
+<p><img data-src="/img/bubseek-agent-insights/01.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<h1 id="bub-是什么？"><a href="#bub-是什么？" class="headerlink" title="bub 是什么？"></a>bub 是什么？</h1><p>bub 是一个框架，但是框架意味着什么呢？我想可能是：A common shape for Agent，一个相对稳定的基线微框架，支持深度私人定制。这很容易让人想起《红色警戒》里的基地车，收起来能跑，展开能造。bub 就是那个基地车，不是基地本身，而是让基地成为可能的东西。</p>
+<p><img data-src="/img/bubseek-agent-insights/02.gif" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>这个 Agent 内核，要足够稳定，足够容易被理解，由维护者保证质量。而功能插件则利用开放的接口去扩展，可以任意 vibe，甚至直接让 Agent 自己为功能需求生成代码来实现。</p>
+<p>现在很火的 OpenClaw 在企业内部基本不可能真正落地，bub 就是把 Agent 中不需要的功能分离出去，变成一个精心设计的轻内核 + 随便 vibe 功能插件的架构。</p>
+<p>bub 是一个 hook-first 的 AI 框架，核心保持精简，通过 hooks 和 skills 扩展功能，它的架构非常优雅：AgentLoop 抽象、Tape 记忆系统、Skills 引擎，每个模块都恰到好处。核心理念是 “路由 → 模型 → 工具 → 记忆” 的确定性单向数据流。</p>
+<p>框架化链路上的每个主要部分都很容易进行定制，我们希望 bub 是一个没有偏好的 Agent，所有偏好来自于使用方，可以方便地做发行版。</p>
+<blockquote>
+<p>hook（钩子）是 bub 框架的扩展点，框架本身只是一个空壳，所有功能都通过 hook 插件来实现，包括内置功能本身。</p>
+<p>小编猜想：这应该就是文章开头为大家展示的 bub 项目 logo 的由来。</p>
+</blockquote>
+<p><img data-src="/img/bubseek-agent-insights/03.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”，我们会持续为大家更新与 #Data 和 #AI 相关的技术内容！</p>
+<span id="more"></span>
+
+<h1 id="bubseek-是什么？"><a href="#bubseek-是什么？" class="headerlink" title="bubseek 是什么？"></a>bubseek 是什么？</h1><p>简单说，bubseek 是一个自驱动的洞察 Agent。它建立在 bub 和 OceanBase seekdb 之上，接受提示词，并且将数据转化成可读、可共享的洞察。</p>
+<p>更确切地说，它可以根据任务的需求，自主对接数据源，为其定义和定制可视化视图，执行分析动作，并提交对应的分析报告。不需要漫长的排期，不需要跨部门协调，只需要告诉它你想要什么，剩下的交给 bubseek。</p>
+<p>如何利用 Agent 进一步满足企业内部对各种数据消费的定制化需求，而当 Agent 的足迹遍布群聊、遍布任务流，我们怎么让这些分散的痕迹，变成团队可以共享、可以复用的洞察？这就是 bubseek 要回答的问题。</p>
+<blockquote>
+<p>bubseek 正是通过上面为大家提到的 hook 机制，向 bub 注册了 OceanBase&#x2F;seekdb 作为 Agent 后端数据存储组件的方式，不改 bub 源码，只挂钩子。</p>
+</blockquote>
+<p>当然，bubseek 和 bub 一样，也可以看做成一个框架，可以成为你想要的那个。</p>
+<p>至于如何成为，每个人对 bubseek 都会有自己的期望和理解。欢迎大家尝试各种不同的模型、提示词工程、拟人化技巧，甚至修改它的代码，直到达到你想要的目标。如果你需要一个起点开始探索 Agent，或许 bubseek 和 bub 一样，也是一个不错的选择。</p>
+<p><img data-src="/img/bubseek-agent-insights/04.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<h1 id="bubseek-的技术架构和现状"><a href="#bubseek-的技术架构和现状" class="headerlink" title="bubseek 的技术架构和现状"></a>bubseek 的技术架构和现状</h1><p>bubseek 接受提示词，根据任务需求自主对接数据源，定义和定制可视化视图，执行分析动作，提交分析报告。它负责”消费”数据，分析、提炼、输出洞察。</p>
+<p>bubseek 建立在 bub 和 seekdb 之上：</p>
+<ul>
+<li>bub 是一个 Agent 框架。它定义了 Agent 的 common shape：有边界、有证据、可交接。它的 tape 设计完整记录了 Agent 的每一次思考、每一次工具调用、每一个结果。</li>
+<li>seekdb 是一个嵌入式数据库。它专为 AI 时代的工作负载设计，原生支持向量嵌入和 RAG 等能力，能更好支撑 “把数据变成洞察”。</li>
+</ul>
+<p><img data-src="/img/bubseek-agent-insights/05.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>这个架构支撑起了前面的两个能力：对外，bubseek 作为 Agent 消费数据，服务业务需求；对内，它自己的足迹又成为被分析的对象，反哺团队理解。</p>
+<blockquote>
+<p>bubseek 还处在一个比较早期的阶段，但是我们已经验证和跑通了基本的业务流程：从数据接入，到 seekdb 存储，再到 Agent 分析生成 insight。</p>
+<p>不过，这可能也是 “深度定制化” 的好时机。</p>
+</blockquote>
+<h2 id="满足定制化数据需求"><a href="#满足定制化数据需求" class="headerlink" title="满足定制化数据需求"></a>满足定制化数据需求</h2><p>企业内部的数据消费需求，往往是多样化的、碎片化的、随时变化的。运营想看趋势，产品想追指标，老板要日报——传统的方式是提需求、等排期、上线，周期长、成本高。</p>
+<p>bubseek 想换一种方式，让这些小而具体的数据被看见。</p>
+<h3 id="把需求变成提示词"><a href="#把需求变成提示词" class="headerlink" title="把需求变成提示词"></a>把需求变成提示词</h3><p>在 bubseek 里，你不需要写复杂的查询语句，也不需要画繁琐的报表。你只需要告诉它你想要什么：</p>
+<ul>
+<li>“帮我建一个看板，跟踪这周 AI 领域的新项目，每天更新”</li>
+<li>“分析一下 vllm 为什么突然 trending，出一份简报”</li>
+<li>“看看过去一个月团队最常讨论的技术话题有哪些”</li>
+</ul>
+<p>bubseek 接到提示词，自己去做剩下的事：对接数据源（GitHub、Slack、内部系统……），定义视图，执行分析，生成报告。</p>
+<h3 id="没有排期，只有迭代"><a href="#没有排期，只有迭代" class="headerlink" title="没有排期，只有迭代"></a>没有排期，只有迭代</h3><p>因为整个过程是 Agent 驱动的，需求的响应速度从”按周排期”或者”分配人天”变成了”即时响应”。不满意？改个提示词再来一次。想要新的维度？加一句话就行。数据消费不再是”提需求等交付”的重型流程，而变成了轻量对话。</p>
+<h2 id="把-Agent-的足迹变成团队洞察"><a href="#把-Agent-的足迹变成团队洞察" class="headerlink" title="把 Agent 的足迹变成团队洞察"></a>把 Agent 的足迹变成团队洞察</h2><p>当 bubseek 被团队用起来，它自己就会产生大量数据——每一次交互、每一个查询、每一份报告，都以 tape 的形式存进 seekdb。这些数据本身，就是洞察的矿藏。</p>
+<h3 id="分析-Agent-就是在分析团队"><a href="#分析-Agent-就是在分析团队" class="headerlink" title="分析 Agent 就是在分析团队"></a>分析 Agent 就是在分析团队</h3><p>bubseek 可以像分析任何数据源一样分析自己：</p>
+<ul>
+<li>哪些类型的查询最多？——反映团队最关心什么</li>
+<li>哪些任务经常失败？——反映 Agent 的能力边界，也可能反映业务的难点</li>
+<li>哪些需求被反复提及但没被满足？——反映产品的机会点</li>
+</ul>
+<p>这不是传统的”可观测性”（看系统健康度），而是更深一层的”可理解性”——通过 Agent 的足迹，理解团队在想什么、在做什么、卡在哪里。</p>
+<h3 id="不需要专门的分析工具"><a href="#不需要专门的分析工具" class="headerlink" title="不需要专门的分析工具"></a>不需要专门的分析工具</h3><p>因为所有数据都在 seekdb 里，分析本身就是 bubseek 的工作。你想了解团队过去一周的动向？问 bubseek 就行。它自己去查自己的 tape，然后给你一份报告。</p>
+<p>这就形成了一个闭环：bubseek 服务团队，产生数据；这些数据又被 bubseek 分析，反哺团队对自身协作的理解。</p>
+<h1 id="bubseek-关键特性"><a href="#bubseek-关键特性" class="headerlink" title="bubseek 关键特性"></a>bubseek 关键特性</h1><p>接下来，为大家介绍 bubseek 的几个关键特性。</p>
+<h2 id="多渠道支持"><a href="#多渠道支持" class="headerlink" title="多渠道支持"></a>多渠道支持</h2><p>Agent 需要入口来接收需求。bubseek 内置了五个常用的即时通讯渠道：飞书、钉钉、微信、Discord 和 Telegram。安装后配置对应的环境变量即可使用，无需额外开发。这些渠道遵循 bub 的 channel 扩展规范，便于自行开发扩展或者引入其他第三方实现。</p>
+<p><img data-src="/img/bubseek-agent-insights/06.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>此外还有一个 Web 入口：marimo channel。启动后访问 <code>http://127.0.0.1:2718</code>，除了一个基本的会话界面之外，还包含简单的数据分析可视化示例和用于内部服务数据呈现的一些看板。</p>
+<h2 id="轻量化数据消费"><a href="#轻量化数据消费" class="headerlink" title="轻量化数据消费"></a>轻量化数据消费</h2><p>Agent 接到需求后执行任务，输出结果。</p>
+<p>企业内部的数据消费需求往往是碎片化的：运营想看趋势，产品想追指标，技术想了解开源动态。传统的方式是提需求、等排期、上线 BI 报表。周期长，成本高。小需求排不上，大需求做不完。</p>
+<p>bubseek 想换一种方式：不需要部署独立的 BI 系统，用 notebook 就能承载看板、图表、分析脚本。不满意改个参数再来，想要新维度加一句话就行。响应速度从”按周排期”变成”即时迭代”。</p>
+<p>marimo notebook：marimo 是一个响应式 Python notebook。bubseek 预置了 <code>dashboard.py</code> 和 <code>index.py</code> 两个模板。用户可以在 <code>insights/</code> 目录下添加自己的 notebook。Agent 可以根据需求动态生成或修改 notebook，数据消费变成对话而非排期。</p>
+<p>GitHub 仓库卡片：内置 <code>github-repo-cards</code> skill。给定 <code>org/repo</code>，生成包含基本信息、星标趋势、贡献者的卡片；或抓取 GitHub trending，生成趋势列表。输出 SVG 和 PNG 格式。把 GitHub 上的数据变成可分享的图片，是一个具体的数据消费场景示例。</p>
+<blockquote>
+<p>当然，这些工具如果非必须，也可以通过摘除钩子，快速清除。</p>
+</blockquote>
+<p><img data-src="/img/bubseek-agent-insights/07.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p><img data-src="/img/bubseek-agent-insights/08.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>调度任务：内置 <code>bubseek-schedule</code>。Agent 可以通过 <code>schedule.add</code>、<code>schedule.list</code>、<code>schedule.remove</code> 管理定时任务，支持 cron 表达式、间隔触发、延时触发。用户说”每天早上 9 点提醒我查看数据”，Agent 就能创建对应的调度任务。周期性的数据需求也可以被即时满足。</p>
+<h2 id="内生可观测性"><a href="#内生可观测性" class="headerlink" title="内生可观测性"></a>内生可观测性</h2><p>Agent 执行过程中会产生大量数据。这些数据不是副产品，而是理解 Agent、理解团队的素材。</p>
+<p>传统的可观测性是外挂的：部署监控系统，收集指标，看仪表盘。Agent 的可观测性可以是内生的：Agent 运行时自然产生数据，这些数据存入 seekdb，可以被 Agent 自己分析。</p>
+<p><img data-src="/img/bubseek-agent-insights/09.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>tape：bub 的核心设计。完整记录 channel 的聊天会话、Agent 的每一次思考、工具调用、结果。这些记录以 tape 的形式持久化，不可篡改。tape 本身就是 Agent 工作的一部分，不是事后追加的日志。所有数据都会持久化到 seekdb，后续可以让 Agent 分析 tape 从而了解：哪些问题被频繁提及？哪些任务经常失败？团队最关心什么？</p>
+<p>marimo 看板：bubseek 预置了看板模板，用于展示 Agent 的运行数据。tape 记录、会话历史、任务状态都可以在 marimo 界面中查看。不需要部署独立的监控系统，Agent 的足迹本身就是可浏览、可查询的数据。</p>
+<p>这形成了一个闭环：Agent 服务团队，产生数据；这些数据存入 seekdb，通过看板可视化，或被 Agent 分析，反哺团队对自身协作的理解。</p>
+<p>当然，用户也可以通过自然语言和 bubseek 进行交互，让其对 seekdb 存储的任意 Agent 数据信息进行分析和生成看板。</p>
+<p>例如：</p>
+<p><img data-src="/img/bubseek-agent-insights/10.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>或者：</p>
+<p><img data-src="/img/bubseek-agent-insights/11.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<p>生成的看板会类似于：</p>
+<p><img data-src="/img/bubseek-agent-insights/12.webp" alt="bubseek —— 让 Agent 的足迹，变成团队的洞察"></p>
+<h2 id="统一的数据底座"><a href="#统一的数据底座" class="headerlink" title="统一的数据底座"></a>统一的数据底座</h2><p>上述记录都存入 seekdb。</p>
+<p>seekdb 是 OceanBase 面向 AI 场景的轻量化版本，原生支持 SQL、向量、全文等多路检索能力，并提供混合搜索策略，能够适应多样化的数据处理和消费需求。bubseek 通过 <code>pyobvector</code> 驱动连接，并针对 OceanBase 的特性做了兼容处理。</p>
+<p>配置方式：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BUB_TAPESTORE_SQLALCHEMY_URL=mysql+oceanbase://user:pass@host:port/database</span><br></pre></td></tr></table></figure>
+
+<p>一个数据库，承载 tape、会话、任务三类数据。并且，如果 seekdb 无法满足业务的增长，也可以无缝切换到 OceanBase 这样久经考验的分布式数据库。</p>
+<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><h3 id="部署-seekdb"><a href="#部署-seekdb" class="headerlink" title="部署 seekdb"></a>部署 seekdb</h3><p>部署 seekdb 的步骤详见：<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLnNlZWtkYi5haS9zZWVrZGIvemgtQ04vZGVwbG95LW92ZXJ2aWV3">https://docs.seekdb.ai/seekdb/zh-CN/deploy-overview<i class="fa fa-external-link-alt"></i></span>。</p>
+<blockquote>
+<p>可以通过上面的文档，直接在您正在使用的本地 linux、mac、windows 环境中，快速部署服务器模式的 seekdb。</p>
+<p>CPU 最低要求 1 核，可用内存最低为 2G。</p>
+</blockquote>
+<h3 id="部署-bubseek"><a href="#部署-bubseek" class="headerlink" title="部署 bubseek"></a>部署 bubseek</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/ob-labs/bubseek.git</span><br><span class="line"><span class="built_in">cd</span> bubseek</span><br><span class="line">uv <span class="built_in">sync</span></span><br><span class="line">uv run bub --<span class="built_in">help</span></span><br><span class="line">uv run bub chat</span><br></pre></td></tr></table></figure>
+
+<p>配置 seekdb：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> BUB_TAPESTORE_SQLALCHEMY_URL=mysql+oceanbase://root@127.0.0.1:2881/bubseek</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>说明：还需要配置适合 Agent 使用的模型的 API KEY，参考：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29iLWxhYnMvYnVic2Vlaw==">https://github.com/ob-labs/bubseek<i class="fa fa-external-link-alt"></i></span></p>
+</blockquote>
+<h1 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h1><p>做 bubseek 的初衷，不是想做一个”大而全”的数据平台或者通用 Agent，市面上已经有太多这样的东西了。</p>
+<p>我们想做的，是一个真正能够理解自己、理解团队、理解数据的 Agent。当 Agent 成为团队的协作成员，它们的足迹不应该散落在各个地方无人问津。这些痕迹里，藏着团队的知识、流程的瓶颈、甚至 Agent 自己的能力边界。</p>
+<p>更重要的是，企业内部对数据消费的需求是多样化的、定制化的。传统的方式是提需求、等排期、上线，周期长、成本高。bubseek 想提供另一种可能：告诉 Agent 你想要什么，它自己去对接数据、定义视图、执行分析、输出报告。</p>
+<p>没有排期，只需要迭代。一切自然发生。</p>
+<blockquote>
+<p>bubseek 0.1.0 是一次尝试，尝试把 bub 的能力打包成一个面向数据消费这个领域的发行版，同时也验证了 seekdb 作为 Agent 数据底座的可行性。</p>
+<p>它还不成熟。但基本的流程已经跑通：从入口接收需求，到执行输出结果，到记录存入 seekdb。</p>
+<p>后续，还会继续迭代。</p>
+</blockquote>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><strong>GitHub - ob-labs&#x2F;bubseek</strong>：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29iLWxhYnMvYnVic2Vlaw==">https://github.com/ob-labs/bubseek<i class="fa fa-external-link-alt"></i></span></li>
+<li><strong>GitHub - OceanBase&#x2F;seekdb</strong>：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span></li>
+<li><strong>GitHub - bubbuild&#x2F;bub</strong>：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2J1YmJ1aWxkL2J1Yg==">https://github.com/bubbuild/bub<i class="fa fa-external-link-alt"></i></span></li>
+<li><strong>bub 背后的统一上下文模型</strong>：<span class="exturl" data-url="aHR0cHM6Ly90YXBlLnN5c3RlbXMv">https://tape.systems<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/bubseek/" rel="tag"># bubseek</a>
+              <a href="/tags/bub/" rel="tag"># bub</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" rel="tag"># 数据分析</a>
+              <a href="/tags/marimo/" rel="tag"># marimo</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-10-mindkeeper-beta-invitation/" rel="prev" title="告别OpenClaw配置丢失——Mindkeeper内测版邀测">
+                  <i class="fa fa-angle-left"></i> 告别OpenClaw配置丢失——Mindkeeper内测版邀测
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-16-ai-concepts-relationship-diagram/" rel="next" title="Token、Harness、OpenClaw、RAG、MCP、Agent到底啥关系？看完这张图全明白">
+                  Token、Harness、OpenClaw、RAG、MCP、Agent到底啥关系？看完这张图全明白 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

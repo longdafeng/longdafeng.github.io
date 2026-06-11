@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文从 Harness 的定义与分层结构出发，结合开源项目 Bub 的插件化设计与 Tape 数据闭环理念，探讨数据库原生 Harness 的技术路线，以及 OceanBase 以 All-in-one 数据底座支撑 Agent 数据内循环的探索实践。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索">
+<meta property="og:url" content="https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文从 Harness 的定义与分层结构出发，结合开源项目 Bub 的插件化设计与 Tape 数据闭环理念，探讨数据库原生 Harness 的技术路线，以及 OceanBase 以 All-in-one 数据底座支撑 Agent 数据内循环的探索实践。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/langchain-harness-allinone-data-base/01.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-harness-allinone-data-base/02.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-harness-allinone-data-base/03.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-harness-allinone-data-base/04.jpeg">
+<meta property="article:published_time" content="2026-05-26T13:06:19.000Z">
+<meta property="article:modified_time" content="2026-05-26T13:06:19.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="AgentSeek">
+<meta property="article:tag" content="Harness">
+<meta property="article:tag" content="LangChain">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="上下文工程">
+<meta property="article:tag" content="数据底座">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/langchain-harness-allinone-data-base/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/","path":"2026/2026-05-26-langchain-harness-allinone-data-base/","title":"LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%90%86%E8%A7%A3-Agent-%E4%B8%8E-Harness-%E7%9A%84%E6%9E%84%E6%88%90%E5%8F%8A%E5%85%B3%E7%B3%BB"><span class="nav-number">1.</span> <span class="nav-text">一、理解 Agent 与 Harness 的构成及关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%9E%84%E5%BB%BA%E5%8F%AF%E6%89%A9%E5%B1%95%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%EF%BC%9A%E4%BB%A5-Bub-%E9%A1%B9%E7%9B%AE%E4%B8%BA%E4%BE%8B"><span class="nav-number">2.</span> <span class="nav-text">二、构建可扩展的智能体：以 Bub 项目为例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BB%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%B0%E6%95%B0%E6%8D%AE%E9%97%AD%E7%8E%AF%EF%BC%9ATape-%E6%A6%82%E5%BF%B5%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8E%9F%E7%94%9F%E7%9A%84-Harness"><span class="nav-number">3.</span> <span class="nav-text">三、从上下文到数据闭环：Tape 概念与数据库原生的 Harness</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BB%A5-Tape-%E4%B8%BA%E6%A0%B8%E5%BF%83%E6%9E%84%E5%BB%BA%E6%95%B0%E6%8D%AE%E9%97%AD%E7%8E%AF"><span class="nav-number">3.1.</span> <span class="nav-text">1. 以 Tape 为核心构建数据闭环</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%B8%BA%E4%BD%95%E9%9C%80%E8%A6%81%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8E%9F%E7%94%9F%E7%9A%84-Harness"><span class="nav-number">3.2.</span> <span class="nav-text">2. 为何需要数据库原生的 Harness</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81AgentSeek%EF%BC%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8E%9F%E7%94%9F-Harness-%E7%9A%84%E6%8E%A2%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">四、AgentSeek：数据库原生 Harness 的探索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">5.</span> <span class="nav-text">结语</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索 | Longda's Interesting World">
+      <meta itemprop="description" content="本文从 Harness 的定义与分层结构出发，结合开源项目 Bub 的插件化设计与 Tape 数据闭环理念，探讨数据库原生 Harness 的技术路线，以及 OceanBase 以 All-in-one 数据底座支撑 Agent 数据内循环的探索实践。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-05-26 21:06:19" itemprop="dateCreated datePublished" datetime="2026-05-26T21:06:19+08:00">2026-05-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">尚卓燃</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.8k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文从 Harness 的定义与分层结构出发，结合开源项目 Bub 的插件化设计与 Tape 数据闭环理念，探讨数据库原生 Harness 的技术路线，以及 OceanBase 以 All-in-one 数据底座支撑 Agent 数据内循环的探索实践。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索","description":"本文从 Harness 的定义与分层结构出发，结合开源项目 Bub 的插件化设计与 Tape 数据闭环理念，探讨数据库原生 Harness 的技术路线，以及 OceanBase 以 All-in-one 数据底座支撑 Agent 数据内循环的探索实践。","image":"https://ilongda.com/img/langchain-harness-allinone-data-base/01.png","wordCount":2788,"datePublished":"2026-05-26T13:06:19.000Z","dateModified":"2026-05-26T13:06:19.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/"},"url":"https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/","inLanguage":"zh-CN","keywords":["OceanBase","LangChain","Agent","上下文工程","Harness","AgentSeek","数据底座"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索","item":"https://ilongda.com/2026/2026-05-26-langchain-harness-allinone-data-base/"}]}</script>
+<p>作者：尚卓燃，ASF Member &amp; OceanBase 研发</p>
+<p>上周，兹拉坦发表了一篇文章分析主流 Agent 框架 LangChain 公司从零构建数据库的举措，一个事实是 Agent 竞赛正从模型层悄然转向数据层。当 Agent 运行产生海量半结构化、高频写入、长生命周期的 trace 数据时，传统数据库架构难免捉襟见肘；而数据在观测平台、向量库、缓存系统之间反复搬运，更让”沉淀—提炼—反哺”的闭环效率大打折扣。</p>
+<p>这揭示了一个关键分野：**从 Agent 框架往下做数据库，与从成熟数据库往上接 Agent 框架，起点不同，成本结构迥异。**后者意味着数据从第一行代码起即为原生公民，运行、记录、提炼、评测、反哺全部在同一底座内完成，无需跨系统搬运的损耗。**All-in-one 数据底座的价值正在于此——让 Agent 的数据闭环成为”内循环”，而非割裂的工程拼图。**本文从 Harness 的定义出发，结合开源项目 Bub 的设计实践，探讨 Agent 架构的分层理念，最终落到数据库原生 Harness 的技术路线——以及 OceanBase 在这一领域的探索实践与价值。</p>
+<span id="more"></span>
+
+<h2 id="一、理解-Agent-与-Harness-的构成及关系"><a href="#一、理解-Agent-与-Harness-的构成及关系" class="headerlink" title="一、理解 Agent 与 Harness 的构成及关系"></a>一、理解 Agent 与 Harness 的构成及关系</h2><p>Agent 的完整形态可以表述为「模型 + Harness」。Harness 涵盖模型之外的所有工程组件——类比马具之于马匹，Harness 是人驾驭模型到达目的地所需的一整套工具，包括缰绳、马鞍、路线，对应到技术层面就是反馈机制、记录系统与训练方法。</p>
+<p>Harness 本身具有明确的分层结构。第一层由 Coding Agent 构建方或 SDK 厂商提供，包含基础工具与对外接口；第二层则由用户在业务侧扩展自己需要的组件，比如引入 RAG 系统、Memory 系统、BI 链路等业务逻辑。</p>
+<p><img data-src="/img/langchain-harness-allinone-data-base/01.png" alt="图片"></p>
+<p>在 Agent 场景中，模型本身并非一个持续状态化的系统——它根据请求返回响应，而不感知具体的业务状态。真正让 Agent 能在产品和团队中稳定工作的，是 Harness 所承担的 <strong>上下文管理、工具调用、状态记录、运行轨迹追踪、效果评估以及数据流转</strong> 等一系列职责。</p>
+<p>在此过程中，我们会逐步识别并抽象出一些关键要素，定义为 <strong>“原语（Primitive）”</strong>。例如，系统提示词（System Prompt）、技能（Skills）、任务完成方法论、多智能体间通信机制等，都是随着实践沉淀下来的重要原语。将这些原语标准化并纳入 Harness，一方面能提升业务表现、扩展能力，另一方面也使 Harness 本身逐渐产品化。</p>
+<p>同时，**从 Harness 中采集的数据至关重要。它们既用于评估工作流效果，经过脱敏处理后也可构成标准数据集，用于训练下一代模型。**模型改进后，又会反哺 Harness 中原语的发现与优化，甚至对过往行为进行纠偏，从而形成一个持续改进的飞轮。下图（源自 LangChain 的博客）清晰地展示了这一闭环。</p>
+<p><img data-src="/img/langchain-harness-allinone-data-base/02.png" alt="图片"></p>
+<h2 id="二、构建可扩展的智能体：以-Bub-项目为例"><a href="#二、构建可扩展的智能体：以-Bub-项目为例" class="headerlink" title="二、构建可扩展的智能体：以 Bub 项目为例"></a>二、构建可扩展的智能体：以 Bub 项目为例</h2><p>Bub 是 GitHub 上的一个开源的 Python Agent 项目，其设计体现了控制 Agent 复杂度的关键思路：通过精简内核与插件化扩展实现稳定性与灵活性的平衡。</p>
+<p>当前主流 Agent 产品如 ChatGPT、通义千问、ModelScope 服务以及 Dify、Flowise 等低代码平台，均已内置 Agent Loop。但一个核心问题是：Agent 的能力范围必须与业务场景精准匹配。尽管 Skills 和工具可以扩展能力，但为了保证任务完成的高效性，仍需针对具体场景组装工具集。</p>
+<p>很多热门产品如 OpenClaw、Nanobot、Hermes Agent 等产品把过多功能捆绑在一起，这带来了两个问题：对用户造成功能干扰和心智负担；对开发者而言，系统复杂度高，维护困难（例如 OpenClaw 的版本升级常引发广泛功能失效）。这种高度耦合的设计在生产环境中难以直接使用。许多厂商因此选择基于特定版本二次封装，或走向完全自研。</p>
+<p>Bub 采用了不同的架构策略：构建一个轻量内核，并通过插件机制扩展功能。也就是将额外功能分离为插件，仅维护精心设计的精简内核实现稳定的 Agent Loop，通过功能插件逐步引入业务所需能力。用户只需验证插件工作状态是否正常，如果某个插件出现问题，摘除这个问题插件即可恢复系统服务，极大提升了可维护性。</p>
+<p><img data-src="/img/langchain-harness-allinone-data-base/03.png" alt="图片"></p>
+<p>Bub 的核心设计哲学是不关注单个 Agent 的强大程度，而是关注单次交互中的阶段划分。无论是 Bub 内置 Agent 还是外部引入的 Codex、LangChain，均可完成工作。Bub 将交互拆分为明确阶段：对话状态构建、提示词组装、Channel 的 Input&#x2F;Output 定义等。这种阶段化拆解使流程控制成为可能，通过 Hooks 暴露各阶段接入点，而非在单个 Agent 内堆砌所有逻辑。</p>
+<p>一个关键设计是解除 Output 的强制绑定。传统系统将消息回复严格绑定到输入 Channel，而 Bub 允许 Agent 在特定场景下「沉默」——不返回消息。这在个人助手场景看似缺陷，但在多人协作或多 Agent 协作场景中，避免噪音的沉默反而是友好特性。</p>
+<p>当前，社区正涌现一系列方案来促进 Agent 设计的标准化与模块化，例如：</p>
+<ul>
+<li><strong>Agents.md</strong>：用于注入系统和任务相关的提示词。</li>
+<li><strong>Skills</strong>：将通用 SOP（如文档写作、代码审查）沉淀为可分发资产，无需硬编码到 Agent Loop 中。</li>
+<li><strong>MCP (Model Context Protocol)</strong>：通过插件提供各类 IM Channel 适配、定时任务、AG-UI 可视化界面等。</li>
+</ul>
+<p>这正是 2026 年主流 Agent 框架演进的方向。Bub 项目便是这一理念的实践，它仅用数百行代码的核心接口，便构建了一个灵活的基础设施。</p>
+<h2 id="三、从上下文到数据闭环：Tape-概念与数据库原生的-Harness"><a href="#三、从上下文到数据闭环：Tape-概念与数据库原生的-Harness" class="headerlink" title="三、从上下文到数据闭环：Tape 概念与数据库原生的 Harness"></a>三、从上下文到数据闭环：Tape 概念与数据库原生的 Harness</h2><h3 id="1-以-Tape-为核心构建数据闭环"><a href="#1-以-Tape-为核心构建数据闭环" class="headerlink" title="1. 以 Tape 为核心构建数据闭环"></a>1. 以 Tape 为核心构建数据闭环</h3><p><strong>Tape</strong>（是 Bub 以及我们正在开发的 AgentSeek 项目的核心概念）并非简单的聊天记录。它在某种程度上与 Trace（追踪）类似，记录了单次 Agent 运行过程中的关键事实。</p>
+<p>但与 OpenTelemetry 等可观测性体系中的 Trace 不同，Tape 的视图更简洁，虽有关联性但不过度关注细节。它的独特价值在于：</p>
+<ul>
+<li><strong>既是可观测性数据，也是上下文模型</strong>：Tape 承载了关键任务的可观测性，同时作为 Agent 运行时的上下文模型。这意味着 <strong>人与 AI 可以基于同一份数据视图来协作</strong>。Agent 可以通过读取自身的 Tape 进行行为复盘。</li>
+<li><strong>赋能 Agent 自省与问题诊断</strong>：传统上，Agent 出错需工程师通过可观测性平台排查。基于 Tape，用户可直接与 Agent 对话，询问”刚才为何失败？”；工程师的排查也变为与 Agent 的自然对话，因为根因信息已内置于其上下文中。</li>
+<li><strong>支持自动化评估与分析</strong>：基于 Tape 记录，可以由 Agent 自主对比不同模型或同一模型在不同任务下的表现，实现自动化的对照评估，而无需依赖面向人的看板。</li>
+<li><strong>服务于模型训练</strong>：通过脱敏和格式化导出，Tape 同样可以便捷地转化为特定任务的数据集，用于模型的训练和微调，从而真正打通从上下文、可观测性到模型训练的数据闭环。</li>
+</ul>
+<h3 id="2-为何需要数据库原生的-Harness"><a href="#2-为何需要数据库原生的-Harness" class="headerlink" title="2. 为何需要数据库原生的 Harness"></a>2. 为何需要数据库原生的 Harness</h3><p>以 OpenClaw 为代表的 Agent 系统，其数据严重依赖文件系统（如各种 <code>.md</code> 文件）。虽然对人类和 Agent 阅读友好，但极不利于数据的加工、分析和处理。现代的上下文工程需要在原始任务轨迹之上构建一层 Memory，它既是对轨迹的摘要，也是索引。OpenClaw 社区后来出现的无损上下文插件，如 lossless-claw，开始使用 SQLite 等数据库来串联调用链和记忆，这正说明了数据库在此环节中的必要性。</p>
+<p><strong>将数据库作为 Harness 的基石</strong>，**意味着所有 Agent 运行数据天生就是数据库中的”一等公民”。**可观测性、数据提取、归档分析都能利用数据库的原生能力，无需维护复杂异构的数据栈（如 MySQL + Elasticsearch + Redis）。这提供了一个统一的数据底座，简化了架构，降低了运维成本。</p>
+<p>OceanBase 是这一路线的优质选项，为什么？其核心优势包括：</p>
+<ul>
+<li><strong>AI 工作负载就绪</strong>：OceanBase 及其衍生的工具均为 AI Agent 工作负载优化提供了向量检索、融合检索能力。SQL 能力结合向量、全文检索均为内置功能，无需额外维护多个技术栈。</li>
+<li><strong>HTAP 能力</strong>：作为混合事务&#x2F;分析处理数据库，可直接支持对 Agent 运行数据的实时查询和复杂分析，助力数据闭环。</li>
+<li><strong>统一存储与无缝扩展</strong>：各类数据可统一存储，支持运行轨迹分析、检索等工作负载探索。从端侧的单机部署（如 OceanBase seekdb）可无缝扩展至分布式 OceanBase 集群，为业务增长提供平滑升级路径。</li>
+</ul>
+<h2 id="四、AgentSeek：数据库原生-Harness-的探索"><a href="#四、AgentSeek：数据库原生-Harness-的探索" class="headerlink" title="四、AgentSeek：数据库原生 Harness 的探索"></a>四、AgentSeek：数据库原生 Harness 的探索</h2><p>魔搭社区的 Endless Context 项目是基于 Bub 和 Tape 理念构建的 OpenClaw 类智能体案例，也是数据库原生 Agent 的一个简单呈现。通过对 Agent 架构的持续探索，OceanBase 团队正在构建完全基于数据库原生能力的 Agent Harness——AgentSeek（5 月 30 日发布，文末预约现场名额）。</p>
+<p>AgentSeek 的核心理念：让 Agent 运行时数据从第一天起成为数据库的一等公民，帮助用户构建数据闭环场景。该项目整合 OceanBase 产品能力与 AgentSeek 相关 Wrapper，目前处于积极推进阶段。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>从 Harness 的分层定义，到 Bub 的插件化可扩展架构，再到 Tape 实现的可观测性与上下文一体化，最终落到数据库原生 Harness 的技术路线——Agent 基础设施的演进正从「功能堆砌」走向「数据驱动」。OceanBase 在这一领域的布局，既是技术架构的自然延伸，也是对 AI 时代数据底座需求的回应。</p>
+<hr>
+<p>5 月 30 日，<strong>OceanBase × LangChain Meetup，现场发布</strong> AgentSeek</p>
+<p><img data-src="/img/langchain-harness-allinone-data-base/04.jpeg" alt="图片"></p>
+<p>扫码预约现场名额</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/LangChain/" rel="tag"># LangChain</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
+              <a href="/tags/Harness/" rel="tag"># Harness</a>
+              <a href="/tags/AgentSeek/" rel="tag"># AgentSeek</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7/" rel="tag"># 数据底座</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-25-ai-agent-harness-deep-dive/" rel="prev" title="深度“解剖”AI Agent Harness">
+                  <i class="fa fa-angle-left"></i> 深度“解剖”AI Agent Harness
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-01-vector-database-best-practices/" rel="next" title="OceanBase 花三年时间整理出的向量数据库最佳实践">
+                  OceanBase 花三年时间整理出的向量数据库最佳实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

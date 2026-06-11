@@ -245,7 +245,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -256,7 +256,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-count">399</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -396,13 +396,13 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"只用两个周末给公司省了5000刀：从多数据库架构到 AI 原生数据库的知识库重构之路","description":"作者用两个周末将企业知识库从 PostgreSQL+Elasticsearch+Pinecone+Redis 四数据库架构重构为 OceanBase 开源的 AI 原生数据库 seekdb 单库方案，查询延迟从 120ms 降至 58ms，每月节省 450 美元，附完整可运行代码与调优经验。","image":"https://ilongda.com/img/ai-native-database-knowledge-base-refactor/01.jpeg","wordCount":9324,"datePublished":"2025-12-24T17:58:46.000Z","dateModified":"2025-12-24T17:58:46.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-25-ai-native-database-knowledge-base-refactor/"},"url":"https://ilongda.com/2025/2025-12-25-ai-native-database-knowledge-base-refactor/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","混合检索","向量检索","知识库","seekdb","AI 原生数据库"],"articleSection":["实战分享"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"只用两个周末给公司省了5000刀：从多数据库架构到 AI 原生数据库的知识库重构之路","description":"作者用两个周末将企业知识库从 PostgreSQL+Elasticsearch+Pinecone+Redis 四数据库架构重构为 OceanBase 开源的 AI 原生数据库 seekdb 单库方案，查询延迟从 120ms 降至 58ms，每月节省 450 美元，附完整可运行代码与调优经验。","image":"https://ilongda.com/img/ai-native-database-knowledge-base-refactor/01.jpeg","wordCount":9323,"datePublished":"2025-12-24T17:58:46.000Z","dateModified":"2025-12-24T17:58:46.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-12-25-ai-native-database-knowledge-base-refactor/"},"url":"https://ilongda.com/2025/2025-12-25-ai-native-database-knowledge-base-refactor/","inLanguage":"zh-CN","keywords":["OceanBase","向量检索","RAG","混合检索","知识库","seekdb","AI 原生数据库"],"articleSection":["实战分享"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"只用两个周末给公司省了5000刀：从多数据库架构到 AI 原生数据库的知识库重构之路","item":"https://ilongda.com/2025/2025-12-25-ai-native-database-knowledge-base-refactor/"}]}</script>
 <blockquote>
 <p>本文来源：白鹿第一帅。未经授权，严禁转载，侵权必究！</p>
 </blockquote>
 <blockquote>
-<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+<p>🛠️ 想试试文中那种”一个数据库搞定所有”的爽快感吗？seekdb 已在 GitHub 开源，欢迎来 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，或许你的下一个项目也能省下一大笔开销呢～</p>
 </blockquote>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>传统 AI 应用往往需要组合多个数据库：PostgreSQL 存储结构化数据，Elasticsearch 做全文搜索，Milvus 做向量检索，Redis 做缓存，这种“拼凑式”架构带来了数据同步复杂、成本高昂、维护困难等问题。 </p>
 <p>2025 年 11 月 18 日，OceanBase 开源了 AI 原生数据库 seekdb。<strong>我用两个周末时间，使用 seekdb 完成了企业知识库系统重构，将 4 个数据库的复杂架构简化为单一数据库方案，查询延迟从 120ms 降至 58ms，性能提升 50%+，每月节省 450 美元云服务费用。</strong></p>
@@ -732,9 +732,9 @@
 
           <div class="post-tags">
               <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
               <a href="/tags/RAG/" rel="tag"># RAG</a>
               <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
-              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
               <a href="/tags/%E7%9F%A5%E8%AF%86%E5%BA%93/" rel="tag"># 知识库</a>
               <a href="/tags/seekdb/" rel="tag"># seekdb</a>
               <a href="/tags/AI-%E5%8E%9F%E7%94%9F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI 原生数据库</a>
@@ -792,14 +792,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">483k</span>
+    <span title="Word count total">644k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">29:16</span>
+    <span title="Reading time total">39:02</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="LangChain 为解决 LangSmith 中 Agent trace 数据爆炸的问题，从零自研分布式数据库 SmithDB。本文解读其四大设计亮点，并探讨 Agent 行业从&quot;卷模型&quot;走向&quot;卷数据底座&quot;的趋势与启示。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LangChain &quot;不务正业&quot;，居然从零造了个数据库？">
+<meta property="og:url" content="https://ilongda.com/2026/2026-05-18-langchain-builds-database/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="LangChain 为解决 LangSmith 中 Agent trace 数据爆炸的问题，从零自研分布式数据库 SmithDB。本文解读其四大设计亮点，并探讨 Agent 行业从&quot;卷模型&quot;走向&quot;卷数据底座&quot;的趋势与启示。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/01.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/02.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/03.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/04.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/05.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/06.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/07.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/08.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/09.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/10.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/11.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/12.png">
+<meta property="og:image" content="https://ilongda.com/img/langchain-builds-database/13.webp">
+<meta property="article:published_time" content="2026-05-18T00:30:53.000Z">
+<meta property="article:modified_time" content="2026-05-18T00:30:53.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="LangChain">
+<meta property="article:tag" content="LangSmith">
+<meta property="article:tag" content="SmithDB">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="可观测性">
+<meta property="article:tag" content="数据底座">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/langchain-builds-database/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-05-18-langchain-builds-database/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-05-18-langchain-builds-database/","path":"2026/2026-05-18-langchain-builds-database/","title":"LangChain \"不务正业\"，居然从零造了个数据库？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>LangChain "不务正业"，居然从零造了个数据库？ | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-05-18-langchain-builds-database/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E4%B8%BB%E6%B5%81%E7%9A%84-Agent-%E6%A1%86%E6%9E%B6%E5%85%AC%E5%8F%B8%EF%BC%8C%E5%B1%85%E7%84%B6%E5%BC%80%E5%A7%8B%E5%81%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%86%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">最主流的 Agent 框架公司，居然开始做数据库了？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%AE%E7%82%B9%E4%B8%80%EF%BC%9A%E6%8A%8A-Agent-trace-%E5%BD%93%E6%88%90%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">亮点一：把 Agent trace 当成一种新的数据类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%AE%E7%82%B9%E4%BA%8C%EF%BC%9A%E6%9E%B6%E6%9E%84%E6%8B%86%E5%BE%97%E5%BE%88%E8%BD%BB"><span class="nav-number">3.</span> <span class="nav-text">亮点二：架构拆得很轻</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%AE%E7%82%B9%E4%B8%89%EF%BC%9A%E7%83%AD%E6%95%B0%E6%8D%AE%E5%B0%B1%E8%BF%91%E8%AF%BB%E5%8F%96"><span class="nav-number">4.</span> <span class="nav-text">亮点三：热数据就近读取</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%AE%E7%82%B9%E5%9B%9B%EF%BC%9Arun-%E6%98%AF%E2%80%9D%E4%B8%80%E4%B8%B2%E4%BA%8B%E4%BB%B6%E2%80%9D%EF%BC%8C%E4%B8%8D%E6%98%AF%E2%80%9D%E4%B8%80%E8%A1%8C%E8%AE%B0%E5%BD%95%E2%80%9D"><span class="nav-number">5.</span> <span class="nav-text">亮点四：run 是”一串事件”，不是”一行记录”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%99%E4%BB%B6%E4%BA%8B%E7%9C%9F%E6%AD%A3%E6%9C%89%E6%84%8F%E6%80%9D%E7%9A%84%E5%9C%B0%E6%96%B9%EF%BC%8C%E5%8F%AF%E8%83%BD%E4%B8%8D%E5%9C%A8%E6%8A%80%E6%9C%AF%E6%9C%AC%E8%BA%AB"><span class="nav-number">6.</span> <span class="nav-text">这件事真正有意思的地方，可能不在技术本身</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%BF%E8%89%B2%E5%BE%AA%E7%8E%AF%EF%BC%8C%E8%AE%A9%E7%94%9F%E6%B4%BB%E6%9B%B4%E7%BE%8E%E5%A5%BD"><span class="nav-number">7.</span> <span class="nav-text">数据绿色循环，让生活更美好</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-Agent-%E7%9A%84%E2%80%9D%E6%95%B0%E6%8D%AE%E9%A5%A5%E9%A5%BF%E2%80%9D%E9%97%AE%E9%A2%98"><span class="nav-number">8.</span> <span class="nav-text">AI Agent 的”数据饥饿”问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83"><span class="nav-number">9.</span> <span class="nav-text">一些思考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#What%E2%80%99s-more"><span class="nav-number">10.</span> <span class="nav-text">What’s more?</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-05-18-langchain-builds-database/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="LangChain &quot;不务正业&quot;，居然从零造了个数据库？ | Longda's Interesting World">
+      <meta itemprop="description" content="LangChain 为解决 LangSmith 中 Agent trace 数据爆炸的问题，从零自研分布式数据库 SmithDB。本文解读其四大设计亮点，并探讨 Agent 行业从&quot;卷模型&quot;走向&quot;卷数据底座&quot;的趋势与启示。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LangChain "不务正业"，居然从零造了个数据库？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-05-18 08:30:53" itemprop="dateCreated datePublished" datetime="2026-05-18T08:30:53+08:00">2026-05-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">兹拉坦</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%A1%8C%E4%B8%9A%E6%B4%9E%E5%AF%9F/" itemprop="url" rel="index"><span itemprop="name">行业洞察</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>6 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">LangChain 为解决 LangSmith 中 Agent trace 数据爆炸的问题，从零自研分布式数据库 SmithDB。本文解读其四大设计亮点，并探讨 Agent 行业从"卷模型"走向"卷数据底座"的趋势与启示。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"LangChain \"不务正业\"，居然从零造了个数据库？","description":"LangChain 为解决 LangSmith 中 Agent trace 数据爆炸的问题，从零自研分布式数据库 SmithDB。本文解读其四大设计亮点，并探讨 Agent 行业从\"卷模型\"走向\"卷数据底座\"的趋势与启示。","image":"https://ilongda.com/img/langchain-builds-database/01.png","wordCount":1632,"datePublished":"2026-05-18T00:30:53.000Z","dateModified":"2026-05-18T00:30:53.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-05-18-langchain-builds-database/"},"url":"https://ilongda.com/2026/2026-05-18-langchain-builds-database/","inLanguage":"zh-CN","keywords":["分布式数据库","AI Agent","LangChain","可观测性","SmithDB","LangSmith","数据底座"],"articleSection":["行业洞察"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"行业洞察","item":"https://ilongda.com/categories/行业洞察/"},{"@type":"ListItem","position":3,"name":"LangChain \"不务正业\"，居然从零造了个数据库？","item":"https://ilongda.com/2026/2026-05-18-langchain-builds-database/"}]}</script>
+<blockquote>
+<p>LangChain 作为世界上最懂 Agent 的公司，突然从零写了一个分布式数据库。是顺势而为，还是迫不得已？</p>
+</blockquote>
+<h2 id="最主流的-Agent-框架公司，居然开始做数据库了？"><a href="#最主流的-Agent-框架公司，居然开始做数据库了？" class="headerlink" title="最主流的 Agent 框架公司，居然开始做数据库了？"></a>最主流的 Agent 框架公司，居然开始做数据库了？</h2><p>先交代下背景：LangChain 是全球最主流的 AI Agent 开发框架之一，数以万计的开发者用它来构建各种智能体应用。2026 年 5 月 13 日，LangChain 发了一篇官方博客，标题显得十分平静：《We built SmithDB, the data layer for agent observability》[1]。</p>
+<p>一个做 Agent 框架的公司，从零开始，<strong>顺手</strong>写了个分布式数据库。听起来就像：<strong>一家面馆，突然开始卖起了面粉</strong>（大概率是被现实撞了满头包之后的选择）。</p>
+<p><img data-src="/img/langchain-builds-database/01.png" alt="图片"></p>
+<span id="more"></span>
+
+<p>这里再多补充一个背景：LangChain 生态里有一个叫 LangSmith 的重要工具，专门用来观测 Agent 的每一次推理、每一次工具调用、每一次对话。LangSmith 原本用的是 ClickHouse——业内顶级的分析型数据库。</p>
+<p>他们遇到的问题是现在的 AI Agent 发展速度太快，一次 task 或者 trace 里都能套出几百个嵌套 span。LangSmith 用户每天往里灌的数据太多，在 ClickHouse 的架构中行不通，数据量和 payload 都爆了。</p>
+<blockquote>
+<p>“only supports multi-replica clusters (read scaling), not multi-shard clusters (write scaling)”。ClickHouse 支持读扩展，但写扩展支持得不好。读可以堆机器，但写只能硬扛。</p>
+</blockquote>
+<p>LangChain 对于解决这个问题的选择是——直接掀桌，自己”原创”了一个分布式数据库 SmithDB。</p>
+<h2 id="亮点一：把-Agent-trace-当成一种新的数据类型"><a href="#亮点一：把-Agent-trace-当成一种新的数据类型" class="headerlink" title="亮点一：把 Agent trace 当成一种新的数据类型"></a>亮点一：把 Agent trace 当成一种新的数据类型</h2><p>SmithDB 的第一个亮点，是它不是把 trace 当成普通日志存，而是<strong>把 Agent trace 当成一种新的数据类型来处理</strong>。</p>
+<p>传统日志系统更擅长处理一条条已经结束的记录，但 Agent trace 不是这样：一个 run 可能拆成多个事件，一个 span 可能长时间保持打开状态，输入输出里还可能混着大段 JSON、文本、多模态内容和工具调用结果。</p>
+<p><img data-src="/img/langchain-builds-database/02.png" alt="图片"></p>
+<h2 id="亮点二：架构拆得很轻"><a href="#亮点二：架构拆得很轻" class="headerlink" title="亮点二：架构拆得很轻"></a>亮点二：架构拆得很轻</h2><p>第二个亮点，是它把架构拆得很轻：底层用对象存储放持久数据，用一个小型 Postgres metastore 记录 segment 元数据，查询、写入、compaction 服务都尽量做成无状态。这样扩容的时候，不是去维护一堆带本地盘的复杂数据库节点，而是加计算资源。</p>
+<p><img data-src="/img/langchain-builds-database/03.png" alt="图片"></p>
+<h2 id="亮点三：热数据就近读取"><a href="#亮点三：热数据就近读取" class="headerlink" title="亮点三：热数据就近读取"></a>亮点三：热数据就近读取</h2><p>第三个亮点，SmithDB 会记录每个 segment 是哪个写入节点产生的，如果这个节点还在线，查询就可以直接从这个节点读最新数据（这个思路很像传统数据库的 LSM Tree）。</p>
+<p><img data-src="/img/langchain-builds-database/04.png" alt="图片"></p>
+<h2 id="亮点四：run-是”一串事件”，不是”一行记录”"><a href="#亮点四：run-是”一串事件”，不是”一行记录”" class="headerlink" title="亮点四：run 是”一串事件”，不是”一行记录”"></a>亮点四：run 是”一串事件”，不是”一行记录”</h2><p>最后一个亮点，是它<strong>把 run 看成”一串事件”，不是”一行记录”</strong>。SmithDB 专门为这个模型做了事件 fanout、merge 和 compaction 策略。</p>
+<p><img data-src="/img/langchain-builds-database/05.png" alt="图片"></p>
+<p>SmithDB 的性能数据也相当能打：Trace 树加载 P50 延迟 92 毫秒，单次 run 加载 71 毫秒，全文搜索 400 毫秒。相比 LangSmith 原来的体验，<strong>快了 12 倍</strong>。</p>
+<p>但兹拉坦认为：<strong>真正的看点不在性能提升上的数字，在于 SmithDB 是专门为 Agent trace 设计的。</strong></p>
+<h2 id="这件事真正有意思的地方，可能不在技术本身"><a href="#这件事真正有意思的地方，可能不在技术本身" class="headerlink" title="这件事真正有意思的地方，可能不在技术本身"></a>这件事真正有意思的地方，可能不在技术本身</h2><p>LangChain 造 SmithDB，说明了一个比技术更重要的行业判断：Agent 运行时产生的那些数据极其重要，但通用数据库不一定能承载好。</p>
+<p>Agent 的数据和传统数据库完全不是同一个画风。它是半结构化的，一段 JSON 里混着自由文本和向量。它是高频写入的，一次对话能爆出几十条记录。它是长生命周期的，一个 span 从开到关横跨好几个小时。</p>
+<p><img data-src="/img/langchain-builds-database/06.png" alt="图片"></p>
+<h2 id="数据绿色循环，让生活更美好"><a href="#数据绿色循环，让生活更美好" class="headerlink" title="数据绿色循环，让生活更美好"></a>数据绿色循环，让生活更美好</h2><p>Agent 最宝贵的资产，是它在你这儿跑出来的那些”个性化经验”。这些原始数据如果能被沉淀下来、提炼出来、再喂回去，Agent 就开始”长记性”了。</p>
+<p>LangChain 显然懂这件事，SmithDB 社区博客里那些”text search”、”JSON filtering”、”tree-aware queries”，翻译过来就是——我们不只是存 trace，我们要让 trace 能被喂回去、用起来。</p>
+<p><img data-src="/img/langchain-builds-database/07.png" alt="图片"></p>
+<p><strong>Agent 跑一次，就聪明一点点。循环越密，进化越快。</strong></p>
+<h2 id="AI-Agent-的”数据饥饿”问题"><a href="#AI-Agent-的”数据饥饿”问题" class="headerlink" title="AI Agent 的”数据饥饿”问题"></a>AI Agent 的”数据饥饿”问题</h2><p><img data-src="/img/langchain-builds-database/08.png" alt="图片"></p>
+<p><img data-src="/img/langchain-builds-database/09.png" alt="图片"></p>
+<p>随着 AI Agent 越来越频繁地遇到”数据饥饿”问题，LangChain 的做法很有意思。</p>
+<p>兹拉坦认为：<strong>LangChain 等 Agent 公司自研数据库，目前还处在非常原始的”发现某些场景玩儿不转，然后就去补”的阶段</strong>。AI Agent 发展的速度极快，过几天大概率还会再遇到诸如数据分片、容灾备份、安全合规等新问题。</p>
+<h2 id="一些思考"><a href="#一些思考" class="headerlink" title="一些思考"></a>一些思考</h2><p>LangChain 这一手，捅破了一层窗户纸：<strong>Agent 跑出来的那些破事：推理链、工具调用、上下文、反馈，很多数据库都扛不住。</strong></p>
+<p><img data-src="/img/langchain-builds-database/10.png" alt="图片"></p>
+<p>这事不只是 LangChain 一家在头疼。Claude Code 的对话历史存哪？JSONL 文件。OpenClaw 呢？Markdown。讲究点的团队上了 SQLite。想加向量？装个 pgvector。要存上下文？再来个 Redis。<strong>数据在它们之间来回搬运，搬一次掉一次精度、烧一次 token。</strong></p>
+<p><img data-src="/img/langchain-builds-database/11.png" alt="图片"></p>
+<p>LangChain 从 Agent 框架往下，做了一层数据库。那反过来呢？从更成熟的数据库层往上，去接一层 Agent 框架？<strong>让 Agent 从第一行代码跑起来，产生的数据，天然就在一个非常成熟的数据库里</strong>。</p>
+<p><img data-src="/img/langchain-builds-database/12.png" alt="图片"></p>
+<p>这跟 LangChain 的路数构成了一个有趣的对照。<strong>LangChain 正在踩的那些数据库的坑，数据库公司 N 多年前早就踩完了。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Agent 运行产生数据 → 存进 OB4AI</span><br><span class="line">        ↓</span><br><span class="line">Context / Memory 系统自动提炼</span><br><span class="line">        ↓</span><br><span class="line">评测筛选出高质量数据</span><br><span class="line">        ↓</span><br><span class="line">高质量数据反哺 Agent</span><br><span class="line">        ↓</span><br><span class="line">Agent 表现更好 → 循环加速</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="/img/langchain-builds-database/13.webp" alt="图片"></p>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>传统做法</strong></td>
+<td>循环的每一步都在不同系统里完成，数据搬运成本极高</td>
+</tr>
+<tr>
+<td><strong>“也许”更好的做法？</strong></td>
+<td>所有数据从一开始就在同一底座上，整个循环是”内循环”</td>
+</tr>
+</tbody></table>
+<h2 id="What’s-more"><a href="#What’s-more" class="headerlink" title="What’s more?"></a>What’s more?</h2><p>LangChain 用自研 SmithDB 证明了：Agent 行业正在从”卷谁的模型更聪明”走向”卷谁的数据底座更扎实”。</p>
+<p><strong>5 月 30 日，OceanBase × LangChain Meetup 上会有新产品的重磅发布！</strong></p>
+<p>Reference: 《We built SmithDB》: <span class="exturl" data-url="aHR0cHM6Ly93d3cubGFuZ2NoYWluLmNvbS9ibG9nL2ludHJvZHVjaW5nLXNtaXRoZGI=">https://www.langchain.com/blog/introducing-smithdb<i class="fa fa-external-link-alt"></i></span></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/LangChain/" rel="tag"># LangChain</a>
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" rel="tag"># 可观测性</a>
+              <a href="/tags/SmithDB/" rel="tag"># SmithDB</a>
+              <a href="/tags/LangSmith/" rel="tag"># LangSmith</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7/" rel="tag"># 数据底座</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-13-shanghai-oceanbase-langchain-meetup-preview/" rel="prev" title="上海来了！5.30 OceanBase × LangChain 重磅联手，首发「AgentSeek」定义企业级智能体开发新范式">
+                  <i class="fa fa-angle-left"></i> 上海来了！5.30 OceanBase × LangChain 重磅联手，首发「AgentSeek」定义企业级智能体开发新范式
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-21-oceanbase-community-monthly-2026-05/" rel="next" title="OceanBase 社区月报：PowerMem、OMS、obdiag 全面更新">
+                  OceanBase 社区月报：PowerMem、OMS、obdiag 全面更新 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

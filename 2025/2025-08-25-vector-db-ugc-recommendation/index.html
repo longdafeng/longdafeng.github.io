@@ -208,7 +208,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -219,7 +219,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">271</span>
+        <span class="site-state-item-count">399</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -359,7 +359,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"向量数据库在 UGC 社区个性化推荐的落地指南","description":"基于 OceanBase 原生向量能力构建 UGC 社区个性化推荐系统的落地指南：双向量用户兴趣建模（短期+长期）、一次 SQL 多路召回与融合排序，并给出表结构、性能调优与两周 MVP 路线。","image":"https://ilongda.com/img/8-25-vector-db-ugc-recommendation/01.png","wordCount":1893,"datePublished":"2025-08-25T01:06:19.000Z","dateModified":"2025-08-25T01:44:20.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-25-vector-db-ugc-recommendation/"},"url":"https://ilongda.com/2025/2025-08-25-vector-db-ugc-recommendation/","inLanguage":"zh-CN","keywords":["OceanBase","向量数据库","HNSW","向量检索","个性化推荐","UGC 社区","推荐系统"],"articleSection":["实战分享"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"向量数据库在 UGC 社区个性化推荐的落地指南","description":"基于 OceanBase 原生向量能力构建 UGC 社区个性化推荐系统的落地指南：双向量用户兴趣建模（短期+长期）、一次 SQL 多路召回与融合排序，并给出表结构、性能调优与两周 MVP 路线。","image":"https://ilongda.com/img/8-25-vector-db-ugc-recommendation/01.png","wordCount":1893,"datePublished":"2025-08-25T01:06:19.000Z","dateModified":"2025-08-25T01:44:20.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-08-25-vector-db-ugc-recommendation/"},"url":"https://ilongda.com/2025/2025-08-25-vector-db-ugc-recommendation/","inLanguage":"zh-CN","keywords":["向量数据库","HNSW","OceanBase","向量检索","个性化推荐","UGC 社区","推荐系统"],"articleSection":["实战分享"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"向量数据库在 UGC 社区个性化推荐的落地指南","item":"https://ilongda.com/2025/2025-08-25-vector-db-ugc-recommendation/"}]}</script>
 <h2 id="1-场景与目标"><a href="#1-场景与目标" class="headerlink" title="1. 场景与目标"></a>1. 场景与目标</h2><p>UGC 社区典型特点：内容量大、更新快、长尾重。推荐系统要同时兼顾”<strong>眼下的即时兴趣</strong>“和”<strong>用户的稳定偏好</strong>“，并在一次请求内完成多路候选召回与融合，保证毫秒级延迟。本文给出一套<strong>双向量用户兴趣 + 一次 SQL 多路召回</strong>的实践方案，数据库层使用 <strong>OceanBase 原生向量</strong>能力，结构化与向量同库，避免”两库同步&#x2F;一致性坑”。</p>
 <span id="more"></span>
@@ -469,9 +469,9 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
               <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
               <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
               <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
               <a href="/tags/%E4%B8%AA%E6%80%A7%E5%8C%96%E6%8E%A8%E8%8D%90/" rel="tag"># 个性化推荐</a>
               <a href="/tags/UGC-%E7%A4%BE%E5%8C%BA/" rel="tag"># UGC 社区</a>
@@ -530,14 +530,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>Word count total: </span>
-    <span title="Word count total">483k</span>
+    <span title="Word count total">644k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>Reading time total &asymp;</span>
-    <span title="Reading time total">29:16</span>
+    <span title="Reading time total">39:02</span>
   </span>
 </div>
 <div class="busuanzi-count">

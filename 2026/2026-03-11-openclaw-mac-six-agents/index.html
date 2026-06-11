@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="作者在一台 Mac 上用 OpenClaw 搭建 1 个编排者加 5 个专业 Agent 的多 Agent 团队，52 个 cron 任务全天轮转，深度复盘上下文管理、五层记忆系统与三态通信协议三大核心工程问题及真实事故教训。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+<meta property="og:url" content="https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="作者在一台 Mac 上用 OpenClaw 搭建 1 个编排者加 5 个专业 Agent 的多 Agent 团队，52 个 cron 任务全天轮转，深度复盘上下文管理、五层记忆系统与三态通信协议三大核心工程问题及真实事故教训。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/01.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/02.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/03.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/04.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/05.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/06.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/07.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/08.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/09.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/10.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/11.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/12.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/13.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/14.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/15.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/16.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/17.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/18.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/19.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/20.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/21.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/22.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/23.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/24.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/25.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/26.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/27.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/28.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/29.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/30.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/31.png">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-mac-six-agents/32.png">
+<meta property="article:published_time" content="2026-03-11T00:46:03.000Z">
+<meta property="article:modified_time" content="2026-03-11T00:46:03.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="Context Engineering">
+<meta property="article:tag" content="OpenClaw">
+<meta property="article:tag" content="多Agent协作">
+<meta property="article:tag" content="自主进化">
+<meta property="article:tag" content="记忆系统">
+<meta property="article:tag" content="通信协议">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/openclaw-mac-six-agents/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/","path":"2026/2026-03-11-openclaw-mac-six-agents/","title":"OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E4%B8%80%E5%A4%A9%E8%A2%AB%E6%8E%A5%E7%AE%A1%E4%BA%86"><span class="nav-number">1.</span> <span class="nav-text">你的一天被接管了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%A2%E9%98%9F%EF%BC%9A1-5-6-%E9%98%B5%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">团队：1+5+6 阵型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Zoe%EF%BC%88%E5%A4%A7%E9%BE%99%E8%99%BE%EF%BC%89%E2%80%94-CTO-%E9%A6%96%E5%B8%AD%E7%BC%96%E6%8E%92%E8%80%85"><span class="nav-number">2.1.</span> <span class="nav-text">Zoe（大龙虾）— CTO &#x2F; 首席编排者</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-%E5%93%A8%E5%85%B5%EF%BC%88ainews%EF%BC%89%E2%80%94-%E6%83%85%E6%8A%A5%E4%B8%AD%E6%9E%A2"><span class="nav-number">2.2.</span> <span class="nav-text">AI 哨兵（ainews）— 情报中枢</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%A4%E6%98%93%E8%9C%98%E8%9B%9B%EF%BC%88Trading%EF%BC%89%E2%80%94-%E9%87%8F%E5%8C%96%E5%88%86%E6%9E%90%E5%B8%88"><span class="nav-number">2.3.</span> <span class="nav-text">交易蜘蛛（Trading）— 量化分析师</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Macro%EF%BC%88%E9%A6%96%E5%B8%AD%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%AE%B6%EF%BC%89%E2%80%94-%E6%95%B0%E6%8D%AE%E9%A9%B1%E5%8A%A8%E7%9A%84%E5%9B%9B%E5%B1%82%E6%98%A0%E5%B0%84"><span class="nav-number">2.4.</span> <span class="nav-text">Macro（首席经济学家）— 数据驱动的四层映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AE%B9%E8%9C%98%E8%9B%9B%EF%BC%88Content%EF%BC%89%E2%80%94-%E5%86%85%E5%AE%B9%E7%AD%96%E7%95%A5%E5%B8%88"><span class="nav-number">2.5.</span> <span class="nav-text">内容蜘蛛（Content）— 内容策略师</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%A1%E5%AE%B6%E8%9C%98%E8%9B%9B%EF%BC%88Butler%EF%BC%89%E2%80%94-%E7%94%9F%E6%B4%BB%E7%AE%A1%E5%AE%B6"><span class="nav-number">2.6.</span> <span class="nav-text">管家蜘蛛（Butler）— 生活管家</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ACP-%E7%BC%96%E7%A0%81%E4%B8%93%E5%AE%B6%E9%98%B5%E5%9E%8B"><span class="nav-number">2.7.</span> <span class="nav-text">ACP 编码专家阵型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%A2%E9%98%9F%E8%AE%BE%E8%AE%A1%E6%95%99%E8%AE%AD"><span class="nav-number">2.8.</span> <span class="nav-text">团队设计教训</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E5%A4%A9%E6%98%AF%E6%80%8E%E4%B9%88%E8%BF%87%E7%9A%84"><span class="nav-number">3.</span> <span class="nav-text">一天是怎么过的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A9%E8%BF%99%E5%A5%97%E7%B3%BB%E7%BB%9F%E8%B7%91%E8%B5%B7%E6%9D%A5%EF%BC%9A%E4%B8%89%E4%B8%AA%E6%A0%B8%E5%BF%83%E5%B7%A5%E7%A8%8B%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">让这套系统跑起来：三个核心工程问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98%E4%B8%80%EF%BC%9A%E4%B8%8A%E4%B8%8B%E6%96%87%E6%98%AF-Agent-%E7%9A%84%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="nav-number">5.</span> <span class="nav-text">核心问题一：上下文是 Agent 的操作系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9AAgent-%E7%B3%BB%E7%BB%9F%E7%9A%84%E7%83%AD%E5%8A%9B%E5%AD%A6%E7%AC%AC%E4%BA%8C%E5%AE%9A%E5%BE%8B"><span class="nav-number">5.1.</span> <span class="nav-text">问题：Agent 系统的热力学第二定律</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%EF%BC%9A%E5%8F%8C%E5%B1%82%E6%8E%A7%E5%88%B6-%E2%80%94-Context-Engineering-Harness"><span class="nav-number">5.2.</span> <span class="nav-text">解决：双层控制 — Context Engineering + Harness</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98%E4%BA%8C%EF%BC%9A%E8%AE%A9-Agent-%E7%9C%9F%E6%AD%A3%E2%80%9C%E8%AE%B0%E4%BD%8F%E2%80%9D%E5%B9%B6%E2%80%9C%E6%88%90%E9%95%BF%E2%80%9D"><span class="nav-number">6.</span> <span class="nav-text">核心问题二：让 Agent 真正“记住”并“成长”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9AAgent-%E4%BB%8A%E5%A4%A9%E7%8A%AF%E7%9A%84%E9%94%99%EF%BC%8C%E6%98%8E%E5%A4%A9%E8%BF%98%E4%BC%9A%E7%8A%AF"><span class="nav-number">6.1.</span> <span class="nav-text">问题：Agent 今天犯的错，明天还会犯</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%EF%BC%9A%E4%BA%94%E5%B1%82%E8%AE%B0%E5%BF%86-%E2%80%94-%E4%BB%8E%E4%BA%BA%E7%B1%BB%E8%AE%A4%E7%9F%A5%E6%A8%A1%E5%9E%8B%E4%B8%AD%E5%80%9F%E9%89%B4"><span class="nav-number">6.2.</span> <span class="nav-text">解决：五层记忆 — 从人类认知模型中借鉴</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E8%87%AA%E4%B8%BB%E8%BF%AD%E4%BB%A3%E2%80%94%E2%80%946-%E6%AD%A5%E5%BE%AA%E7%8E%AF"><span class="nav-number">6.3.</span> <span class="nav-text">记忆自主迭代——6 步循环</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9C%9F%E5%AE%9E%E8%BF%9B%E5%8C%96%E6%A1%88%E4%BE%8B"><span class="nav-number">6.4.</span> <span class="nav-text">真实进化案例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F%E8%BF%98%E5%9C%A8%E8%BF%9B%E5%8C%96"><span class="nav-number">6.5.</span> <span class="nav-text">记忆系统还在进化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%81%87%E8%AE%BE%E9%A9%B1%E5%8A%A8%E7%9A%84%E8%BF%AD%E4%BB%A3-%E2%80%94-%E4%BB%8E%E4%BF%AE-Bug-%E5%88%B0%E7%A7%91%E5%AD%A6%E6%96%B9%E6%B3%95"><span class="nav-number">6.6.</span> <span class="nav-text">假设驱动的迭代 — 从修 Bug 到科学方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E4%B8%BB%E8%BF%9B%E5%8C%96%E6%9C%BA%E5%88%B6%EF%BC%9A%E5%93%AA%E4%BA%9B%E6%98%AF-OpenClaw-%E8%87%AA%E5%B8%A6%E7%9A%84%EF%BC%8C%E5%93%AA%E4%BA%9B%E6%98%AF%E6%88%91%E4%BB%AC%E5%8A%A0%E7%9A%84"><span class="nav-number">6.7.</span> <span class="nav-text">自主进化机制：哪些是 OpenClaw 自带的，哪些是我们加的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98%E4%B8%89%EF%BC%9A%E5%A4%9A-Agent-%E5%8D%8F%E4%BD%9C%E6%98%AF%E5%8D%8F%E8%AE%AE%E9%97%AE%E9%A2%98%EF%BC%8C%E4%B8%8D%E6%98%AF%E7%BE%A4%E8%81%8A%E9%97%AE%E9%A2%98"><span class="nav-number">7.</span> <span class="nav-text">核心问题三：多 Agent 协作是协议问题，不是群聊问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9A%E6%8A%8A-Agent-%E6%94%BE%E8%BF%9B%E7%BE%A4%E8%81%8A-%E2%89%A0-%E5%8D%8F%E4%BD%9C"><span class="nav-number">7.1.</span> <span class="nav-text">问题：把 Agent 放进群聊 ≠ 协作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%EF%BC%9A%E5%8D%8F%E8%AE%AE%E7%BA%A7%E8%AE%BE%E8%AE%A1-%E2%86%92-%E7%9C%9F%E5%AE%9E%E6%A1%88%E4%BE%8B"><span class="nav-number">7.2.</span> <span class="nav-text">解决：协议级设计 → 真实案例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%8F%E8%AE%AE%E8%AE%BE%E8%AE%A1"><span class="nav-number">7.3.</span> <span class="nav-text">协议设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%8F%E8%AE%AE%E4%BC%98%E5%8C%96%E5%90%8E%E7%9A%84%E8%87%AA%E4%B8%BB%E5%8F%8D%E6%80%9D"><span class="nav-number">7.4.</span> <span class="nav-text">协议优化后的自主反思</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%94%E6%9D%A1%E8%81%94%E5%8A%A8%E9%93%BE%E8%B7%AF"><span class="nav-number">7.5.</span> <span class="nav-text">五条联动链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E8%BE%B9%E7%95%8C-%E2%80%94-Agent-%E8%83%BD%E6%94%B9%E4%BB%80%E4%B9%88%E3%80%81%E4%B8%8D%E8%83%BD%E6%94%B9%E4%BB%80%E4%B9%88"><span class="nav-number">7.6.</span> <span class="nav-text">安全边界 — Agent 能改什么、不能改什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Task-Watcher-%E2%80%94-%E8%A7%A3%E5%86%B3%E2%80%9CAgent-%E8%AF%B4%E4%BA%86%E4%BC%9A%E5%81%9A%E4%BD%86%E5%AE%9E%E9%99%85%E6%B2%A1%E5%81%9A%E2%80%9D"><span class="nav-number">7.7.</span> <span class="nav-text">Task Watcher — 解决“Agent 说了会做但实际没做”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E4%BF%A1-Guardrail-%E5%BC%82%E6%AD%A5%E7%8A%B6%E6%80%81%E9%93%BE%EF%BC%88%E6%9C%80%E6%96%B0%E8%BF%9B%E5%B1%95%EF%BC%89"><span class="nav-number">7.8.</span> <span class="nav-text">通信 Guardrail + 异步状态链（最新进展）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E6%80%BB%E7%BB%93-%E2%80%94-%E4%BA%94%E5%B1%82%E5%B7%A5%E7%A8%8B%E8%A7%86%E8%A7%92"><span class="nav-number">7.9.</span> <span class="nav-text">整体架构总结 — 五层工程视角</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B7%91%E4%BA%86%E5%8D%8A%E4%B8%AA%E6%9C%88%E4%B9%8B%E5%90%8E%E7%9A%84%E8%AE%A4%E7%9F%A5%E5%8F%98%E5%8C%96"><span class="nav-number">8.</span> <span class="nav-text">跑了半个月之后的认知变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E4%BD%A0%E4%B9%9F%E6%83%B3%E8%AF%95%E8%AF%95"><span class="nav-number">9.</span> <span class="nav-text">如果你也想试试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-1-2-%E5%A4%A9%EF%BC%9A%E5%85%88%E8%AE%A9-1-%E4%B8%AA-Agent-%E7%A8%B3%E5%AE%9A%E8%BF%90%E8%A1%8C"><span class="nav-number">9.1.</span> <span class="nav-text">第 1-2 天：先让 1 个 Agent 稳定运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-3-5-%E5%A4%A9%EF%BC%9A%E5%8A%A0%E7%AC%AC-2-%E4%B8%AA%EF%BC%8C%E5%BC%80%E5%A7%8B%E5%A4%84%E7%90%86%E5%8D%8F%E4%BD%9C"><span class="nav-number">9.2.</span> <span class="nav-text">第 3-5 天：加第 2 个，开始处理协作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-2-%E5%91%A8%E8%B5%B7%EF%BC%9A%E9%80%90%E6%AD%A5%E6%89%A9%E5%B1%95%E5%88%B0%E5%AE%8C%E6%95%B4%E9%98%B5%E5%9E%8B"><span class="nav-number">9.3.</span> <span class="nav-text">第 2 周起：逐步扩展到完整阵型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E7%90%86%E8%A7%A3%E5%8E%9F%E7%90%86%E5%BC%80%E5%A7%8B"><span class="nav-number">9.4.</span> <span class="nav-text">从理解原理开始</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95%EF%BC%9A%E6%8A%80%E6%9C%AF%E6%A0%88%E5%BF%AB%E9%80%9F%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">附录：技术栈快速参考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LLM-%E6%A8%A1%E5%9E%8B%E5%88%86%E5%B1%82"><span class="nav-number">10.1.</span> <span class="nav-text">LLM 模型分层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83-Harness-%E9%85%8D%E7%BD%AE"><span class="nav-number">10.2.</span> <span class="nav-text">核心 Harness 配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%BA%90"><span class="nav-number">10.3.</span> <span class="nav-text">数据源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E9%85%8D%E7%BD%AE"><span class="nav-number">10.4.</span> <span class="nav-text">部署配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96"><span class="nav-number">10.5.</span> <span class="nav-text">其他</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践 | Longda's Interesting World">
+      <meta itemprop="description" content="作者在一台 Mac 上用 OpenClaw 搭建 1 个编排者加 5 个专业 Agent 的多 Agent 团队，52 个 cron 任务全天轮转，深度复盘上下文管理、五层记忆系统与三态通信协议三大核心工程问题及真实事故教训。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-11 08:46:03" itemprop="dateCreated datePublished" datetime="2026-03-11T08:46:03+08:00">2026-03-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">岚遥</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>11k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>40 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">作者在一台 Mac 上用 OpenClaw 搭建 1 个编排者加 5 个专业 Agent 的多 Agent 团队，52 个 cron 任务全天轮转，深度复盘上下文管理、五层记忆系统与三态通信协议三大核心工程问题及真实事故教训。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践","description":"作者在一台 Mac 上用 OpenClaw 搭建 1 个编排者加 5 个专业 Agent 的多 Agent 团队，52 个 cron 任务全天轮转，深度复盘上下文管理、五层记忆系统与三态通信协议三大核心工程问题及真实事故教训。","image":"https://ilongda.com/img/openclaw-mac-six-agents/01.png","wordCount":10834,"datePublished":"2026-03-11T00:46:03.000Z","dateModified":"2026-03-11T00:46:03.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/"},"url":"https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/","inLanguage":"zh-CN","keywords":["AI Agent","Context Engineering","OpenClaw","记忆系统","多Agent协作","通信协议","自主进化"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践","item":"https://ilongda.com/2026/2026-03-11-openclaw-mac-six-agents/"}]}</script>
+<blockquote>
+<p>今天的这篇文章，是阿里大佬岚遥在内部分享的 OpenClaw 实战内容，为大家展示如何构建一个自我演进且“可用”的龙虾。（公司内部同学读完之后纷纷留言评论：“这篇文章的质量，放外面不得卖个 648 的课程包啊！”）</p>
+</blockquote>
+<h2 id="你的一天被接管了"><a href="#你的一天被接管了" class="headerlink" title="你的一天被接管了"></a>你的一天被接管了</h2><img data-src="/img/openclaw-mac-six-agents/01.png" width="512" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>你睡着的时候，交易蜘蛛已经出了美股收盘报告。你醒来之前，宏观分析师已经写完了 A 股晨报。你还没刷手机，管家蜘蛛已经推来了天气、日程和今日待办。与此同时，AI 哨兵已经扫完了 GitHub Trending、arXiv 最新论文和 100+ 个信息源——18+ 条技术情报按重要性排好序等你看。内容蜘蛛已经在跟踪 54 个平台的热榜和 X 热点。</p>
+<p>这是我最关心的部分——<strong>AI 动态和技术趋势的自动追踪</strong>。哨兵发现有价值的开源项目或论文后，不仅推送新闻，还会评估对我们现有系统的影响，给出 P0&#x2F;P1&#x2F;P2 行动建议。有价值的发现会进入 Zoe 的 Tech Radar，走评估 → 决策 → 委派编码落地的完整链路。</p>
+<p>从凌晨 3 点的自动备份到 23:45 的全团队反思，52 个 cron 任务每天自动轮转。而且 Agent 在自己进化——犯过的错会被记住，同类问题的复发率显著下降。这不是我写的规则，是 Agent 自己从 <code>.learnings/</code> promote 到 <code>MEMORY.md</code> 的自主迭代。</p>
+<img data-src="/img/openclaw-mac-six-agents/02.png" width="236" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>1 个编排者 + 5 个专业 Agent + 6 类 ACP 编码专家（最大 6 并发）、52 个 cron 定时任务、118 个 Skills（33 全局共享 + 85 Agent 专属）、29 个注册 LLM 模型、每天几千次 LLM 调用、2086 行运维脚本 + 半个月 23 次自动恢复。</p>
+<span id="more"></span>
+
+<hr>
+<p><strong>Agent 自己在进化</strong>才是真正有意思的部分：</p>
+<ol>
+<li><strong>自己设计通信协议</strong> — 两个 Agent “收到&#x2F;确认”刷了十几轮，Zoe 自主诊断根因，设计三态协议（<code>request → confirmed → final → 静默</code>），smoke test 通过后沉淀到 AGENTS.md</li>
+<li><strong>自研 Skill 并发布到 ClawHub</strong> — Content 调研 7 个“去 AI 味”工具、A&#x2F;B 测试、固化为 Skill 发布到 ClawHub，全团队次日自动共享</li>
+<li><strong>圆桌讨论产出策略报告</strong> — Macro 和 Trading 按协议进行下周 A 股策略讨论，产出含数据快照、仓位建议、止损纪律的完整报告</li>
+<li><strong>Task Watcher 异步监控</strong> — Agent 承诺“审核通过后通知你”但实际做不到异步回调，Zoe 设计了 cron 级 Task Callback Event Bus 下沉监控</li>
+</ol>
+<p><strong>我的角色是搭好框架、设好约束、在关键节点确认方向——具体的需求发现、方案调研、协议设计、代码实现，都是 Agent 自己完成的。</strong></p>
+<hr>
+<h2 id="团队：1-5-6-阵型"><a href="#团队：1-5-6-阵型" class="headerlink" title="团队：1+5+6 阵型"></a>团队：1+5+6 阵型</h2><img data-src="/img/openclaw-mac-six-agents/03.png" width="640" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="Zoe（大龙虾）—-CTO-首席编排者"><a href="#Zoe（大龙虾）—-CTO-首席编排者" class="headerlink" title="Zoe（大龙虾）— CTO &#x2F; 首席编排者"></a>Zoe（大龙虾）— CTO &#x2F; 首席编排者</h3><p>不只是“管理员”。Zoe 负责技术方案设计、任务编排、圆桌主持、系统运维和记忆系统维护——每天 3 次巡检（10:00&#x2F;14:00&#x2F;22:00），检查所有 Agent 的 cron 执行状态、workspace 磁盘使用、session 健康度。每周分析各 Agent 的 MEMORY.md 是否超限并执行分层压缩。更关键的是，Zoe 会消费 ainews 提供的技术发现，评估哪些值得应用到我们的系统上，征得我同意后指派 ainews 深入调研，然后自行设计方案、委派 ACP 编码专家实现——从技术发现到方案落地的完整链路。</p>
+<img data-src="/img/openclaw-mac-six-agents/04.png" width="976" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>每次巡检覆盖 6 大维度：cron 任务执行状态（是否有失败&#x2F;跳过的任务）、workspace 磁盘使用（文件增长异常检测）、session 大小与健康度、Chrome CDP 进程是否泄露、<code>.learnings/</code> 中是否有待处理条目、<code>shared-context/</code> 时间戳是否正常（检测 Agent 是否“静默失联”）。</p>
+<p>Zoe 最有价值的能力是<strong>方案设计</strong>——三态通信协议、Task Watcher、通信 Guardrail 框架，都是 Zoe 发现问题后自主设计的。下面是 Zoe 设计 Task Watcher 时的方案讨论：</p>
+<img data-src="/img/openclaw-mac-six-agents/05.png" width="772" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="AI-哨兵（ainews）—-情报中枢"><a href="#AI-哨兵（ainews）—-情报中枢" class="headerlink" title="AI 哨兵（ainews）— 情报中枢"></a>AI 哨兵（ainews）— 情报中枢</h3><p>这是我最关心的 Agent。它不是“推新闻”——每天从 100+ 个信息源（GitHub Trending、arXiv、RSS、HackerNews、Reddit 等）采集信息，按 5 星制评估后产出晨报、午间论文解读、晚间趋势分析。<strong>7 个 cron 任务</strong>覆盖晨午晚三报（08:30&#x2F;12:00&#x2F;20:00），每份报告末尾都预留了「改写要点（供 Content 参考）」接口。</p>
+<p>更关键的能力是<strong>主动评估技术发现对我们系统的影响</strong>——本周就发现了 ReMe（记忆管理框架），主动向 Zoe 提出评估建议，从发现到决策到落地，我只需要在关键节点确认，执行全部由 Agent 完成。每日趋势分析中的有价值项目会自动更新到 <code>shared-context/tech-radar.json</code>，供 Zoe 每周 Tech Radar 审查：</p>
+<img data-src="/img/openclaw-mac-six-agents/06.png" width="928" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/07.png" width="712" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>核心采集工具链：<code>github_trending.py</code>（<code>--ai-only</code> 过滤 + <code>--since weekly</code> 周趋势）、<code>rss_aggregator.py</code>（多源并发采集）、<code>arxiv_papers.py</code>（多关键词搜索）、Tavily（AI 优化搜索首选）、agent-browser（Playwright 驱动，JS 渲染页面采集）。防幻觉硬约束：每条新闻 MUST 带原文 URL，发布前自检可达性，无法交叉验证的标注「单源，建议核实」。</p>
+<h3 id="交易蜘蛛（Trading）—-量化分析师"><a href="#交易蜘蛛（Trading）—-量化分析师" class="headerlink" title="交易蜘蛛（Trading）— 量化分析师"></a>交易蜘蛛（Trading）— 量化分析师</h3><p>团队中任务最密集的 Agent——<strong>21 个 cron 任务</strong>。20 个原子量化工具（<code>quant.py</code> CLI）、15 个专属 Skills（68000+ 行代码）、65&#x2F;35 混合评分模型（65% 工具量化 + 35% AI 判断）。覆盖 A 股全时段（集合竞价→盘中每 10 分钟扫描→尾盘速报）+ 美股（盘前→盘中每 30 分钟→盘后夜报）+ 大宗商品（每小时白天+夜盘）。</p>
+<p>核心方法论是<strong>四步分析框架</strong>：读取 Macro 宏观因子 → 多维评分（技术面 25% &#x2F; 资金面 30% &#x2F; 基本面 10% &#x2F; 情绪面 20% &#x2F; 市场面 15%）→ 逆向检验（与共识一致吗？若错最可能原因？）→ 输出标的+评分(0-100)+止损位+置信度。硬性规则：NEVER 给出没有止损的买入建议，NEVER 编造数据（工具失败时直接报告原因），置信度 &lt;60% 标注「低置信度，建议观望」。</p>
+<img data-src="/img/openclaw-mac-six-agents/08.png" width="920" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/09.png" width="984" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="Macro（首席经济学家）—-数据驱动的四层映射"><a href="#Macro（首席经济学家）—-数据驱动的四层映射" class="headerlink" title="Macro（首席经济学家）— 数据驱动的四层映射"></a>Macro（首席经济学家）— 数据驱动的四层映射</h3><p>提供<strong>宏观→传导→国内→市场</strong>四层映射因子包，供 Trading 直接引用。<strong>9 个 cron 任务</strong>覆盖晨报(07:50)→午间(12:30)→财经晚报(18:00)→美股盘前(22:00)→美股收盘(次日05:20)。周日 18:30 率先产出周度宏观复盘，Trading 19:30 引用其结论做市场复盘——形成<strong>宏观→微观→技术</strong>的递进链路。</p>
+<p>分析纪律：每个判断标注数据来源和时效性，区分事实（有数据）和判断（有逻辑无直接数据），标注置信度（高&gt;70%&#x2F;中50-70%&#x2F;低&lt;50%），每个判断提出反面论据。真实案例——伊朗局势分析时，传统框架预测“地缘→避险→黄金涨”，实际油价+14%但黄金-5%。Macro 的分析指出“油价涨幅&gt;10%，通胀逻辑主导，市场交易的是通胀而非避险”。这个洞察被沉淀到 MEMORY.md 成为持久知识。</p>
+<img data-src="/img/openclaw-mac-six-agents/10.png" width="1109" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="内容蜘蛛（Content）—-内容策略师"><a href="#内容蜘蛛（Content）—-内容策略师" class="headerlink" title="内容蜘蛛（Content）— 内容策略师"></a>内容蜘蛛（Content）— 内容策略师</h3><p>不是自己“想”内容，而是从团队情报链中提取素材——ainews 提供改写要点、Macro 提供深度分析、Trading 提供市场观点。<strong>9 个 cron 任务</strong>驱动 Research→Ideate→Write→Reflect 四阶段流水线：09:00 从 54 个平台热榜（微博&#x2F;知乎&#x2F;B站&#x2F;抖音&#x2F;百度&#x2F;头条…）+ X 热点抓取 → 10:30 消费 ainews 改写要点生成创意 → 14:00 产出初稿经 Ripple 传播预测引擎评分后投递 → 22:10 反思。</p>
+<p>最有意思的是<strong>自主进化能力</strong>——发现 AI 味太重后，Content 自行调研“去 AI 味”工具，编写 Skill，发布到 ClawHub，并沉淀为全团队通用能力。从发现问题到解决方案再到发布，Agent 自己走完了整个流程：</p>
+<img data-src="/img/openclaw-mac-six-agents/11.png" width="536" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>另一个自主进化的产物是 <strong>X 五篮子热点雷达</strong>——Content 最初只抓 AI 热点然后摘抄，经过一次反馈后，它自己设计了覆盖五个维度的情报采集框架，并交叉读取其他 Agent 的当日情报：</p>
+<table>
+<thead>
+<tr>
+<th>篮子</th>
+<th>覆盖范围</th>
+<th>配额</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AI&#x2F;科技</td>
+<td>OpenAI &#x2F; Claude &#x2F; Agent &#x2F; LLM</td>
+<td>≤40%</td>
+</tr>
+<tr>
+<td>产品&#x2F;创业</td>
+<td>startup &#x2F; founder &#x2F; product launch</td>
+<td>按热度</td>
+</tr>
+<tr>
+<td>一人公司&#x2F;效率</td>
+<td>solopreneur &#x2F; productivity &#x2F; automation</td>
+<td>按热度</td>
+</tr>
+<tr>
+<td>投资&#x2F;市场&#x2F;宏观</td>
+<td>stocks &#x2F; macro &#x2F; bitcoin &#x2F; fed</td>
+<td>按热度</td>
+</tr>
+<tr>
+<td>社会情绪&#x2F;国际</td>
+<td>geopolitics &#x2F; layoffs &#x2F; tariffs</td>
+<td>按热度</td>
+</tr>
+</tbody></table>
+<p>关键约束：<strong>AI&#x2F;科技部分不超过整份输出的 40%</strong>。这不是我写在 SOUL.md 里的硬编码，是 Content 自己在反思中迭代出来的——它发现产出全是 AI 内容后，主动给自己加了配额限制。</p>
+<h3 id="管家蜘蛛（Butler）—-生活管家"><a href="#管家蜘蛛（Butler）—-生活管家" class="headerlink" title="管家蜘蛛（Butler）— 生活管家"></a>管家蜘蛛（Butler）— 生活管家</h3><p>不只是“喝水提醒”——深度集成 Apple 生态（Reminders &#x2F; Calendar &#x2F; Health &#x2F; Notes &#x2F; Shortcuts），是真正的个人生活助理。<strong>7 个 cron 任务</strong>：早安问候(08:00)→日程规划(08:30)→5 次喝水提醒（每次换花样：温馨&#x2F;幽默&#x2F;知识科普&#x2F;名人名言&#x2F;emoji 五种风格随机切换）→健康检查(20:00)→晚安总结(22:00)。</p>
+<p>核心理念是<strong>不多不少，刚刚好</strong>——单次提醒 &lt;50 字，间隔 ≥1.5 小时，23:00–07:00 仅发送紧急事项。如果用户没回复，不会连续催促：</p>
+<img data-src="/img/openclaw-mac-six-agents/12.png" width="633" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="ACP-编码专家阵型"><a href="#ACP-编码专家阵型" class="headerlink" title="ACP 编码专家阵型"></a>ACP 编码专家阵型</h3><p>Pi &#x2F; Claude Code &#x2F; Codex &#x2F; OpenCode &#x2F; Gemini &#x2F; GPT-5.3-Codex，通过 ACP 协议按需委派，最大 6 并发实例、120min TTL。分析 Agent 不写代码，编码全部通过 <code>sessions_spawn</code> 委派给专家——每种编码 Agent 都可以开多个并发实例。</p>
+<img data-src="/img/openclaw-mac-six-agents/13.png" width="589" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/14.png" width="1251" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="团队设计教训"><a href="#团队设计教训" class="headerlink" title="团队设计教训"></a>团队设计教训</h3><p>一个关键决策是<strong>不要让分析 Agent 直接编码</strong>。早期我额外设了 coding、architect、PM 三个技术角色，结果发现这几个角色基本没什么实际产出——它们的能力和 Zoe + ACP 编码专家的组合高度重叠，反而增加了通信复杂度和调试成本。后来全砍了，编码通过 ACP 委派给 Claude Code 等专业工具。PM 和架构师？Zoe 兼任就够了。</p>
+<p><strong>复杂度随人数快速上升</strong>。3 个 Agent &#x3D; 3 对交互关系，6 个 &#x3D; 15 对。整个系统从零到 6 个 Agent 稳定运行，花了大约半个月的下班时间——每加一个新 Agent 都需要半天到一天的调试，处理和现有 Agent 的通信冲突、共享资源竞争、规则兼容。</p>
+<hr>
+<h2 id="一天是怎么过的"><a href="#一天是怎么过的" class="headerlink" title="一天是怎么过的"></a>一天是怎么过的</h2><img data-src="/img/openclaw-mac-six-agents/15.png" width="688" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>从凌晨 03:00 的自动备份到 23:45 的全团队反思，52 个 cron 任务覆盖 A 股 + 美股双时区自动轮转。周日还有 Macro → Trading → Trading 的三级递进周报。</p>
+<p>每天结束时，每个 Agent 独立反思当天的 <code>.learnings/</code> 待审条目，Zoe 最后汇总全团队产出：</p>
+<img data-src="/img/openclaw-mac-six-agents/16.png" width="763" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<hr>
+<h2 id="让这套系统跑起来：三个核心工程问题"><a href="#让这套系统跑起来：三个核心工程问题" class="headerlink" title="让这套系统跑起来：三个核心工程问题"></a>让这套系统跑起来：三个核心工程问题</h2><p>上面展示的是最终效果。但从“装好 OpenClaw”到“系统流畅运作”，再到“Agent 自主进化”——中间有巨大的鸿沟。三个核心工程问题，每一个都不是“写好 prompt”能解决的。</p>
+<h2 id="核心问题一：上下文是-Agent-的操作系统"><a href="#核心问题一：上下文是-Agent-的操作系统" class="headerlink" title="核心问题一：上下文是 Agent 的操作系统"></a>核心问题一：上下文是 Agent 的操作系统</h2><h3 id="问题：Agent-系统的热力学第二定律"><a href="#问题：Agent-系统的热力学第二定律" class="headerlink" title="问题：Agent 系统的热力学第二定律"></a>问题：Agent 系统的热力学第二定律</h3><p><strong>不加约束，entropy 只增不减。</strong> 持续运行的 Agent 系统会<strong>确定性地</strong>走向崩溃——不是“可能”，是“一定”。</p>
+<p>Agent 就像一个没有操作系统的进程：它能处理输入、产出输出，但谁来管理它的内存（上下文）？谁来做垃圾回收（Session 清理）？谁来防止 OOM（膨胀保护）？不设计就没有人管。</p>
+<p>三个真实事故，按严重度排序：</p>
+<p><strong>P0 — 全团队瘫痪 8 小时</strong></p>
+<p>ainews 的 session 因为连续处理新闻和论文累积到 <strong>235K tokens</strong>。Gateway 启动时对所有 session 做 compaction，这个 session 永远超时 → crash → macOS 守护进程 <code>ThrottleInterval=1</code> 每秒重启 → 无限循环。所有 Agent 全部离线。</p>
+<p>修复要四层：手动清理膨胀 session → <code>ThrottleInterval</code> 1→10 → <code>idleMinutes</code> 180→30 → <code>exec.security</code> full→allowlist。这不是某一个参数的问题，是<strong>四个独立的防线全部缺失</strong>。</p>
+<p><strong>P1 — 3500 字报告被框架“优化”到 800 字</strong></p>
+<p>交易蜘蛛的收盘速报包含完整的数据表格、资金流向、个股评分。OpenClaw 在文本超过 <code>textChunkLimit</code> 时自动做 content compaction（LLM summarize），数据表格被“智能压缩”掉了。框架认为“帮你优化了”——但在数据密集场景下，<strong>AI 的“智能”是灾难</strong>。</p>
+<p><strong>P2 — 信息过载后关键规则失效</strong></p>
+<p>当 SOUL.md 里堆满了各种操作规范、当 session 膨胀到几万 tokens，Agent 开始“选择性遵守”规则。管家蜘蛛越界做投资分析。交易蜘蛛忽略数据验证规则。<strong>不是模型变笨了，而是关键信息被噪声淹没了</strong>——这是 Context Engineering 要解决的根本问题。</p>
+<h3 id="解决：双层控制-—-Context-Engineering-Harness"><a href="#解决：双层控制-—-Context-Engineering-Harness" class="headerlink" title="解决：双层控制 — Context Engineering + Harness"></a>解决：双层控制 — Context Engineering + Harness</h3><p>两层协同，两个都不能少。</p>
+<p><strong>第一层 — Context Engineering（设计 Agent 的信息架构）</strong></p>
+<p><strong>设计 Agent 每次推理时看到的完整信息结构</strong>——系统级的信息架构设计：</p>
+<ul>
+<li><strong>SOUL.md</strong> 放在 system prompt 最前面，是 Agent 的“宪法”——身份定义、决策框架、绝对禁止项。保持精简，只放最核心的约束</li>
+<li><strong>AGENTS.md</strong> 跟在 SOUL.md 后面，定义操作规范和协作协议</li>
+<li><strong>Skills</strong> 通过 <code>extraDirs</code> 配置<strong>按需加载</strong>——Trading 有 15 个 Skills 共 68000+ 行内容，不可能全放在 system prompt 里。只在 Agent 需要用到某个 Skill 时才注入上下文</li>
+<li><strong>shared-context&#x2F;</strong> 是跨 Agent 的共享状态，Agent 通过工具主动读取</li>
+<li><strong>Obsidian Vault</strong> 是冷存储，归档产出但不参与推理</li>
+</ul>
+<p><strong>LLM 的上下文窗口不是等价的</strong>。system prompt 前面的信息权重远高于后面的。session 膨胀到几万 tokens 后，早期消息的影响力被稀释——类似操作系统的内存管理：<strong>热数据放缓存，冷数据放磁盘，关键数据常驻内存</strong>。</p>
+<p>Trading 的 15 个 Skills 中，<code>stock_analysis</code>（技术面评分）在每日扫描时才需要，<code>bilateral_analysis</code>（龙虎榜分析）只在异动时触发。全部常驻上下文的话，<strong>噪声淹没了真正重要的规则</strong>。通过 <code>extraDirs</code> 按需注入，每次推理只加载相关的 1-3 个 Skill。</p>
+<p><strong>规则措辞必须面向最弱的模型</strong>。多模型 fallback 环境下（GPT-5.4 超时 → Qwen3.5+ → Ollama qwen3:8b），规则遵循率随模型能力递减：</p>
+<ul>
+<li><code>&quot;建议不要编造数据&quot;</code> → GPT-5.4 基本遵守，Qwen3.5+ 偶尔遵守，qwen3:8b 几乎无视</li>
+<li><code>&quot;MUST: 不编造数据&quot;</code> → 各模型遵守率显著提升</li>
+<li><code>&quot;MUST + P0 + NON-NEGOTIABLE&quot;</code> → 即使弱模型也能保持较高的遵守率</li>
+</ul>
+<p>多模型 fallback 时，不知道哪次推理会用弱模型，所以所有关键规则都要按最弱模型的理解能力来写。<strong>显式 &gt; 隐式，硬规则 &gt; 软建议</strong>。</p>
+<p><strong>第二层 — Harness（框架自动管理）</strong></p>
+<p>Agent 7×24 运行，session 会持续膨胀——你设计得再好，运行一天之后上下文就变了。<strong>框架替 Agent 管</strong>，OpenClaw 的 harness 配置提供自动化的上下文生命周期管理：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>触发条件</th>
+<th>动作</th>
+<th>为什么需要</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>compaction memoryFlush</strong></td>
+<td>Session 超过 40K tokens</td>
+<td>提取精华到 <code>memory/YYYY-MM-DD.md</code></td>
+<td>防止 session 无限膨胀</td>
+</tr>
+<tr>
+<td><strong>contextPruning</strong></td>
+<td>上下文超过 6 小时</td>
+<td>cache-ttl 裁剪，保留最近 3 条</td>
+<td>防止旧上下文干扰新推理</td>
+</tr>
+<tr>
+<td><strong>session reset</strong></td>
+<td>每天 5:00 或空闲 30 分钟</td>
+<td>自动重置</td>
+<td>防止跨天数据残留</td>
+</tr>
+<tr>
+<td><strong>session maintenance</strong></td>
+<td>文件超过 7 天</td>
+<td>自动清理，磁盘上限 100MB</td>
+<td>防止磁盘被撑满</td>
+</tr>
+<tr>
+<td><strong>self-improving-agent Skill</strong></td>
+<td>Agent 启动时</td>
+<td>注入 <code>.learnings/</code> 历史经验</td>
+<td>确保学到的东西不丢失（额外安装的 Skill）</td>
+</tr>
+</tbody></table>
+<p>只有 Context Engineering 没有 Harness，session 膨胀到 235K tokens 后一样崩溃；只有 Harness 没有 Context Engineering，所有信息堆在一起、关键规则被噪声淹没。Context Engineering 定义信息的结构，框架管理信息的生命周期。</p>
+<p>实际的 <code>openclaw.json</code> 配置（每个参数背后都是真实事故）：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;compaction&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;mode&quot;</span><span class="punctuation">:</span> <span class="string">&quot;safeguard&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;memoryFlush&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;enabled&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;softThresholdTokens&quot;</span><span class="punctuation">:</span> <span class="number">40000</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;prompt&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Distill to memory/YYYY-MM-DD.md. Focus: decisions, state changes, lessons, blockers.&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;contextPruning&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;mode&quot;</span><span class="punctuation">:</span> <span class="string">&quot;cache-ttl&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;ttl&quot;</span><span class="punctuation">:</span> <span class="string">&quot;6h&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;keepLastAssistants&quot;</span><span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;session&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;reset&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;mode&quot;</span><span class="punctuation">:</span> <span class="string">&quot;daily&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;atHour&quot;</span><span class="punctuation">:</span> <span class="number">5</span><span class="punctuation">,</span> <span class="attr">&quot;idleMinutes&quot;</span><span class="punctuation">:</span> <span class="number">30</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;maintenance&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;pruneAfter&quot;</span><span class="punctuation">:</span> <span class="string">&quot;7d&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;maxDiskBytes&quot;</span><span class="punctuation">:</span> <span class="number">104857600</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;hooks&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;bootstrap&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;self-improving-agent&quot;</span><span class="punctuation">]</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>四个机制的<strong>执行顺序很重要</strong>——compaction 先于 contextPruning，确保有价值的内容先被提取到 <code>memory/</code>，再被清理。self-improving-agent 的 bootstrap hook 在新 session 启动时触发，把 <code>.learnings/</code> 和 <code>MEMORY.md</code> 注入上下文——这是 Agent“记住上次学到的东西”的关键机制。</p>
+<p><strong>跨会话记忆恢复链</strong>（Agent 重启后如何“想起来自己是谁”）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">新 session 启动</span><br><span class="line">  ↓ self-improvement hook: 读 SOUL.md → AGENTS.md → MEMORY.md → .learnings/</span><br><span class="line">  ↓ memorySearch: 从 memory/ + sessions 中检索与当前任务相关的历史上下文</span><br><span class="line">  ↓ 读取 shared-context/ (团队实时状态)</span><br><span class="line">Agent 恢复到&quot;知道自己是谁、做过什么、团队现在在干什么&quot;的状态</span><br></pre></td></tr></table></figure>
+
+<p>Agent 不需要“记住”所有对话——memoryFlush 提取的是 decisions&#x2F;lessons&#x2F;state changes，不是完整对话。<code>memory/</code> 中的文件通常只有几百行，而原始 session 可能有几万 tokens。</p>
+<hr>
+<h2 id="核心问题二：让-Agent-真正“记住”并“成长”"><a href="#核心问题二：让-Agent-真正“记住”并“成长”" class="headerlink" title="核心问题二：让 Agent 真正“记住”并“成长”"></a>核心问题二：让 Agent 真正“记住”并“成长”</h2><h3 id="问题：Agent-今天犯的错，明天还会犯"><a href="#问题：Agent-今天犯的错，明天还会犯" class="headerlink" title="问题：Agent 今天犯的错，明天还会犯"></a>问题：Agent 今天犯的错，明天还会犯</h3><p>这是一个比上下文管理更深层的问题。chatbot 每次对话从零开始，所以它每次都犯同样的错是正常的。但如果你的 Agent 7×24 运行、每天处理几千次 LLM 调用，你会<strong>无法接受</strong>它反复犯同一个错误。</p>
+<p>交易蜘蛛 <strong>5 次</strong>把龙虎榜 API 字段名搞错——<code>BILLBOARD_BUY_AMT</code> 写成 <code>BUY_AMT</code>，每次 session 重置后记忆丢失，下一次又犯。用户纠正“昨天建议买军工，今天跌了就转空”，Agent 当场改了，但三天后遇到类似场景又给出同样的单向建议。</p>
+<p>chatbot 和 Agent 的分水岭就在这里：<strong>Agent 应该能从错误中学习，并且下次不犯</strong>。但怎么实现？</p>
+<img data-src="/img/openclaw-mac-six-agents/17.png" width="540" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="解决：五层记忆-—-从人类认知模型中借鉴"><a href="#解决：五层记忆-—-从人类认知模型中借鉴" class="headerlink" title="解决：五层记忆 — 从人类认知模型中借鉴"></a>解决：五层记忆 — 从人类认知模型中借鉴</h3><img data-src="/img/openclaw-mac-six-agents/18.png" width="680" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>设计记忆系统时，我参考了人类记忆的分层模型：工作记忆（短期）→ 长期记忆（经验）→ 程序性记忆（技能）。Agent 的记忆也应该有不同的时间尺度和管理方式：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>存储</th>
+<th>时间尺度</th>
+<th>管理方式</th>
+<th>典型内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1 身份层</td>
+<td>SOUL.md (精简核心)</td>
+<td>永恒</td>
+<td><strong>人工确认</strong>修改</td>
+<td>身份 + 硬约束 + 决策框架</td>
+</tr>
+<tr>
+<td>L2 长期记忆</td>
+<td>MEMORY.md (&lt;3000 tokens)</td>
+<td>长期</td>
+<td>Agent 自主维护</td>
+<td>结构化经验（✅ 成功模式 &#x2F; ❌ 失败教训）</td>
+</tr>
+<tr>
+<td>L3 中期记忆</td>
+<td>memory&#x2F;YYYY-MM-DD.md + memory.db</td>
+<td>中期</td>
+<td><strong>Harness 自动</strong>提取</td>
+<td>Session 超过 40K tokens 时的精华快照</td>
+</tr>
+<tr>
+<td>L4 短期记忆</td>
+<td>.learnings&#x2F; (ERRORS&#x2F;LEARNINGS&#x2F;FEATURES)</td>
+<td>短期</td>
+<td>Agent 即时记录</td>
+<td>错误记录、用户纠正、最佳实践</td>
+</tr>
+<tr>
+<td>L5 持久化</td>
+<td>Skills + Obsidian + ontology + vector_store.db</td>
+<td>持久</td>
+<td>共享&#x2F;归档</td>
+<td>技能库 + 知识归档 + 知识图谱 + 向量检索</td>
+</tr>
+</tbody></table>
+<p><strong>层与层之间的衔接</strong>才是关键——这形成了一个完整的自主进化循环。</p>
+<h3 id="记忆自主迭代——6-步循环"><a href="#记忆自主迭代——6-步循环" class="headerlink" title="记忆自主迭代——6 步循环"></a>记忆自主迭代——6 步循环</h3><p>这是整个系统最核心的机制。没有这个循环，Agent 只是 chatbot；有了这个循环，Agent 才是真正的 Agent。</p>
+<ol>
+<li><strong>触发事件</strong>：操作失败 · 用户纠正 · 发现更优做法 · 需要新能力——任意一种都会触发即时记录</li>
+<li><strong><code>.learnings/</code> 即时记录</strong>：ERRORS.md · LEARNINGS.md · FEATURE_REQUESTS.md，状态 pending — 低成本、高频率、不审查直接写入</li>
+<li><strong>每日反思 Cron（23:00-23:45）</strong>：扫描 <code>.learnings/</code> 所有 pending 条目 → 评估复现频率和重要性 → 验证 ≥3 次？✓ ≥3 次则 promote 到 MEMORY.md；✗ &lt;3 次则保留 pending，继续观察</li>
+<li><strong>promote 到 MEMORY.md</strong>：长期记忆 · &lt;3000 tokens 硬上限 · 超限时 Agent 自主精简（合并相似、删除过时）</li>
+<li><strong>下次 Session 加载</strong>：self-improvement hook · bootstrap 注入 · 检查 <code>.learnings/</code> · 引用历史经验</li>
+<li><strong>Agent 行为改进</strong>：下次遇到同样问题时自动避免 — 迭代完成</li>
+</ol>
+<p><strong>🔒 SOUL.md 修改</strong> — 需要用户确认（Agent 不能自己改自己的“宪法”）</p>
+<blockquote>
+<p><strong>Harness 并行路径</strong></p>
+<p>Session 40K tokens → memoryFlush → memory&#x2F;YYYY-MM-DD.md → memory.db</p>
+<p>与 Agent 自主的 .learnings&#x2F; → MEMORY.md 路径互补——Harness 管“对话精华提取”，Agent 管“经验教训沉淀”</p>
+</blockquote>
+<blockquote>
+<p><strong>为什么 “≥3 次”？</strong><br>防止偶发事件（如一次 API 超时）污染长期记忆。</p>
+<p>3000 tokens 额度很珍贵，只有反复出现的模式才值得占位。</p>
+</blockquote>
+<p>Agent 可以自主更新 <code>.learnings/</code>、<code>MEMORY.md</code>、<code>memory/</code>、<code>knowledge/</code>——但<strong>绝对不能改 SOUL.md</strong>。SOUL.md 是身份和硬约束，修改需要用户确认。我们真的遇到过 Agent 把自己的“人格”改松的情况——行为立刻变得不可控。</p>
+<p>Zoe 每周还会做记忆系统维护——分析各 Agent 的 MEMORY 状态，做归档和压缩：</p>
+<img data-src="/img/openclaw-mac-six-agents/19.png" width="614" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>L5 的 ontology 知识图谱记录实体关系（Agent&#x2F;Task&#x2F;MarketInsight&#x2F;Decision），<code>vector_store.db</code> 提供语义级检索——Agent 不需要记住精确措辞，通过向量相似度找到相关历史决策。</p>
+<h3 id="真实进化案例"><a href="#真实进化案例" class="headerlink" title="真实进化案例"></a>真实进化案例</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">用户纠正: &quot;昨天建议买军工，今天跌了就转空&quot;</span><br><span class="line">  ↓</span><br><span class="line">即时记录 (.learnings/):</span><br><span class="line">  &quot;[LRN-20260303-001] correction | priority: high | status: pending</span><br><span class="line">   军工策略在地缘利好场景下未充分强调短线拥挤与顶背离风险</span><br><span class="line">   Suggested Action: 条件单模板 — 入场带失效位 + bullish/base/bear 三情景&quot;</span><br><span class="line">  ↓</span><br><span class="line">每日反思 cron (23:30): promote 到 MEMORY.md</span><br><span class="line">  ↓</span><br><span class="line">MEMORY.md: &quot;❌ 事件驱动标的必须用条件单模板&quot;</span><br><span class="line">  ↓</span><br><span class="line">三周后遇到类似板块轮动:</span><br><span class="line">  交易蜘蛛直接引用了这条经验</span><br></pre></td></tr></table></figure>
+
+<p>这不是我写的规则——是 Agent 从纠正中自己提炼出方案，自己写入长期记忆。每日反思 cron 会审查 <code>.learnings/</code> 中的 pending 条目并决定是否 promote：</p>
+<img data-src="/img/openclaw-mac-six-agents/20.png" width="872" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/21.png" width="771" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>更多真实进化记录：</p>
+<table>
+<thead>
+<tr>
+<th>发现</th>
+<th>进化</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SOUL.md 信息过载导致规则失效</td>
+<td>精简核心，非核心规则迁移到 Skills 按需加载</td>
+<td>行为异常排查</td>
+</tr>
+<tr>
+<td><code>delivery=ok</code> ≠ 知识库已落库</td>
+<td>反思同时核对投递 + 文件存在性</td>
+<td>管家零产出事件</td>
+</tr>
+<tr>
+<td>butler 零产出但反思说“正常”</td>
+<td>建议性兜底 → 硬门禁（产出为空 &#x3D; 失败）</td>
+<td>运维巡检</td>
+</tr>
+<tr>
+<td>macro→trading 引用缺乏追溯</td>
+<td>强制结构化引用 + 验证字段</td>
+<td>数据追溯困难</td>
+</tr>
+<tr>
+<td>trading 频道刷屏（双发送链路）</td>
+<td>幂等键 + 单层重试 + 节流</td>
+<td>P0 事故</td>
+</tr>
+<tr>
+<td>军工策略只看事件驱动</td>
+<td>条件单模板：入场+失效位+三情景</td>
+<td><strong>Agent 自提方案</strong></td>
+</tr>
+</tbody></table>
+<h3 id="记忆系统还在进化"><a href="#记忆系统还在进化" class="headerlink" title="记忆系统还在进化"></a>记忆系统还在进化</h3><p>记忆系统不是“设计好就不变的”。最近的一个例子：</p>
+<p>Zoe 每周生成 <strong>Tech Radar 报告</strong>，从 ainews 的情报中提取技术趋势，分为 Adopt&#x2F;Trial&#x2F;Assess 三级。本周报告中，ainews 发现了 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2FnZW50c2NvcGUtYWkvUmVNZQ==">ReMe<i class="fa fa-external-link-alt"></i></span>（Agent 记忆管理框架），Zoe 立刻评估其与现有系统的对比：</p>
+<img data-src="/img/openclaw-mac-six-agents/22.png" width="1026" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/23.png" width="1091" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/24.png" width="825" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p><strong>结论</strong>：ReMe 架构优秀（223K → 1.1K tokens，99.5% 压缩率），但与 AgentScope 深度绑定，直接接入不划算。走“参考设计自研”——先实现收益最高的 <code>tool_result 压缩</code>（超长工具输出自动截断 + 外存，上下文占用降 80%+），再逐步引入结构化摘要模板和异步持久化。</p>
+<p>用户同意后，Zoe 立即通过 ACP 协议委派 Claude Code 做架构评审：</p>
+<img data-src="/img/openclaw-mac-six-agents/25.png" width="589" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>这个过程本身就是多 Agent 协作的真实案例：<strong>ainews 情报发现 → Zoe Tech Radar 评估 → 用户确认 → ACP 委派编码专家 → 分阶段落地</strong>，涉及 3 个 Agent + 1 个 ACP 编码专家。</p>
+<h3 id="假设驱动的迭代-—-从修-Bug-到科学方法"><a href="#假设驱动的迭代-—-从修-Bug-到科学方法" class="headerlink" title="假设驱动的迭代 — 从修 Bug 到科学方法"></a>假设驱动的迭代 — 从修 Bug 到科学方法</h3><p>记忆系统最有深度的进化不是修某个具体的 Bug，而是 Agent 学会了<strong>主动提出假设并验证</strong>——这是从“被动修复”升级到“主动改进”的关键一步。</p>
+<p>每日反思中，Agent 会基于当天的工作提出 3-5 条可验证假设，晚间反思时用实际数据评估：</p>
+<table>
+<thead>
+<tr>
+<th>假设</th>
+<th>验证结果</th>
+<th>后续动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>评分报告加上推理过程可降低用户质疑</td>
+<td><strong>已验证</strong>：Trading 加上推理链后用户追问显著减少</td>
+<td>固化为评分模板硬性要求</td>
+</tr>
+<tr>
+<td>Macro→Trading 引用上游结论可减少重复分析</td>
+<td><strong>已验证</strong>：从“每次重新分析”变为“引用+增量”</td>
+<td>写入协作协议</td>
+</tr>
+<tr>
+<td>端到端评测集比单点指标更能提升日报质量</td>
+<td><strong>验证中</strong></td>
+<td>正在建立评测基准</td>
+</tr>
+</tbody></table>
+<p>验证通过的假设被固化为规则或 Skill，验证失败的被标注原因并淘汰。Agent 不只是“犯错后改正”，而是在<strong>主动寻找改进空间</strong>——从 reactive 到 proactive 的跃迁。</p>
+<h3 id="自主进化机制：哪些是-OpenClaw-自带的，哪些是我们加的"><a href="#自主进化机制：哪些是-OpenClaw-自带的，哪些是我们加的" class="headerlink" title="自主进化机制：哪些是 OpenClaw 自带的，哪些是我们加的"></a>自主进化机制：哪些是 OpenClaw 自带的，哪些是我们加的</h3><p>理解这套记忆系统需要区分<strong>框架能力</strong>和<strong>运营优化</strong>——很多人问“OpenClaw 是不是开箱即用”，答案是“框架能力开箱可用，但要跑好需要大量运营层设计”。</p>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>OpenClaw 框架自带</th>
+<th>我们的运营层优化</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Session 管理</strong></td>
+<td>compaction（memoryFlush）、contextPruning、session reset、session maintenance</td>
+<td>调优参数（40K&#x2F;6h&#x2F;30min）来自多次事故复盘</td>
+</tr>
+<tr>
+<td><strong>self-improving-agent Skill</strong></td>
+<td>❌ 框架不自带</td>
+<td><strong>额外安装的 Skill</strong>——Agent 启动时注入 <code>.learnings/</code> 提醒，驱动学习记录和持续改进</td>
+</tr>
+<tr>
+<td><strong>Memory flush</strong></td>
+<td>超过阈值自动提取精华到 <code>memory/</code></td>
+<td>定制 flush prompt 强调“decisions&#x2F;state-changes&#x2F;lessons&#x2F;blockers”</td>
+</tr>
+<tr>
+<td><strong>Skills 加载</strong></td>
+<td><code>extraDirs</code> 按需注入</td>
+<td>15 个 Trading 专属 Skill、33 个全局共享 Skill，按需加载</td>
+</tr>
+<tr>
+<td><strong>ACP 委派</strong></td>
+<td><code>sessions_spawn</code> + 编码 Agent session 管理</td>
+<td>委派策略（什么任务用什么编码专家）、TTL 和并发调优</td>
+</tr>
+<tr>
+<td><strong>反思 + 自我迭代</strong></td>
+<td>❌ 框架不自带</td>
+<td><strong>完全自建</strong>——每日 23:30 每个 Agent 独立反思 + Zoe 汇总，包括 .learnings 审查、MEMORY 精简、Tech Radar 技术趋势提取、ReMe 等新技术评估</td>
+</tr>
+<tr>
+<td><strong>三态通信协议</strong></td>
+<td>❌ 框架不自带</td>
+<td><strong>Zoe 自主设计</strong>——从刷屏问题出发，迭代到 V1 线程协议</td>
+</tr>
+<tr>
+<td><strong>Task Watcher</strong></td>
+<td>❌ 框架不自带</td>
+<td><strong>Zoe 设计 + ACP 编码落地</strong>——task-watcher Skill</td>
+</tr>
+<tr>
+<td><strong>MEMORY.md 容量管理</strong></td>
+<td>❌</td>
+<td><code>memory_maintenance.py</code> 每周压缩 + Agent 自主精简</td>
+</tr>
+<tr>
+<td><strong>ontology 知识图谱</strong></td>
+<td>❌</td>
+<td>自建 schema.yaml + graph.jsonl 实体关系</td>
+</tr>
+</tbody></table>
+<p>OpenClaw 提供了优秀的框架级基础设施（Session 管理、Harness、ACP），但<strong>让 Agent 真正“活”起来的进化机制——反思迭代、协作协议、Task Watcher、记忆压缩——都是在框架之上的运营层设计</strong>。</p>
+<hr>
+<h2 id="核心问题三：多-Agent-协作是协议问题，不是群聊问题"><a href="#核心问题三：多-Agent-协作是协议问题，不是群聊问题" class="headerlink" title="核心问题三：多 Agent 协作是协议问题，不是群聊问题"></a>核心问题三：多 Agent 协作是协议问题，不是群聊问题</h2><h3 id="问题：把-Agent-放进群聊-≠-协作"><a href="#问题：把-Agent-放进群聊-≠-协作" class="headerlink" title="问题：把 Agent 放进群聊 ≠ 协作"></a>问题：把 Agent 放进群聊 ≠ 协作</h3><p>大多数人对 Multi-Agent 的直觉是“给几个 Agent 一个聊天群，它们就能协作”。实际上，这和把几个工程师拉到一个没有流程规范的群聊里没有区别——<strong>有沟通能力不等于有协作能力</strong>。</p>
+<p>Macro 和 Trading 在“伊朗局势对 A 股影响”上互相“收到&#x2F;确认&#x2F;感谢”刷了十几轮。分析早就做完了——Macro 判断“油价涨幅 &gt;10% → 通胀逻辑主导 → 黄金反跌”（实际走势：油价 +14%，黄金 -5%，判断准确）——但分析之后两个 Agent 客套的 token 比分析本身还多。</p>
+<p>根因不是“Agent 太客套”。根因是<strong>缺乏终态协议</strong>。Discord 配置中 <code>requireMention=true</code> 表示 Agent 只在被 @ 时才回复。当两个 Agent 互相 @，A → B → A → B……这就是经典的 ACK storm，和 TCP 协议早期遇到的问题是一样的。</p>
+<p>解法也是一样的：<strong>设计协议</strong>。不是告诉 Agent “少说话”——实际观察中“建议”式规则在弱模型上几乎不起作用——而是设计一个有状态机的通信协议。</p>
+<h3 id="解决：协议级设计-→-真实案例"><a href="#解决：协议级设计-→-真实案例" class="headerlink" title="解决：协议级设计 → 真实案例"></a>解决：协议级设计 → 真实案例</h3><p><strong>实例：下周 A 股策略圆桌讨论</strong></p>
+<p>Zoe 发起圆桌 → Macro 提供宏观研判 → Trading 回应策略建议 → 按固定三态协议有序收敛：</p>
+<p><strong>Step 1 — Zoe 发起议题 + Macro&#x2F;Trading 按协议 confirmed：</strong></p>
+<img data-src="/img/openclaw-mac-six-agents/26.png" width="1148" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p><strong>Step 2 — Trading 基于 Macro 研判给出详细策略（confirmed 输出）：</strong></p>
+<img data-src="/img/openclaw-mac-six-agents/27.png" width="616" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p><strong>Step 3 — Trading 输出 final（DRI 结论 + 完整推理过程）：</strong></p>
+<img data-src="/img/openclaw-mac-six-agents/28.png" width="619" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/29.png" width="625" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p><strong>Step 4 — 协议收敛（final 后全员静默）：</strong></p>
+<img data-src="/img/openclaw-mac-six-agents/30.png" width="611" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<h3 id="协议设计"><a href="#协议设计" class="headerlink" title="协议设计"></a>协议设计</h3><p><strong>固定三态通信协议 + V1 线程协议</strong>（被刷屏教训后设计，已迭代到 V1 版本，沉淀到 AGENTS.md）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">固定三态协议（强制）</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line"></span><br><span class="line">[request]    @对方 + ack_id + 期望动作 + 截止时间</span><br><span class="line">             模板: @agent [state=request] [ack_id=topic-v1-202603081430]</span><br><span class="line"></span><br><span class="line">[confirmed]  @发起方 + 相同 ack_id + 版本号/生效时间/关键结论</span><br><span class="line">             模板: @requester [state=confirmed] [ack_id=...] 版本=v2</span><br><span class="line"></span><br><span class="line">[final]      @相关方 + 相同 ack_id + 终态收敛（全线程仅 1 条）</span><br><span class="line">             发出后全员进入静默，&quot;收到/感谢/OK&quot; → NO_REPLY</span><br><span class="line"></span><br><span class="line">V1 线程协议（2026-03-08 起）</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line">• 同一线程只允许一个 ack_id，新一轮必须新开</span><br><span class="line">• final 后禁止续话；必须补充时优先 edit 既有消息</span><br><span class="line">• sessions_send 超时 ≠ 失败 → 同一 ack_id 不得重试</span><br><span class="line">• 同一内容最多重试 1 次；第二次超时 → shared-context/ 文件投递</span><br><span class="line"></span><br><span class="line">⏰ 5 分钟无 confirmed → 催办 1 次 · 10 分钟仍无 → 升级 Zoe 仲裁</span><br></pre></td></tr></table></figure>
+
+<p><strong>子线程策略</strong>：多轮协作的内容任务默认开专用子线程（命名: <code>&lt;主题&gt;-&lt;负责人&gt;-&lt;日期&gt;</code>），主频道只同步三次状态：<code>[Dispatch]</code> → <code>[ACK]</code> → <code>[DraftReady]</code>。</p>
+<p><strong>三种通信机制</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>用途</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sessions_send</code></td>
+<td>实时任务分派&#x2F;圆桌讨论</td>
+<td>Zoe → Macro “分析伊朗局势”</td>
+</tr>
+<tr>
+<td><code>shared-context/</code></td>
+<td>异步状态共享</td>
+<td>Macro 写入宏观因子包 → Trading 直接读取</td>
+</tr>
+<tr>
+<td>知识归档</td>
+<td>结构化素材接口</td>
+<td>ainews 报告末尾留“改写要点” → content 消费</td>
+</tr>
+</tbody></table>
+<p><code>shared-context/</code> 的核心价值：<strong>从消息驱动升级到状态驱动</strong>。Trading 不需要每次问 Macro“今天宏观怎么样”，直接读 <code>intel/finance_news_latest.json</code>。sessions_send 适合实时触发，但不可靠（超时、重复）——关键数据走文件才可追溯。</p>
+<p>Zoe 主导了 <code>shared-context/</code> 的标准化——从最初零散的文件目录，演进为结构化的跨 Agent 协作基础设施：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">shared-context/</span><br><span class="line">├── agent-sessions/       # ACP 编码专家的 session 状态（30 个 claude/codex session）</span><br><span class="line">├── agent-runs/           # Agent 运行记录</span><br><span class="line">├── monitor-tasks/        # Task Watcher 持久化存储</span><br><span class="line">│   ├── tasks.jsonl       # 任务注册（小红书审核/ACP完成/cron健康等）</span><br><span class="line">│   ├── watcher.log       # 轮询日志</span><br><span class="line">│   ├── audit.log         # 审计追踪</span><br><span class="line">│   ├── dlq.jsonl         # 死信队列（处理失败的任务）</span><br><span class="line">│   └── notifications/    # 通知记录</span><br><span class="line">├── intel/                # 情报共享（finance_news_latest.json 等）</span><br><span class="line">├── roundtable/           # 圆桌讨论记录</span><br><span class="line">├── decisions/            # 重大决策存档</span><br><span class="line">├── job-status/           # cron 任务状态</span><br><span class="line">├── knowledge-base/       # 共享知识</span><br><span class="line">├── status/               # 各 Agent 当前状态 JSON</span><br><span class="line">├── tech-radar.json       # 技术雷达（Adopt/Trial/Assess 三级）</span><br><span class="line">├── memory-maintenance-latest.json  # 最近一次记忆压缩报告</span><br><span class="line">└── PROJECT_STATUS.md     # 项目全局状态（Zoe 维护）</span><br></pre></td></tr></table></figure>
+
+<p>这不是一次性设计出来的——是 Zoe 在实际运营中逐步标准化的。每增加一个新的协作场景（ACP 编码、Task Watcher、Tech Radar），Zoe 就在 <code>shared-context/</code> 中增加对应的标准化目录和文件格式。</p>
+<p><strong>DRI 原则</strong>：一个问题只有一个 Directly Responsible Individual 出最终结论。非 DRI 只能补充，不能覆盖。Zoe 组织和归档，不替代专业 Agent 出专业意见。</p>
+<h3 id="协议优化后的自主反思"><a href="#协议优化后的自主反思" class="headerlink" title="协议优化后的自主反思"></a>协议优化后的自主反思</h3><p>协议落地后，Agent 不只是“按规则执行”——它们会主动反思效果并提出改进方向：</p>
+<img data-src="/img/openclaw-mac-six-agents/31.png" width="424" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<img data-src="/img/openclaw-mac-six-agents/32.png" width="516" alt="OpenClaw 实战：一台 Mac、六个 Agent，从“聊天”到“干活”的工程实践">
+
+<p>从初版“禁止客套”到 V1“线程级收敛”，每一步协议优化都来自 Agent 的 <code>.learnings/</code> 经验沉淀——这正是五层记忆系统的价值所在。</p>
+<p><strong>最新进展（2026-03-08）</strong>：Zoe 刚完成了一次全员通信标准下沉——修改了 26 个文件（6 个 Agent 的 AGENTS.md + SOUL.md + 相关 Skill 文档），把通信硬规则统一写入每个 Agent 的本地配置。同时执行了全员通信路径审计，识别出 <code>main/SOUL.md</code> 与圆桌 Thread 规则的冲突并修复。</p>
+<h3 id="五条联动链路"><a href="#五条联动链路" class="headerlink" title="五条联动链路"></a>五条联动链路</h3><p>Agent 之间不是各干各的，是上游主动为下游准备接口：</p>
+<table>
+<thead>
+<tr>
+<th>链路</th>
+<th>流转</th>
+<th>机制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ainews → content</td>
+<td>ainews 每份报告末尾留“改写要点”</td>
+<td>约定接口格式</td>
+</tr>
+<tr>
+<td>ainews → Zoe</td>
+<td>Tech Radar 技术雷达 → Zoe 评估与决策</td>
+<td>shared-context&#x2F;tech-radar.json</td>
+</tr>
+<tr>
+<td>Macro → Trading</td>
+<td>宏观因子包（DXY&#x2F;US10Y&#x2F;油价方向&#x2F;Fed路径&#x2F;板块映射）</td>
+<td>shared-context&#x2F;intel&#x2F;</td>
+</tr>
+<tr>
+<td>Trading → Macro（美股跨时区）</td>
+<td>Trading 05:10 夜报 → Macro 05:20 宏观复盘</td>
+<td>时序联动</td>
+</tr>
+<tr>
+<td>Macro → Trading（周末递进）</td>
+<td>18:30 宏观→ 19:30 市场→ 20:30 技术</td>
+<td>递进链路</td>
+</tr>
+<tr>
+<td>Zoe → 全团队</td>
+<td>23:45 跨 workspace 读取 6 Agent 产出 + .learnings&#x2F;</td>
+<td>反思汇总</td>
+</tr>
+</tbody></table>
+<p><strong>Tech Radar 真实示例</strong>——ainews 每日维护的技术雷达，分为 Adopt（已验证可用）、Trial（值得尝试）、Assess（持续观察）三级：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;adopt&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;MCP Protocol&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;reason&quot;</span><span class="punctuation">:</span> <span class="string">&quot;MCP 2.0 发布，三大框架推进标准化&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;trial&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;OpenAI Skills Catalog&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;reason&quot;</span><span class="punctuation">:</span> <span class="string">&quot;582→947 星，可参考 Skill 格式&quot;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;ReMe Agent 记忆管理&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;reason&quot;</span><span class="punctuation">:</span> <span class="string">&quot;独立记忆工具包，评估替代方案&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Zoe 消费 Tech Radar 后做源码级评估，判断对现有系统的影响——本周就基于此发起了 ReMe 评估并委派 Claude Code 落地 PoC。</p>
+<h3 id="安全边界-—-Agent-能改什么、不能改什么"><a href="#安全边界-—-Agent-能改什么、不能改什么" class="headerlink" title="安全边界 — Agent 能改什么、不能改什么"></a>安全边界 — Agent 能改什么、不能改什么</h3><p>安全在于<strong>限制 Agent 能触碰的范围</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>安全层</th>
+<th>机制</th>
+<th>教训</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>执行权限</strong></td>
+<td><code>exec.security: allowlist</code></td>
+<td>Content 曾自己改坏配置 → 改为白名单执行</td>
+</tr>
+<tr>
+<td><strong>配置保护</strong></td>
+<td>SOUL.md &#x2F; openclaw.json 不允许 Agent 修改</td>
+<td>Agent 把自己的“人格”改松 → 行为失控</td>
+</tr>
+<tr>
+<td><strong>密钥隔离</strong></td>
+<td>API keys 在 env 中，不在文件中</td>
+<td>防止暴露到 session 或 Discord</td>
+</tr>
+<tr>
+<td><strong>代码审查</strong></td>
+<td>ACP 编码走 review 流程</td>
+<td>Agent 生成的代码不直接部署</td>
+</tr>
+</tbody></table>
+<h3 id="Task-Watcher-—-解决“Agent-说了会做但实际没做”"><a href="#Task-Watcher-—-解决“Agent-说了会做但实际没做”" class="headerlink" title="Task Watcher — 解决“Agent 说了会做但实际没做”"></a>Task Watcher — 解决“Agent 说了会做但实际没做”</h3><p>Agent 最难发现的问题不是崩溃或报错，而是**“说了会做但实际没做”**。Content 蜘蛛发完小红书说“审核通过后通知你”——但 session 已经结束了，它根本做不到异步回调。更隐蔽的是 cron 任务“执行了”但零产出——反思也说“一切正常”。</p>
+<p>Zoe 主导设计了一套 <strong>Task Callback Event Bus</strong>——插件式架构，5 个组件各司其职，把异步监控<strong>下沉到 cron 级别</strong>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">注册任务 → tasks.jsonl（shared-context/monitor-tasks/）</span><br><span class="line">                ↓</span><br><span class="line">Cron (*/3 min) → Watcher → Adapter 检查状态 → 状态变化？</span><br><span class="line">                                                   ↓ Yes</span><br><span class="line">                                      Policy 决策 → Notifier 发 Discord</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Adapter 插件</strong>：小红书审核状态、GitHub PR、ACP 编码任务——想监控什么加一个 Adapter</li>
+<li><strong>Policy 策略</strong>：通知频率、升级、重试都可配</li>
+<li><strong>6 小时超时保护</strong>（默认），3 次投递失败自动升级，不会死循环、不会卡死</li>
+</ul>
+<p>这套系统由 Zoe 自行设计 → 委派 Claude Code 实现 → <strong>130 个单元测试</strong> → 开源发布为 OpenClaw Skill。从需求到代码到测试到发布，我只在方案评审时介入，其余由 Agent 团队完成。</p>
+<h3 id="通信-Guardrail-异步状态链（最新进展）"><a href="#通信-Guardrail-异步状态链（最新进展）" class="headerlink" title="通信 Guardrail + 异步状态链（最新进展）"></a>通信 Guardrail + 异步状态链（最新进展）</h3><p>Task Watcher 解决了“异步任务有没有产出”的问题，但更深层的问题是：<strong>Agent 之间的通信本身缺乏系统级约束</strong>。<code>message</code> 被误用为内部控制面、<code>timeout</code> 不等于失败却被当作失败处理、<code>completed</code> 和 <code>delivered</code> 无法区分——这些都不是靠文档规则能解决的。</p>
+<p>Zoe 自主设计并委派 ACP 编码专家实现了一套<strong>通信 Guardrail + 请求生命周期状态链</strong>（~3000 行 Python），核心组件：</p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>行数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>agent_comm_guardrail.py</code></td>
+<td>383</td>
+<td>5 条硬性规则：拒绝 message 误用、阻止身份伪造、拦截 ack_id 重发</td>
+</tr>
+<tr>
+<td><code>agent_request_models.py</code></td>
+<td>289</td>
+<td>11 态生命周期模型：<code>accepted → routed → queued → started → completed → delivered</code></td>
+</tr>
+<tr>
+<td><code>agent_request_store.py</code></td>
+<td>529</td>
+<td>文件级状态存储，<code>requests.jsonl</code> + <code>events.jsonl</code> 全链路审计</td>
+</tr>
+<tr>
+<td><code>completion_bus.py</code></td>
+<td>507</td>
+<td>异步完成投递总线，producer-consumer 模式</td>
+</tr>
+<tr>
+<td><code>acp_state_bridge.py</code></td>
+<td>502</td>
+<td>ACP 编码任务的状态桥接</td>
+</tr>
+<tr>
+<td><code>dead_letter_queue.py</code></td>
+<td>271</td>
+<td>投递失败兜底队列</td>
+</tr>
+</tbody></table>
+<p>设计决策：</p>
+<ul>
+<li><code>timeout ≠ failed</code>：超时只是控制面观察结果，任务可能已经在执行——引入 <code>ambiguous_success</code> 语义</li>
+<li><code>completed ≠ delivered</code>：工作完成 ≠ 结果送达，分离两个状态避免投递失败覆盖工作成果</li>
+<li><strong>通信生命周期独立于业务 TaskState</strong>：不污染现有 Task Watcher 的 <code>submitted → completed → failed</code> 状态机</li>
+<li><strong>文件级状态源</strong>：先用 <code>shared-context/agent-requests/</code> 跑通，不依赖 Redis&#x2F;MQ 等重量级设施</li>
+</ul>
+<p>这套系统从“Zoe 发现问题 → 设计方案 → 委派编码 → 代码实现 → 测试验收”，我只在方案确认环节介入，其余环节由 Agent 自主完成——是 Agent 从“执行者”进化为“系统设计者”的典型案例。</p>
+<h3 id="整体架构总结-—-五层工程视角"><a href="#整体架构总结-—-五层工程视角" class="headerlink" title="整体架构总结 — 五层工程视角"></a>整体架构总结 — 五层工程视角</h3><p>回过头看，整个系统的核心设计可以归结为五个层次：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>核心机制</th>
+<th>解决什么问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>通信层</strong></td>
+<td>三态协议 + ack_id + 四层一体化 + shared-context&#x2F;</td>
+<td>Agent 之间如何可靠地协作</td>
+</tr>
+<tr>
+<td><strong>记忆层</strong></td>
+<td>五层分层存储 + Harness 自动管理 + 反思迭代</td>
+<td>Agent 如何记住经验并持续成长</td>
+</tr>
+<tr>
+<td><strong>自愈层</strong></td>
+<td>三层自愈架构 + heartbeat-guardian + memory_maintenance</td>
+<td>系统如何 7×24 稳定运行</td>
+</tr>
+<tr>
+<td><strong>进化层</strong></td>
+<td>.learnings → promote → MEMORY + Skill 自研 + ClawHub 发布</td>
+<td>Agent 如何从“执行者”变成“设计者”</td>
+</tr>
+<tr>
+<td><strong>编排层</strong></td>
+<td>Zoe 巡检 + 圆桌主持 + Task Watcher + ACP 委派</td>
+<td>谁来管理和协调这一切</td>
+</tr>
+</tbody></table>
+<p>这五层不是独立的——它们相互依赖、相互强化。通信层的三态协议是 Zoe 在编排层中发现问题后设计的。记忆层的压缩策略是自愈层的一部分。进化层的 Skill 自研能力来自通信层的跨 Agent 协作。</p>
+<h2 id="跑了半个月之后的认知变化"><a href="#跑了半个月之后的认知变化" class="headerlink" title="跑了半个月之后的认知变化"></a>跑了半个月之后的认知变化</h2><p><strong>1. 90% 的时间花在工程问题上，不是 AI 问题上。</strong> Session 膨胀、消息风暴、配置被改坏——解法在分布式系统和 SRE 经典知识中，不在 AI 论文里。Agent 系统的瓶颈不是模型能力，是基础设施的成熟度。模型升级是锦上添花，通信协议、记忆架构、自愈机制才是决定成败的底座。</p>
+<p><strong>2. AI 的“智能”在生产环境中经常是灾难。</strong> Discord 消息被“智能压缩”砍掉了数据表格，Agent “智能修复”自己的配置改坏了工具名，管家蜘蛛在 session 膨胀后“智能地”越界做投资分析。在需要精确、可预测输出的场景下，“智能”反而是负面特性。<strong>显式 &gt; 隐式，硬规则 &gt; 软建议，可预测 &gt; 可解释。</strong></p>
+<p><strong>3. 持续运行的系统必然退化——不是 bug，是热力学。</strong> 配置堆积、记忆过长、session 膨胀、磁盘撑满——这些会确定性地发生。对策不是“一次设置好”，而是建立<strong>反退化机制栈</strong>：compaction 管 session，maintenance 管记忆，heartbeat-guardian 管配置，巡检管行为漂移。用 Agent 运维 Agent，用 cron 监控 cron——每层兜底机制都需要自己的兜底。</p>
+<p><strong>4. 协作是协议问题，不是 prompt 问题。</strong> 两个 Agent 放在同一个 Thread 里不写协议，等价于两个进程共享内存不加锁。Macro 和 Trading 用同一个模型、同一个知识库，刷屏时每条回复都言之有物——加上三态协议后产出从十几轮废话变成了一份可执行策略文档。模型没变，变的是规则。</p>
+<p><strong>5. Agent 最大的价值不是执行力，而是“参与设计”。</strong> 当 Agent 从“你让我做什么我就做什么”进化到“我发现了问题，调研了三种方案，推荐 B，你确认我就落地”——这时它才真正成为团队成员。十个进化案例里，大多数的起因不是“我让它做什么”，而是“它遇到了问题然后自己想办法”。系统设计的目标不是让 Agent 听话，而是让它有能力自己解决问题。</p>
+<hr>
+<h2 id="如果你也想试试"><a href="#如果你也想试试" class="headerlink" title="如果你也想试试"></a>如果你也想试试</h2><p><strong>不需要照搬 6 个 Agent。从 1 个开始。</strong> 整个系统从零到 6 个 Agent 稳定运行花了大约半个月的下班时间——不是开发时间，是调试和填坑时间。</p>
+<h3 id="第-1-2-天：先让-1-个-Agent-稳定运行"><a href="#第-1-2-天：先让-1-个-Agent-稳定运行" class="headerlink" title="第 1-2 天：先让 1 个 Agent 稳定运行"></a>第 1-2 天：先让 1 个 Agent 稳定运行</h3><p>最重要的三件事：</p>
+<ol>
+<li><strong>SOUL.md 保持精简，只放核心约束</strong>。把它当“宪法”不是“操作手册”——非核心规则放 Skills 按需加载</li>
+<li><strong>Session 管理参数第一天就设好</strong>：<code>idleMinutes=30</code>、<code>pruneAfter=7d</code>、<code>maxDiskBytes=100MB</code>。不设 &#x3D; 定时炸弹</li>
+<li><strong>从第一天就启用 <code>.learnings/</code> + 反思 cron</strong>。没有反思的 Agent 只是 chatbot，不是 Agent</li>
+</ol>
+<h3 id="第-3-5-天：加第-2-个，开始处理协作"><a href="#第-3-5-天：加第-2-个，开始处理协作" class="headerlink" title="第 3-5 天：加第 2 个，开始处理协作"></a>第 3-5 天：加第 2 个，开始处理协作</h3><ol>
+<li><strong>Discord 配置比你想的复杂 10 倍</strong>。每个 Agent 需要独立 Bot 账号。<code>requireMention</code>、<code>textChunkLimit</code>、<code>delivery.mode</code>、子 Thread 创建、Bot 权限——每个都有坑，而且组合起来的症状让你根本猜不到是哪个配置的问题</li>
+<li><strong>协作需要协议，不是群聊</strong>。两个 Agent 在群聊里会互相 ACK 到死。固定三态协议 + ack_id + 超时升级，两个都不能少</li>
+</ol>
+<h3 id="第-2-周起：逐步扩展到完整阵型"><a href="#第-2-周起：逐步扩展到完整阵型" class="headerlink" title="第 2 周起：逐步扩展到完整阵型"></a>第 2 周起：逐步扩展到完整阵型</h3><ol>
+<li><strong>规则用最强措辞，面向最弱模型</strong>。LLM 对“建议”式规则的遵循率远低于“MUST”，尤其在长上下文和弱模型上</li>
+<li><strong>“成功”要严格定义</strong>。投递成功 ≠ 归档成功，无报错 ≠ 有产出，Agent 说“正常” ≠ 真正正常</li>
+<li><strong>Agent 不回复是常态</strong>——准备好 Task Watcher 和重试机制</li>
+<li><strong>shared-context&#x2F; 是协作基石</strong>——<code>sessions_send</code> 不可靠（超时、重复），关键数据走文件才可追溯</li>
+<li><strong>每加一个 Agent 都需要半天到一天的调试</strong>。急于求成 &#x3D; 浪费更多时间在排查上</li>
+</ol>
+<p><strong>装好不难，跑通也不难。难的是：让 6 个 Agent 在没有你盯着的时候也能稳定产出、自我修正、协作不打架。这不是 prompt 问题，是系统工程问题。</strong></p>
+<h3 id="从理解原理开始"><a href="#从理解原理开始" class="headerlink" title="从理解原理开始"></a>从理解原理开始</h3><p>如果你想先理解 OpenClaw 的核心原理再动手，可以看看 <span class="exturl" data-url="aHR0cHM6Ly9hdGEuYXRhdGVjaC5vcmcvYXJ0aWNsZXMvMTEwMjA1OTkyMDE=">MiniClaw<i class="fa fa-external-link-alt"></i></span> —— ~2700 行 Python 实现了 OpenClaw（43 万行 TypeScript）的 11 个核心架构模式：Gateway Hub-and-Spoke、Workspace 契约文件、Agent Loop、Skills 触发、Compaction 上下文管理、Multi-Agent &amp; Spawn、Heartbeat、Cron、Hooks EventBus、自动反思。不需要看原始代码就能理解“为什么要这么设计”。</p>
+<hr>
+<h2 id="附录：技术栈快速参考"><a href="#附录：技术栈快速参考" class="headerlink" title="附录：技术栈快速参考"></a>附录：技术栈快速参考</h2><p><em>以下是正文中提到的技术组件的集中索引，方便快速查阅。详细说明见正文对应章节。</em></p>
+<h3 id="LLM-模型分层"><a href="#LLM-模型分层" class="headerlink" title="LLM 模型分层"></a>LLM 模型分层</h3><table>
+<thead>
+<tr>
+<th>任务类型</th>
+<th>模型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主对话 &#x2F; 反思 &#x2F; 圆桌</td>
+<td>GPT-5.4</td>
+</tr>
+<tr>
+<td>ACP 编码任务</td>
+<td>K2.5 &#x2F; GPT-5.4</td>
+</tr>
+<tr>
+<td>Cron 日常任务</td>
+<td>Qwen3.5+ &#x2F; K2.5</td>
+</tr>
+<tr>
+<td>心跳 &#x2F; 健康检查</td>
+<td>Ollama qwen3:8b</td>
+</tr>
+</tbody></table>
+<p>Fallback 链：<code>gpt-5.4 → k2.5 → qwen3.5-plus → ollama/qwen3:8b</code></p>
+<h3 id="核心-Harness-配置"><a href="#核心-Harness-配置" class="headerlink" title="核心 Harness 配置"></a>核心 Harness 配置</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;compaction&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;mode&quot;</span><span class="punctuation">:</span> <span class="string">&quot;safeguard&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;memoryFlush&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;softThresholdTokens&quot;</span><span class="punctuation">:</span> <span class="number">40000</span> <span class="punctuation">&#125;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;contextPruning&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;mode&quot;</span><span class="punctuation">:</span> <span class="string">&quot;cache-ttl&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;ttl&quot;</span><span class="punctuation">:</span> <span class="string">&quot;6h&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;keepLastAssistants&quot;</span><span class="punctuation">:</span> <span class="number">3</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;session&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;reset&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;atHour&quot;</span><span class="punctuation">:</span> <span class="number">5</span><span class="punctuation">,</span> <span class="attr">&quot;idleMinutes&quot;</span><span class="punctuation">:</span> <span class="number">30</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span> <span class="attr">&quot;maintenance&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;pruneAfter&quot;</span><span class="punctuation">:</span> <span class="string">&quot;7d&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;maxDiskBytes&quot;</span><span class="punctuation">:</span> <span class="number">104857600</span> <span class="punctuation">&#125;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;acp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;maxConcurrentSessions&quot;</span><span class="punctuation">:</span> <span class="number">6</span><span class="punctuation">,</span> <span class="attr">&quot;ttlMinutes&quot;</span><span class="punctuation">:</span> <span class="number">120</span> <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="数据源"><a href="#数据源" class="headerlink" title="数据源"></a>数据源</h3><table>
+<thead>
+<tr>
+<th>市场</th>
+<th>数据源</th>
+<th>覆盖</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A 股</td>
+<td>AKShare + TuShare Pro</td>
+<td>实时行情 + 历史 + 财务 + 龙虎榜 + 北向</td>
+</tr>
+<tr>
+<td>美股&#x2F;港股</td>
+<td>yfinance + Finnhub</td>
+<td>行情 + 新闻 + 基本面</td>
+</tr>
+<tr>
+<td>信息采集</td>
+<td>Tavily + RSS 13源 + GitHub Trending + 54 平台热榜 + arXiv</td>
+<td>搜索 + 新闻 + 热点 + 论文</td>
+</tr>
+<tr>
+<td>浏览器</td>
+<td>agent-browser (Playwright)</td>
+<td>JS 渲染页面（X&#x2F;Twitter、雪球等）</td>
+</tr>
+</tbody></table>
+<h3 id="部署配置"><a href="#部署配置" class="headerlink" title="部署配置"></a>部署配置</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>硬件</td>
+<td>Mac 本地 7×24</td>
+</tr>
+<tr>
+<td>进程守护</td>
+<td><code>launchctl</code> + <code>ThrottleInterval=10</code></td>
+</tr>
+<tr>
+<td>自愈</td>
+<td>2086 行脚本（heartbeat-guardian &#x2F; check_cron_health &#x2F; memory_maintenance）</td>
+</tr>
+<tr>
+<td>备份</td>
+<td>每日 03:00 全量备份</td>
+</tr>
+<tr>
+<td>监控</td>
+<td>Zoe 3 次&#x2F;天巡检 + 系统 crontab 15 分钟健康检查</td>
+</tr>
+<tr>
+<td>知识归档</td>
+<td>Obsidian Vault + obsidian-livesync</td>
+</tr>
+</tbody></table>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
+<li>文中 “RSS 13 源 + GitHub Trending + 54 平台热榜” 的数据获取方式：<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xhbnlhc2hlbmcvYWktbmV3cy1hZ2dyZWdhdG9y">https://github.com/lanyasheng/ai-news-aggregator<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/Context-Engineering/" rel="tag"># Context Engineering</a>
+              <a href="/tags/OpenClaw/" rel="tag"># OpenClaw</a>
+              <a href="/tags/%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F/" rel="tag"># 记忆系统</a>
+              <a href="/tags/%E5%A4%9AAgent%E5%8D%8F%E4%BD%9C/" rel="tag"># 多Agent协作</a>
+              <a href="/tags/%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE/" rel="tag"># 通信协议</a>
+              <a href="/tags/%E8%87%AA%E4%B8%BB%E8%BF%9B%E5%8C%96/" rel="tag"># 自主进化</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-10-agent-skills-teams-architecture-evolution/" rel="prev" title="Agent &#x2F; Skills &#x2F; Teams 架构演进流程及技术选型之道">
+                  <i class="fa fa-angle-left"></i> Agent / Skills / Teams 架构演进流程及技术选型之道
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-18-why-openclaw-gets-better/" rel="next" title="OpenClaw 为什么越用越好用？">
+                  OpenClaw 为什么越用越好用？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

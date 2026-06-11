@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文介绍如何安装与使用 seekdb Cursor Extension，将 seekdb 官方文档注入 .cursor&#x2F;rules 目录，让 Cursor AI 助手掌握向量搜索、混合搜索等知识，并以 Python 混合搜索示例演示实际效果与工作原理。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+<meta property="og:url" content="https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文介绍如何安装与使用 seekdb Cursor Extension，将 seekdb 官方文档注入 .cursor&#x2F;rules 目录，让 Cursor AI 助手掌握向量搜索、混合搜索等知识，并以 Python 混合搜索示例演示实际效果与工作原理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/01.png">
+<meta property="og:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/02.png">
+<meta property="og:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/03.png">
+<meta property="og:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/04.png">
+<meta property="og:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/05.png">
+<meta property="article:published_time" content="2026-01-14T00:54:10.000Z">
+<meta property="article:modified_time" content="2026-01-14T00:54:10.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 辅助编程">
+<meta property="article:tag" content="Cursor">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="pyseekdb">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="混合搜索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/cursor-seekdb-extension-guide/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/","path":"2026/2026-01-14-cursor-seekdb-extension-guide/","title":"让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-seekdb%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">什么是 seekdb？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-seekdb-Cursor-Extension%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">什么是 seekdb Cursor Extension？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">核心特性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B"><span class="nav-number">3.</span> <span class="nav-text">快速开始</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%AE%89%E8%A3%85%E6%89%A9%E5%B1%95"><span class="nav-number">3.1.</span> <span class="nav-text">第一步：安装扩展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E6%B7%BB%E5%8A%A0-seekdb-%E6%96%87%E6%A1%A3"><span class="nav-number">3.2.</span> <span class="nav-text">第二步：添加 seekdb 文档</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E6%95%88%E6%9E%9C%E6%BC%94%E7%A4%BA"><span class="nav-number">4.</span> <span class="nav-text">实际效果演示</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%EF%BC%9A%E4%BD%BF%E7%94%A8-AI-%E5%8A%A9%E6%89%8B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA-seekdb-%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2%E5%BA%94%E7%94%A8"><span class="nav-number">4.1.</span> <span class="nav-text">示例：使用 AI 助手创建一个 seekdb 混合搜索应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.2.</span> <span class="nav-text">运行示例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">5.</span> <span class="nav-text">更多使用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E6%9F%A5%E8%AF%A2"><span class="nav-number">5.1.</span> <span class="nav-text">基础查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E9%97%AE%E9%A2%98"><span class="nav-number">5.2.</span> <span class="nav-text">技术问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.3.</span> <span class="nav-text">代码示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%86%E6%88%90%E7%9B%B8%E5%85%B3"><span class="nav-number">5.4.</span> <span class="nav-text">集成相关</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">6.</span> <span class="nav-text">工作原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A7%BB%E9%99%A4%E6%96%87%E6%A1%A3"><span class="nav-number">7.</span> <span class="nav-text">移除文档</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南 | Longda's Interesting World">
+      <meta itemprop="description" content="本文介绍如何安装与使用 seekdb Cursor Extension，将 seekdb 官方文档注入 .cursor&#x2F;rules 目录，让 Cursor AI 助手掌握向量搜索、混合搜索等知识，并以 Python 混合搜索示例演示实际效果与工作原理。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-14 08:54:10" itemprop="dateCreated datePublished" datetime="2026-01-14T08:54:10+08:00">2026-01-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文介绍如何安装与使用 seekdb Cursor Extension，将 seekdb 官方文档注入 .cursor/rules 目录，让 Cursor AI 助手掌握向量搜索、混合搜索等知识，并以 Python 混合搜索示例演示实际效果与工作原理。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南","description":"本文介绍如何安装与使用 seekdb Cursor Extension，将 seekdb 官方文档注入 .cursor/rules 目录，让 Cursor AI 助手掌握向量搜索、混合搜索等知识，并以 Python 混合搜索示例演示实际效果与工作原理。","image":"https://ilongda.com/img/cursor-seekdb-extension-guide/01.png","wordCount":1900,"datePublished":"2026-01-14T00:54:10.000Z","dateModified":"2026-01-14T00:54:10.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/"},"url":"https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/","inLanguage":"zh-CN","keywords":["向量数据库","RAG","Cursor","seekdb","混合搜索","pyseekdb","AI 辅助编程"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南","item":"https://ilongda.com/2026/2026-01-14-cursor-seekdb-extension-guide/"}]}</script>
+<blockquote>
+<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+</blockquote>
+<p>在 AI 辅助编程时代，开发者越来越依赖智能工具来提升编码效率。然而，当你在 Cursor 中询问 seekdb 相关问题时，AI 可能无法给出准确的回答——因为它可能还不够了解 seekdb 这款刚发布不久的 AI 原生搜索数据库。</p>
+<p>本文将为大家介绍如何通过 <strong>seekdb Cursor Extension</strong>，让 Cursor AI 助手拥有 seekdb 专业知识，从而在大家基于 seekdb 进行 AI 应用开发的过程中获得精准的技术指导。</p>
+<p><img data-src="/img/cursor-seekdb-extension-guide/01.png" alt="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南"></p>
+<span id="more"></span>
+
+<h1 id="什么是-seekdb？"><a href="#什么是-seekdb？" class="headerlink" title="什么是 seekdb？"></a>什么是 seekdb？</h1><p><strong>seekdb</strong> 是由 OceanBase 推出的一款 AI 原生搜索数据库。它在单一引擎中统一了关系型数据、向量、文本、JSON 和 GIS 等多种数据模型，支持混合搜索和数据库内的 AI 工作流。</p>
+<p>seekdb 的典型应用场景包括：</p>
+<ul>
+<li><strong>RAG 与知识检索</strong>：为大语言模型引入实时可信的外部知识，提升回答质量</li>
+<li><strong>AI 辅助编程</strong>：为代码仓库构建向量和全文索引，实现基于语义的代码搜索</li>
+<li><strong>语义搜索引擎</strong>：捕捉用户搜索意图，实现跨模态精准检索</li>
+<li><strong>智能体（Agent）应用</strong>：为 AI Agent 提供记忆、规划、感知和推理的统一基础</li>
+</ul>
+<h1 id="什么是-seekdb-Cursor-Extension？"><a href="#什么是-seekdb-Cursor-Extension？" class="headerlink" title="什么是 seekdb Cursor Extension？"></a>什么是 seekdb Cursor Extension？</h1><p><strong>seekdb Cursor Extension</strong> 是一款 Cursor 扩展，它通过在 <code>.cursor/rules</code> 目录下添加规则，使 Cursor AI 助手能够检索 seekdb 官方文档，从而理解 seekdb 数据库知识，使其能够：</p>
+<ul>
+<li>✅ <strong>理解 seekdb 数据库概念</strong>：向量搜索、混合搜索、AI 函数等</li>
+<li>✅ <strong>提供准确的代码建议</strong>：基于官方文档生成符合最佳实践的代码</li>
+<li>✅ <strong>回答 seekdb 相关问题</strong>：直接在编辑器中获取技术支持</li>
+<li>✅ <strong>加速开发流程</strong>：减少查阅文档的时间，专注于业务逻辑</li>
+</ul>
+<h2 id="核心特性"><a href="#核心特性" class="headerlink" title="核心特性"></a>核心特性</h2><ul>
+<li>🚀 <strong>一键安装</strong>：通过 Cursor 扩展市场或命令面板快速安装</li>
+<li>📚 <strong>完整文档</strong>：检索 seekdb 官方文档知识库，涵盖向量搜索、混合搜索、AI 函数等全面技术文档</li>
+<li>🌐 <strong>双模式支持</strong>：优先从 GitHub 获取最新文档，本地文档作为备份</li>
+</ul>
+<h1 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h1><h2 id="第一步：安装扩展"><a href="#第一步：安装扩展" class="headerlink" title="第一步：安装扩展"></a>第一步：安装扩展</h2><ol>
+<li>在 Cursor 中打开扩展市场（<code>Ctrl+Shift+X</code> 或 <code>Cmd+Shift+X</code>）</li>
+<li>搜索 “seekdb”</li>
+<li>点击 <strong>Install</strong> 安装扩展</li>
+</ol>
+<img data-src="/img/cursor-seekdb-extension-guide/02.png" width="351" alt="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+
+<h2 id="第二步：添加-seekdb-文档"><a href="#第二步：添加-seekdb-文档" class="headerlink" title="第二步：添加 seekdb 文档"></a>第二步：添加 seekdb 文档</h2><ol>
+<li>使用 Cursor 打开一个项目目录（文档将添加到该目录下）</li>
+<li>打开命令面板：<ul>
+<li>Windows&#x2F;Linux: 按 <code>Ctrl+Shift+P</code></li>
+<li>macOS: 按 <code>Cmd+Shift+P</code></li>
+</ul>
+</li>
+<li>输入并选择命令：<ul>
+<li>输入 <strong>“seekdb”</strong> 或 <strong>“Add seekdb Docs”</strong></li>
+<li>选择 <code>Add seekdb Docs</code> 命令</li>
+</ul>
+</li>
+<li>文档将自动添加：<ul>
+<li><code>.cursor/rules/seekdb-docs</code> 目录（官方文档）</li>
+<li><code>.cursor/rules/seekdb.mdc</code> 文件（规则文件）</li>
+</ul>
+</li>
+<li>重新加载窗口使规则生效</li>
+</ol>
+<img data-src="/img/cursor-seekdb-extension-guide/03.png" width="398" alt="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+
+<p>安装完成！现在你可以直接向 Cursor AI 助手询问任何 seekdb 相关问题了。</p>
+<h1 id="实际效果演示"><a href="#实际效果演示" class="headerlink" title="实际效果演示"></a>实际效果演示</h1><p>让我们通过一个实际示例，看看 seekdb Cursor Extension 如何帮助你进行开发。</p>
+<h2 id="示例：使用-AI-助手创建一个-seekdb-混合搜索应用"><a href="#示例：使用-AI-助手创建一个-seekdb-混合搜索应用" class="headerlink" title="示例：使用 AI 助手创建一个 seekdb 混合搜索应用"></a>示例：使用 AI 助手创建一个 seekdb 混合搜索应用</h2><p>安装扩展并添加文档后，在 Cursor 中开始一个新对话，输入以下问题：</p>
+<blockquote>
+<p><strong>例如</strong>：我想用 Python 创建一个简单的 seekdb 应用，实现文档的混合搜索功能，请帮我写代码。</p>
+</blockquote>
+<p><strong>Cursor AI 助手此时就会给出准确的回答</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">seekdb 混合搜索快速入门示例</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">这是一个最简化的混合搜索示例，帮助你快速上手。</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> pyseekdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 创建客户端（嵌入式模式，无需部署数据库）</span></span><br><span class="line">client = pyseekdb.Client()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 创建集合</span></span><br><span class="line">collection = client.get_or_create_collection(name=<span class="string">&quot;my_docs&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 添加文档</span></span><br><span class="line">documents = [</span><br><span class="line">    <span class="string">&quot;机器学习是人工智能的核心技术&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Python 是最流行的机器学习编程语言&quot;</span>,</span><br><span class="line">    <span class="string">&quot;深度学习需要大量的训练数据&quot;</span>,</span><br><span class="line">    <span class="string">&quot;自然语言处理让计算机理解人类语言&quot;</span>,</span><br><span class="line">    <span class="string">&quot;向量数据库用于存储和检索向量数据&quot;</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">metadatas = [</span><br><span class="line">    &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;AI&quot;</span>, <span class="string">&quot;year&quot;</span>: <span class="number">2024</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;Programming&quot;</span>, <span class="string">&quot;year&quot;</span>: <span class="number">2024</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;AI&quot;</span>, <span class="string">&quot;year&quot;</span>: <span class="number">2023</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;AI&quot;</span>, <span class="string">&quot;year&quot;</span>: <span class="number">2024</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;Database&quot;</span>, <span class="string">&quot;year&quot;</span>: <span class="number">2024</span>&#125;,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">ids = [<span class="string">f&quot;doc_<span class="subst">&#123;i&#125;</span>&quot;</span> <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(documents))]</span><br><span class="line"></span><br><span class="line">collection.add(ids=ids, documents=documents, metadatas=metadatas)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;✅ 已添加 <span class="subst">&#123;<span class="built_in">len</span>(documents)&#125;</span> 个文档&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 执行混合搜索</span></span><br><span class="line"><span class="comment"># 结合全文搜索（包含&quot;机器学习&quot;）和向量语义搜索（查找与&quot;AI技术&quot;相似的内容）</span></span><br><span class="line">results = collection.hybrid_search(</span><br><span class="line">    query=&#123;</span><br><span class="line">        <span class="string">&quot;where_document&quot;</span>: &#123;<span class="string">&quot;$contains&quot;</span>: <span class="string">&quot;机器学习&quot;</span>&#125;,  <span class="comment"># 全文搜索：包含关键词</span></span><br><span class="line">        <span class="string">&quot;n_results&quot;</span>: <span class="number">10</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    knn=&#123;</span><br><span class="line">        <span class="string">&quot;query_texts&quot;</span>: [<span class="string">&quot;AI技术&quot;</span>],  <span class="comment"># 向量搜索：语义相似性</span></span><br><span class="line">        <span class="string">&quot;n_results&quot;</span>: <span class="number">10</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    rank=&#123;<span class="string">&quot;rrf&quot;</span>: &#123;&#125;&#125;,  <span class="comment"># 使用 RRF 算法融合结果</span></span><br><span class="line">    n_results=<span class="number">3</span>,</span><br><span class="line">    include=[<span class="string">&quot;documents&quot;</span>, <span class="string">&quot;metadatas&quot;</span>],</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 打印结果</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;\n🔍 混合搜索结果:&quot;</span>)</span><br><span class="line"><span class="keyword">for</span> i, (doc_id, doc, meta) <span class="keyword">in</span> <span class="built_in">enumerate</span>(</span><br><span class="line">    <span class="built_in">zip</span>(results[<span class="string">&quot;ids&quot;</span>][<span class="number">0</span>], results[<span class="string">&quot;documents&quot;</span>][<span class="number">0</span>], results[<span class="string">&quot;metadatas&quot;</span>][<span class="number">0</span>]), <span class="number">1</span></span><br><span class="line">):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;  [<span class="subst">&#123;i&#125;</span>] <span class="subst">&#123;doc&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;      元数据: <span class="subst">&#123;meta&#125;</span>\n&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 6. 清理（可选）</span></span><br><span class="line"><span class="comment"># client.delete_collection(&quot;my_docs&quot;)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="运行示例"><a href="#运行示例" class="headerlink" title="运行示例"></a>运行示例</h2><ol>
+<li><strong>安装 pyseekdb</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install pyseekdb</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>运行代码</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python quick_start_hybrid_search.py</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>查看结果</strong></li>
+</ol>
+<img data-src="/img/cursor-seekdb-extension-guide/04.png" width="1356" alt="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+
+<p>混合搜索结合了<strong>关键词匹配</strong>（包含 “机器学习” 的文档）和<strong>语义搜索</strong>（与 “AI 技术” 语义相近的文档），通过 RRF（Reciprocal Rank Fusion）算法融合两路检索结果，返回最相关的文档。RRF 的具体含义详见这篇基础概念文章<span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3M/X19iaXo9TXprM05URTJOelU1TlE9PSZtaWQ9MjI0NzQ4OTE0NiZpZHg9MSZzbj05NWNlYjcwMzBjODQ3MmQ0OWU0MDlmZTUzNTY5OTA4NyZzY2VuZT0yMSN3ZWNoYXRfcmVkaXJlY3Q=">《浅入了解混合搜索》<i class="fa fa-external-link-alt"></i></span>。</p>
+<p>特别说明：seekdb 的嵌入式模式暂时只支持 Linux 服务器，如果是在 Mac 或者 Windows 本地测试，需要把 Python 代码里的 <code>client = pyseekdb.Client()</code> 改成服务器模式的连接地址（推荐在 Mac 或者 Windows 上使用 seekdb 桌面版）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">client = pyseekdb.Client(</span><br><span class="line">    host=<span class="string">&quot;127.0.0.1&quot;</span>,      <span class="comment"># Server host</span></span><br><span class="line">    port=<span class="number">2881</span>,              <span class="comment"># Server port (default: 2881)</span></span><br><span class="line">    database=<span class="string">&quot;test&quot;</span>,        <span class="comment"># Database name</span></span><br><span class="line">    user=<span class="string">&quot;root&quot;</span>,            <span class="comment"># Username (default: &quot;root&quot;)</span></span><br><span class="line">    password=<span class="string">&quot;&quot;</span>             <span class="comment"># Password (can be retrieved from SEEKDB_PASSWORD environment variable)</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h1 id="更多使用场景"><a href="#更多使用场景" class="headerlink" title="更多使用场景"></a>更多使用场景</h1><p>安装 seekdb Cursor Extension 后，你可以向 AI 助手询问各种 seekdb 相关问题：</p>
+<h2 id="基础查询"><a href="#基础查询" class="headerlink" title="基础查询"></a>基础查询</h2><ul>
+<li>如何开始使用 seekdb？</li>
+<li>seekdb 支持哪些部署模式？</li>
+</ul>
+<h2 id="技术问题"><a href="#技术问题" class="headerlink" title="技术问题"></a>技术问题</h2><ul>
+<li>如何在 seekdb 中创建向量索引？</li>
+<li>seekdb 的 AI 函数有哪些？如何使用 AI_EMBED 函数？</li>
+</ul>
+<h2 id="代码示例"><a href="#代码示例" class="headerlink" title="代码示例"></a>代码示例</h2><ul>
+<li>展示一个使用 seekdb SQL 实现向量相似度搜索的示例。</li>
+<li>如何将 seekdb 与 LangChain 集成？</li>
+</ul>
+<h2 id="集成相关"><a href="#集成相关" class="headerlink" title="集成相关"></a>集成相关</h2><ul>
+<li>seekdb 如何配置 OpenAI 模型进行向量嵌入？</li>
+</ul>
+<h1 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h1><p>seekdb Cursor Extension 的工作原理非常简单：</p>
+<ol>
+<li><strong>规则文件注入</strong>：扩展将 seekdb 官方文档和 <code>.mdc</code> 规则文件添加到 <code>.cursor/rules</code> 目录</li>
+<li><strong>AI 上下文增强</strong>：Cursor 会自动读取 <code>.cursor/rules</code> 目录中的内容，作为 AI 助手的上下文知识</li>
+<li><strong>智能检索</strong>：当你询问 seekdb 相关问题时，AI 助手会基于这些文档提供准确的回答</li>
+</ol>
+<img data-src="/img/cursor-seekdb-extension-guide/05.png" width="171" alt="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+
+<h1 id="移除文档"><a href="#移除文档" class="headerlink" title="移除文档"></a>移除文档</h1><p>如果你不再需要 seekdb 文档，可以轻松移除：</p>
+<ol>
+<li>打开命令面板（<code>Ctrl+Shift+P</code> 或 <code>Cmd+Shift+P</code>）</li>
+<li>输入 <strong>“Remove seekdb Docs”</strong></li>
+<li>选择该命令执行</li>
+</ol>
+<p>文档将从 <code>.cursor/rules</code> 目录中移除。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>通过 <strong>seekdb Cursor Extension</strong>，你可以在使用 Cursor 进行开发时，随时获取 seekdb 的官方文档支持。无论是学习 seekdb 的新功能，还是解决开发中遇到的技术问题，AI 助手都能基于最新的官方文档提供准确的指导~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/Cursor/" rel="tag"># Cursor</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/pyseekdb/" rel="tag"># pyseekdb</a>
+              <a href="/tags/AI-%E8%BE%85%E5%8A%A9%E7%BC%96%E7%A8%8B/" rel="tag"># AI 辅助编程</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-09-hybrid-search-multimodal-guide/" rel="prev" title="混合检索（Hybrid Search）：多模态检索实战指南（第四章）">
+                  <i class="fa fa-angle-left"></i> 混合检索（Hybrid Search）：多模态检索实战指南（第四章）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-16-pharma-crm-database-upgrade/" rel="next" title="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？">
+                  千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

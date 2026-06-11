@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OpenClaw 新版发布后，多 Agent 并行、长程任务的算力消耗更难掌控。开源工具 ClawProbe 通过静默读取本地状态文件与差分算法，提供 status、top、cost、context、compacts 等命令，实时追踪 Token 流速、成本与上下文压缩事件，打开 Agent 运行黑盒。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒">
+<meta property="og:url" content="https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OpenClaw 新版发布后，多 Agent 并行、长程任务的算力消耗更难掌控。开源工具 ClawProbe 通过静默读取本地状态文件与差分算法，提供 status、top、cost、context、compacts 等命令，实时追踪 Token 流速、成本与上下文压缩事件，打开 Agent 运行黑盒。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-cost-tracking/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/openclaw-cost-tracking/02.webp">
+<meta property="article:published_time" content="2026-03-24T01:55:24.000Z">
+<meta property="article:modified_time" content="2026-03-24T01:55:24.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="ClawProbe">
+<meta property="article:tag" content="OpenClaw">
+<meta property="article:tag" content="上下文管理">
+<meta property="article:tag" content="可观测性">
+<meta property="article:tag" content="开源工具">
+<meta property="article:tag" content="成本追踪">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/openclaw-cost-tracking/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/","path":"2026/2026-03-24-openclaw-cost-tracking/","title":"OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E5%88%86%E9%92%9F%E6%8E%A5%E5%85%A5%EF%BC%9A%E6%AF%94%E9%85%8D%E7%BD%AE-Prometheus-%E8%BF%98%E7%AE%80%E5%8D%95"><span class="nav-number">1.</span> <span class="nav-text">两分钟接入：比配置 Prometheus 还简单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%EF%BC%9A%E4%BB%8E-status-%E5%88%B0-top-%E7%9A%84%E5%AE%8C%E6%95%B4%E5%B7%A5%E5%85%B7%E9%93%BE"><span class="nav-number">2.</span> <span class="nav-text">核心功能：从 status 到 top 的完整工具链</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#clawprobe-status%EF%BC%9AAgent-%E7%9A%84%E2%80%9CCT%E6%89%AB%E6%8F%8F%E6%8A%A5%E5%91%8A%E2%80%9D"><span class="nav-number">2.1.</span> <span class="nav-text">clawprobe status：Agent 的“CT扫描报告”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clawprobe-top%EF%BC%9A%E4%B8%93%E4%B8%BA%E9%95%BF%E7%A8%8B%E4%BB%BB%E5%8A%A1%E8%AE%BE%E8%AE%A1%E7%9A%84-htop"><span class="nav-number">2.2.</span> <span class="nav-text">clawprobe top：专为长程任务设计的 htop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clawprobe-cost%EF%BC%9AAPI-%E8%B4%A6%E5%8D%95%E7%9A%84%E2%80%9C%E5%AE%9E%E6%97%B6%E5%AE%A1%E8%AE%A1%E2%80%9D"><span class="nav-number">2.3.</span> <span class="nav-text">clawprobe cost：API 账单的“实时审计”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clawprobe-context%EF%BC%9A%E6%8F%AA%E5%87%BA%E9%9D%99%E9%BB%98%E6%88%AA%E6%96%AD%E7%9A%84%E5%85%83%E5%87%B6"><span class="nav-number">2.4.</span> <span class="nav-text">clawprobe context：揪出静默截断的元凶</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clawprobe-compacts%EF%BC%9A%E5%AE%A1%E8%AE%A1%E4%B8%8A%E4%B8%8B%E6%96%87%E2%80%9C%E9%81%97%E5%BF%98%E2%80%9D%E4%BA%8B%E4%BB%B6"><span class="nav-number">2.5.</span> <span class="nav-text">clawprobe compacts：审计上下文“遗忘”事件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%BA%E8%83%BD%E5%BB%BA%E8%AE%AE%EF%BC%9A%E8%A7%84%E5%88%99%E5%BC%95%E6%93%8E%E8%80%8C%E9%9D%9E-AI-%E5%91%8A%E8%AD%A6"><span class="nav-number">3.</span> <span class="nav-text">智能建议：规则引擎而非 AI 告警</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%88%91%E7%9B%91%E6%8E%A7%EF%BC%9AAgent-%E7%9A%84%E2%80%9C%E5%86%85%E7%9C%81%E2%80%9D%E8%83%BD%E5%8A%9B"><span class="nav-number">4.</span> <span class="nav-text">自我监控：Agent 的“内省”能力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%B8%8E%E8%B5%84%E6%BA%90%EF%BC%9A%E6%AF%94-systemd-%E6%9C%8D%E5%8A%A1%E6%9B%B4%E8%BD%BB"><span class="nav-number">5.</span> <span class="nav-text">性能与资源：比 systemd 服务更轻</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E6%BA%90%E4%B8%8E%E6%9C%AA%E6%9D%A5%EF%BC%9A%E7%A4%BE%E5%8C%BA%E9%A9%B1%E5%8A%A8%E7%9A%84%E8%B7%AF%E7%BA%BF%E5%9B%BE"><span class="nav-number">6.</span> <span class="nav-text">开源与未来：社区驱动的路线图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%90%8E%E7%9A%84%E6%80%9D%E8%80%83%EF%BC%9A%E9%80%8F%E6%98%8E%E5%BA%A6%E6%98%AF-Agent-%E7%9A%84%E2%80%9C%E9%81%93%E5%BE%B7%E5%9F%BA%E7%A1%80%E2%80%9D"><span class="nav-number">7.</span> <span class="nav-text">最后的思考：透明度是 Agent 的“道德基础”</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒 | Longda's Interesting World">
+      <meta itemprop="description" content="OpenClaw 新版发布后，多 Agent 并行、长程任务的算力消耗更难掌控。开源工具 ClawProbe 通过静默读取本地状态文件与差分算法，提供 status、top、cost、context、compacts 等命令，实时追踪 Token 流速、成本与上下文压缩事件，打开 Agent 运行黑盒。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-24 09:55:24" itemprop="dateCreated datePublished" datetime="2026-03-24T09:55:24+08:00">2026-03-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>9 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">OpenClaw 新版发布后，多 Agent 并行、长程任务的算力消耗更难掌控。开源工具 ClawProbe 通过静默读取本地状态文件与差分算法，提供 status、top、cost、context、compacts 等命令，实时追踪 Token 流速、成本与上下文压缩事件，打开 Agent 运行黑盒。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒","description":"OpenClaw 新版发布后，多 Agent 并行、长程任务的算力消耗更难掌控。开源工具 ClawProbe 通过静默读取本地状态文件与差分算法，提供 status、top、cost、context、compacts 等命令，实时追踪 Token 流速、成本与上下文压缩事件，打开 Agent 运行黑盒。","image":"https://ilongda.com/img/openclaw-cost-tracking/01.webp","wordCount":2517,"datePublished":"2026-03-24T01:55:24.000Z","dateModified":"2026-03-24T01:55:24.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/"},"url":"https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/","inLanguage":"zh-CN","keywords":["AI Agent","OpenClaw","ClawProbe","可观测性","成本追踪","上下文管理","开源工具"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒","item":"https://ilongda.com/2026/2026-03-24-openclaw-cost-tracking/"}]}</script>
+<p>OpenClaw 又双叒叕发版了，此次发布的 2026.3.22-beta.1 版本看起来“大换血”——大改插件体系、重构 SDK 路径、重写消息机制、改变运行方式、收敛工具能力，以及重构浏览器体系与大模型策略。</p>
+<p><img data-src="/img/openclaw-cost-tracking/01.webp" alt="OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒"></p>
+<p>这次更新让开发者在构建复杂 AI 应用时拥有了更强的能力，但同时也带来了新的挑战：<strong>当多个 Agent 并行运行、任务跨度数天时，如何精确掌握每个环节的算力消耗和状态变化？</strong></p>
+<p>根据我们小范围的调研，开发者反馈在使用 OpenClaw 运行复杂任务时，经常遇到这些困扰：任务跑到一半突然变慢，却无法区分是模型在深度思考还是出现了卡顿；月底收到 API 账单时发现金额远超预期，却无法追溯具体消耗；或者更糟糕的是，上下文被静默压缩导致 Agent“忘记”了关键决策，影响任务连续性。</p>
+<span id="more"></span>
+
+<p>这种“黑盒”开发体验，正是新开源工具 ClawProbe 要解决的核心痛点。<strong>作为专为 OpenClaw 设计的实时监控工具，它让开发者在模型价格战激烈的当下，能够精确掌控每一分算力消耗。</strong></p>
+<p>clawprobe 不改变你的 Agent 逻辑，不注入任何性能开销，只是<strong>静默地读取 OpenClaw 的本地状态文件，用差分算法实时计算出你想知道的一切</strong>。就像给 Agent 做 <code>strace</code>，但输出的是人类可读的仪表盘。</p>
+<p>本版本为内测版：<strong>github.com&#x2F;seekcontext&#x2F;ClawProbe</strong>，诚邀试用、提 PR，或将建议反馈在 OceanBase 社区「问答」板块。</p>
+<h2 id="两分钟接入：比配置-Prometheus-还简单"><a href="#两分钟接入：比配置-Prometheus-还简单" class="headerlink" title="两分钟接入：比配置 Prometheus 还简单"></a>两分钟接入：比配置 Prometheus 还简单</h2><p>别急着上 Grafana 仪表盘。对于大多数 OpenClaw 用户来说，部署完整的监控栈反而增加了复杂度。clawprobe 的哲学是：<strong>监控工具本身不应该成为新的监控对象</strong>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install -g clawprobe</span><br><span class="line">clawprobe start    <span class="comment"># 启动后台文件监听器</span></span><br><span class="line">clawprobe status   <span class="comment"># 立即查看Agent CT扫描报告</span></span><br></pre></td></tr></table></figure>
+
+<p>没有 YAML 配置，没有 API Key 管理，没有 Docker 容器。工具自动探测 <code>~/.openclaw</code> 目录，通过 fs.watch() 监听会话文件变化，内存占用不到 30MB。Node.js 22+ 的 native file system API 保证了跨平台效率，macOS 和 Linux 上延迟低于 100ms。至于 Windows 用户，暂时只能在 WSL2 下完美运行。</p>
+<h2 id="核心功能：从-status-到-top-的完整工具链"><a href="#核心功能：从-status-到-top-的完整工具链" class="headerlink" title="核心功能：从 status 到 top 的完整工具链"></a>核心功能：从 <code>status</code> 到 <code>top</code> 的完整工具链</h2><h3 id="clawprobe-status：Agent-的“CT扫描报告”"><a href="#clawprobe-status：Agent-的“CT扫描报告”" class="headerlink" title="clawprobe status：Agent 的“CT扫描报告”"></a><code>clawprobe status</code>：Agent 的“CT扫描报告”</h3><p>这不是简单的状态查询，而是一次完整的数据采集与分析。执行瞬间，工具会：</p>
+<ol>
+<li>读取当前会话的 <code>session.json</code> 获取元数据</li>
+<li>解析 <code>conversation.log</code> 计算 Token 流速</li>
+<li>扫描 <code>context/</code> 目录估算窗口占用</li>
+<li>查询内置定价数据库（每日自动更新）计算成本</li>
+<li>运行启发式规则检测异常</li>
+</ol>
+<p>输出的是一张信息密度极高的诊断报告：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">📊  Agent Status  (active session)</span><br><span class="line">──────────────────────────────────────────────────</span><br><span class="line">  Agent:     main</span><br><span class="line">  Session:   agent:main:workspace:direct:xxx ●</span><br><span class="line">  Model:     moonshot/kimi-k2.5</span><br><span class="line">  Active:    Today 16:41   Compacts: 2</span><br><span class="line"></span><br><span class="line">  Context:   87.3K / 200.0K tokens  ███████░░░  44%</span><br><span class="line">  Tokens:    72.4K in / 5.2K out</span><br><span class="line"></span><br><span class="line">  Today:     $0.12  → clawprobe cost for full breakdown</span><br><span class="line"></span><br><span class="line">  🟡  Context window at 44% capacity</span><br><span class="line">       → Consider starting a fresh session or manually compacting now</span><br></pre></td></tr></table></figure>
+
+<p>注意那个 <code>Compacts: 2</code>——它告诉你上下文已经被压缩过两次，部分历史对话已丢失。如果你发现 Agent 行为异常，这通常是第一个线索。</p>
+<h3 id="clawprobe-top：专为长程任务设计的-htop"><a href="#clawprobe-top：专为长程任务设计的-htop" class="headerlink" title="clawprobe top：专为长程任务设计的 htop"></a><code>clawprobe top</code>：专为长程任务设计的 <code>htop</code></h3><p>调试 Claude 3.7 的代理式任务时，你需要持续观察。<code>top</code> 命令提供了 2 秒刷新频率的实时仪表盘，用 ASCII 字符画出现场感：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">clawprobe top  refreshing every 2s  (q / Ctrl+C to quit)     03/18/2026 17:42:35</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">  Agent: main   ● daemon running</span><br><span class="line">  Session: agent:main:workspace:direct:xxx  ● active</span><br><span class="line">  Model:   moonshot/kimi-k2.5</span><br><span class="line">  Active:  Today 17:42   Compacts: 2</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">  Context   ████████░░░░░░░░░░░░░░░░  44%   87.3K / 200.0K tokens</span><br><span class="line">  Headroom  112.7K tokens remaining (56%)</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">  Session cost  $0.52        Input   859.2K tok      Output   29.8K tok</span><br><span class="line">  Today total   $0.67        Cache read   712.0K tok</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">  Recent turns</span><br><span class="line">  Turn  Time      ΔInput   ΔOutput  Cost          Note</span><br><span class="line">  27    17:42     22.0K    908      $0.0094        ← latest</span><br><span class="line">  26    17:19     990      630      $0.0026</span><br><span class="line">  25    17:19     20.4K    661      $0.0094</span><br><span class="line">  24    15:57     564      39       $0.0014</span><br><span class="line">  23    15:56     18.8K    231      $0.0076        ◆ compact</span><br><span class="line">────────────────────────────────────────────────────────────────────────────────</span><br><span class="line">  🟡  Context window at 44% capacity</span><br><span class="line">  Costs are estimates based on public pricing.</span><br></pre></td></tr></table></figure>
+
+<p>关键洞察在 <code>Recent turns</code> 表格：第 23 轮发生了 compact，第 25 轮输入暴增 20.4K tokens。如果 Agent 此时行为异常，你就知道是压缩导致的上下文断裂。这种可重放的调试能力，在生产环境排错时价值千金。</p>
+<h3 id="clawprobe-cost：API-账单的“实时审计”"><a href="#clawprobe-cost：API-账单的“实时审计”" class="headerlink" title="clawprobe cost：API 账单的“实时审计”"></a><code>clawprobe cost</code>：API 账单的“实时审计”</h3><p>Claude 3.7 的 200K 上下文窗口很强大，但输入输出都按 1M tokens 计价。一个不小心，单日费用就能突破 $50。<code>cost</code> 命令提供了多维度成本分析：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">💰  Weekly Cost  2026-03-12 – 2026-03-18</span><br><span class="line">──────────────────────────────────────────────────</span><br><span class="line">  Total:     $0.67</span><br><span class="line">  Daily avg: $0.096</span><br><span class="line">  Month est: $2.87</span><br><span class="line"></span><br><span class="line">  2026-03-16  ████████████████  $0.16</span><br><span class="line">  2026-03-17  █░░░░░░░░░░░░░░░  $0.0088</span><br><span class="line">  2026-03-18  ███░░░░░░░░░░░░░  $0.03</span><br><span class="line"></span><br><span class="line">  Input:   1.0M tokens  $0.65  (97%)</span><br><span class="line">  Output:  47.8K tokens  $0.03  (3%)</span><br></pre></td></tr></table></figure>
+
+<p>内置定价数据库每日从官方 API 同步，覆盖 OpenAI、Anthropic、Google、Moonshot、DeepSeek 等 30+ 模型。对于私有化部署的模型，支持在 <code>~/.clawprobe/models.json</code> 中自定义定价。我们还计划接入 MCP（Model Context Protocol）的定价元数据标准，一旦协议成熟，将实现自动化的模型成本发现。</p>
+<h3 id="clawprobe-context：揪出静默截断的元凶"><a href="#clawprobe-context：揪出静默截断的元凶" class="headerlink" title="clawprobe context：揪出静默截断的元凶"></a><code>clawprobe context</code>：揪出静默截断的元凶</h3><p>这是最具技术深度的功能。OpenClaw 在加载工具定义时，如果 <code>TOOLS.md</code> 超过 <code>bootstrapMaxChars</code> 限制，会静默截断。Agent 看不到完整工具描述，可能导致调用失败，但它不会告诉你“我看不到”。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">🔍  Context Window  agent: main</span><br><span class="line">──────────────────────────────────────────────────</span><br><span class="line">  Used:    87.3K / 200.0K tokens  ███████░░░  44%</span><br><span class="line"></span><br><span class="line">  Workspace overhead:  ~4.2K tokens  (7 injected files)</span><br><span class="line">  Conversation est:    ~83.1K tokens</span><br><span class="line"></span><br><span class="line">  ⚠ TOOLS.md: 31% truncated — model never sees this content</span><br><span class="line">    Increase bootstrapMaxChars in openclaw.json to fix this</span><br><span class="line"></span><br><span class="line">  Remaining:  112.7K tokens (56%)</span><br></pre></td></tr></table></figure>
+
+<p>clawprobe 通过静态分析 <code>workspace/</code> 目录下的注入文件，精确计算截断比例。这个检测在 Agent 启动时运行一次，发现截断立即告警。上周我们刚帮一个用户定位了 Claude 3.7 连续调用失败的原因——他的 <code>TOOLS.md</code> 被截断了 40%，模型根本看不到关键参数定义。</p>
+<h3 id="clawprobe-compacts：审计上下文“遗忘”事件"><a href="#clawprobe-compacts：审计上下文“遗忘”事件" class="headerlink" title="clawprobe compacts：审计上下文“遗忘”事件"></a><code>clawprobe compacts</code>：审计上下文“遗忘”事件</h3><p>每次 compact 都是一次信息丢失。这个功能让你看到 Agent“失忆”的详细病历：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ clawprobe compacts</span><br><span class="line"></span><br><span class="line">📦  Compact Events  last 5</span><br><span class="line">──────────────────────────────────────────────────</span><br><span class="line"></span><br><span class="line">  #3  Today 16:22  [agent:main…]  3 messages</span><br><span class="line"></span><br><span class="line">    👤  &quot;Can you add retry logic to the upload handler?&quot;</span><br><span class="line">    🤖  &quot;Done — added exponential backoff with 3 retries. The key change is in…&quot;</span><br><span class="line"></span><br><span class="line">    → Archive: clawprobe compacts --save 3</span><br></pre></td></tr></table></figure>
+
+<p>你可以用 <code>--save</code> 将关键对话归档到 <code>~/.clawprobe/archive/</code>，供后续会话通过 RAG 召回。我们正在实验与 mem0 等向量记忆库集成，实现压缩事件的自动语义存档。</p>
+<h2 id="智能建议：规则引擎而非-AI-告警"><a href="#智能建议：规则引擎而非-AI-告警" class="headerlink" title="智能建议：规则引擎而非 AI 告警"></a>智能建议：规则引擎而非 AI 告警</h2><p><code>suggest</code> 命令运行一组硬编码规则，避免 LLM 自省带来的额外成本：</p>
+<ul>
+<li><strong>tools-truncation</strong>: 检测工具定义截断</li>
+<li><strong>high-compact-freq</strong>: 30 分钟内压缩超过 2 次</li>
+<li><strong>context-headroom</strong>: 占用率 &gt;90%</li>
+<li><strong>cost-spike</strong>: 今日费用 &gt; 周均值 2 倍</li>
+<li><strong>memory-bloat</strong>: MEMORY.md &gt;10K tokens</li>
+</ul>
+<p>规则文件在 <code>~/.clawprobe/rules.js</code> 中，支持热重载。你可以用 JavaScript 自定义业务规则，比如“当调用 <code>dangerous_tool</code> 超过 5 次时告警”。这比用 PromQL 简单，也比 LLM 判断可靠。</p>
+<h2 id="自我监控：Agent-的“内省”能力"><a href="#自我监控：Agent-的“内省”能力" class="headerlink" title="自我监控：Agent 的“内省”能力"></a>自我监控：Agent 的“内省”能力</h2><p>clawprobe 最激进的特性是支持 Agent 自我监控。安装为 Skill 后，Agent 可以读取自己的 <code>status --json</code> 输出：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;agent&quot;</span><span class="punctuation">:</span> <span class="string">&quot;main&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;context_used&quot;</span><span class="punctuation">:</span> <span class="number">87300</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;context_limit&quot;</span><span class="punctuation">:</span> <span class="number">200000</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;today_cost&quot;</span><span class="punctuation">:</span> <span class="number">0.67</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;compacts&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;alerts&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;context-headroom&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>基于这些数据，Agent 可以实现：</p>
+<ul>
+<li>在成本 &gt;$5 时主动请求用户确认</li>
+<li>在上下文 &gt;80% 时自动启动压缩</li>
+<li>在工具截断时拒绝执行并报告</li>
+</ul>
+<p>这是构建<strong>自我感知 Agent</strong> 的第一步。代码已开源在 <code>skills/clawprobe</code> 目录，欢迎 PR 改进决策逻辑。</p>
+<h2 id="性能与资源：比-systemd-服务更轻"><a href="#性能与资源：比-systemd-服务更轻" class="headerlink" title="性能与资源：比 systemd 服务更轻"></a>性能与资源：比 systemd 服务更轻</h2><p>clawprobe 守护进程基于 Node.js 的 <code>fs.watch()</code> 和 <code>setInterval()</code>，资源占用极低：</p>
+<ul>
+<li>CPU: &lt;1%（仅文件变动时触发）</li>
+<li>Memory: ~28MB（缓存最近 1000 轮对话）</li>
+<li>Disk I&#x2F;O: 仅读取 OpenClaw 日志，不写临时文件</li>
+<li>Network: 零流量（定价数据库更新除外）</li>
+</ul>
+<p>对比方案：用 Prometheus + Grafana 监控 OpenClaw，你需要：</p>
+<ol>
+<li>修改 OpenClaw 源码注入 metrics</li>
+<li>部署 node-exporter</li>
+<li>配置 Prometheus 抓取规则</li>
+<li>设计 Grafana 仪表盘</li>
+</ol>
+<p>clawprobe 用 200 行代码解决了这个问题。</p>
+<h2 id="开源与未来：社区驱动的路线图"><a href="#开源与未来：社区驱动的路线图" class="headerlink" title="开源与未来：社区驱动的路线图"></a>开源与未来：社区驱动的路线图</h2><p>项目采用 MIT 协议，GitHub 地址：<strong>github.com&#x2F;seekcontext&#x2F;ClawProbe</strong>，欢迎大家试用、提 PR，或将建议反馈在 OceanBase 社区「问答」板块。</p>
+<p>v1.2.0 版本将支持：</p>
+<ul>
+<li><strong>多会话监控</strong>: 同时追踪多个 Agent 实例</li>
+<li><strong>WebSocket 实时推送</strong>: 供自建仪表盘消费</li>
+<li><strong>MCP 协议集成</strong>: 从 Model Context Protocol 获取元数据</li>
+<li><strong>插件系统</strong>: 支持自定义指标采集</li>
+</ul>
+<p>我们特别欢迎两类 PR：</p>
+<ol>
+<li>新增模型定价数据（特别是私有化部署模型）</li>
+<li>优化差分算法，降低大文件解析 CPU 占用</li>
+</ol>
+<h2 id="最后的思考：透明度是-Agent-的“道德基础”"><a href="#最后的思考：透明度是-Agent-的“道德基础”" class="headerlink" title="最后的思考：透明度是 Agent 的“道德基础”"></a>最后的思考：透明度是 Agent 的“道德基础”</h2><p>频繁更新的大模型正在将 Agent 能力推向新高度，但能力越强，失控风险越大。一个能自主调用工具、读写文件、消耗资源的 Agent，如果缺乏透明度，本质上就是<strong>权限无限大的黑盒进程</strong>。clawprobe 的出现，不仅是技术需求的满足，更是 AI 工程化的伦理要求——任何自主系统都必须可被观测、可被审计、可被约束。</p>
+<p>现在，关闭那令人焦虑的 OpenClaw 终端，打开一个新的标签页：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install -g clawprobe</span><br><span class="line">clawprobe start</span><br><span class="line">clawprobe top</span><br></pre></td></tr></table></figure>
+
+<p>让你的小龙虾在玻璃缸里游泳，而不是在墨汁里挣扎。透明度，从这一行命令开始。</p>
+<hr>
+<p>本周六（3.28）来中关村现场装机，并听取一线创业者现场揭开他们的运营逻辑和盈利模型（含金量极高！）</p>
+<p><img data-src="/img/openclaw-cost-tracking/02.webp" alt="OpenClaw又双叒叕发版，如何实时追踪其每一秒开销，打开Agent“思考”黑盒"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/OpenClaw/" rel="tag"># OpenClaw</a>
+              <a href="/tags/ClawProbe/" rel="tag"># ClawProbe</a>
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" rel="tag"># 可观测性</a>
+              <a href="/tags/%E6%88%90%E6%9C%AC%E8%BF%BD%E8%B8%AA/" rel="tag"># 成本追踪</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/" rel="tag"># 上下文管理</a>
+              <a href="/tags/%E5%BC%80%E6%BA%90%E5%B7%A5%E5%85%B7/" rel="tag"># 开源工具</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-19-powermem-1-0-0-release/" rel="prev" title="给 OpenClaw 装上长期记忆 —— PowerMem 1.0.0 正式发布">
+                  <i class="fa fa-angle-left"></i> 给 OpenClaw 装上长期记忆 —— PowerMem 1.0.0 正式发布
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-01-seekdb-fork-table-test-report/" rel="next" title="小编工作已被 AI 取代 —— seekdb fork table 能力测试报告">
+                  小编工作已被 AI 取代 —— seekdb fork table 能力测试报告 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="seekdb 1.2.0 正式发布，带来首个高可用方案——主备库异步复制架构，支持 Switchover&#x2F;Failover 两种切换模式；同时新增整库级秒级克隆 Fork Database 与 Diff &amp; Merge 数据版本管理能力，助力 AI 应用迈向生产就绪。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了">
+<meta property="og:url" content="https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="seekdb 1.2.0 正式发布，带来首个高可用方案——主备库异步复制架构，支持 Switchover&#x2F;Failover 两种切换模式；同时新增整库级秒级克隆 Fork Database 与 Diff &amp; Merge 数据版本管理能力，助力 AI 应用迈向生产就绪。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/02.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/03.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/04.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/05.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/06.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/07.webp">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-2-0-release/08.webp">
+<meta property="article:published_time" content="2026-04-03T00:25:15.000Z">
+<meta property="article:modified_time" content="2026-04-03T00:25:15.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 原生数据库">
+<meta property="article:tag" content="Fork Database">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="主备库">
+<meta property="article:tag" content="数据版本管理">
+<meta property="article:tag" content="版本发布">
+<meta property="article:tag" content="高可用">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-1-2-0-release/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/","path":"2026/2026-04-03-seekdb-1-2-0-release/","title":"seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E5%A4%87%E5%BA%93%EF%BC%9A%E9%A6%96%E4%B8%AA%E9%AB%98%E5%8F%AF%E7%94%A8%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">主备库：首个高可用方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%EF%BC%9A%E4%BC%98%E9%9B%85%E3%80%81%E5%AE%9E%E7%94%A8%E3%80%81%E5%8F%AF%E6%BC%94%E8%BF%9B"><span class="nav-number">1.1.</span> <span class="nav-text">架构设计：优雅、实用、可演进</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E5%88%87%E6%8D%A2%E6%A8%A1%E5%BC%8F%EF%BC%9A%E6%9C%89%E6%8D%9F%E5%92%8C%E6%97%A0%E6%8D%9F%EF%BC%8C%E5%90%84%E6%9C%89%E5%90%84%E7%9A%84%E7%94%A8%E5%A4%84"><span class="nav-number">1.2.</span> <span class="nav-text">两种切换模式：有损和无损，各有各的用处</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Fork-Database%EF%BC%9AAI-%E6%97%B6%E4%BB%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">Fork Database：AI 时代的数据版本管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Diff-Merge%EF%BC%9A%E7%BB%99%E6%95%B0%E6%8D%AE%E5%8A%A0%E4%B8%8A-Git-%E7%9A%84%E8%83%BD%E5%8A%9B"><span class="nav-number">3.</span> <span class="nav-text">Diff &amp; Merge：给数据加上 Git 的能力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">4.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%86%E8%A7%A3%E6%9B%B4%E5%A4%9A"><span class="nav-number">5.</span> <span class="nav-text">了解更多</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了 | Longda's Interesting World">
+      <meta itemprop="description" content="seekdb 1.2.0 正式发布，带来首个高可用方案——主备库异步复制架构，支持 Switchover&#x2F;Failover 两种切换模式；同时新增整库级秒级克隆 Fork Database 与 Diff &amp; Merge 数据版本管理能力，助力 AI 应用迈向生产就绪。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-03 08:25:15" itemprop="dateCreated datePublished" datetime="2026-04-03T08:25:15+08:00">2026-04-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">羡林</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BA%A7%E5%93%81%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">产品详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>11 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">seekdb 1.2.0 正式发布，带来首个高可用方案——主备库异步复制架构，支持 Switchover/Failover 两种切换模式；同时新增整库级秒级克隆 Fork Database 与 Diff & Merge 数据版本管理能力，助力 AI 应用迈向生产就绪。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了","description":"seekdb 1.2.0 正式发布，带来首个高可用方案——主备库异步复制架构，支持 Switchover/Failover 两种切换模式；同时新增整库级秒级克隆 Fork Database 与 Diff & Merge 数据版本管理能力，助力 AI 应用迈向生产就绪。","image":"https://ilongda.com/img/seekdb-1-2-0-release/01.webp","wordCount":3169,"datePublished":"2026-04-03T00:25:15.000Z","dateModified":"2026-04-03T00:25:15.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/"},"url":"https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/","inLanguage":"zh-CN","keywords":["高可用","seekdb","AI 原生数据库","版本发布","主备库","Fork Database","数据版本管理"],"articleSection":["产品详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"产品详解","item":"https://ilongda.com/categories/产品详解/"},{"@type":"ListItem","position":3,"name":"seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了","item":"https://ilongda.com/2026/2026-04-03-seekdb-1-2-0-release/"}]}</script>
+<blockquote>
+<p>本文作者 | 羡林 - seekdb 研发负责人</p>
+<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+</blockquote>
+<p>如果你正在用 seekdb 构建 AI 应用，一定有过这个担心：<strong>单点故障怎么办？</strong></p>
+<p><strong>seekdb 1.2.0 的正式发布，解决了这个困扰。</strong></p>
+<p>这个版本带来了 seekdb 的首个高可用方案——主备库异步复制架构。除此之外，还有整库级别快照克隆的 Fork Database，以及给数据加上 Git 能力的 Diff &amp; Merge。</p>
+<p>这三个能力各自解决不同的问题：主备库解决可用性问题，业务不能因为一台机器挂了就全面瘫痪；Fork Database 解决效率问题，AI 场景下的数据版本管理不能还停留在 mysqldump 的速度；Diff &amp; Merge 解决可控性问题，数据变更不能是个黑盒，改了什么、能不能回滚，开发者要心里有数。</p>
+<p>其中主备库是大家最关心的，也是这个版本分量最重的部分，先从它说起。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/01.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<span id="more"></span>
+
+<h2 id="主备库：首个高可用方案"><a href="#主备库：首个高可用方案" class="headerlink" title="主备库：首个高可用方案"></a>主备库：首个高可用方案</h2><p>单点故障的痛，用过单机数据库的人都懂。<strong>seekdb 1.2.0 给出了解决方案：主备库异步复制架构。</strong></p>
+<h3 id="架构设计：优雅、实用、可演进"><a href="#架构设计：优雅、实用、可演进" class="headerlink" title="架构设计：优雅、实用、可演进"></a>架构设计：优雅、实用、可演进</h3><p>seekdb 的主备库方案，采用的是最大性能模式的异步复制架构。这个选择是经过深思熟虑的。</p>
+<p>同步复制虽然能保证数据零丢失，但代价是每次写入都要等备库确认，性能损耗明显。对于 AI 应用场景来说，很多时候写入的是向量数据、知识库文档、对话记录，这些数据的实时一致性要求并没有金融交易那么高。异步复制在性能和可靠性之间取得了一个务实的平衡。</p>
+<p>整个架构基于 gRPC 框架进行 RPC 通信，这是一个成熟、高效、跨语言的选择。主库在运行过程中不断产生增量日志，备库通过网络拉取这些日志并回放，从而保持与主库的数据同步。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/02.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<p>架构图大概是这样的：主库在左边，持续接收业务读写请求；备库在右边，通过 gRPC 连接从主库拉取日志；如果你需要更高的容灾能力，还可以在备库后面再挂一个备库，形成级联架构。</p>
+<p>这个设计有几个值得说的点。</p>
+<p>第一是<strong>备库异步搭建</strong>。你可以在任意时刻搭建备库，不需要停止主库服务。这意味着什么？意味着你可以在业务高峰期之后，悄悄加一个备库，而不用协调什么“维护窗口”。搭建过程也很优雅：先拷贝一份基线数据，然后同步增量日志，整个过程对主库的影响微乎其微。</p>
+<p>第二是<strong>松耦合设计</strong>。备库知道主库在哪，会主动去拉日志；但主库不需要知道备库的存在，它只管自己的事情。这个设计带来两个直接的好处：主库性能完全不受备库数量的影响，而且天然支持一主多备的拓扑。你想加几个备库都行，主库根本不关心。</p>
+<p>第三是<strong>级联备库支持</strong>。如果你的备库还想再有备库呢？没问题，seekdb 支持主库到备库 1 再到备库 2 的级联架构。这在跨机房、跨地域容灾场景下特别有用。</p>
+<h3 id="两种切换模式：有损和无损，各有各的用处"><a href="#两种切换模式：有损和无损，各有各的用处" class="headerlink" title="两种切换模式：有损和无损，各有各的用处"></a>两种切换模式：有损和无损，各有各的用处</h3><p>高可用架构的核心价值，在于当主库出问题时，能够快速切换到备库继续提供服务。seekdb 提供了两种切换模式，分别应对不同的场景。</p>
+<p>**Switchover，无损切换。**这是在主库还活着的时候执行的切换。典型场景是计划内的维护：你要升级主库的版本，或者主库所在的机器需要打补丁。这时候主库还在正常运行，你执行 switchover 命令，系统会先检查主备之间的日志是否完全同步，确认没有数据丢失后，再执行角色互换。整个过程数据零丢失，业务感知到的只是一个短暂的连接中断。</p>
+<p>更贴心的是，seekdb 还提供了 switchover verify 命令，让你可以在真正切换之前先做一次“模拟演练”。它会检查所有切换条件是否满足，但不实际执行变更。这对于生产环境来说非常重要——你可以提前发现潜在问题，而不是在真正切换时手忙脚乱。</p>
+<p>**Failover，有损切换。**这是在主库已经挂掉的时候执行的紧急切换。服务器宕机了、网络断了、进程崩溃了，主库已经无法提供服务，这时候备库需要紧急接管。Failover 不会去检查主备日志是否完全同步，因为主库已经联系不上了，它会直接把备库提升为新的主库。</p>
+<p>有损切换可能意味着少量数据丢失——那些已经在主库提交但还没来得及同步到备库的事务。但对于大多数场景来说，丢失几秒钟的数据，总比整个业务中断几个小时要强得多。这是一个务实的权衡。</p>
+<p>说到这里，你可能会问：备库除了容灾，还能干什么？能不能用来分担查询压力？</p>
+<p>能，而且这是备库的重要价值之一。备库提供只读服务，你可以把一些报表查询、分析任务路由到备库，减轻主库的负担。但有一点需要注意：因为是异步复制，备库的数据可能会略微滞后于主库，通常是毫秒到秒级的延迟。对于大多数查询场景，这个延迟是可以接受的；但如果你的业务对实时性要求极高，需要考虑这个因素。</p>
+<p>那向量索引在备库上能正常查询吗？1.2.0 版本对向量索引的备库读支持还不完整，这是一个已知的限制，后续版本会优化。如果你的应用重度依赖向量查询，目前建议主要在主库上进行。</p>
+<p>另一个常见的问题是：切换之后，应用需要改连接串吗？目前需要。切换完成后，新的主库 IP 地址变了，应用需要更新连接配置。在实际操作中，你可以通过 DNS、VIP、或者连接代理来简化这个过程，后续版本也会考虑提供更自动化的方案。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/03.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<h2 id="Fork-Database：AI-时代的数据版本管理"><a href="#Fork-Database：AI-时代的数据版本管理" class="headerlink" title="Fork Database：AI 时代的数据版本管理"></a>Fork Database：AI 时代的数据版本管理</h2><p>如果说主备库解决的是“不能挂”的问题，Fork Database 解决的就是“不能慢”的问题。</p>
+<p>做 AI 应用的同学应该深有体会。你在调试一个 RAG 应用，知识库里有几十万条文档，跑了一版效果不太好，想回退到之前的状态试试别的参数。传统做法是什么？要么提前做好备份，要么用 mysqldump 导出再导入。数据量稍微大一点，几个小时就过去了。</p>
+<p>你在做 A&#x2F;B 测试，需要两份完全相同的数据跑不同的算法。你在训练模型，每个实验需要独立的数据快照。你在做 AI Coding，让大模型修改数据库里的数据，但你想保留一份原始版本以防改坏了。</p>
+<p>这些场景有一个共同点：<strong>你需要快速、低成本地创建数据的副本。</strong></p>
+<p>seekdb 1.1.0 版本支持了 Fork Table，能够快速克隆单张表。1.2.0 把这个能力升级到了整库级别。一条命令，整个数据库瞬间克隆，所有表、所有数据、所有关系，全部保留。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/04.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<p>这里的“瞬间”不是夸张。Fork 操作的耗时与数据量无关，不管原库有 1GB 还是 100GB，都是秒级完成。背后的原理是 Copy-on-Write 机制：Fork 出来的目标库一开始只是指向源库数据的引用，只有当你真正写入时，才会复制被修改的那部分数据。</p>
+<p>更妙的是库级原子快照。Fork Database 会选取一个一致性快照时刻，目标库中所有表共享这同一个快照版本。这意味着多表关联查询、外键约束，在 Fork 后仍然保持逻辑一致。你可以放心地在目标库上做任何操作，不用担心数据不一致的问题。</p>
+<p>这个能力放在 AI 场景下特别有价值。知识库版本管理变得轻而易举，每次大的更新前 Fork 一个版本，效果不好随时回退。A&#x2F;B 测试数据准备从几个小时变成几秒钟。模型训练的数据快照不再需要每次都复制一份完整数据。AI Agent 的多分支对话可以有独立的数据上下文。</p>
+<p>同一个源库可以 Fork 多次，每次产生独立的目标库，互不影响。你可以 Fork 出 dev、test、staging 多个环境，想怎么折腾就怎么折腾，不会影响源库。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/05.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<h2 id="Diff-Merge：给数据加上-Git-的能力"><a href="#Diff-Merge：给数据加上-Git-的能力" class="headerlink" title="Diff &amp; Merge：给数据加上 Git 的能力"></a>Diff &amp; Merge：给数据加上 Git 的能力</h2><p>Fork Database 让你能快速创建数据副本，但副本改完之后呢？改了什么、要不要合并回去、怎么合并？</p>
+<p>代码世界早就有了标准答案：Git。branch、diff、merge、pull request，这套工作流开发者闭着眼睛都能用。但数据世界呢？大多数时候还是原始状态——改了什么不知道，能不能回滚不好说，想对比两个版本的差异得自己写脚本。</p>
+<p>seekdb 1.2.0 引入了 Diff &amp; Merge 功能，让数据也能像代码一样被管理。</p>
+<p>工作流程很直观：先 Fork 一个副本出来，在副本上做各种修改，然后用 Diff 对比两边的差异，最后用 Merge 把改动合并回去（如果你决定要的话）。</p>
+<p>Diff 会告诉你：新增了多少条记录，修改了多少条，删除了多少条，每一条的具体变化是什么。Merge 则支持多种策略：全量覆盖、只合并新增、只合并修改、跳过删除等等。</p>
+<p>这套能力解决的核心问题是：<strong>让数据变更从“不可观测、难控制”变成“可观测、可控制”。</strong></p>
+<ul>
+<li>**可观测：**改了什么一目了然，不用猜，不用对比数据库导出文件。</li>
+<li>**可审计：**所有变更都有迹可循，谁在什么时候改了什么。</li>
+<li>**可回滚：**合并之前可以反复验证，发现问题不合并就完了。</li>
+<li>**可协作：**多人可以在不同的 Fork 上并行工作，最后合并到一起。</li>
+</ul>
+<p>对于 AI 应用来说，这个能力特别实用。RAG 知识库更新可以先在 Fork 上验证效果，好了再合并，不好就丢弃。AI Agent 不同对话分支的记忆可以独立演进，需要时再合并。数据清洗流水线可以把每个步骤作为一个分支，最终 Merge 得到干净数据。</p>
+<p><img data-src="/img/seekdb-1-2-0-release/06.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>回到开头的问题：单点故障怎么办？</p>
+<p>seekdb 1.2.0 给出的答案是一整套组合拳。主备库让你有了容灾能力，业务不会因为一台机器的故障而全面瘫痪。Fork Database 让数据版本管理变得轻盈，不用再为备份恢复耗费大量时间。Diff &amp; Merge 让数据变更变得可控，改了什么、要不要回滚，心里有数。</p>
+<p>这是 seekdb 从“开发友好”走向“生产就绪”的关键一步。</p>
+<p>如果你正在用 <strong>seekdb 构建 AI 应用，这个版本值得认真看看。如果你还没用过，现在是一个不错的起点——它依然保持着轻量、易用的特点，pip install pyseekdb 就能在本地跑起来，但它现在也有了生产环境需要的高可用能力。</strong></p>
+<p>AI 原生数据库正在从“能用”走向“好用”，从“开发友好”走向“生产就绪”。</p>
+<p>PS：若觉得 seekdb 对你有帮助，欢迎在 GitHub 上点个 ⭐，这对项目非常有帮助！</p>
+<h2 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h2><p><img data-src="/img/seekdb-1-2-0-release/07.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<p>添加社区小助手微信</p>
+<p><img data-src="/img/seekdb-1-2-0-release/08.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
+<p>学习优质社区课程</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8/" rel="tag"># 高可用</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/AI-%E5%8E%9F%E7%94%9F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI 原生数据库</a>
+              <a href="/tags/%E7%89%88%E6%9C%AC%E5%8F%91%E5%B8%83/" rel="tag"># 版本发布</a>
+              <a href="/tags/%E4%B8%BB%E5%A4%87%E5%BA%93/" rel="tag"># 主备库</a>
+              <a href="/tags/Fork-Database/" rel="tag"># Fork Database</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86/" rel="tag"># 数据版本管理</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-01-seekdb-fork-table-test-report/" rel="prev" title="小编工作已被 AI 取代 —— seekdb fork table 能力测试报告">
+                  <i class="fa fa-angle-left"></i> 小编工作已被 AI 取代 —— seekdb fork table 能力测试报告
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-09-vector-database-selection-principles/" rel="next" title="别再盲目跟风，七家企业真实场景的向量数据库选型，揭秘核心原则">
+                  别再盲目跟风，七家企业真实场景的向量数据库选型，揭秘核心原则 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

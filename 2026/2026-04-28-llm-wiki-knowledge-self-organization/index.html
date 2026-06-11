@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="从知识工程视角拆解 Karpathy 的 LLM Wiki、Obsidian-Wiki 与 GBrain 的设计，解析 Agent 时代知识的自组织与自进化机制，以及 Skillify 如何把零散资料沉淀为可持续进化的结构化记忆。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="深度解析 LLM Wiki &#x2F; Obsidian-Wiki &#x2F; GBrain：Agent 时代知识的“自组织”与“自进化”">
+<meta property="og:url" content="https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="从知识工程视角拆解 Karpathy 的 LLM Wiki、Obsidian-Wiki 与 GBrain 的设计，解析 Agent 时代知识的自组织与自进化机制，以及 Skillify 如何把零散资料沉淀为可持续进化的结构化记忆。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/01.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/02.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/03.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/04.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/05.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/06.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/07.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/08.png">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/09.webp">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/10.webp">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/11.webp">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/12.webp">
+<meta property="og:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/13.webp">
+<meta property="article:published_time" content="2026-04-28T13:06:10.000Z">
+<meta property="article:modified_time" content="2026-04-28T13:06:10.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="GBrain">
+<meta property="article:tag" content="LLM Wiki">
+<meta property="article:tag" content="Skill">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="混合检索">
+<meta property="article:tag" content="知识图谱">
+<meta property="article:tag" content="知识工程">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/llm-wiki-knowledge-self-organization/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/","path":"2026/2026-04-28-llm-wiki-knowledge-self-organization/","title":"深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化” | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E2%80%9C%E7%9F%A5%E8%AF%86%E5%A0%86%E7%A7%AF%E2%80%9D%E5%88%B0%E2%80%9C%E7%BB%93%E6%9E%84%E5%8C%96%E8%AE%B0%E5%BF%86%E2%80%9D"><span class="nav-number">2.</span> <span class="nav-text">从“知识堆积”到“结构化记忆”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Skillify%EF%BC%9A%E6%B8%90%E8%BF%9B%E5%BC%8F%E6%8A%AB%E9%9C%B2%E5%BC%8F%E7%9A%84%E2%80%9C%E7%9F%A5%E8%AF%86%E5%BD%A2%E6%80%81%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">Skillify：渐进式披露式的“知识形态”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LLM-Wiki%EF%BC%9A%E4%B8%89%E5%B1%82%E6%9E%B6%E6%9E%84%E7%9A%84%E7%9F%A5%E8%AF%86%E9%97%AD%E7%8E%AF"><span class="nav-number">4.</span> <span class="nav-text">LLM Wiki：三层架构的知识闭环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Obsidian-Wiki%EF%BC%9A%E4%BB%8E%E6%83%B3%E6%B3%95%E5%88%B0%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B7%A5%E7%A8%8B%E5%8C%96%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">Obsidian-Wiki：从想法到系统的工程化实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GBrain%EF%BC%9A%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%9B%BE%E8%B0%B1%E5%85%B3%E7%B3%BB%E6%BC%94%E8%BF%9B"><span class="nav-number">6.</span> <span class="nav-text">GBrain：混合检索架构与图谱关系演进</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BD%9C%E5%9C%A8%E7%A9%BA%E9%97%B4-vs-%E7%A1%AE%E5%AE%9A%E6%80%A7"><span class="nav-number">6.1.</span> <span class="nav-text">潜在空间 vs 确定性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E6%9E%B6%E6%9E%84%EF%BC%9A%E5%90%91%E9%87%8F%E8%BF%87%E6%BB%A4-%E6%96%87%E4%BB%B6%E6%8A%AB%E9%9C%B2"><span class="nav-number">6.2.</span> <span class="nav-text">混合检索架构：向量过滤 + 文件披露</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE%E8%B0%B1%E6%9E%84%E5%BB%BA%E4%B8%8E%E5%AE%9E%E4%BD%93%E5%85%B3%E7%B3%BB%E6%8A%BD%E5%8F%96"><span class="nav-number">6.3.</span> <span class="nav-text">图谱构建与实体关系抽取</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb%EF%BC%9A%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2%E8%83%BD%E5%8A%9B%E5%A6%82%E4%BD%95%E8%90%BD%E5%88%B0%E7%9C%9F%E5%AE%9E%E5%B7%A5%E7%A8%8B%E9%87%8C"><span class="nav-number">7.</span> <span class="nav-text">seekdb：混合搜索能力如何落到真实工程里</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="深度解析 LLM Wiki &#x2F; Obsidian-Wiki &#x2F; GBrain：Agent 时代知识的“自组织”与“自进化” | Longda's Interesting World">
+      <meta itemprop="description" content="从知识工程视角拆解 Karpathy 的 LLM Wiki、Obsidian-Wiki 与 GBrain 的设计，解析 Agent 时代知识的自组织与自进化机制，以及 Skillify 如何把零散资料沉淀为可持续进化的结构化记忆。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-28 21:06:10" itemprop="dateCreated datePublished" datetime="2026-04-28T21:06:10+08:00">2026-04-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">飞樰</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">从知识工程视角拆解 Karpathy 的 LLM Wiki、Obsidian-Wiki 与 GBrain 的设计，解析 Agent 时代知识的自组织与自进化机制，以及 Skillify 如何把零散资料沉淀为可持续进化的结构化记忆。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”","description":"从知识工程视角拆解 Karpathy 的 LLM Wiki、Obsidian-Wiki 与 GBrain 的设计，解析 Agent 时代知识的自组织与自进化机制，以及 Skillify 如何把零散资料沉淀为可持续进化的结构化记忆。","image":"https://ilongda.com/img/llm-wiki-knowledge-self-organization/01.png","wordCount":1901,"datePublished":"2026-04-28T13:06:10.000Z","dateModified":"2026-04-28T13:06:10.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/"},"url":"https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/","inLanguage":"zh-CN","keywords":["知识图谱","混合检索","Agent","seekdb","Skill","知识工程","LLM Wiki","GBrain"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”","item":"https://ilongda.com/2026/2026-04-28-llm-wiki-knowledge-self-organization/"}]}</script>
+<blockquote>
+<p>今天这篇文章，会从 Knowledge Engineering（知识工程）的角度，由 LLM Wiki、Obsidian-Wiki 和 GBrain 的设计切入，为大家拆解在 Agent 时代，知识工程为何比单纯优化 RAG 更关键。以及“Skillify”是如何把零散资料，沉淀为可持续进化的结构化记忆的。</p>
+</blockquote>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>近期大家对 AI 关注的焦点非常集中，主要围绕在“自进化”这个概念，包括“Skill 的自动沉淀”以及“RL（强化学习）训练”这两个核心维度上。对于大多数工程落地场景而言，通过 Skill 机制来实现 Agent 的自进化是更轻量、更具普适性的方式。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/01.png" alt="图片"></p>
+<span id="more"></span>
+
+<p>仅通过 Skill 自动更新还不足够——通过人给予 Agent 更多的“知识”，甚至存放知识的这个“知识库”如果能“自动梳理”、“自动组织”、“自动更新”甚至“自动进化”，就能推动 Agent 的不断“自进化”。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/02.png" alt="图片"></p>
+<h2 id="从“知识堆积”到“结构化记忆”"><a href="#从“知识堆积”到“结构化记忆”" class="headerlink" title="从“知识堆积”到“结构化记忆”"></a>从“知识堆积”到“结构化记忆”</h2><p>Andrej Karpathy 开源了“LLM-Wiki”项目，核心是一个 Markdown 文件，目标是指导大模型 Agent 进行知识的更新与结构化。GBrain 由 Y Combinator 总裁兼 CEO Garry Tan 构建，思想和 LLM-Wiki 类似但更工程化。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/03.png" alt="图片"></p>
+<p>人类非常擅长“无脑堆积”知识，但很不擅长“组织”知识。知识管理的难点体现在时效性与动态维护、组织结构的复杂性两个维度。在 AI 时代，<strong>知识的质量直接决定了效果的上限</strong>。</p>
+<p>如果说 Prompt Engineering 是在教模型“完成什么样的任务”，那么 <strong>Knowledge Engineering 就是在教模型“应该知道什么”以及“如何运用已知信息”</strong>。Karpathy 的 LLM-Wiki 突破了传统 RAG“每次查询从头检索”的局限，通过 Schema 文件指导 LLM 主动维护结构化的 Markdown Wiki，将原始资料“编译”为带有交叉引用、矛盾标注的持久化知识体。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/04.png" alt="图片"></p>
+<h2 id="Skillify：渐进式披露式的“知识形态”"><a href="#Skillify：渐进式披露式的“知识形态”" class="headerlink" title="Skillify：渐进式披露式的“知识形态”"></a>Skillify：渐进式披露式的“知识形态”</h2><p><img data-src="/img/llm-wiki-knowledge-self-organization/05.png" alt="图片"></p>
+<p>LLM Wiki 和 GBrain 的核心创新在于：将 Skill 泛化为一种知识组织形态。GBrain 创始人使用了一个词叫“Skillify”——去写 Skill 或者像 Skill 一样去组织和加载知识。这种机制允许各类 Agent 接收各类文件、文本、链接，然后自动将其“编译”并归档到一个统一的个人知识库中。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/06.png" alt="图片"></p>
+<p>回顾阿里云智能客服发展三阶段：传统智能知识库时代（2016~2022）→ RAG 时代（2023起，存在模型能力断层和知识未沉淀问题）→ Agent 时代（大模型主导的持久化知识库，“一次学习，永久可用”）。</p>
+<blockquote>
+<p>如果说 RAG 是让大模型“带着书本进考场”，那么 Skillify 则是让大模型“把书读透并记成整理后的笔记”。</p>
+</blockquote>
+<h2 id="LLM-Wiki：三层架构的知识闭环"><a href="#LLM-Wiki：三层架构的知识闭环" class="headerlink" title="LLM Wiki：三层架构的知识闭环"></a>LLM Wiki：三层架构的知识闭环</h2><p><img data-src="/img/llm-wiki-knowledge-self-organization/07.png" alt="图片"></p>
+<p>LLM Wiki 核心理念：不是在查询时从原始文档中检索，而是让 LLM 渐进式地构建和维护一个持久的 Wiki。三层架构：Raw Sources（只读存档区）→ The Wiki（结构化知识页面）→ The Schema（元指令）。</p>
+<p>三种核心操作：</p>
+<ul>
+<li><strong>摄入（Ingest）</strong>：LLM 阅读原始资料，提取关键要点，自动更新全局索引，一个来源能联动更新 10-15 个相关 Wiki 页面</li>
+<li><strong>查询（Query）</strong>：LLM 先定位相关 Wiki 页面，综合出带引用的答案。高质量答案可归档为新页面</li>
+<li><strong>维护（Lint）</strong>：类似代码静态检查，识别事实矛盾、清理过时声明、发现孤立页面</li>
+</ul>
+<h2 id="Obsidian-Wiki：从想法到系统的工程化实现"><a href="#Obsidian-Wiki：从想法到系统的工程化实现" class="headerlink" title="Obsidian-Wiki：从想法到系统的工程化实现"></a>Obsidian-Wiki：从想法到系统的工程化实现</h2><p><img data-src="/img/llm-wiki-knowledge-self-organization/08.png" alt="图片"></p>
+<p>Obsidian-Wiki 是一个基于 Skill 的多 Agent 框架，核心增强包括：</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/09.webp" alt="图片"></p>
+<ul>
+<li><strong>Delta 追踪</strong>：用 SHA-256 哈希追踪所有来源，知道哪些需要重新处理</li>
+<li><strong>来源可信度边界</strong>：来源文档视为不可信，防止 prompt injection</li>
+<li><strong>溯源标记系统</strong>：extracted &#x2F; inferred &#x2F; ambiguous 三种置信度</li>
+<li><strong>Agent 历史摄入 Skills</strong>：自动扫描 Claude、Codex、OpenClaw、Hermes Agent 的历史记录</li>
+<li><strong>知识图谱 Skills</strong>：cross-linker 技能自动发现页面间联系，引入置信度评分系统</li>
+</ul>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/10.webp" alt="图片"></p>
+<p>LLM Wiki 能力边界：无数据库依赖（适合数百到低千页面）、规模天花板明显、无自动化调度、弱结构化图谱。随着页面膨胀需要引入向量搜索或图数据库基础设施。</p>
+<h2 id="GBrain：混合检索架构与图谱关系演进"><a href="#GBrain：混合检索架构与图谱关系演进" class="headerlink" title="GBrain：混合检索架构与图谱关系演进"></a>GBrain：混合检索架构与图谱关系演进</h2><p>GBrain 架构哲学：<strong>Thin Harness, Fat Skills</strong>。建议把 Harness 做得薄，主要精力放在丰富 Skills 上。</p>
+<p><img data-src="/img/llm-wiki-knowledge-self-organization/11.webp" alt="图片"></p>
+<h3 id="潜在空间-vs-确定性"><a href="#潜在空间-vs-确定性" class="headerlink" title="潜在空间 vs 确定性"></a>潜在空间 vs 确定性</h3><p><img data-src="/img/llm-wiki-knowledge-self-organization/12.webp" alt="图片"></p>
+<p>让 LLM 决定“做什么”（潜在空间），让代码保证“在哪里”和“如何做”（确定性）。</p>
+<h3 id="混合检索架构：向量过滤-文件披露"><a href="#混合检索架构：向量过滤-文件披露" class="headerlink" title="混合检索架构：向量过滤 + 文件披露"></a>混合检索架构：向量过滤 + 文件披露</h3><p><img data-src="/img/llm-wiki-knowledge-self-organization/13.webp" alt="图片"></p>
+<p>GBrain 的检索过程是“Chunk 确认 → 整页加载 → 分层呈现”。向量检索快速从海量文件中筛选候选集，然后整页加载走渐进式披露。“向量粗筛 + 文件精读”既避免了纯 RAG 的语义丢失，也克服了纯文件遍历的效率低下。</p>
+<p>seekdb 将这种模式工程化：一条查询里既可以做全文匹配，也可以做向量近邻检索，还可以叠加标量过滤、权重融合、RRF 或重排序模型。</p>
+<p>GBrain 在 240 页 Benchmark 上的实测结果：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>GBrain（带图谱）</th>
+<th>仅混合搜索（无图谱）</th>
+<th>差距</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P@5</td>
+<td>49.1%</td>
+<td>17.7%</td>
+<td>+31.4 pp</td>
+</tr>
+<tr>
+<td>R@5</td>
+<td>97.9%</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h3 id="图谱构建与实体关系抽取"><a href="#图谱构建与实体关系抽取" class="headerlink" title="图谱构建与实体关系抽取"></a>图谱构建与实体关系抽取</h3><p>GBrain 图谱构建四步 Pipeline：实体抽取（正则+关键词模式匹配）→ 页面生成 → 关系分类（关键词匹配判断关系类型）→ 反向链接强制化。GBrain 拥有完整的图数据结构：节点、有类型的边、可遍历性。能让 Agent 执行“查找所有由张三投资且李四任职的公司”这样的复杂推理任务。</p>
+<h2 id="seekdb：混合搜索能力如何落到真实工程里"><a href="#seekdb：混合搜索能力如何落到真实工程里" class="headerlink" title="seekdb：混合搜索能力如何落到真实工程里"></a>seekdb：混合搜索能力如何落到真实工程里</h2><p>当知识规模继续增长，seekdb 这类 AI 原生混合搜索数据库回答的是：底层检索基础设施该怎么接住这些需求。它把向量搜索、全文搜索、标量过滤、重排揉进了同一个引擎里，减少了多套检索组件拼接带来的复杂度和一致性问题。</p>
+<p>英伟达工程师已发布基于 seekdb + PowerMem 的多模态智能记忆系统 MemBox，前端接收用户消息与图片，后端向量化后在 seekdb 中检索相关记忆，再把召回的用户画像注入大模型上下文。</p>
+<p>LLM Wiki 和 Obsidian-Wiki 探索知识组织范式，GBrain 探索工程化知识系统，seekdb 补上“大规模、可过滤、可混合、可重排”的检索基础设施。未来 Agent 系统必然把“上层的知识组织”和“下层的混合搜索底座”结合起来。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><blockquote>
+<p>Skill 与知识的动态维护体系，正是决定 Agent 能否从“一次次试错探索”进化为“持久化学习更新”的分水岭。</p>
+</blockquote>
+<p>技术选型并非非此即彼。通常的最佳实践是混合架构：利用 OceanBase seekdb 这类混合搜索能力进行快速初筛，解决“找得快”的问题；同时保留大模型对高价值知识的深度阅读、渐进式披露以及离线自我迭代能力，解决“答得准”和“记得牢”的问题。</p>
+<p>参考链接：</p>
+<ul>
+<li>[1] LLM-Wiki: <span class="exturl" data-url="aHR0cHM6Ly9naXN0LmdpdGh1Yi5jb20va2FycGF0aHkvNDQyYTZiZjU1NTkxNDg5M2U5ODkxYzExNTE5ZGU5NGY=">https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f<i class="fa fa-external-link-alt"></i></span></li>
+<li>[2] AI Maker 解读: <span class="exturl" data-url="aHR0cHM6Ly9haW1ha2VyLnN1YnN0YWNrLmNvbS9wL2xsbS13aWtpLW9ic2lkaWFuLWtub3dsZWRnZS1iYXNlLWFuZHJlai1rYXJwaGF0eQ==">https://aimaker.substack.com/p/llm-wiki-obsidian-knowledge-base-andrej-karphaty<i class="fa fa-external-link-alt"></i></span></li>
+<li>[3] GBrain: <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2dhcnJ5dGFuL2dicmFpbg==">https://github.com/garrytan/gbrain<i class="fa fa-external-link-alt"></i></span></li>
+<li>[4] Obsidian-Wiki: <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2FyOWF2L29ic2lkaWFuLXdpa2k=">https://github.com/ar9av/obsidian-wiki<i class="fa fa-external-link-alt"></i></span></li>
+<li>[5] seekdb: <span class="exturl" data-url="aHR0cHM6Ly93d3cuc2Vla2RiLmFpL3poLUNO">https://www.seekdb.ai/zh-CN<i class="fa fa-external-link-alt"></i></span></li>
+<li>[6] seekdb SDK&#x2F;SQL: <span class="exturl" data-url="aHR0cHM6Ly9kb2NzLnNlZWtkYi5haS9zZWVrZGIvemgtQ04vZXhwZXJpbmNlLWh5YnJpZC1zZWFyY2gtd2l0aC1zZGs=">https://docs.seekdb.ai/seekdb/zh-CN/experince-hybrid-search-with-sdk<i class="fa fa-external-link-alt"></i></span></li>
+<li>[7] Build RAG with seekdb: <span class="exturl" data-url="aHR0cHM6Ly9kb2NzLnNlZWtkYi5haS9zZWVrZGIvemgtQ04vYnVpbGQtYS1yYWctc3lzdGVtLXdpdGgtc2Vla2Ri">https://docs.seekdb.ai/seekdb/zh-CN/build-a-rag-system-with-seekdb<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1/" rel="tag"># 知识图谱</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/Skill/" rel="tag"># Skill</a>
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E5%B7%A5%E7%A8%8B/" rel="tag"># 知识工程</a>
+              <a href="/tags/LLM-Wiki/" rel="tag"># LLM Wiki</a>
+              <a href="/tags/GBrain/" rel="tag"># GBrain</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-04-27-workflow-skill-best-practices/" rel="prev" title="工作流 Skill 怎么写？从 7 个顶级项目中提炼的模式与最佳实践">
+                  <i class="fa fa-angle-left"></i> 工作流 Skill 怎么写？从 7 个顶级项目中提炼的模式与最佳实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-08-openclaw-token-cost-saving/" rel="next" title="你的Token消耗为啥这么高？OpenClaw省钱玩法">
+                  你的Token消耗为啥这么高？OpenClaw省钱玩法 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

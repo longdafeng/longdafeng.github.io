@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="重药集团 CRM 会员系统面对千万级会员、亿级交易与多维行为数据，传统数据库不堪重负。对比三款国产分布式数据库后选择 OceanBase，实现复杂查询效率提升 25.7 倍、存储空间节约 60%，支撑实时精准营销。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？">
+<meta property="og:url" content="https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="重药集团 CRM 会员系统面对千万级会员、亿级交易与多维行为数据，传统数据库不堪重负。对比三款国产分布式数据库后选择 OceanBase，实现复杂查询效率提升 25.7 倍、存储空间节约 60%，支撑实时精准营销。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/02.webp">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/03.png">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/04.png">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/05.png">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/06.png">
+<meta property="og:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/07.png">
+<meta property="article:published_time" content="2026-01-15T17:50:26.000Z">
+<meta property="article:modified_time" content="2026-01-15T17:50:26.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="CRM">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="列式存储">
+<meta property="article:tag" content="医药零售">
+<meta property="article:tag" content="国产化替代">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/pharma-crm-database-upgrade/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/","path":"2026/2026-01-16-pharma-crm-database-upgrade/","title":"千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？ | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%BC%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">综述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%BB%E8%8D%AF%E9%9B%B6%E5%94%AE%E5%95%86%E4%B8%9A%E6%A8%A1%E5%BC%8F%E5%8F%98%E9%9D%A9%EF%BC%8CCRM%E7%B3%BB%E7%BB%9F%E5%AE%9E%E7%8E%B0%E5%85%A8%E6%B8%A0%E9%81%93%E5%8D%8F%E5%90%8C"><span class="nav-number">2.</span> <span class="nav-text">医药零售商业模式变革，CRM系统实现全渠道协同</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%BD%93%E5%8C%96%E7%AE%A1%E7%90%86%E9%9C%80%E6%B1%82%EF%BC%8C%E6%9E%84%E5%BB%BACRM%E4%BC%9A%E5%91%98%E7%B3%BB%E7%BB%9F"><span class="nav-number">2.1.</span> <span class="nav-text">为实现一体化管理需求，构建CRM会员系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E7%BB%86%E5%8C%96%E4%BC%9A%E5%91%98%E6%9C%8D%E5%8A%A1%EF%BC%8C%E5%B8%A6%E6%9D%A5%E6%B5%B7%E9%87%8F%E6%95%B0%E6%8D%AE%E7%9A%84%E6%9F%A5%E8%AF%A2%E3%80%81%E5%AD%98%E5%82%A8%E9%9A%BE%E9%A2%98"><span class="nav-number">2.2.</span> <span class="nav-text">精细化会员服务，带来海量数据的查询、存储难题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CRM%E4%BC%9A%E5%91%98%E7%B3%BB%E7%BB%9F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8D%87%E7%BA%A7%EF%BC%8C%E5%BA%94%E5%AF%B9%E5%8D%83%E4%B8%87%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E9%9A%BE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">CRM会员系统数据库升级，应对千万级数据处理难题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E6%8A%80%E6%9C%AF%E7%93%B6%E9%A2%88%E5%88%B6%E7%BA%A6%E4%B8%9A%E5%8A%A1%E5%8F%91%E5%B1%95"><span class="nav-number">3.1.</span> <span class="nav-text">传统数据库的技术瓶颈制约业务发展</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF%E5%BC%95%E5%85%A5%EF%BC%8C%E6%94%AF%E6%92%91%E6%B5%B7%E9%87%8F%E4%BA%A4%E6%98%93%E6%95%B0%E6%8D%AE%E7%9A%84%E9%AB%98%E6%95%88%E5%A4%84%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">数据库技术引入，支撑海量交易数据的高效处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%9A%E5%91%98%E6%9C%8D%E5%8A%A1%E5%B9%B3%E5%8F%B0%E2%80%9C%E6%96%B0%E9%9D%A2%E8%B2%8C%E2%80%9D%EF%BC%9A%E7%A8%B3%E5%AE%9A%E3%80%81%E9%AB%98%E6%80%A7%E8%83%BD%E3%80%81%E4%BD%8E%E6%88%90%E6%9C%AC"><span class="nav-number">4.</span> <span class="nav-text">会员服务平台“新面貌”：稳定、高性能、低成本</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E6%A0%87%E5%87%86%E5%8C%96%E6%95%B0%E6%8D%AE%E9%93%BE%E8%B7%AF%EF%BC%8C%E7%A8%B3%E5%AE%9A%E3%80%81%E9%AB%98%E6%95%88%E5%A4%84%E7%90%86%E6%B5%B7%E9%87%8F%E6%95%B0%E6%8D%AE"><span class="nav-number">4.1.</span> <span class="nav-text">构建标准化数据链路，稳定、高效处理海量数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%9A%E5%91%98%E7%B2%BE%E5%87%86%E7%AD%9B%E9%80%89%E5%A4%8D%E6%9D%82%E5%9C%BA%E6%99%AF%EF%BC%8C%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87%E6%8F%90%E5%8D%87-25-7-%E5%80%8D"><span class="nav-number">4.2.</span> <span class="nav-text">会员精准筛选复杂场景，查询效率提升 25.7 倍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E7%A9%BA%E9%97%B4%E7%9C%81-60-%EF%BC%8C%E6%9C%89%E6%95%88%E9%99%8D%E4%BD%8E%E5%AD%98%E5%82%A8%E6%88%90%E6%9C%AC%E5%8E%8B%E5%8A%9B"><span class="nav-number">4.3.</span> <span class="nav-text">数据存储空间省 60%，有效降低存储成本压力</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E5%90%91%E6%9C%AA%E6%9D%A5%EF%BC%8C%E6%8C%81%E7%BB%AD%E6%8E%A8%E8%BF%9B-OceanBase-%E7%9A%84%E6%B7%B1%E5%BA%A6%E9%9B%86%E6%88%90%E4%B8%8E%E4%BB%B7%E5%80%BC%E9%87%8A%E6%94%BE"><span class="nav-number">5.</span> <span class="nav-text">面向未来，持续推进 OceanBase 的深度集成与价值释放</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E4%BA%8E%E6%9B%B4%E5%A4%9A%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E4%B8%8E%E4%BA%A7%E5%93%81"><span class="nav-number">5.1.</span> <span class="nav-text">应用于更多业务场景与产品</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%91%E4%B8%9A%E5%86%85%E5%AE%A2%E6%88%B7%E6%8E%A8%E8%8D%90"><span class="nav-number">5.2.</span> <span class="nav-text">向业内客户推荐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%A4%E6%B5%81%E5%BC%80%E5%8F%91%EF%BC%8C%E6%B2%89%E6%B7%80%E8%BF%90%E7%BB%B4%E7%BB%8F%E9%AA%8C"><span class="nav-number">5.3.</span> <span class="nav-text">交流开发，沉淀运维经验</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？ | Longda's Interesting World">
+      <meta itemprop="description" content="重药集团 CRM 会员系统面对千万级会员、亿级交易与多维行为数据，传统数据库不堪重负。对比三款国产分布式数据库后选择 OceanBase，实现复杂查询效率提升 25.7 倍、存储空间节约 60%，支撑实时精准营销。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-16 01:50:26" itemprop="dateCreated datePublished" datetime="2026-01-16T01:50:26+08:00">2026-01-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">张红霞</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>5.4k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>20 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">重药集团 CRM 会员系统面对千万级会员、亿级交易与多维行为数据，传统数据库不堪重负。对比三款国产分布式数据库后选择 OceanBase，实现复杂查询效率提升 25.7 倍、存储空间节约 60%，支撑实时精准营销。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？","description":"重药集团 CRM 会员系统面对千万级会员、亿级交易与多维行为数据，传统数据库不堪重负。对比三款国产分布式数据库后选择 OceanBase，实现复杂查询效率提升 25.7 倍、存储空间节约 60%，支撑实时精准营销。","image":"https://ilongda.com/img/pharma-crm-database-upgrade/01.webp","wordCount":5453,"datePublished":"2026-01-15T17:50:26.000Z","dateModified":"2026-01-15T17:50:26.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/"},"url":"https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/","inLanguage":"zh-CN","keywords":["OceanBase","医药零售","分布式数据库","CRM","HTAP","国产化替代","列式存储"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？","item":"https://ilongda.com/2026/2026-01-16-pharma-crm-database-upgrade/"}]}</script>
+<p>作者：张红霞，青岛雨诺网络信息股份有限公司新零售产品部总监</p>
+<h2 id="综述"><a href="#综述" class="headerlink" title="综述"></a>综述</h2><p>当前，医药零售企业已不再满足于“卖药”，而是致力于成为“健康管理伙伴”。通过构建以 CRM 会员系统为核心、线上与线下深度融合的全渠道服务架构，企业实现了服务时间与空间的无限延展、会员数据的集中管理与智能应用、营销活动的精准触达与高效转化。</p>
+<p>作为医药零售的头部企业，重庆医药（集团）股份有限公司（简称“重药集团”）前身是成立于1950年的中国医药公司西南区公司，服务于医药全产业链，同时从事医药研发（MAH）、医疗器械生产，并投资参与医药工业。重药集团拥有全级次分、子公司200余家，正在从传统的配送商业企业向“互联网+医药”融合型现代医药企业转型。</p>
+<p>随着CRM会员系统的使用时间拉长，其底层的传统数据库逐渐难以满足复杂数据的高效处理需求。面对海量交易和多维度行为数据的汇聚，重药集团CRM会员系统亟需采用具备高可用、强一致、可扩展特性的数据库。经过对比三款国产分布式数据库，重药集团选择OceanBase，最终实现系统稳定运行、复杂场景实时分析、查询效率提升25倍、存储空间节约60%。</p>
+<span id="more"></span>
+
+<p>此次重药集团CRM系统的数据库升级不仅提升了用户体验与品牌忠诚度，也为后续集团构建高性能、高可用的“集团级数字化运营中枢”提供了明确的业务需求与数据基础，构建可扩展、可复制、可监管的集团化运营体系。</p>
+<h2 id="医药零售商业模式变革，CRM系统实现全渠道协同"><a href="#医药零售商业模式变革，CRM系统实现全渠道协同" class="headerlink" title="医药零售商业模式变革，CRM系统实现全渠道协同"></a>医药零售商业模式变革，CRM系统实现全渠道协同</h2><p>随着消费者行为的数字化转型和健康需求的持续升级，医药零售行业正经历深刻的商业模式变革。传统药店“有啥卖啥”的经营逻辑，逐步向“顾客需要什么”的逻辑转变，除了提供到店服务外，还支持线上服务，比如通过企业微信、公众号等渠道建立长期沟通机制。微商城代客下单、在线解答疑问等。</p>
+<p>为构建以专业化服务为基础的顾客信任体系，医药企业建立了完整的会员服务体系——CRM 会员系统，以实现绑定多重会员信息、建立精准的会员标签画像，为会员提供更多的服务和营销。通过数据驱动决策的专业化服务能力提升来提高企业在行业内的竞争力，实现增收。</p>
+<p>如图1 所示，CRM 会员系统可以实现线上、线下全渠道协同，支持会员档案统一、标签体系完善、自动触发机制、店员触达赋能、社群营销等关键功能。完成顾客到店&#x2F;线上购药 → 完成交易 → 数据沉淀至 CRM → 触发服务与营销 → 二次消费 → 再次触达，实现“交易—服务—再交易”的正向循环。</p>
+<p><img data-src="/img/pharma-crm-database-upgrade/01.webp" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图1 CRM会员系统实现线上、线下全渠道协同</p>
+<h3 id="为实现一体化管理需求，构建CRM会员系统"><a href="#为实现一体化管理需求，构建CRM会员系统" class="headerlink" title="为实现一体化管理需求，构建CRM会员系统"></a>为实现一体化管理需求，构建CRM会员系统</h3><p>重药集团CRM会员系统的搭建背景，源自于其各子公司会员管理分散，系统缺乏统一规划，导致数据难沉淀、服务差异大、运营难复制，且缺乏实时监控，难以支撑决策。</p>
+<p>为实现一体化管理，重药集团CRM会员系统分阶段建设。第一阶段完成会员营销平台的底座建设，打造集团化、标准化、数据化运营基础，核心目标如下。</p>
+<ul>
+<li>**搭建集团化会员运营平台。**实现集团—子公司—门店的一体化管理，打通组织架构与业务链路，确保会员在不同层级和渠道中都能获得一致的服务体验。</li>
+<li>**统一的会员运营服务体系。**构建覆盖会员管理、营销活动、服务交付的标准化流程，减少分散运作带来的效率损耗，提升整体运营协同能力。</li>
+<li>**可快速复制标准化服务能力。**形成可落地的服务模板和运营机制，帮助新业务和子公司快速复制成熟经验，缩短建设周期，提升推广效率。</li>
+<li>**实现经营数据统一分析。**沉淀完整的数据资产，打破信息孤岛，实现对会员、门店、区域的多维度统一分析，为企业战略决策与合规审计提供有力支撑。</li>
+</ul>
+<p>在上述目标指导下，我们做了三个核心举措：</p>
+<ul>
+<li>**联合集团会员中心，推进一体化进程。**覆盖集团全品牌及线上会员，实现线上和线下会员统一运营和全域价值管理（见图2）。</li>
+<li>**构建多层级组织架构视角报表。**支持集团、品牌、门店的权限管理，权限灵活配置，便于集团总部进行跨品牌的数据报表分析。</li>
+<li>**集团统一下达任务。**集团可向各品牌下发销售任务、患者教育活动任务及拉新任务，实现集团任务统一管理与执行监督。</li>
+</ul>
+<p><img data-src="/img/pharma-crm-database-upgrade/02.webp" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图2 集团会员统一运营架构</p>
+<p>我们计划以集团内个别区域公司为试点，试行以上举措，若成功，则进行全面推广。推广成功后，重药集团会员运营平台将实现从“单一业务系统”向“集团级数字化运营中枢”演进。依托统一的技术底座与标准化流程，平台不仅实现对多家子公司、多个品牌的全面接入，更构建起可扩展、可复制、可监管的集团化运营体系。</p>
+<p>此外，为实现全渠道会员统一运营，平台通过整合分散在各系统中的数据，构建统一、动态、多维度的会员标签画像体系（见图3），支撑精细化运营决策。</p>
+<p><img data-src="/img/pharma-crm-database-upgrade/03.png" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图3 多维度会员标签画像体系</p>
+<p>通过会员系统精准化的服务来反哺我们的线上和线下的会员营销和服务，实现线上精准营销、个性化推荐、好物推送、会员关怀，线下关联用药建议、慢病管理提醒、店员主动触达等，提升营销转化率，增强客户粘性，实现“数据驱动服务”的闭环。</p>
+<h3 id="精细化会员服务，带来海量数据的查询、存储难题"><a href="#精细化会员服务，带来海量数据的查询、存储难题" class="headerlink" title="精细化会员服务，带来海量数据的查询、存储难题"></a>精细化会员服务，带来海量数据的查询、存储难题</h3><p>然而，随着集团化会员运营平台的推进，精细化服务模式持续深化，导致用户数据规模呈指数级增长，显著提升了系统的查询与存储复杂性。</p>
+<ul>
+<li>会员量：突破千万级，覆盖多个品牌及区域公司。</li>
+<li>交易数据量：达到亿级，涵盖线上线下购药、用券、复购等行为。</li>
+<li>用户行为类数据：包括商品浏览、搜索、加购等，总量亦达千万级以上。</li>
+</ul>
+<p>这些数据来源于线上商城、私域平台、公众号等多个渠道，经标签体系整合后，用于构建立体化的会员画像，支撑精准营销与双向引流。</p>
+<p>但数据体量大、类型多样、实时性要求高，对数据库的高并发读写能力、存储扩展性与查询性能提出严峻考验。<strong>面对千万级会员、亿级交易和多维度行为数据的汇聚，传统数据库难以满足高效处理需求，亟需采用具备高可用、强一致、可扩展特性的分布式数据库系统进行支撑。</strong></p>
+<h2 id="CRM会员系统数据库升级，应对千万级数据处理难题"><a href="#CRM会员系统数据库升级，应对千万级数据处理难题" class="headerlink" title="CRM会员系统数据库升级，应对千万级数据处理难题"></a>CRM会员系统数据库升级，应对千万级数据处理难题</h2><h3 id="传统数据库的技术瓶颈制约业务发展"><a href="#传统数据库的技术瓶颈制约业务发展" class="headerlink" title="传统数据库的技术瓶颈制约业务发展"></a>传统数据库的技术瓶颈制约业务发展</h3><p>重药集团会员服务平台的规模化发展，使系统数据总量迅速增长至千万级、数十 TB 存储规模，传统关系型数据库在支撑精细化会员运营场景时，暴露出四大核心挑战。</p>
+<ul>
+<li>性能：百万大表 InnoDB 在高并发读写及复杂查询场景下，性能显著下降，无法满足业务需求，且有事务访问，无法通过拆分提升性能。同时，业务强依赖事务一致性，无法通过拆分提升性能。</li>
+<li>效率：核心归档由于业务需求，需要保留大量数据（数十 TB），会造成 DDL 周期长，延迟业务上线时间。</li>
+<li>成本：随着企业数量增多、历年数据累积，存储成本将越来越高。</li>
+<li>及时性：在各种场景下，对应数据处理的及时性需求越来越强。</li>
+</ul>
+<p>上述技术挑战不乏真实业务案例。</p>
+<h4 id="例-1：某大型连锁店，以满足信创要求为前提进行性能保障"><a href="#例-1：某大型连锁店，以满足信创要求为前提进行性能保障" class="headerlink" title="例 1：某大型连锁店，以满足信创要求为前提进行性能保障"></a>例 1：某大型连锁店，以满足信创要求为前提进行性能保障</h4><p>如今国家对信息技术应用创新（简称“信创”）的要求日益严格，特别是在国有企业中，系统必须符合相关标准才能上线。为了响应这一趋势，我们严格按照信创目录选择数据库产品，并对其进行了全面的业务场景适配与性能验证。</p>
+<ul>
+<li>数据准备：会员卡 9950万+、订单 1 亿 9980万+。</li>
+<li>验证数据库：OceanBase 数据库、某数据库1、某数据库2。</li>
+<li>验证功能：报表 14 项内容、高级筛选 8 项内容。</li>
+<li>参考标准：报表查询小于 20s、静态化数据小于 60s、高级筛选小于 15s。</li>
+</ul>
+<p>测试结果如图4所示。OceanBase 在所有测试项中均显著优于其他两个国产数据库，在报表查询、高级筛选、静态化数据三个场景的性能表现都远超预期：</p>
+<ul>
+<li>报表查询小于 7s，平均提速 78 倍以上。</li>
+<li>高级筛选响应高级筛选小于 1s，速度提升 200–700 倍。</li>
+<li>静态化数据静态化数据小于 46s，效率提升 6.7 倍以上。</li>
+</ul>
+<p><img data-src="/img/pharma-crm-database-upgrade/04.png" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图4 OceanBase 数据库、某数据库1、某数据库2的测试结果</p>
+<p>在严格遵循国家信创要求的前提下，OceanBase 不仅完全满足合规性准入条件，更在百亿级数据规模下的复杂查询与批量处理场景中展现出卓越性能，远超同类国产数据库产品。基于此，我们总结了三个数据库的性能数据，向客户提交了一份详细的分析报告。</p>
+<h4 id="例-2：连锁会员、订单交易数据量增长迅速，实时性查询瓶颈"><a href="#例-2：连锁会员、订单交易数据量增长迅速，实时性查询瓶颈" class="headerlink" title="例 2：连锁会员、订单交易数据量增长迅速，实时性查询瓶颈"></a>例 2：连锁会员、订单交易数据量增长迅速，实时性查询瓶颈</h4><p>除了信创需求外，客户对业务的实时性、及时性要求也越来越高。过去，企业主要依赖 BI 工具进行周期性报表生成，可容忍数小时甚至数天的数据延迟。然而，随着营销策略向精准触达和即时响应演进，业务人员需要在高价值客户识别、复购提醒触发、定向营销投放、健康知识推荐等场景中获取近实时数据支持。为实现精准服务，运营人员经常需要基于会员信息、会员属性、历史消费、会员标签、商品集合等多个维度进行多维组合筛选，由于关联维度过多，可能会出现查询失败、查询时间过长、范围跨度受限、复杂查询无法支持等问题，显然，这些问题是我们服务的客户无法接受的。</p>
+<h4 id="例-3：海量业务数据，系统可用性与存储成本难平衡"><a href="#例-3：海量业务数据，系统可用性与存储成本难平衡" class="headerlink" title="例 3：海量业务数据，系统可用性与存储成本难平衡"></a>例 3：海量业务数据，系统可用性与存储成本难平衡</h4><p>连锁医药企业会员体系的不断扩展和数字化运营的深入，必然会带来业务数据量的指数级增长，海量数据带来的高存储成本成为制约系统可持续发展的关键瓶颈之一。</p>
+<ul>
+<li>用户数据：累计会员数量突破千万级（&gt;1000万）。</li>
+<li>交易流水：日均订单量达百万级，历史累计超过亿级（&gt;1亿条）。</li>
+<li>用户行为数据：包括浏览、搜索、加购、收藏等行为记录，总量亦达千万级以上。</li>
+</ul>
+<p>单个业务数据库实例空间占用已达到 N 个 TB 级别，且随时间推移呈线性增长。随着客户数量增加和业务持续扩张，业务数据库实例的空间占用迅速攀升至数十TB甚至上百TB级别，这些数据不仅用于支撑日常业务运行，还需长期保留以满足合规审计、精准营销、客户画像构建等需求。企业面临保障性能与可用性的前提下降低存储成本的难题。</p>
+<p>因此，<strong>引入具备高效数据压缩、自动冷热分层、弹性扩展能力的新一代分布式数据库，是实现“数据价值最大化、存储成本最小化”的必然选择。</strong></p>
+<h3 id="数据库技术引入，支撑海量交易数据的高效处理"><a href="#数据库技术引入，支撑海量交易数据的高效处理" class="headerlink" title="数据库技术引入，支撑海量交易数据的高效处理"></a>数据库技术引入，支撑海量交易数据的高效处理</h3><p>综合业务需求与传统数据库的技术瓶颈考虑，我们需要替换传统数据库，升级为高性能、稳定性强、成本低、 HTAP 一体化的分布式数据库。</p>
+<p>自 2023 年起，我们开始系统性地评估并引入 OceanBase，历经技术认知、多轮测试、工具链验证、SaaS 级试点上线等关键阶段（见图5），最终成功应用于重药集团会员管理平台。</p>
+<p><img data-src="/img/pharma-crm-database-upgrade/05.png" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图5 上线OceanBase的关键阶段</p>
+<h4 id="1-技术引入与评估阶段（2023年）"><a href="#1-技术引入与评估阶段（2023年）" class="headerlink" title="1.技术引入与评估阶段（2023年）"></a>1.技术引入与评估阶段（2023年）</h4><p>测试重点包括三部分。</p>
+<p>其一，日常抖动测试。在对 OceanBase 初期测试时，我们首先进行了业务压力测试。低峰期业务配合100%模拟线上流量直接发压，高达4轮的压力测试，每次持续 3 小时以上。</p>
+<p>其二，扩容&#x2F;缩容测试。在业务流量低时进行相关操作验证。为了验证是否存在小概率事件，进行了为期一周的脚本自动扩、缩容操作以观察其稳定性。</p>
+<p>其三，Add Index 测试。与扩容、缩容相仿，基于业务流量对1T大表进行多达几十次的add index操作，观察延迟情况。</p>
+<h4 id="2-SaaS-产品试点上线（2023-年-12-月）"><a href="#2-SaaS-产品试点上线（2023-年-12-月）" class="headerlink" title="2.SaaS 产品试点上线（2023 年 12 月）"></a>2.SaaS 产品试点上线（2023 年 12 月）</h4><p>在完成全面技术验证后，我司将 OceanBase 应用于内部 SaaS 类产品中，作为首个生产级试点场景。该阶段实现了：</p>
+<ul>
+<li>数据库稳定运行于真实业务环境中。</li>
+<li>验证了迁移、运维、监控等全生命周期管理能力。</li>
+<li>积累了宝贵的实战经验，为后续客户项目打下坚实基础。</li>
+</ul>
+<h4 id="3-重药集团项目正式上线（2025-年-4-月）"><a href="#3-重药集团项目正式上线（2025-年-4-月）" class="headerlink" title="3.重药集团项目正式上线（2025 年 4 月）"></a>3.重药集团项目正式上线（2025 年 4 月）</h4><p>基于前期充分验证与试点成果，我们于 2025 年 4 月正式启动重药集团会员管理平台项目，OceanBase 正式投入生产使用，支撑海量交易数据的高效处理。</p>
+<h2 id="会员服务平台“新面貌”：稳定、高性能、低成本"><a href="#会员服务平台“新面貌”：稳定、高性能、低成本" class="headerlink" title="会员服务平台“新面貌”：稳定、高性能、低成本"></a>会员服务平台“新面貌”：稳定、高性能、低成本</h2><h3 id="构建标准化数据链路，稳定、高效处理海量数据"><a href="#构建标准化数据链路，稳定、高效处理海量数据" class="headerlink" title="构建标准化数据链路，稳定、高效处理海量数据"></a>构建标准化数据链路，稳定、高效处理海量数据</h3><p>目前，OceanBase 主要支撑重药集团会员服务平台的分析型业务场景，支撑高并发、多维度的会员数据查询、标签计算、报表生成及精准营销决策。其核心价值体现在：高效处理海量历史数据、支持复杂实时分析、保障查询性能与系统稳定性。</p>
+<p>整个数据链路遵循“源系统 → CRM 中转清洗 → OceanBase 分析库”的三层架构，如图6所示。</p>
+<p><img data-src="/img/pharma-crm-database-upgrade/06.png" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图6 会员服务平台的数据分析链路</p>
+<p>数据来源（源系统）包括POS 订单数据、各渠道会员信息、组织人员数据、会员标签数据、档案测量数据、全部商品主数据。</p>
+<ul>
+<li>中转与清洗层（CRM 系统）：所有原始数据通过定时抽取或实时接入方式进入 CRM 系统，进行统一的数据清洗、去重、合并与标准化处理。关键处理策略包括历史数据清洗、订单数据合并、积分逻辑处理、会员标签动态更新、消费行为计算、活跃度模型计算。</li>
+<li>目标存储与分析层（OceanBase 分析库）：清洗后的数据通过同步机制实时或定时写入 OceanBase 分析库；并分为原始数据表、静态化处理表、日表&#x2F;月表、报表中间表。</li>
+</ul>
+<p><strong>通过构建“源数据 → CRM 清洗 → OceanBase 分析库”的标准化数据链路，实现了多源异构数据的统一整合、复杂分析场景的高性能响应、业务数据的长期留存与高效利用。</strong></p>
+<h3 id="会员精准筛选复杂场景，查询效率提升-25-7-倍"><a href="#会员精准筛选复杂场景，查询效率提升-25-7-倍" class="headerlink" title="会员精准筛选复杂场景，查询效率提升 25.7 倍"></a>会员精准筛选复杂场景，查询效率提升 25.7 倍</h3><p>在重药集团会员服务平台的实际运营中，多维度组合筛选（见图7）是支撑精细化营销与客户管理的核心功能。对于数据库而言，该功能是典型的复杂查询场景，用户需同时基于多个维度进行精确匹配，查询通常涉及多表关联、大量过滤条件和聚合计算，非常考验数据库的执行效率。我们通过开启 OceanBase 的列存模式（Columnar Storage），将原本传统数据库MySQL 的响应时间从 18 秒缩短至 0.7 秒，性能提升达 25.7 倍，满足业务对“实时圈选、即时触达”的严苛需求，显著提升了系统整体吞吐量与用户体验。</p>
+<p><img data-src="/img/pharma-crm-database-upgrade/07.png" alt="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？"></p>
+<p>图7 会员服务平台多维度组合筛选</p>
+<h3 id="数据存储空间省-60-，有效降低存储成本压力"><a href="#数据存储空间省-60-，有效降低存储成本压力" class="headerlink" title="数据存储空间省 60%，有效降低存储成本压力"></a>数据存储空间省 60%，有效降低存储成本压力</h3><p>OceanBase 将全量数据划分为两个部分进行管理：一是增量数据（Memtable），即实时写入内存中的热数据，支持快速读写；二是基线数据（静态数据），即经过合并与持久化后的冷数据，存储于磁盘。</p>
+<p>对于静态数据，OceanBase 采用高效的压缩算法，对列式存储的数据进行深度压缩，显著减少磁盘 I&#x2F;O 和存储开销。例如，当原始数据总量为 4TB 时，MySQL 需要完整保留所有数据，存储空间占用为 4TB；而 OceanBase 通过对静态数据进行高压缩处理，仅需 1.5TB 即可承载相同规模的数据。</p>
+<p>在重药集团会员服务平台的实际部署中，OceanBase 通过其先进的列式存储引擎与高效压缩算法，显著降低了数据存储空间占用，在同等业务数据规模下实现了 60% 以上的存储空间节约，有效缓解了海量数据带来的存储成本压力。</p>
+<h2 id="面向未来，持续推进-OceanBase-的深度集成与价值释放"><a href="#面向未来，持续推进-OceanBase-的深度集成与价值释放" class="headerlink" title="面向未来，持续推进 OceanBase 的深度集成与价值释放"></a>面向未来，持续推进 OceanBase 的深度集成与价值释放</h2><p>随着 OceanBase 在重药集团会员服务平台的成功落地，我们对其在更广泛业务领域和客户群体中的应用充满信心。面向 2026 年及未来，我们将围绕场景拓展、客户推广、技术融合与产品适配四大方向，持续推进 OceanBase 的深度集成与价值释放。</p>
+<h3 id="应用于更多业务场景与产品"><a href="#应用于更多业务场景与产品" class="headerlink" title="应用于更多业务场景与产品"></a>应用于更多业务场景与产品</h3><p>当前，OceanBase 已稳定支撑重药集团会员管理平台的复杂分析型业务（如精准筛选、标签计算、报表生成）。订单处理中心和运营诊断产品也在生产环境开始使用OceanBase，下一步，我们将推动其全面融入日常运营服务场景，包括：实时会员服务、营销活动执行、AI 智能推荐等业务场景。</p>
+<p>另外，我们将逐步将 OceanBase 适配至更多内部产品，包括商品主数据管理、患者健康管理平台、智能补货与供应链协同系统，构建以 OceanBase 为核心的统一、弹性、智能的企业级数据基础设施。</p>
+<h3 id="向业内客户推荐"><a href="#向业内客户推荐" class="headerlink" title="向业内客户推荐"></a>向业内客户推荐</h3><p>在国家信创政策与企业降本增效双重驱动下，我们已将 OceanBase 作为高并发、大数据量、强一致性要求场景下的首选数据库，并向行业客户积极推广。截至目前，已在以下大型医药企业成功落地：扬子江药业集团、鹭燕医学、重药集团、上海医药、国大药房。未来，我们将继续优先推荐 OceanBase 作为会员服务、订单中心等关键系统的数据库底座，助力更多企业完成安全、高效、低成本的国产化替代。</p>
+<h3 id="交流开发，沉淀运维经验"><a href="#交流开发，沉淀运维经验" class="headerlink" title="交流开发，沉淀运维经验"></a>交流开发，沉淀运维经验</h3><p>为持续提升团队与客户的 OceanBase 应用能力，我们计划定期组织专题培训、参与社区技术沙龙、共建问题解决机制、定期组织数据库培训及实战分享会议，探讨并解决遇到的问题，争取打造一支“懂业务、精技术、能落地”的复合型数据库应用团队。</p>
+<p><strong>未来，我们将携手更多合作伙伴，共同探索“数据库 + AI + 行业场景”的创新路径，为医药健康行业的高质量发展注入新动能。</strong></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%8C%BB%E8%8D%AF%E9%9B%B6%E5%94%AE/" rel="tag"># 医药零售</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/CRM/" rel="tag"># CRM</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E5%9B%BD%E4%BA%A7%E5%8C%96%E6%9B%BF%E4%BB%A3/" rel="tag"># 国产化替代</a>
+              <a href="/tags/%E5%88%97%E5%BC%8F%E5%AD%98%E5%82%A8/" rel="tag"># 列式存储</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-14-cursor-seekdb-extension-guide/" rel="prev" title="让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南">
+                  <i class="fa fa-angle-left"></i> 让 Cursor AI 助手秒懂向量数据库 —— Cursor seekdb 扩展插件使用指南
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/" rel="next" title="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座">
+                  不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

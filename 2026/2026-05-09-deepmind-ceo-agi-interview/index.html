@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Google DeepMind CEO Demis Hassabis 在访谈中预测 AGI 有望于 2030 年实现，并指出当前 AI 的三大短板：持续学习、长程推理与真正的记忆。本文拆解访谈核心观点，探讨记忆系统、端侧智能与 AI 安全的基础设施演进方向。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图">
+<meta property="og:url" content="https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Google DeepMind CEO Demis Hassabis 在访谈中预测 AGI 有望于 2030 年实现，并指出当前 AI 的三大短板：持续学习、长程推理与真正的记忆。本文拆解访谈核心观点，探讨记忆系统、端侧智能与 AI 安全的基础设施演进方向。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/01.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/02.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/03.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/04.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/05.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/06.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/07.png">
+<meta property="og:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/08.png">
+<meta property="article:published_time" content="2026-05-09T01:00:55.000Z">
+<meta property="article:modified_time" content="2026-05-09T01:00:55.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AGI">
+<meta property="article:tag" content="AI 安全">
+<meta property="article:tag" content="AI 记忆">
+<meta property="article:tag" content="DeepMind">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="模型蒸馏">
+<meta property="article:tag" content="端侧智能">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/deepmind-ceo-agi-interview/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/","path":"2026/2026-05-09-deepmind-ceo-agi-interview/","title":"DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%9A%B4%E5%8A%9B%E5%A0%86%E7%A0%8C%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AA%97%E5%8F%A3-%E2%89%A0-AI-%E8%AE%B0%E5%BF%86"><span class="nav-number">2.</span> <span class="nav-text">一、暴力堆砌的上下文窗口 ≠ AI 记忆</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E7%9A%84%E6%9C%AC%E8%B4%A8%EF%BC%9A%E6%B5%B7%E9%A9%AC%E4%BD%93-%E6%8C%81%E7%BB%AD%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.1.</span> <span class="nav-text">记忆的本质：海马体 &amp; 持续学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E6%B5%B7%E9%A9%AC%E4%BD%93%EF%BC%8C%E5%BA%94%E8%AF%A5%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7%E5%AD%90%EF%BC%9F"><span class="nav-number">2.2.</span> <span class="nav-text">AI 海马体，应该长什么样子？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PowerMem"><span class="nav-number">2.2.1.</span> <span class="nav-text">PowerMem</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#seekdb-M0"><span class="nav-number">2.2.2.</span> <span class="nav-text">seekdb M0</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%A8%A1%E5%9E%8B%E8%92%B8%E9%A6%8F-%E2%80%94%E2%80%94-%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9C%89%E5%A4%9A%E5%BC%BA%EF%BC%8C%E5%85%AD%E4%B8%AA%E6%9C%88%E5%90%8E%E4%BD%A0%E7%9A%84%E6%89%8B%E6%9C%BA%E5%B0%B1%E6%9C%89%E5%A4%9A%E5%BC%BA"><span class="nav-number">3.</span> <span class="nav-text">二、模型蒸馏 —— 大模型有多强，六个月后你的手机就有多强</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81AI-%E5%AE%89%E5%85%A8%E5%8F%AA%E5%86%99%E5%9C%A8-prompt-%E9%87%8C%EF%BC%8C%E8%BF%98%E8%BF%9C%E8%BF%9C%E4%B8%8D%E5%A4%9F"><span class="nav-number">4.</span> <span class="nav-text">三、AI 安全只写在 prompt 里，还远远不够</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81AI-%E9%A2%86%E5%9F%9F%EF%BC%8C%E8%BF%98%E5%9C%A8%E7%AD%89%E5%AE%83%E7%9A%84%E2%80%9C%E7%88%B1%E5%9B%A0%E6%96%AF%E5%9D%A6%E2%80%9D"><span class="nav-number">5.</span> <span class="nav-text">四、AI 领域，还在等它的“爱因斯坦”</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图 | Longda's Interesting World">
+      <meta itemprop="description" content="Google DeepMind CEO Demis Hassabis 在访谈中预测 AGI 有望于 2030 年实现，并指出当前 AI 的三大短板：持续学习、长程推理与真正的记忆。本文拆解访谈核心观点，探讨记忆系统、端侧智能与 AI 安全的基础设施演进方向。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-05-09 09:00:55" itemprop="dateCreated datePublished" datetime="2026-05-09T09:00:55+08:00">2026-05-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%A1%8C%E4%B8%9A%E6%B4%9E%E5%AF%9F/" itemprop="url" rel="index"><span itemprop="name">行业洞察</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>13 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Google DeepMind CEO Demis Hassabis 在访谈中预测 AGI 有望于 2030 年实现，并指出当前 AI 的三大短板：持续学习、长程推理与真正的记忆。本文拆解访谈核心观点，探讨记忆系统、端侧智能与 AI 安全的基础设施演进方向。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图","description":"Google DeepMind CEO Demis Hassabis 在访谈中预测 AGI 有望于 2030 年实现，并指出当前 AI 的三大短板：持续学习、长程推理与真正的记忆。本文拆解访谈核心观点，探讨记忆系统、端侧智能与 AI 安全的基础设施演进方向。","image":"https://ilongda.com/img/deepmind-ceo-agi-interview/01.png","wordCount":3655,"datePublished":"2026-05-09T01:00:55.000Z","dateModified":"2026-05-09T01:00:55.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/"},"url":"https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/","inLanguage":"zh-CN","keywords":["seekdb","PowerMem","AI 记忆","AGI","DeepMind","模型蒸馏","端侧智能","AI 安全"],"articleSection":["行业洞察"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"行业洞察","item":"https://ilongda.com/categories/行业洞察/"},{"@type":"ListItem","position":3,"name":"DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图","item":"https://ilongda.com/2026/2026-05-09-deepmind-ceo-agi-interview/"}]}</script>
+<h1 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h1><p>前几天（4 月 29 日），Google DeepMind CEO、2024 年诺贝尔化学奖得主 Demis Hassabis 在一期播客节目<span class="exturl" data-url="aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1KTnl1WDF6b09nVQ==">《Agents, AGI &amp; The Next Big Scientific Breakthrough》<i class="fa fa-external-link-alt"></i></span> 中，预测 AGI（通用人工智能）有望在 2030 年实现，并介绍了当前 AI 的致命短板（为什么现在还不是 AGI）。</p>
+<p><strong>看完之后，小编的感受是——这可能比今年任何一场 AI 产品发布会都值得看。</strong></p>
+<p>不是因为发布了什么新模型，什么 benchmark 跑到了宇宙第一。恰恰相反，Hassabis 花了大量时间讲一件事：<strong>现在的 AI，到底还差什么？</strong></p>
+<p>Hassabis 的答案不长，但每个都很致命：</p>
+<ul>
+<li>持续学习（Continual Learning）：不能像人一样终身学习、不断更新知识</li>
+<li>长程推理（Long-term Reasoning）：复杂逻辑链、多步骤规划能力极弱</li>
+<li>真正的记忆（Memory）：不只靠上下文窗口，而是结构化、可索引的长期记忆</li>
+</ul>
+<blockquote>
+<p>“A true general intelligence system shouldn’t have that kind of jaggedness.”</p>
+<p>一个真正的通用智能系统，不该有这种锯齿。</p>
+</blockquote>
+<p>他直言因为这三个问题，现在的 LLM 只是 <strong>“一半天使、一半智障”</strong>，甚至给现在的 AI 起了个不太好听但极其贴切的名字——<strong>“锯齿型智能”（Jagged Intelligence）</strong>。</p>
+<p><img data-src="/img/deepmind-ceo-agi-interview/01.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<span id="more"></span>
+
+<p>什么意思？就是虽然 AI 能拿国际数学奥赛金牌，但却可能会因为无法持久地记住历史会话和用户偏好，而在面对简单问题时，无法做出正确的决策。接下来，我会把访谈里几个最核心的方向和短板，拆开聊上一聊。</p>
+<h1 id="一、暴力堆砌的上下文窗口-≠-AI-记忆"><a href="#一、暴力堆砌的上下文窗口-≠-AI-记忆" class="headerlink" title="一、暴力堆砌的上下文窗口 ≠ AI 记忆"></a>一、暴力堆砌的上下文窗口 ≠ AI 记忆</h1><p>你一定注意到了，最近各家大模型在比赛一件事：<strong>谁的上下文窗口更长。</strong></p>
+<p>从 4K 到 128K，到 100 万 token，到 1000 万 token。好像只要上下文足够长，什么问题都能塞进去解决。</p>
+<p>然后他算了一笔让我愣住的账。现在最大的上下文窗口是 1000 万 token 对吧？Hassabis 的原话是 100 万 token &#x3D; 约 20 分钟视频。按这个换算，即使放大到 1000 万 token，也就 200 分钟的视觉信息。</p>
+<p><strong>听起来很厉害，但本质上是暴力堆砌。</strong> 对于一个需要理解你数天、数周、数月，甚至数年生活、工作习惯的 AI 助手来说，200 分钟算个啥？</p>
+<p>而且现在的问题不只是容量。更重要的是——现在的做法是把<strong>所有东西一股脑塞进 Context Window（上下文窗口）</strong>，包括不重要的、错误的、过时的信息。每次对话本质上是无状态的。关掉窗口，上一轮聊了什么，全没了。</p>
+<p>Context Window 其实就相当于人脑里的 Working Memory，工作记忆。人的工作记忆能同时装多少东西？心理学里有个经典数字，7 个左右。比如让你背一个朋友的电话号码，其实能记住 7 位左右，因为位数再多就“溢出”了。</p>
+<p>而大模型呢？已经做到 100 万 Token。按理说，模型的工作记忆比人大几十万倍，应该比人聪明几十万倍才对。</p>
+<p>但，显然不是。</p>
+<h2 id="记忆的本质：海马体-持续学习"><a href="#记忆的本质：海马体-持续学习" class="headerlink" title="记忆的本质：海马体 &amp; 持续学习"></a>记忆的本质：海马体 &amp; 持续学习</h2><p>Hassabis 拿 AI 和人脑做了个对比，因为这位大佬读博士时研究的就是：<strong>海马体如何把新知识优雅地融入已有知识体系</strong>。</p>
+<p>问题也恰恰就出现在这。AI 习惯把所有东西都塞进 Context Window 里，里面包含了不重要的东西、错的东西、过时的东西。看起来信息很多，其实是一团乱麻。</p>
+<p>那人为什么 7 个数字的工作记忆就够用？</p>
+<p>因为人脑背后还有另一套机制在工作。我们记得几年前的事，记得童年的事，记得几小时前发生的事。这些都不塞在工作记忆里，而是另一套系统，这套系统，就是刚刚提到的海马体，大脑里负责把新知识整合进已有知识库的那个部分。</p>
+<p>Hassabis 在播客中介绍说，人脑在快速眼动睡眠（REM sleep）期间，会回放白天的经历，<strong>主动判断哪些值得记住、哪些应该遗忘，然后把有价值的经验“写入”长期记忆。</strong></p>
+<p><img data-src="/img/deepmind-ceo-agi-interview/02.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<p>2013 年 DeepMind 那个名震一时的 DQN 算法（第一个在雅达利游戏上达到人类水平的深度强化学习系统），一个关键技术就是从这里借来的——<strong>经验回放（experience replay）</strong>，反复回放成功路径来学习。这件事，放在 AI 领域，已经算是上古时期的了。</p>
+<p>这个把新东西融进旧知识库的过程，就是所谓的<strong>持续学习（Continual Learning）</strong>。</p>
+<p>2026 年，AI 普遍还没有做到这一点。</p>
+<h2 id="AI-海马体，应该长什么样子？"><a href="#AI-海马体，应该长什么样子？" class="headerlink" title="AI 海马体，应该长什么样子？"></a>AI 海马体，应该长什么样子？</h2><p>Hassabis 在播客的观点很清晰：AI 需要一套<strong>独立的、高效索引的记忆模块</strong>——能主动决定记住什么、遗忘什么。这是 AI Agent 在长时间维度可信赖地自主运行的前提条件。</p>
+<p>换句话说，<strong>上下文窗口只是一张越摊越大的桌面。AI 真正缺的，是一颗海马体。</strong></p>
+<p><img data-src="/img/deepmind-ceo-agi-interview/03.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<h3 id="PowerMem"><a href="#PowerMem" class="headerlink" title="PowerMem"></a>PowerMem</h3><p>小编参与的一个 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9wb3dlcm1lbQ==">PowerMem<i class="fa fa-external-link-alt"></i></span> 开源项目，就专门为 AI Agent 加上了这个“海马体”——<strong>一套能够持久化 &amp; 持续学习的记忆系统</strong>。</p>
+<p>它的思路和 Hassabis 描述的方向高度一致：</p>
+<ul>
+<li>不是把所有对话都塞进上下文，而是从对话中<strong>提取关键事实</strong>，按工作记忆、短期记忆、长期记忆分层管理</li>
+<li>引入<strong>艾宾浩斯遗忘曲线</strong>机制——用到的记忆会强化，长期不用的记忆会逐渐淡出，甚至自动清理（和 Hassabis 说的“主动决定记住什么、遗忘什么”异曲同工）</li>
+<li>支持向量 + 全文 + 图谱<strong>三路混合检索</strong>，多 Agent 之间可以做记忆隔离和共享</li>
+</ul>
+<p>而且有一个数据很直观。在长对话记忆基准测试 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NuYXAtcmVzZWFyY2gvbG9jb21v">LOCOMO<i class="fa fa-external-link-alt"></i></span> 上：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>PowerMem</th>
+<th>全上下文方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>准确率</td>
+<td><strong>78.70%</strong></td>
+<td>52.9%</td>
+</tr>
+<tr>
+<td>检索 p95 延迟</td>
+<td><strong>1.44s</strong></td>
+<td>17.12s</td>
+</tr>
+<tr>
+<td>Token 消耗</td>
+<td><strong>~0.9k</strong></td>
+<td>~26k</td>
+</tr>
+</tbody></table>
+<p>同样的任务，用 PowerMem 的 token 消耗只有全上下文方式的 <strong>18%</strong>。少了 82% 的 token，结果反而更准——因为，不是所有旧对话都有价值。</p>
+<p><img data-src="/img/deepmind-ceo-agi-interview/04.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<p>Python SDK 一行 <code>pip install powermem</code> 就装好，也支持 CLI（<code>pmem</code> 命令行）、HTTP API + Web Dashboard、MCP Server。OpenClaw 框架可以直接通过 <code>memory-powermem</code> 插件接入。</p>
+<p>当然，这可能还达不到 Hassabis 描述的那套人类的“能在梦中回放和整合经验”的完整记忆系统。但方向是对的：<strong>记忆，不该只靠暴力堆砌的上下文窗口硬撑。</strong></p>
+<h3 id="seekdb-M0"><a href="#seekdb-M0" class="headerlink" title="seekdb M0"></a>seekdb M0</h3><p>除了 PowerMem 之外，小编参与的另一个项目 <span class="exturl" data-url="aHR0cHM6Ly9tMC5zZWVrZGIuYWkv">seekdb M0<i class="fa fa-external-link-alt"></i></span> 也是专门为 AI Agent 设计的自进化的云记忆，支持一键接入，分享经验，无限进化。</p>
+<p>seekdb M0 有一套记忆和经验提取、验证、注入、反馈的闭环，驱动 AI Agent 持续迭代。</p>
+<ul>
+<li>自动提炼工作经验，新任务启动即自动注入相关最佳实践，无需手动检索。</li>
+<li>当经验被 Agent 成功验证 3 次以上，将进入经验池，开始为其他 Agent 提供服务。</li>
+<li>基于 Agent 反馈结果动态调整权重，优胜劣汰，持续优化</li>
+</ul>
+<h1 id="二、模型蒸馏-——-大模型有多强，六个月后你的手机就有多强"><a href="#二、模型蒸馏-——-大模型有多强，六个月后你的手机就有多强" class="headerlink" title="二、模型蒸馏 —— 大模型有多强，六个月后你的手机就有多强"></a>二、模型蒸馏 —— 大模型有多强，六个月后你的手机就有多强</h1><p>访谈中另一个让我反复回看的判断，是关于<strong>模型蒸馏（Distillation）</strong>。</p>
+<p>Garry Tan 问了一个很多人都好奇的问题：小模型到底能聪明到什么程度？蒸馏有没有理论极限？</p>
+<p>Hassabis 的回答很干脆：</p>
+<blockquote>
+<p>“我不觉得我们已经碰到了信息论上的极限。至少目前没人知道有没有碰到。我们的假设是，一个前沿的 Pro 模型发布后，在半年到一年内，它的能力就能被压缩到非常小的、几乎可以跑在边缘设备上的模型里。”</p>
+</blockquote>
+<p>他给了具体数字：蒸馏后的小模型可以达到前沿大模型 <strong>90-95% 的能力，成本仅约十分之一</strong>。</p>
+<p>这不是远期展望，而是正在发生的。DeepMind 自家的产品线就是这套逻辑：Gemini Pro（前沿旗舰）→ Flash（蒸馏后的消费级推理）→ Nano（端侧设备）。开源的 Gemma 4 模型发布两周半，下载量达到 <strong>4000 万次</strong>。</p>
+<blockquote>
+<p>“小模型的价值不只是成本低。速度快同样会带来巨大的好处——你能迭代得更快，迭代速度赚回来的，远超那 10% 的能力差距。”</p>
+</blockquote>
+<p><img data-src="/img/deepmind-ceo-agi-interview/05.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<p>Hassabis 还特别提到了边缘场景的意义：车载设备、智能穿戴设备、具身机器人……这些场景<strong>不光需要效率，还需要隐私和安全</strong>。</p>
+<blockquote>
+<p>“想象一下你家里的机器人，你会希望本地跑一个高效且强大的模型，只在特定场景下把任务委托给云端大模型。音频和视频流都在本地处理、数据留在本地——这是一个很好的终极状态。”</p>
+</blockquote>
+<p>这话让我想到一个正在发生的趋势：当大模型的能力以 6-12 个月的周期“流”向端侧，一个很自然的问题浮现——<strong>端侧设备上，谁来给这些小模型提供数据底座？</strong></p>
+<p>它需要边缘设备上跑一个完整的传统数据库实例，同时还要让它支持向量检索、全文搜索、结构化查询。</p>
+<p>这就是小编参与的另另一个项目 —— <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">seekdb<i class="fa fa-external-link-alt"></i></span> 瞄准的方向。</p>
+<ul>
+<li>seekdb 的服务器模式，只需要 <strong>1C2G</strong> 的资源，支持 <code>pip install</code> 一键安装、秒级启动。</li>
+<li>嵌入式模式甚至可以作为一个 Python 库，直接运行在应用程序内部，不需要独立数据库进程，几乎没有任何资源开销。</li>
+<li>同时塞进去了向量检索、全文搜索、JSON、GIS——一个引擎全包，兼容 MySQL 语法，学习成本极低。</li>
+</ul>
+<p><img data-src="/img/deepmind-ceo-agi-interview/06.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<p>关于 AI“从重到轻”的大趋势，小编之前写过两篇文章来分析。这里不再继续展开，感兴趣的可以翻翻看~</p>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3MvRTQ2U1prOHRjdGNBZWh0N19JUW5SUQ==">《如今的数据库产品，为何总是越“轻”越火？》<i class="fa fa-external-link-alt"></i></span></li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9tcC53ZWl4aW4ucXEuY29tL3MvVjJfalY1WkVZckFmYkZsTEZsM3dfZw==">《AI 应用爆发，传统数据库为何“力不从心”？》<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+<p>Hassabis 的判断让我更加确信：<strong>端侧智能不是“未来某天的事”，它以 6 个月为周期在逼近。</strong> 那些能在极低资源开销下提供完整 AI 数据能力的基础设施，很快会从“可选”变成“刚需”。</p>
+<h1 id="三、AI-安全只写在-prompt-里，还远远不够"><a href="#三、AI-安全只写在-prompt-里，还远远不够" class="headerlink" title="三、AI 安全只写在 prompt 里，还远远不够"></a>三、AI 安全只写在 prompt 里，还远远不够</h1><p>Hassabis 在访谈中花了不少篇幅谈安全。他的核心判断：</p>
+<blockquote>
+<p>“目前的 AI 系统在网络攻防方面已经相当强了。关键是要确保防御能力跑在攻击能力前面。”</p>
+</blockquote>
+<p>他认为 AI 是典型的“双重用途”技术——既能加强防御，也能被利用来发现漏洞、自动化攻击。最紧迫的风险有两类：</p>
+<ol>
+<li><strong>恶意人类行为者</strong>利用 AI 发动攻击</li>
+<li>AI <strong>自主性增强</strong>带来的长期对齐问题</li>
+</ol>
+<p>第二点尤其值得警惕。随着 AI Agent 越来越能“自己做判断”，“它自己做了个判断然后把你的数据搞没了”这种事已经不只是理论推演。PocketOS 数据被 Agent 误删的事故，就是一个活生生的案例。</p>
+<p>这也是为什么 Hassabis 说“技术狂奔的同时，底线不能丢”。但“底线”不能只写在 prompt 里，得落到硬约束上。</p>
+<p>数据库层面，OceanBase 和 seekdb 在设计上恰好有几道防线：</p>
+<ul>
+<li><strong>数据分支（Branch &#x2F; Fork）</strong>：像 Git 一样。AI Agent 在 Fork 出来的分支上随便实验，主库纹丝不动。改好了 MERGE 回去，改砸了直接扔掉。Fork 基于 LSM-Tree 的写时复制，毫秒级完成，不复制全量数据。</li>
+<li><strong>回收站 + 闪回</strong>：被 DROP 的表暂存回收站，<code>FLASHBACK</code> 一键捞回。闪回查询可以看任意历史时间点的数据快照——AI 在 9 秒前干了什么，9 秒后就能精确回滚。（这个是小编当年通过古法编程开发出的功能，欢迎各位试用和反馈~）</li>
+<li><strong>主备物理隔离</strong>：备份和主库跑在独立的存储集群上，不在同一个“爆炸半径”里。</li>
+</ul>
+<p><img data-src="/img/deepmind-ceo-agi-interview/07.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+<p>说到底，Hassabis 的焦虑和 PocketOS 的事故，都指向同一个结论：<strong>与其指望 Agent 不犯错，不如假定它一定会犯错。然后在数据库层面，把所有破坏性操作的口子焊死。</strong></p>
+<h1 id="四、AI-领域，还在等它的“爱因斯坦”"><a href="#四、AI-领域，还在等它的“爱因斯坦”" class="headerlink" title="四、AI 领域，还在等它的“爱因斯坦”"></a>四、AI 领域，还在等它的“爱因斯坦”</h1><p>访谈快结束时，Hassabis 说了一段让人很难忘的话。他提到了一个他称为 <strong>“爱因斯坦测试”</strong> 的标准：</p>
+<blockquote>
+<p>“给一个 AI 系统截止到 1911 年的所有知识，看它能不能像爱因斯坦在 1915 年那样，自己推导出广义相对论。很明显，今天的系统做不到这一点。”</p>
+</blockquote>
+<p>他进一步解释：现在最强的 AI 系统能做到在既有框架内解决问题——解一道物理题，甚至是奥赛级别的。但 AGI 需要的是发明框架本身——不是答好一道物理题，而是创造一套全新的物理理论。</p>
+<blockquote>
+<p>“能发明围棋吗？给系统一段高层描述：‘一个五分钟能学会规则、但穷尽一生也难以精通的游戏，美学上很优雅，一个下午能下完一盘’——然后系统返回给你围棋。今天的系统做不到。”</p>
+</blockquote>
+<p>AlphaGo 能在棋盘上下出惊世骇俗的第 37 手，但它发明不了围棋。</p>
+<p>这大概就是当前 AI 的处境总结：能在考试里拿满分，但还没学会发明考试。Hassabis 说，这个领域还在等一次“爱因斯坦式突破”——一个底层理论革新，一次性解决推理、记忆、进化学习的难题。</p>
+<p>在那个时刻到来之前，我们能做的是：<strong>把记忆造好，把端侧铺好，把安全兜好。</strong> 让 AI 在通往 AGI 的路上，少摔几个跟头。</p>
+<p>而要做到这三件事，光靠模型层不够。基础设施层，也必须跟着一起进化。</p>
+<blockquote>
+<p><em>本文观点素材主要来自 Demis Hassabis 与 YC CEO Garry Tan 的 <span class="exturl" data-url="aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1KTnl1WDF6b09nVQ==">How to Build the Future 播客访谈视频<i class="fa fa-external-link-alt"></i></span>（2026 年 4 月 29 日），以及<span class="exturl" data-url="aHR0cHM6Ly93d3cudGVjaGZsb3dwb3N0LmNvbS96aC1DTi9hcnRpY2xlLzMxNDA5">访谈文字稿<i class="fa fa-external-link-alt"></i></span>。</em></p>
+</blockquote>
+<p><img data-src="/img/deepmind-ceo-agi-interview/08.png" alt="DeepMind CEO 访谈：人类离 AGI 只剩 4 年，只差最后 3 块拼图"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/AI-%E8%AE%B0%E5%BF%86/" rel="tag"># AI 记忆</a>
+              <a href="/tags/AGI/" rel="tag"># AGI</a>
+              <a href="/tags/DeepMind/" rel="tag"># DeepMind</a>
+              <a href="/tags/%E6%A8%A1%E5%9E%8B%E8%92%B8%E9%A6%8F/" rel="tag"># 模型蒸馏</a>
+              <a href="/tags/%E7%AB%AF%E4%BE%A7%E6%99%BA%E8%83%BD/" rel="tag"># 端侧智能</a>
+              <a href="/tags/AI-%E5%AE%89%E5%85%A8/" rel="tag"># AI 安全</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-09-ai-deletes-database-incident/" rel="prev" title="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨">
+                  <i class="fa fa-angle-left"></i> 700 万人围观 AI 删库，罪魁祸首写下奇葩检讨
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-05-12-netease-lb-driver-obproxy-load-balancing/" rel="next" title="网易开源 lb-driver：OceanBase OBProxy 驱动层负载均衡实践">
+                  网易开源 lb-driver：OceanBase OBProxy 驱动层负载均衡实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

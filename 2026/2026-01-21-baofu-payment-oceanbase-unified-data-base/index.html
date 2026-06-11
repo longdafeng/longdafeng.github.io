@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="宝付支付数据团队分享使用 OceanBase OBKV-HBase 替换 HBase 的完整实践：从架构痛点与选型考量，到五步平滑迁移、数据校验与压测调优，最终实现 42 万 QPS、1ms 延迟，构建 TP+AP+KV+AI 统一数据基座。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座">
+<meta property="og:url" content="https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="宝付支付数据团队分享使用 OceanBase OBKV-HBase 替换 HBase 的完整实践：从架构痛点与选型考量，到五步平滑迁移、数据校验与压测调优，最终实现 42 万 QPS、1ms 延迟，构建 TP+AP+KV+AI 统一数据基座。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/01.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/02.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/03.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/04.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/05.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/06.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/07.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/08.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/09.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/10.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/11.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/12.png">
+<meta property="og:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/13.png">
+<meta property="article:published_time" content="2026-01-21T00:05:55.000Z">
+<meta property="article:modified_time" content="2026-01-21T00:05:55.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="HBase">
+<meta property="article:tag" content="HTAP">
+<meta property="article:tag" content="OBKV">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="支付行业">
+<meta property="article:tag" content="数据迁移">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/","path":"2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/","title":"不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%BA%E4%BA%8E%E6%9E%B6%E6%9E%84%E7%97%9B%E7%82%B9%EF%BC%8C%E5%AF%BB%E6%B1%82%E6%94%AF%E6%8C%81-TP-AP-KV-AI-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.</span> <span class="nav-text">出于架构痛点，寻求支持 TP+AP+KV+AI 的数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E8%BE%B9%E7%BC%98%E5%88%B0%E6%A0%B8%E5%BF%83%EF%BC%9AOBKV-HBase-%E6%9B%BF%E6%8D%A2-HBase"><span class="nav-number">2.</span> <span class="nav-text">从边缘到核心：OBKV-HBase 替换 HBase</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HBase-%E9%9A%BE%E4%BB%A5%E5%BA%94%E5%AF%B9%E4%B8%9A%E5%8A%A1%E5%A4%8D%E6%9D%82%E5%BA%A6%E4%B8%8E%E5%AE%9E%E6%97%B6%E6%80%A7%E8%A6%81%E6%B1%82"><span class="nav-number">2.1.</span> <span class="nav-text">HBase 难以应对业务复杂度与实时性要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-OBKV-%E6%9B%BF%E6%8D%A2-HBase%EF%BC%8C%E4%B8%BA%E7%BB%9F%E4%B8%80%E6%8A%80%E6%9C%AF%E6%A0%88%E5%A5%A0%E5%AE%9A%E5%9F%BA%E7%A1%80"><span class="nav-number">2.2.</span> <span class="nav-text">使用 OBKV 替换 HBase，为统一技术栈奠定基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%95%E5%85%A5-OceanBase-%E7%9A%84%E4%B8%89%E4%B8%AA%E9%98%B6%E6%AE%B5%EF%BC%8C%E7%A1%AE%E4%BF%9D%E6%8A%80%E6%9C%AF%E8%BD%AC%E5%9E%8B%E5%B9%B3%E7%A8%B3%E5%8F%AF%E6%8E%A7"><span class="nav-number">2.3.</span> <span class="nav-text">引入 OceanBase 的三个阶段，确保技术转型平稳可控</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E6%AD%A5%E5%B9%B3%E6%BB%91%E8%BF%81%E7%A7%BB%EF%BC%9A%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E3%80%81%E6%96%B9%E6%A1%88%E8%AE%BE%E8%AE%A1%E4%B8%8E%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-number">3.</span> <span class="nav-text">五步平滑迁移：工具使用、方案设计与注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step1%EF%BC%9A%E7%9B%AE%E6%A0%87%E7%AB%AF%E5%87%86%E5%A4%87"><span class="nav-number">3.1.</span> <span class="nav-text">Step1：目标端准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step2%EF%BC%9A%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB"><span class="nav-number">3.2.</span> <span class="nav-text">Step2：数据迁移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step3%EF%BC%9A%E6%95%B0%E6%8D%AE%E6%A0%A1%E9%AA%8C"><span class="nav-number">3.3.</span> <span class="nav-text">Step3：数据校验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step4%EF%BC%9A%E6%95%B0%E6%8D%AE%E8%AE%BF%E9%97%AE%E6%94%AF%E6%8C%81"><span class="nav-number">3.4.</span> <span class="nav-text">Step4：数据访问支持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step5%EF%BC%9A%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B"><span class="nav-number">3.5.</span> <span class="nav-text">Step5：业务压测</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OBKV-%E4%B8%8A%E7%BA%BF%E7%BB%8F%E9%AA%8C%E4%B8%8E%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93%EF%BC%9A%E8%BF%90%E7%BB%B4%E9%85%8D%E7%BD%AE%E3%80%81%E6%95%B0%E6%8D%AE%E6%A0%A1%E9%AA%8C"><span class="nav-number">4.</span> <span class="nav-text">OBKV 上线经验与问题总结：运维配置、数据校验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E7%BB%B4%E9%85%8D%E7%BD%AE%E7%9B%B8%E5%85%B3"><span class="nav-number">4.1.</span> <span class="nav-text">运维配置相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%A0%A1%E9%AA%8C%E9%97%AE%E9%A2%98"><span class="nav-number">4.2.</span> <span class="nav-text">数据校验问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%9C%E4%B8%80%E5%BA%93%E5%A4%9A%E6%A8%A1%E3%80%81%E7%BB%9F%E4%B8%80%E5%B9%B3%E5%8F%B0%E2%80%9D%EF%BC%8C%E5%B0%86%E5%A4%A7%E8%A7%84%E6%A8%A1%E5%BC%95%E5%85%A5-OceanBase"><span class="nav-number">5.</span> <span class="nav-text">“一库多模、统一平台”，将大规模引入 OceanBase</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座 | Longda's Interesting World">
+      <meta itemprop="description" content="宝付支付数据团队分享使用 OceanBase OBKV-HBase 替换 HBase 的完整实践：从架构痛点与选型考量，到五步平滑迁移、数据校验与压测调优，最终实现 42 万 QPS、1ms 延迟，构建 TP+AP+KV+AI 统一数据基座。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-21 08:05:55" itemprop="dateCreated datePublished" datetime="2026-01-21T08:05:55+08:00">2026-01-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">杨泽</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>6.6k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>24 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">宝付支付数据团队分享使用 OceanBase OBKV-HBase 替换 HBase 的完整实践：从架构痛点与选型考量，到五步平滑迁移、数据校验与压测调优，最终实现 42 万 QPS、1ms 延迟，构建 TP+AP+KV+AI 统一数据基座。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座","description":"宝付支付数据团队分享使用 OceanBase OBKV-HBase 替换 HBase 的完整实践：从架构痛点与选型考量，到五步平滑迁移、数据校验与压测调优，最终实现 42 万 QPS、1ms 延迟，构建 TP+AP+KV+AI 统一数据基座。","image":"https://ilongda.com/img/baofu-payment-oceanbase-unified-data-base/01.png","wordCount":6613,"datePublished":"2026-01-21T00:05:55.000Z","dateModified":"2026-01-21T00:05:55.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/"},"url":"https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","HTAP","OBKV","数据迁移","HBase","支付行业"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座","item":"https://ilongda.com/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/"}]}</script>
+<p>作者：杨泽，宝付支付数据团队负责人</p>
+<p>随着数字化转型升级进入关键期，数据库已从被动的存储仓库，转变为主动赋能业务的智能数据中枢。以现代金融行业为例，业务对数据库提出了更高要求：既要满足事务，又要实时分析，同时安全、高效、弹性、智能地处理多模数据，并支撑实时决策与业务创新。这意味着，符合要求的数据库需在 TP、AP、KV、AI 方向均具备出色的数据处理能力。</p>
+<p>作为在银行、消费金融、零售、跨境等行业深耕多年的一站式综合支付解决方案商，宝付支付产品种类丰富，且深谙技术创新与业务稳健的关系，不断引进先进技术维护和保障公司业务稳步运行，全方位为商户资金安全和交易安全保驾护航。</p>
+<p>近年来，宝付支付的原数据库方案已不能满足业务需求，故而寻求技术升级。本文分享宝付支付在 KV 场景使用 OBKV 替换 HBase 的技术实践。</p>
+<span id="more"></span>
+
+<h2 id="出于架构痛点，寻求支持-TP-AP-KV-AI-的数据库"><a href="#出于架构痛点，寻求支持-TP-AP-KV-AI-的数据库" class="headerlink" title="出于架构痛点，寻求支持 TP+AP+KV+AI 的数据库"></a>出于架构痛点，寻求支持 TP+AP+KV+AI 的数据库</h2><p>宝付支付所属集团——漫道集团采用基于 MySQL 的集中式架构，由于近年来业务高速增长（2023 年初交易量约 3000 万笔&#x2F;日，2024 年 12 月已突破 9000 万笔&#x2F;日）带来的海量数据（TB 级），系统压力陡增。</p>
+<p>最直观的压力便是成本压力，<strong>每年存储采购预算高达数千万元</strong>。同时，为了保障部分业务系统的高可用性，需在 A&#x2F;B 两个机房部署完全对等的 MySQL 双活架构集群（如各 100 台服务器），导致硬件与运维成本成倍增长。</p>
+<p>同时在双活架构下，业务层仅关注“订单不丢、实时写入”，但不关心数据最终落在哪个机房、哪个分库。这给数据团队带来巨大挑战：<strong>无法准确追踪数据源，难以构建统一的数据视图</strong>，ETL 与实时同步逻辑异常复杂。</p>
+<p>在业务种类多样的情况下，长期使用 MySQL 还会导致架构越来越复杂，使运维压力极大。集团内部运行着十余套大数据集群和超过 1000 个 MySQL 实例，分别服务于支付、风控、征信、BI 等不同场景，对数据库有不同的需求。</p>
+<ul>
+<li>支付交易系统：要求高并发、低延迟的事务处理能力。</li>
+<li>风控系统：依赖实时数据分析与毫秒级决策。</li>
+<li>征信用户画像业务：需要高性能 KV 存储与快速点查。</li>
+<li>BI 系统：依赖大规模离线分析计算。</li>
+</ul>
+<p><strong>多套异构系统并行，导致开发、监控、备份、扩容等运维工作极其繁重。</strong></p>
+<p>除 MySQL 外，我们使用 HBase 存储海量日志与宽表，其虽具备高吞吐写入能力，<strong>但在事务支持、复杂查询、实时分析、KV 混合负载等方面存在明显短板</strong>，已无法满足新一代业务需求。</p>
+<p>基于上述挑战，我们开始评估新一代分布式数据库方案。文章开头提到现代金融行业的业务对数据库提出了多种要求。宝付支付作为金融行业的一员也不例外，<strong>根据对 TP、AP、KV、AI 方向的需求，我们首先想到了 OceanBase，核心原因在于其原生支持 HTAP（混合事务&#x2F;分析处理）+ KV + AI 的一体化架构。</strong></p>
+<ul>
+<li>TP 能力：满足支付交易系统的高并发、强一致性要求。</li>
+<li>AP 能力：支撑风控与 BI 的实时分析需求。</li>
+<li>KV 接口：为征信等场景提供低延迟点查。</li>
+<li>AI 能力：内置向量化引擎与 AI 原生能力，为后续智能风控、实时推荐等 AI 应用奠定基础。</li>
+</ul>
+<p><strong>为控制风险，我们采取“由边缘到核心”的渐进式改造路径</strong>：先在非关键系统验证 OceanBase 稳定性，逐步迁移风控、征信等中台系统；最终目标是将核心支付交易系统平滑切换至 OceanBase，用一套数据库承载全场景需求。</p>
+<h2 id="从边缘到核心：OBKV-HBase-替换-HBase"><a href="#从边缘到核心：OBKV-HBase-替换-HBase" class="headerlink" title="从边缘到核心：OBKV-HBase 替换 HBase"></a>从边缘到核心：OBKV-HBase 替换 HBase</h2><p>在启动 OceanBase 引入计划后，我们先在离线与分析业务进行试点，后将多个 MySQL 业务迁移至 OceanBase。当 OBKV 功能较为完善时，又完成了从 HBase 到 OBKV-HBase 的升级，实现了一套引擎支持多场景业务的目标。</p>
+<h3 id="HBase-难以应对业务复杂度与实时性要求"><a href="#HBase-难以应对业务复杂度与实时性要求" class="headerlink" title="HBase 难以应对业务复杂度与实时性要求"></a>HBase 难以应对业务复杂度与实时性要求</h3><p>尽管 HBase 在海量数据存储场景中曾发挥重要作用，但随着业务复杂度提升与实时性要求增强，其在架构、运维及成本等方面的问题日益凸显。主要体现在以下六个方面。</p>
+<ul>
+<li>离线链路冗长：当前数据流转路径为从 MySQL 流转至 Hive，再导入 HBase，流程环节多，数据延迟显著，且 Hive 层的数据修正不够灵活。</li>
+<li>实时链路依赖过重：直接读写 HBase 严重依赖 Zookeeper 与 HDFS，中间件耦合度高，链路稳定性风险集中。</li>
+<li>运维问题：跨机房场景下，集群切换与数据同步操作繁琐，故障时难快速隔离或切换。</li>
+<li>成本控制：为满足高可用要求，需部署完整的 HBase 主备集群，硬件与存储资源近乎翻倍，成本太大。</li>
+<li>多机房网络问题：机房网络切割的时候，专线网络异常的时候，对业务都有影响。</li>
+<li>SQL 查询依赖 Phoenix：原生不支持标准 SQL，需借助 Phoenix 等组件实现查询，引入额外维护负担，且使用体验与性能往往不及直接 SQL 友好。</li>
+</ul>
+<h3 id="使用-OBKV-替换-HBase，为统一技术栈奠定基础"><a href="#使用-OBKV-替换-HBase，为统一技术栈奠定基础" class="headerlink" title="使用 OBKV 替换 HBase，为统一技术栈奠定基础"></a>使用 OBKV 替换 HBase，为统一技术栈奠定基础</h3><p>OBKV 是构建在 OceanBase 分布式存储引擎之上的 NoSQL 产品系列，目前支持 OBKV-Table、OBKV-HBase、OBKV-Redis 三种产品形态，其原生继承了 OceanBase 的高性能、事务、分布式、多租户、高可靠的基础能力。此外，OceanBase 的工具体系（比如 OCP、OMS、CDC 等）也原生支持 OBKV，运维 OBKV 的各个产品形态和运维 OceanBase 的 SQL 集群完全一样。<strong>OBKV 可以帮助企业统一技术栈，在满足业务对多模 NoSQL 数据库诉求的同时，降低企业在数据库运维上的复杂度。</strong></p>
+<p>基于我们目前正在使用的 OBKV-HBase，总结其<strong>与 HBase 的使用区别如下。</strong></p>
+<ul>
+<li>完全集成 OceanBase 分布式存储能力：OBKV 不仅有 OceanBase 强大的内核能力，也继承了 OceanBase 丰富的生态工具能力。</li>
+<li>极简运维：DBA 如果同时有 SQL 以及 NoSQL 数据库的诉求，可以只运维一个数据库。</li>
+<li>统一查询：可以用 OBKV 做简单快速的 DML，同时可以用 SQL 对同一份数据做并发的复杂查询。</li>
+<li>成本更低：HBase 独用资源，OceanBase 是复用现有资源。</li>
+<li>监控更方便：方便对应用现有运行环境添加监控。</li>
+</ul>
+<p>OBKV-HBase 不仅解决了传统 HBase 在运维复杂、资源孤岛、工具缺失等方面的痛点，更通过与 OceanBase 深度融合，可以<strong>实现“一套引擎、多模服务、统一运维、资源共享”的现代化数据基础设施目标。</strong></p>
+<h3 id="引入-OceanBase-的三个阶段，确保技术转型平稳可控"><a href="#引入-OceanBase-的三个阶段，确保技术转型平稳可控" class="headerlink" title="引入 OceanBase 的三个阶段，确保技术转型平稳可控"></a>引入 OceanBase 的三个阶段，确保技术转型平稳可控</h3><p>在数据库架构升级过程中，我们分三个阶段逐步引入 OceanBase，确保技术转型平稳可控。</p>
+<h4 id="第一阶段：初步探索与能力评估（2023-年）"><a href="#第一阶段：初步探索与能力评估（2023-年）" class="headerlink" title="第一阶段：初步探索与能力评估（2023 年）"></a>第一阶段：初步探索与能力评估（2023 年）</h4><p>2023 年底，团队开始接触 OceanBase 及其 OBKV-HBase 产品。当时 OBKV 文档尚不完善，关键功能缺失，尤其缺乏 bulkload（批量导入）能力，无法高效导入离线数据，初期判断暂不具备支撑核心业务的能力。因此，该阶段以技术调研为主，未投入生产使用。</p>
+<h4 id="第二阶段：归档与分析场景试点（2024-年）"><a href="#第二阶段：归档与分析场景试点（2024-年）" class="headerlink" title="第二阶段：归档与分析场景试点（2024 年）"></a>第二阶段：归档与分析场景试点（2024 年）</h4><p>2024 年，团队转向更匹配当前能力的场景，启动 OceanBase 在离线与分析业务的试点，将数据归档、BI 聚合宽表、AP 分析类业务迁移至 OceanBase。我们不仅验证了 OceanBase 在高吞吐写入、复杂查询、资源隔离等方面的稳定性与性能表现，还积累了集群部署、SQL 优化、运维监控等关键经验，为后续全面推广奠定基础。</p>
+<h4 id="第三阶段：逐步替换与扩展（2025-年起）"><a href="#第三阶段：逐步替换与扩展（2025-年起）" class="headerlink" title="第三阶段：逐步替换与扩展（2025 年起）"></a>第三阶段：逐步替换与扩展（2025 年起）</h4><p>随着 OceanBase 功能持续完善（特别是 OBKV-HBase 的成熟），团队启动规模化替换计划。</p>
+<ul>
+<li>关系型业务：逐步将业务管理系统、商户管理系统、BI 系统等原 MySQL 应用迁移至 OceanBase SQL 模式；</li>
+<li>NoSQL 业务：使用 OBKV-HBase 替代原有 HBase，例如将“绑卡&#x2F;解卡操作日志”等高频 KV 场景迁移至 OBKV-HBase；</li>
+<li>实现 TP、AP、KV 多负载统一承载，推动技术栈收敛与运维简化。</li>
+</ul>
+<h2 id="五步平滑迁移：工具使用、方案设计与注意事项"><a href="#五步平滑迁移：工具使用、方案设计与注意事项" class="headerlink" title="五步平滑迁移：工具使用、方案设计与注意事项"></a>五步平滑迁移：工具使用、方案设计与注意事项</h2><p>在从 HBase 到 OBKV-HBase 的数据迁移过程中，我们在实践中总结出五个关键步骤。</p>
+<h3 id="Step1：目标端准备"><a href="#Step1：目标端准备" class="headerlink" title="Step1：目标端准备"></a>Step1：目标端准备</h3><p>在正式启动从 HBase 到 OBKV-HBase 的数据迁移前，需在 OceanBase 端完成充分的环境与配置准备。</p>
+<ul>
+<li>硬件配置：为避免因磁盘性能不足导致集群不稳定，建议使用高性能磁盘，但建议初期不要过度分配资源，以便预留弹性空间，用于后续扩缩容及负载均衡调整。</li>
+<li>存储规划：单个 OBServer 节点的磁盘容量应大于单个日志流的数据量。若单表数据量极大，而节点磁盘不足，可能在扩容或副本迁移时触发空间不足错误。</li>
+<li>租户规划：建议为 OBKV 创建独立租户，隔离资源。</li>
+<li>建好分区表。</li>
+</ul>
+<p><strong>注意事项</strong></p>
+<ul>
+<li>实测表明，自动 Range 分区优于手工预设 Hash 分区。自动分区支持分区裁剪，对范围扫描类查询性能更优；手工 Hash 分区在范围查询时需扫描所有分区，显著增加延迟与资源消耗。</li>
+<li>需正确创建 Table Group：HBase 表名对应 OBKV-HBase 的 tablegroup 名字。</li>
+<li>注意命名规范：HBase 列簇 family 在 OBKV-HBase 形式对应表 tablegroup$family。</li>
+<li>注意 K 大小写：使用 DBeaver 等工具导出建表语句时，关键字（如 K）可能被转为小写（如 k），导致语法错误。同时需显式设置最大版本数（Max Versions）和数据过期时间（TTL）（多个版本多行）。</li>
+</ul>
+<h3 id="Step2：数据迁移"><a href="#Step2：数据迁移" class="headerlink" title="Step2：数据迁移"></a>Step2：数据迁移</h3><p>在完成目标端环境准备后，我们分阶段实施历史数据迁移与增量数据同步，确保业务平滑切换至 OBKV-HBase。</p>
+<h4 id="历史数据迁移"><a href="#历史数据迁移" class="headerlink" title="历史数据迁移"></a>历史数据迁移</h4><p>为高效迁移海量历史数据（单表达数十 TB），我们同时使用了 DataX 与 OMS，但需特别注意两者在数据格式上的关键差异：</p>
+<ul>
+<li>DataX 导入的数据 Q 值是带列簇，T 值是正数。</li>
+<li>用 OMS 导入的 Q 值是不带列簇，T 值是负数。</li>
+</ul>
+<h4 id="增量数据同步"><a href="#增量数据同步" class="headerlink" title="增量数据同步"></a>增量数据同步</h4><p>为确保切换期间数据零丢失，我们采用“OMS 增量同步 + 业务双写”双保险机制：</p>
+<ul>
+<li>HBase 开启复制，通过 OMS 增量同步。</li>
+<li>通过业务程序双写保证数据实时同步。</li>
+<li>逐步将流量从 HBase 切换到 OceanBase。</li>
+</ul>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/01.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<h3 id="Step3：数据校验"><a href="#Step3：数据校验" class="headerlink" title="Step3：数据校验"></a>Step3：数据校验</h3><p>由于 OBKV-HBase 属于 NoSQL 场景，OMS 在当前版本中尚未提供 KV 类型数据的全量一致性校验功能，我们结合业务实际，设计了一套多维度、可落地的数据校验方案，确保迁移后数据准确无误。</p>
+<p><strong>1. 行数校验：精确统计表行数。</strong></p>
+<p>HBase 端：使用 HBase 的 RowCounter 工具统计原表行数。命令：<code>org.apache.hadoop.hbase.mapreduce.RowCounter &#39;table&#39;</code>。</p>
+<p>OceanBase 端：使用 count 统计，获取行数并与 HBase 结果比对。</p>
+<p><strong>2. 三方数据对比：借助 Doris 实现内容级校验。</strong></p>
+<p>由于 OMS 暂时不支持进行 KV 场景下的全量校验，我们引入 Doris 作为临时比对中间层：</p>
+<ul>
+<li>通过 DataX 将 HBase 数据同步至 OceanBase 和 Doris。</li>
+<li>对比 HBase、OceanBase、Doris 三方的数据一致性。</li>
+</ul>
+<p><strong>3. 对关键业务字段进行抽样对比。</strong></p>
+<h3 id="Step4：数据访问支持"><a href="#Step4：数据访问支持" class="headerlink" title="Step4：数据访问支持"></a>Step4：数据访问支持</h3><p>在完成数据迁移与校验后，业务系统需通过标准接口访问 OBKV-HBase。我们发现 OBKV-HBase 不仅兼容 HBase 协议，还扩展了多项高级查询与操作能力，显著提升了开发效率与系统灵活性。</p>
+<h4 id="查询操作（Select）"><a href="#查询操作（Select）" class="headerlink" title="查询操作（Select）"></a>查询操作（Select）</h4><ul>
+<li>Filter：支持定义基于 AND 及 OR 构建的复杂的过滤条件，下压给 OBKV 服务端来做过滤。</li>
+<li>Limit：限制返回满足条件数据的条数。</li>
+<li>IN 等语法糖：IN 本质上是一种 Filter，提供对应接口方便业务编码。</li>
+<li>简单聚合能力：提供 Sum&#x2F;Min&#x2F;Max&#x2F;Avg&#x2F;Count 的聚合语义接口，下压给 OBKV 服务端来做简单聚合。</li>
+<li>OrderBy：只支持基于主键以及索引序。</li>
+<li>迭代器访问方式：提供类似迭代器的流式 Query 接口，适用于大批量结果集的流式获取以及处理场景，比如翻页场景。</li>
+</ul>
+<h4 id="数据操作"><a href="#数据操作" class="headerlink" title="数据操作"></a>数据操作</h4><ul>
+<li>Insert：支持单行&#x2F;多行数据插入。</li>
+<li>Update：支持单行&#x2F;多行数据更新，支持带 Filter 的条件更新。</li>
+<li>Delete：提供基于主键做数据的删除，支持单行&#x2F;多行数据删除。</li>
+<li>Upsert（insertOrUpdate）：此接口的语义是，如果有对应记录存在，执行 Update 操作，如果不存在，执行 Insert 操作，此接口也支持单行&#x2F;多行操作。</li>
+</ul>
+<h3 id="Step5：业务压测"><a href="#Step5：业务压测" class="headerlink" title="Step5：业务压测"></a>Step5：业务压测</h3><p>为确保 OBKV-HBase 能够满足高并发生产环境要求，我们使用真实业务压测 OBKV 性能，达到 42w QPS，延迟仅为 1ms 左右，超出预期。</p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/02.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><strong>压测方法：</strong></p>
+<ul>
+<li>业务直接连接 OBServer 压测 OBKV 性能。</li>
+<li>对比前期通过 ODP 压测的性能差异。</li>
+<li>详细测试数据</li>
+</ul>
+<p>我们部署 10 个 Pod 模拟业务客户端，分别通过 OCP 统一调度和通过 ODP 的方式进行多轮压测任务。如下分别是 OceanBase 数据库、OCP 模式、ODP 模式压测的数据记录。</p>
+<p><strong>OceanBase 数据库压测数据如下图所示。</strong></p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/03.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><strong>OCP 模式压测数据如下图所示。</strong></p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/04.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><strong>ODP 模式压测数据如下图所示。</strong></p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/05.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p>需要说明的是，前期通过 ODP 压测，性能不佳，QPS 不到 2k，具体原因分析见后续问题总结。经过优化，直连 OBServer 压测 OBKV，QPS 达到 42W，延迟 1ms 左右，完全满足业务需求。</p>
+<p>直连 OBServer 的测试结果让我们对 OceanBase 的性能有了充分的信心，为后续业务的正式切换奠定了基础。</p>
+<h2 id="OBKV-上线经验与问题总结：运维配置、数据校验"><a href="#OBKV-上线经验与问题总结：运维配置、数据校验" class="headerlink" title="OBKV 上线经验与问题总结：运维配置、数据校验"></a>OBKV 上线经验与问题总结：运维配置、数据校验</h2><p>在 OBKV-HBase 的测试与上线过程中，我们积累了一系列关于监控集成、硬件配置、租户隔离及 CDC 同步等方面的实践经验，总结如下，供大家参考。</p>
+<h3 id="运维配置相关"><a href="#运维配置相关" class="headerlink" title="运维配置相关"></a>运维配置相关</h3><h4 id="1-监控配置"><a href="#1-监控配置" class="headerlink" title="1. 监控配置"></a>1. 监控配置</h4><p>为避免重复建设监控平台，我们将 OBKV 相关指标接入公司统一的自研监控系统：</p>
+<ul>
+<li>ODP 的 Prometheus 参数可直接使用默认配置，无需额外调整；</li>
+<li>如需修改 ODP 监控参数，可通过 sys 租户登录集群，执行以下命令：</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> proxyconfig <span class="keyword">like</span> &quot;%prometheus%&quot;;</span><br><span class="line"><span class="keyword">alter</span> proxyconfig <span class="keyword">set</span> xxx <span class="operator">=</span> xxx;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-硬件配置"><a href="#2-硬件配置" class="headerlink" title="2. 硬件配置"></a>2. 硬件配置</h4><ul>
+<li>建议使用高性能磁盘，以保障高吞吐写入需求。</li>
+<li>初期资源不要划太多，避免将单台服务器的全部 CPU&#x2F;内存资源划给租户，以便预留弹性空间用于后续扩缩容及负载均衡。</li>
+<li>单个节点的磁盘要大于日志流的大小，当单表很大时且未合理分区，其对应的日志流可能超过单节点磁盘容量，同时在集群扩容（如从 3-3-3 架构扩展至 6-6-6）时，副本迁移会因日志流到节点磁盘迁移失败而失败。</li>
+</ul>
+<h4 id="3-租户配置"><a href="#3-租户配置" class="headerlink" title="3. 租户配置"></a>3. 租户配置</h4><p>建议为 OBKV 创建独立租户，避免与 TP&#x2F;AP 类 SQL 业务共享资源。</p>
+<h4 id="4-CDC-配置"><a href="#4-CDC-配置" class="headerlink" title="4. CDC 配置"></a>4. CDC 配置</h4><p>在使用 OMS 或 CDC 进行数据同步时，需特别注意 HBase 动态列模型与 CDC 日志格式的兼容性问题。HBase 表的列是动态的（不同 Row 可含不同列），而 OceanBase 的 clog（提交日志）在记录变更时有两种模式。</p>
+<ul>
+<li>全列模式（full）：记录整行所有列的值。</li>
+<li>非全列模式：仅记录被更新的字段。</li>
+</ul>
+<p>若源端写入为非全列，而目标端 CDC 期望全列日志，可能导致同步解析失败或数据不一致。</p>
+<p>解决方法是启用 CDC 的脏数据跳过开关 <code>skip_dirty_data=1</code>，允许跳过全列校验，修改后重启实例生效：<code>ALTER BINLOG INSTANCE y6op8d9rk1 SET EXTRA_OBCDC_CFG =&#39;skip_dirty_data=1&#39;</code>。</p>
+<h4 id="5-前缀检索用-setRowPrefixFilter"><a href="#5-前缀检索用-setRowPrefixFilter" class="headerlink" title="5. 前缀检索用 setRowPrefixFilter"></a>5. 前缀检索用 setRowPrefixFilter</h4><p>在早期调研阶段，我们比较担忧 OBKV-HBase 是否支持基于 RowKey 前缀的高效查询。经过深入查阅文档与测试验证，确认 OBKV-HBase 完全兼容 HBase 1.2+ 的原生 API，其中包括关键的前缀检索功能。可通过 <code>Scan.setRowPrefixFilter(byte[] prefix)</code> 方法实现高效的前缀扫描（Prefix Scan），具体如下图所示。</p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/06.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p>该接口会自动构造起始键（startRow）和终止键（stopRow），仅扫描匹配指定前缀的 RowKey 范围，避免全表扫描，显著提升查询效率。</p>
+<h3 id="数据校验问题"><a href="#数据校验问题" class="headerlink" title="数据校验问题"></a>数据校验问题</h3><p>在从 HBase 迁移至 OBKV-HBase 的过程中，我们在数据校验过程中也遇到了 3 个关键问题。</p>
+<h4 id="问题-1：上下游数据条数校对问题"><a href="#问题-1：上下游数据条数校对问题" class="headerlink" title="问题 1：上下游数据条数校对问题"></a>问题 1：上下游数据条数校对问题</h4><p><strong>问题描述</strong></p>
+<p>使用 DataX 和 OMS 两种工具分别迁移同一张 HBase 表后，OBKV 中的数据行数均少于 HBase 源端，初步校验无法对齐。</p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/07.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><strong>原因分析</strong></p>
+<p>HBase 的数据模型特性导致 count 结果存在歧义。</p>
+<ul>
+<li>Region 分裂重叠：分裂过程中可能短暂产生重复 RowKey。</li>
+<li>未提交数据&#x2F;写入失败残留：部分写入未完成但日志已落盘。</li>
+<li>多版本（Multi-Version）：同一 RowKey 多次写入生成多个时间戳版本，默认全部保留。</li>
+<li>TTL（Time-To-Live）未生效：过期数据尚未被清理，仍计入统计。</li>
+</ul>
+<p>在上述场景下，HBase 的 RowCounter 统计的是所有版本 + 所有可见记录，而 OBKV 默认仅保留最新版本（若未显式配置），导致数量差异。</p>
+<p><strong>解决办法</strong></p>
+<ul>
+<li>统一迁移工具：避免混合使用 DataX 与 OMS，防止因时间戳、列格式处理逻辑不同引入偏差。</li>
+<li>放弃基于快照（Snapshot）或 HFile 的 BulkLoad 方式，改用 <code>queryType=scan</code> 的流式读取，确保仅同步当前可见、已提交的最新版本数据。</li>
+<li>开发专门的数据校验工具，对比源端和目标端的数据。</li>
+</ul>
+<p><strong>结果验证</strong></p>
+<p>通过调整迁移工具和校验方法，最终实现了 HBase 和 OBKV 数据的完全一致。</p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/08.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/09.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><strong>注意事项</strong></p>
+<ul>
+<li>建表语句大小写敏感：通过 DBeaver 等工具导出的建表语句中，K 关键字可能为小写（如 <code>k = &#39;value&#39;</code>），需手动修正为大写，否则解析失败。</li>
+<li>注意设置最大版本号和过期属性（多个版本多行）。</li>
+</ul>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/10.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<h4 id="问题-2：20002-错误码"><a href="#问题-2：20002-错误码" class="headerlink" title="问题 2：20002 错误码"></a>问题 2：20002 错误码</h4><p><strong>问题描述</strong></p>
+<ul>
+<li>客户端等待服务端一直没有回包，超时报错 20002，默认超时设置为 1.5 秒。</li>
+<li>每次应用重启后，第一笔查询耗时比较高，后面查询耗时基本正常。</li>
+</ul>
+<p><strong>原因分析</strong></p>
+<p>根本原因是 scan.setCaching 参数配置不合理。</p>
+<ul>
+<li>scan.setCaching 参数用于限制每次 RPC 请求返回数据的行数。在 next() 迭代的过程中，底层通过多次 RPC 来拉取剩余数据。</li>
+<li>不设置 scan.setCaching 参数时，默认一次 RPC 拉完一整个分区的数据，在等数据返回的过程中卡住，导致 RT 较高。</li>
+</ul>
+<p><strong>解决办法</strong></p>
+<p>将 scan.setCaching 参数的值设置为 100，控制每次 RPC 请求返回的最大行数：<code>scan.setCaching(100);</code>。设置后，第一次查询耗时降到了 300ms 左右，后续查询性能也得到显著提升。</p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/11.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<h4 id="问题-3：代理压测性能不佳"><a href="#问题-3：代理压测性能不佳" class="headerlink" title="问题 3：代理压测性能不佳"></a>问题 3：代理压测性能不佳</h4><p><strong>问题描述</strong></p>
+<p>通过 ODP 压测 OBKV-HBase，发现性能瓶颈明显，QPS 不到 2k。</p>
+<p><strong>原因分析</strong></p>
+<p>根本原因是 ODP 元数据缓存机制与数据库大小写敏感配置不匹配。</p>
+<ul>
+<li>OceanBase 集群启用了表名大小写敏感模式（<code>lower_case_table_names = 0</code>）。</li>
+<li>而 ODP 默认行为在处理元数据请求时，未正确识别大小写敏感上下文，导致其无法有效缓存表结构信息。</li>
+</ul>
+<p>每次查询均触发完整的元数据解析流程（包括向 sys 租户查询表定义），无法命中本地缓存。高频元数据查询成为性能瓶颈，严重拖累整体吞吐能力。</p>
+<p><strong>优化方案</strong></p>
+<ul>
+<li>通过设置 ODP 参数开启 ODP 表名小写兼容模式，在 sys 租户下执行：<code>alter proxyconfig set pc_enable_lower_case_table_names=True</code>。</li>
+<li>再次压测结果：<strong>QPS 稳定在 1.2w 左右，性能提升 6 倍</strong>。</li>
+</ul>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/12.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<p><img data-src="/img/baofu-payment-oceanbase-unified-data-base/13.png" alt="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座"></p>
+<h2 id="“一库多模、统一平台”，将大规模引入-OceanBase"><a href="#“一库多模、统一平台”，将大规模引入-OceanBase" class="headerlink" title="“一库多模、统一平台”，将大规模引入 OceanBase"></a>“一库多模、统一平台”，将大规模引入 OceanBase</h2><p>通过近两年对 OceanBase 及其 OBKV-HBase 能力的深入实践，宝付支付成功完成了从传统 HBase 架构向新一代分布式数据库平台的平滑演进，取得了显著的技术与业务成效。</p>
+<ul>
+<li>实现降本：HBase 独用资源转为 OceanBase 复用资源，不仅释放了数台服务器资源，还实现了 NoSQL 与 SQL 负载的统一承载，使硬件投入与运维成本大幅降低。</li>
+<li>提升效率：QPS 提升到 42W，延迟降低到 1ms 左右，完全满足高并发支付场景的严苛 SLA 要求。</li>
+<li>增强可用性：告别 MySQL 主从 + 异地备库等复杂架构，统一为 OceanBase 多副本强一致架构。系统具备自动故障切换（RTO &lt; 8s）、数据零丢失（RPO &#x3D; 0）能力，整体健壮性显著提升。</li>
+<li>统一监控：方便对应用现有运行环境添加监控，大幅提升可观测性和监控易用性。</li>
+</ul>
+<p>不仅如此，对于集团架构而言，也具有重大意义和价值。</p>
+<p><strong>其一，完成数据库架构全面升级</strong>。从 HBase 到 OceanBase，从“多套异构数据库”走向“一库多模、统一平台”，我们实现了数据库架构的全面升级，技术栈大幅收敛。</p>
+<p><strong>其二，夯实业务创新底座</strong>。高性能、高可用的数据服务为实时风控、智能 BI 等新场景的业务创新提供了更强大的数据支撑能力。</p>
+<p><strong>其三，奠定智能数据架构基础</strong>。为未来 AI 原生计算、HTAP 融合分析、跨地域多活等演进方向预留充分扩展空间。</p>
+<p><strong>其四，沉淀宝贵实践经验</strong>。形成涵盖迁移方案、数据校验、性能调优、故障排查的完整方法论，可复用于后续系统改造。</p>
+<p>本次 OBKV-HBase 成功落地，离不开 OceanBase 团队在过去两年中提供的专业、及时、深度的技术支持，特别是老纪及其研发、技术支持团队。无论是早期功能定制、性能瓶颈攻关，还是生产上线保障，OceanBase 团队始终与我们并肩作战，为项目顺利推进提供了坚实保障。在此，谨代表宝付支付技术团队，向 OceanBase 团队在迁移过程中提供的技术支持致以诚挚感谢！</p>
+<p>另外，基于当前 OceanBase 在宝付支付的成功落地经验，我们已将 OceanBase 纳入集团未来数据架构的核心，聚焦 AI 项目赋能、汇聚库建设、多活架构尝试、零售支付场景四大业务方向大规模引入。</p>
+<p><strong>1. AI 项目赋能：实现一体化 SQL+AI。</strong></p>
+<p>为响应公司对智能化转型的战略要求，我们将 AI 能力深度集成至数据库引擎层，推动从“被动查询”向“主动智能服务”升级。</p>
+<ul>
+<li>原生支持 AI 混合计算：利用 OceanBase 内置的向量化执行引擎与 AI 函数能力，实现“SQL + AI”的混合计算。</li>
+<li>探索智能化查询优化和数据处理。</li>
+<li>提升数据分析和决策支持能力。</li>
+</ul>
+<p><strong>2. 汇聚库建设：实现一体化 TP+AP。</strong></p>
+<p>当前集团存在 1000+ MySQL 实例及多套异构数据系统，导致跨库分析、实时统计、经营报表等场景面临巨大挑战，OceanBase 的 HTAP 一体化架构为此提供了根本性解决方案。我们将逐步把核心业务库、汇聚库、宽表等迁移至 OceanBase 并扩大线上使用规模，使用一套集群同时承载 TP 写入与 AP 分析，构建统一的数据平台，简化数据链路，提升数据治理和数据服务能力。</p>
+<p><strong>3. 多活架构尝试，实现系统稳定。</strong></p>
+<p>苦于 MySQL 双活架构带来的问题，我们将尝试业务多活要求，满足高可用业务需求。依托 OceanBase 原生分布式多副本与 Paxos 协议能力，构建轻量级、高可用、跨机房、跨地域的多活架构，提升系统容灾能力和业务连续性。</p>
+<p><strong>4. 零售支付场景深化。</strong></p>
+<p>随着内部零售支付业务越来越多，我们将在其他零售支付业务场景推广使用 OceanBase。并持续优化 OceanBase 压测记录，完善性能基线。我们计划基于真实业务负载开展常态化压测，建立 QPS、延迟、资源消耗等关键指标的基准模型。</p>
+<p>此外，探索更多 OceanBase 在支付行业的应用场景，充分发挥 OceanBase 的 HTAP 与多模能力。</p>
+<p><strong>数据库的升级不仅是技术的迭代，更是业务持续创新与稳健运行的基石。</strong></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/OBKV/" rel="tag"># OBKV</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag"># 数据迁移</a>
+              <a href="/tags/HBase/" rel="tag"># HBase</a>
+              <a href="/tags/%E6%94%AF%E4%BB%98%E8%A1%8C%E4%B8%9A/" rel="tag"># 支付行业</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-16-pharma-crm-database-upgrade/" rel="prev" title="千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？">
+                  <i class="fa fa-angle-left"></i> 千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-22-seekdb-mcp-server/" rel="next" title="用自然语言玩转 AI 原生数据库 —— seekdb MCP Server">
+                  用自然语言玩转 AI 原生数据库 —— seekdb MCP Server <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

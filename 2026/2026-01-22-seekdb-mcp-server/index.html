@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文介绍 seekdb MCP Server 的安装与配置方法，涵盖嵌入式与客户端&#x2F;服务器两种部署模式、Stdio 与 SSE 连接方式，并通过构建个人笔记知识库的实战案例，演示用自然语言完成向量集合管理、语义搜索、混合搜索与 AI 记忆等能力。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="用自然语言玩转 AI 原生数据库 —— seekdb MCP Server">
+<meta property="og:url" content="https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文介绍 seekdb MCP Server 的安装与配置方法，涵盖嵌入式与客户端&#x2F;服务器两种部署模式、Stdio 与 SSE 连接方式，并通过构建个人笔记知识库的实战案例，演示用自然语言完成向量集合管理、语义搜索、混合搜索与 AI 记忆等能力。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-mcp-server/01.png">
+<meta property="article:published_time" content="2026-01-21T23:13:37.000Z">
+<meta property="article:modified_time" content="2026-01-21T23:13:37.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 原生数据库">
+<meta property="article:tag" content="Cursor">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量搜索">
+<meta property="article:tag" content="混合搜索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-mcp-server/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/","path":"2026/2026-01-22-seekdb-mcp-server/","title":"用自然语言玩转 AI 原生数据库 —— seekdb MCP Server"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>用自然语言玩转 AI 原生数据库 —— seekdb MCP Server | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-seekdb-MCP-Server%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">什么是 seekdb MCP Server？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E8%83%BD%E5%8A%9B%E4%B8%80%E8%A7%88"><span class="nav-number">2.1.</span> <span class="nav-text">核心能力一览</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-seekdb-%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">3.</span> <span class="nav-text">安装 seekdb 数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%BC%8F%E4%B8%80%EF%BC%9A%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%A8%A1%E5%BC%8F%EF%BC%88%E9%9B%B6%E9%85%8D%E7%BD%AE%EF%BC%8C%E4%BB%85%E9%99%90-Linux%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">模式一：嵌入式模式（零配置，仅限 Linux）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%BC%8F%E4%BA%8C%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF-%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%BC%8F%EF%BC%88%E7%94%9F%E4%BA%A7%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">模式二：客户端&#x2F;服务器模式（生产推荐）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-seekdb-MCP-Server"><span class="nav-number">4.</span> <span class="nav-text">安装 seekdb MCP Server</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-uv-%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8"><span class="nav-number">4.1.</span> <span class="nav-text">安装 uv 包管理器</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE-AI-%E5%B7%A5%E5%85%B7%E8%BF%9E%E6%8E%A5"><span class="nav-number">5.</span> <span class="nav-text">配置 AI 工具连接</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Stdio-%E6%A8%A1%E5%BC%8F"><span class="nav-number">5.1.</span> <span class="nav-text">Stdio 模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Linux-%E7%94%A8%E6%88%B7%EF%BC%88%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%A8%A1%E5%BC%8F%EF%BC%89"><span class="nav-number">5.1.1.</span> <span class="nav-text">Linux 用户（嵌入式模式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#macOS-Windows-%E7%94%A8%E6%88%B7%EF%BC%88%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%BC%8F%EF%BC%89"><span class="nav-number">5.1.2.</span> <span class="nav-text">macOS &#x2F; Windows 用户（服务器模式）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SSE-%E6%A8%A1%E5%BC%8F"><span class="nav-number">5.2.</span> <span class="nav-text">SSE 模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Linux-%E7%94%A8%E6%88%B7%EF%BC%88%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%A8%A1%E5%BC%8F%EF%BC%89-1"><span class="nav-number">5.2.1.</span> <span class="nav-text">Linux 用户（嵌入式模式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#macOS-Windows-%E7%94%A8%E6%88%B7%EF%BC%88%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%BC%8F%EF%BC%89-1"><span class="nav-number">5.2.2.</span> <span class="nav-text">macOS &#x2F; Windows 用户（服务器模式）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%E6%A1%88%E4%BE%8B%EF%BC%9A%E7%94%A8-AI-%E5%AF%B9%E8%AF%9D%E6%9E%84%E5%BB%BA%E4%B8%AA%E4%BA%BA%E7%AC%94%E8%AE%B0%E7%9F%A5%E8%AF%86%E5%BA%93"><span class="nav-number">6.</span> <span class="nav-text">实战案例：用 AI 对话构建个人笔记知识库</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E8%AE%BE%E5%AE%9A"><span class="nav-number">6.1.</span> <span class="nav-text">场景设定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%88%9B%E5%BB%BA%E7%AC%94%E8%AE%B0%E9%9B%86%E5%90%88"><span class="nav-number">6.2.</span> <span class="nav-text">第一步：创建笔记集合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E6%B7%BB%E5%8A%A0%E7%AC%94%E8%AE%B0%E5%86%85%E5%AE%B9"><span class="nav-number">6.3.</span> <span class="nav-text">第二步：添加笔记内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9A%E8%AF%AD%E4%B9%89%E6%90%9C%E7%B4%A2"><span class="nav-number">6.4.</span> <span class="nav-text">第三步：语义搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9A%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2"><span class="nav-number">6.5.</span> <span class="nav-text">第四步：混合搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E8%AE%A9-AI-%E8%AE%B0%E4%BD%8F%E4%BD%A0%E7%9A%84%E5%81%8F%E5%A5%BD"><span class="nav-number">6.6.</span> <span class="nav-text">第五步：让 AI 记住你的偏好</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E4%B8%80%E8%A7%88"><span class="nav-number">7.</span> <span class="nav-text">功能一览</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E9%9B%86%E5%90%88%E7%AE%A1%E7%90%86"><span class="nav-number">7.1.</span> <span class="nav-text">向量集合管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98%E7%BA%A7%E6%90%9C%E7%B4%A2"><span class="nav-number">7.2.</span> <span class="nav-text">高级搜索</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E6%A8%A1%E5%9E%8B%E5%B7%A5%E5%85%B7"><span class="nav-number">7.3.</span> <span class="nav-text">AI 模型工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F"><span class="nav-number">7.4.</span> <span class="nav-text">AI 记忆系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA"><span class="nav-number">7.5.</span> <span class="nav-text">数据导入导出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL-%E6%93%8D%E4%BD%9C"><span class="nav-number">7.6.</span> <span class="nav-text">SQL 操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E5%B7%A5%E5%85%B7%E6%8E%A2%E7%B4%A2"><span class="nav-number">8.</span> <span class="nav-text">更多工具探索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-number">9.</span> <span class="nav-text">常见问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q-%E9%9C%80%E8%A6%81%E5%AE%89%E8%A3%85-seekdb-%E5%90%97%EF%BC%9F"><span class="nav-number">9.1.</span> <span class="nav-text">Q: 需要安装 seekdb 吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q-%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-number">9.2.</span> <span class="nav-text">Q: 数据存储在哪里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q-%E6%94%AF%E6%8C%81%E5%93%AA%E4%BA%9B%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%9F"><span class="nav-number">9.3.</span> <span class="nav-text">Q: 支持哪些操作系统？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q-%E5%A6%82%E4%BD%95%E5%8D%87%E7%BA%A7%EF%BC%9F"><span class="nav-number">9.4.</span> <span class="nav-text">Q: 如何升级？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="用自然语言玩转 AI 原生数据库 —— seekdb MCP Server | Longda's Interesting World">
+      <meta itemprop="description" content="本文介绍 seekdb MCP Server 的安装与配置方法，涵盖嵌入式与客户端&#x2F;服务器两种部署模式、Stdio 与 SSE 连接方式，并通过构建个人笔记知识库的实战案例，演示用自然语言完成向量集合管理、语义搜索、混合搜索与 AI 记忆等能力。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          用自然语言玩转 AI 原生数据库 —— seekdb MCP Server
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-22 07:13:37" itemprop="dateCreated datePublished" datetime="2026-01-22T07:13:37+08:00">2026-01-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2.8k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>10 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文介绍 seekdb MCP Server 的安装与配置方法，涵盖嵌入式与客户端/服务器两种部署模式、Stdio 与 SSE 连接方式，并通过构建个人笔记知识库的实战案例，演示用自然语言完成向量集合管理、语义搜索、混合搜索与 AI 记忆等能力。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"用自然语言玩转 AI 原生数据库 —— seekdb MCP Server","description":"本文介绍 seekdb MCP Server 的安装与配置方法，涵盖嵌入式与客户端/服务器两种部署模式、Stdio 与 SSE 连接方式，并通过构建个人笔记知识库的实战案例，演示用自然语言完成向量集合管理、语义搜索、混合搜索与 AI 记忆等能力。","image":"https://ilongda.com/img/seekdb-mcp-server/01.png","wordCount":2939,"datePublished":"2026-01-21T23:13:37.000Z","dateModified":"2026-01-21T23:13:37.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/"},"url":"https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/","inLanguage":"zh-CN","keywords":["RAG","MCP","Cursor","seekdb","AI 原生数据库","混合搜索","向量搜索"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"用自然语言玩转 AI 原生数据库 —— seekdb MCP Server","item":"https://ilongda.com/2026/2026-01-22-seekdb-mcp-server/"}]}</script>
+<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>想象一下：你只需要用自然语言描述你的需求，AI 就能自动帮你完成数据库操作 —— 创建文档集合、插入数据、执行复杂查询，甚至构建一个完整的知识库应用。这不是未来，而是现在就能实现的能力。</p>
+<p><strong>seekdb MCP Server</strong> 就是实现这一愿景的桥梁。它基于 Anthropic 提出的 <strong>MCP（Model Context Protocol）协议</strong>，让 AI 助手能够直接与 seekdb 数据库交互，将 “自然语言” 转化为 “数据库操作”。</p>
+<p>本文将带你上手 seekdb MCP Server，并通过一个实战案例 —— <strong>通过自然语言构建 AI 应用</strong>，让你亲身体验 AI 原生数据库的魅力。</p>
+<p><img data-src="/img/seekdb-mcp-server/01.png" alt="seekdb MCP Server"></p>
+<span id="more"></span>
+
+<h1 id="什么是-seekdb-MCP-Server？"><a href="#什么是-seekdb-MCP-Server？" class="headerlink" title="什么是 seekdb MCP Server？"></a>什么是 seekdb MCP Server？</h1><p><strong>seekdb</strong> 是一款 AI 原生搜索数据库，在统一架构下融合了关系数据、向量数据、全文索引、JSON 和 GIS 能力，支持混合检索和库内 AI 工作流。</p>
+<p><strong>MCP Server</strong> 则是连接 AI 工具与数据库的”适配器”。通过 MCP 协议，Cursor、Claude Code、Cline 等 AI 工具可以直接访问和操作 seekdb 数据库。</p>
+<h2 id="核心能力一览"><a href="#核心能力一览" class="headerlink" title="核心能力一览"></a>核心能力一览</h2><table>
+<thead>
+<tr>
+<th>能力分类</th>
+<th>工具列表</th>
+<th>功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>向量集合管理</strong></td>
+<td><code>create_collection</code>、<code>query_collection</code>、<code>add_data_to_collection</code> 等</td>
+<td>创建向量集合、语义搜索、文档管理</td>
+</tr>
+<tr>
+<td><strong>高级搜索</strong></td>
+<td><code>full_text_search</code>、<code>hybrid_search</code></td>
+<td>全文搜索、混合搜索（BM25 + 向量）</td>
+</tr>
+<tr>
+<td><strong>AI 函数</strong></td>
+<td><code>ai_complete</code>、<code>ai_rerank</code>、<code>create_ai_model</code> 等</td>
+<td>调用 LLM 生成文本、重排序搜索结果</td>
+</tr>
+<tr>
+<td><strong>AI 记忆系统</strong></td>
+<td><code>seekdb_memory_query</code>、<code>seekdb_memory_insert</code> 等</td>
+<td>跨会话持久化记忆，让 AI “记住”你</td>
+</tr>
+<tr>
+<td><strong>数据导入导出</strong></td>
+<td><code>import_csv_file_to_seekdb</code>、<code>export_csv_file_from_seekdb</code></td>
+<td>CSV 文件与数据库表&#x2F;向量集合互转</td>
+</tr>
+</tbody></table>
+<h1 id="安装-seekdb-数据库"><a href="#安装-seekdb-数据库" class="headerlink" title="安装 seekdb 数据库"></a>安装 seekdb 数据库</h1><p>在使用 seekdb MCP Server 之前，你需要先准备好 seekdb 数据库。seekdb 提供两种部署模式：</p>
+<h2 id="模式一：嵌入式模式（零配置，仅限-Linux）"><a href="#模式一：嵌入式模式（零配置，仅限-Linux）" class="headerlink" title="模式一：嵌入式模式（零配置，仅限 Linux）"></a>模式一：嵌入式模式（零配置，仅限 Linux）</h2><p><strong>嵌入式模式无需单独安装 seekdb 数据库</strong>！seekdb MCP Server 启动时会自动初始化一个本地嵌入式数据库，开箱即用。</p>
+<p>适用场景：个人学习、快速原型开发、边缘设备运行。</p>
+<blockquote>
+<p>⚠️ <strong>提示</strong>：<br><strong>macOS 和 Windows 用户</strong>需要使用「客户端 &#x2F; 服务器模式」，需要先部署 seekdb 数据库（推荐 Docker 方式），然后配置连接参数。</p>
+</blockquote>
+<h2 id="模式二：客户端-服务器模式（生产推荐）"><a href="#模式二：客户端-服务器模式（生产推荐）" class="headerlink" title="模式二：客户端&#x2F;服务器模式（生产推荐）"></a>模式二：客户端&#x2F;服务器模式（生产推荐）</h2><p>如果你需要在测试或生产环境部署 seekdb，可以选择以下方式：</p>
+<h4 id="方式-1：使用-yum-安装（RPM-系统）"><a href="#方式-1：使用-yum-安装（RPM-系统）" class="headerlink" title="方式 1：使用 yum 安装（RPM 系统）"></a>方式 1：使用 yum 安装（RPM 系统）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 添加 seekdb 镜像源</span></span><br><span class="line">sudo yum-config-manager --add-repo https://mirrors.aliyun.com/oceanbase/OceanBase.repo</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 安装 seekdb 和客户端</span></span><br><span class="line">sudo yum install seekdb obclient</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 启动 seekdb</span></span><br><span class="line">sudo systemctl start seekdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 检查启动状态（状态为 &quot;Service is ready&quot; 表示启动成功）</span></span><br><span class="line">sudo systemctl status seekdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 连接测试</span></span><br><span class="line">mysql -h127.0.0.1 -uroot -P2881 -A oceanbase</span><br></pre></td></tr></table></figure>
+
+<h4 id="方式-2：使用-Docker（最快捷）"><a href="#方式-2：使用-Docker（最快捷）" class="headerlink" title="方式 2：使用 Docker（最快捷）"></a>方式 2：使用 Docker（最快捷）</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 一行命令启动 seekdb</span></span><br><span class="line">sudo docker run -d -p 2881:2881 oceanbase/seekdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># 如果拉取失败，可使用备用镜像源：</span></span><br><span class="line"><span class="comment"># sudo docker run -d -p 2881:2881 quay.io/oceanbase/seekdb</span></span><br><span class="line"><span class="comment"># sudo docker run -d -p 2881:2881 ghcr.io/oceanbase/seekdb</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>系统要求</strong>：</p>
+<ul>
+<li>CPU：最低 1 核</li>
+<li>内存：最低 2 GB 可用内存</li>
+<li>支持的操作系统：CentOS 7&#x2F;8、Ubuntu 20+、Debian 9+、Anolis OS 8、麒麟 V10 等</li>
+</ul>
+<p>更多部署方式请参考 <strong>seekdb 部署文档</strong><sup>[1]</sup>。</p>
+<hr>
+<h1 id="安装-seekdb-MCP-Server"><a href="#安装-seekdb-MCP-Server" class="headerlink" title="安装 seekdb MCP Server"></a>安装 seekdb MCP Server</h1><h2 id="安装-uv-包管理器"><a href="#安装-uv-包管理器" class="headerlink" title="安装 uv 包管理器"></a>安装 uv 包管理器</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装 uv 包管理器</span></span><br><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置-AI-工具连接"><a href="#配置-AI-工具连接" class="headerlink" title="配置 AI 工具连接"></a>配置 AI 工具连接</h1><h2 id="Stdio-模式"><a href="#Stdio-模式" class="headerlink" title="Stdio 模式"></a>Stdio 模式</h2><p>以 Cursor 为例，在 Cursor 中打开设置 → Tools &amp; MCP → New MCP Server，根据你的操作系统选择配置方式：</p>
+<h3 id="Linux-用户（嵌入式模式）"><a href="#Linux-用户（嵌入式模式）" class="headerlink" title="Linux 用户（嵌入式模式）"></a>Linux 用户（嵌入式模式）</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;seekdb&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;uvx&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;seekdb-mcp-server&quot;</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>就这么简单！<strong>嵌入式模式无需任何配置</strong>，服务器启动时会自动初始化一个本地 seekdb 数据库。</p>
+<h3 id="macOS-Windows-用户（服务器模式）"><a href="#macOS-Windows-用户（服务器模式）" class="headerlink" title="macOS &#x2F; Windows 用户（服务器模式）"></a>macOS &#x2F; Windows 用户（服务器模式）</h3><p>macOS 和 Windows 不支持嵌入式模式，需要先部署 seekdb 数据库（推荐使用 Docker），然后配置连接参数：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;seekdb&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;uvx&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;seekdb-mcp-server&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;SEEKDB_HOST&quot;</span><span class="punctuation">:</span> <span class="string">&quot;127.0.0.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;SEEKDB_PORT&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2881&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;SEEKDB_USER&quot;</span><span class="punctuation">:</span> <span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;SEEKDB_PASSWORD&quot;</span><span class="punctuation">:</span> <span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;SEEKDB_DATABASE&quot;</span><span class="punctuation">:</span> <span class="string">&quot;test&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SEEKDB_HOST</code></td>
+<td>seekdb 服务器地址</td>
+<td><code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td><code>SEEKDB_PORT</code></td>
+<td>seekdb 服务端口</td>
+<td><code>2881</code></td>
+</tr>
+<tr>
+<td><code>SEEKDB_USER</code></td>
+<td>数据库用户名</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>SEEKDB_PASSWORD</code></td>
+<td>数据库密码</td>
+<td>无</td>
+</tr>
+<tr>
+<td><code>SEEKDB_DATABASE</code></td>
+<td>数据库名称</td>
+<td>无</td>
+</tr>
+</tbody></table>
+<h2 id="SSE-模式"><a href="#SSE-模式" class="headerlink" title="SSE 模式"></a>SSE 模式</h2><h3 id="Linux-用户（嵌入式模式）-1"><a href="#Linux-用户（嵌入式模式）-1" class="headerlink" title="Linux 用户（嵌入式模式）"></a>Linux 用户（嵌入式模式）</h3><p>直接启动 SSE 服务器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uvx seekdb-mcp-server --transport sse --port 6000</span><br></pre></td></tr></table></figure>
+
+<h3 id="macOS-Windows-用户（服务器模式）-1"><a href="#macOS-Windows-用户（服务器模式）-1" class="headerlink" title="macOS &#x2F; Windows 用户（服务器模式）"></a>macOS &#x2F; Windows 用户（服务器模式）</h3><p>先配置环境变量，再启动服务器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 配置 seekdb 连接信息</span></span><br><span class="line"><span class="built_in">export</span> SEEKDB_HOST=127.0.0.1</span><br><span class="line"><span class="built_in">export</span> SEEKDB_PORT=2881</span><br><span class="line"><span class="built_in">export</span> SEEKDB_USER=</span><br><span class="line"><span class="built_in">export</span> SEEKDB_PASSWORD=</span><br><span class="line"><span class="built_in">export</span> SEEKDB_DATABASE=<span class="built_in">test</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动 SSE 服务器</span></span><br><span class="line">uvx seekdb-mcp-server --transport sse --port 6000</span><br></pre></td></tr></table></figure>
+
+<p>然后在客户端配置：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;sse-seekdb&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;sse&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://127.0.0.1:6000/sse&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="实战案例：用-AI-对话构建个人笔记知识库"><a href="#实战案例：用-AI-对话构建个人笔记知识库" class="headerlink" title="实战案例：用 AI 对话构建个人笔记知识库"></a>实战案例：用 AI 对话构建个人笔记知识库</h1><p>现在让我们通过一个完整的实战案例，体验 seekdb MCP Server 的强大能力。我们将构建一个<strong>个人笔记知识库</strong>，实现：</p>
+<ul>
+<li>✅ 用自然语言存储笔记</li>
+<li>✅ 语义搜索相关内容</li>
+<li>✅ 混合搜索精准定位</li>
+<li>✅ AI 智能问答</li>
+</ul>
+<h2 id="场景设定"><a href="#场景设定" class="headerlink" title="场景设定"></a>场景设定</h2><p>假设你是一名技术工作者，平时会记录各种学习笔记、工作心得。现在你希望用 AI 帮你管理这些笔记，并能通过自然语言快速找到需要的内容。</p>
+<h2 id="第一步：创建笔记集合"><a href="#第一步：创建笔记集合" class="headerlink" title="第一步：创建笔记集合"></a>第一步：创建笔记集合</h2><p>在 AI 工具（如 Cursor）的对话框中输入：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">创建一个名为 &quot;my_notes&quot; 的知识库集合</span><br></pre></td></tr></table></figure>
+
+<p><strong>AI 响应示例：</strong></p>
+<blockquote>
+<p>我已成功创建名为 <strong>“my_notes”</strong> 的集合：</p>
+<ul>
+<li><strong>维度</strong>: 384（向量大小）</li>
+<li><strong>距离度量</strong>: L2（欧几里得距离）</li>
+</ul>
+</blockquote>
+<p>就这样，一个支持语义搜索的向量集合就创建好了！</p>
+<h2 id="第二步：添加笔记内容"><a href="#第二步：添加笔记内容" class="headerlink" title="第二步：添加笔记内容"></a>第二步：添加笔记内容</h2><p>继续输入：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">向 my_notes 中添加以下笔记：</span><br><span class="line"></span><br><span class="line">1. &quot;seekdb 支持向量搜索和全文搜索的混合检索，可以同时利用关键词匹配和语义理解&quot;</span><br><span class="line">2. &quot;MCP 协议是 Anthropic 在 2024 年 11 月提出的开源协议，让大模型可以与外部工具交互&quot;</span><br><span class="line">3. &quot;Python 的 asyncio 模块提供了异步编程能力，适合 I/O 密集型任务&quot;</span><br><span class="line">4. &quot;Docker 容器化技术可以实现应用的快速部署和环境隔离&quot;</span><br><span class="line">5. &quot;RAG（检索增强生成）是目前最流行的 AI 应用架构，结合检索和生成能力&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>AI 响应示例：</strong></p>
+<p>完成！已成功向 <strong>“my_notes”</strong> 集合添加 5 条笔记：</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>doc1</td>
+<td>seekdb 支持向量搜索和全文搜索的混合检索…</td>
+</tr>
+<tr>
+<td>doc2</td>
+<td>MCP 协议是 Anthropic 在 2024 年 11 月提出的…</td>
+</tr>
+<tr>
+<td>doc3</td>
+<td>Python 的 asyncio 模块提供了异步编程能力…</td>
+</tr>
+<tr>
+<td>doc4</td>
+<td>Docker 容器化技术可以实现应用的快速部署…</td>
+</tr>
+<tr>
+<td>doc5</td>
+<td>RAG（检索增强生成）是目前最流行的 AI 应用架构…</td>
+</tr>
+</tbody></table>
+<h2 id="第三步：语义搜索"><a href="#第三步：语义搜索" class="headerlink" title="第三步：语义搜索"></a>第三步：语义搜索</h2><p>现在，让我们用自然语言搜索笔记：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">在 my_notes 中搜索与 &quot;AI 应用开发&quot; 相关的笔记</span><br></pre></td></tr></table></figure>
+
+<p><strong>AI 响应示例：</strong></p>
+<p>以下是与 <strong>“AI 应用开发”</strong> 相关的笔记，按相关性排序：</p>
+<table>
+<thead>
+<tr>
+<th>排名</th>
+<th>内容</th>
+<th>相关度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>RAG（检索增强生成）是目前最流行的 AI 应用架构…</td>
+<td>最高</td>
+</tr>
+<tr>
+<td>2</td>
+<td>MCP 协议是 Anthropic 在 2024 年 11 月提出的…</td>
+<td>高</td>
+</tr>
+<tr>
+<td>3</td>
+<td>seekdb 支持向量搜索和全文搜索的混合检索…</td>
+<td>中</td>
+</tr>
+</tbody></table>
+<p>注意：我们搜索的是 “AI 应用开发”，但笔记中并没有这个确切的词。seekdb 的向量搜索能够理解<strong>语义相似性</strong>，自动找到相关内容！</p>
+<h2 id="第四步：混合搜索"><a href="#第四步：混合搜索" class="headerlink" title="第四步：混合搜索"></a>第四步：混合搜索</h2><p>混合搜索结合了<strong>关键词匹配</strong>和<strong>语义理解</strong>，效果更精准：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">对 my_notes 执行混合搜索：</span><br><span class="line">- 全文关键词：&quot;Python&quot;</span><br><span class="line">- 语义查询：&quot;异步编程和并发处理&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>AI 响应示例：</strong></p>
+<table>
+<thead>
+<tr>
+<th>排名</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Python 的 asyncio 模块提供了异步编程能力，适合 I&#x2F;O 密集型任务</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Docker 容器化技术可以实现应用的快速部署和环境隔离</td>
+</tr>
+</tbody></table>
+<p>混合搜索使用 <strong>RRF（倒数排名融合）</strong> 算法，综合关键词匹配（BM25）和向量相似度得分，排名结果更准确。</p>
+<h2 id="第五步：让-AI-记住你的偏好"><a href="#第五步：让-AI-记住你的偏好" class="headerlink" title="第五步：让 AI 记住你的偏好"></a>第五步：让 AI 记住你的偏好</h2><p>seekdb MCP Server 还提供了 <strong>AI 记忆系统</strong>，让 AI 能够跨会话记住你的信息：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">记住我是一名 Python 开发者，主要使用 seekdb 做向量搜索应用</span><br></pre></td></tr></table></figure>
+
+<p><strong>AI 响应示例：</strong></p>
+<blockquote>
+<p>已记录！我会记住：</p>
+<ul>
+<li>你是一名 Python 开发者</li>
+<li>主要使用 seekdb 做向量搜索应用</li>
+</ul>
+</blockquote>
+<p>下次对话时，你可以直接问：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">根据我的技术背景，推荐一些学习资源</span><br></pre></td></tr></table></figure>
+
+<p>AI 会自动检索你的偏好，给出个性化推荐！</p>
+<h1 id="功能一览"><a href="#功能一览" class="headerlink" title="功能一览"></a>功能一览</h1><h2 id="向量集合管理"><a href="#向量集合管理" class="headerlink" title="向量集合管理"></a>向量集合管理</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>create_collection</code></td>
+<td>创建向量集合</td>
+</tr>
+<tr>
+<td><code>list_collections</code></td>
+<td>列出所有集合</td>
+</tr>
+<tr>
+<td><code>has_collection</code></td>
+<td>检查集合是否存在</td>
+</tr>
+<tr>
+<td><code>peek_collection</code></td>
+<td>预览集合中的文档</td>
+</tr>
+<tr>
+<td><code>add_data_to_collection</code></td>
+<td>添加文档（自动生成向量）</td>
+</tr>
+<tr>
+<td><code>update_collection</code></td>
+<td>更新文档</td>
+</tr>
+<tr>
+<td><code>delete_documents</code></td>
+<td>删除文档</td>
+</tr>
+<tr>
+<td><code>query_collection</code></td>
+<td>向量相似性搜索</td>
+</tr>
+<tr>
+<td><code>delete_collection</code></td>
+<td>删除集合</td>
+</tr>
+</tbody></table>
+<h2 id="高级搜索"><a href="#高级搜索" class="headerlink" title="高级搜索"></a>高级搜索</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>full_text_search</code></td>
+<td>全文搜索（基于关键词）</td>
+</tr>
+<tr>
+<td><code>hybrid_search</code></td>
+<td>混合搜索（结合全文和向量搜索）</td>
+</tr>
+</tbody></table>
+<h2 id="AI-模型工具"><a href="#AI-模型工具" class="headerlink" title="AI 模型工具"></a>AI 模型工具</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>create_ai_model</code></td>
+<td>注册 AI 模型（嵌入、文本生成或重排序）</td>
+</tr>
+<tr>
+<td><code>create_ai_model_endpoint</code></td>
+<td>创建将模型连接到 API 服务的端点</td>
+</tr>
+<tr>
+<td><code>drop_ai_model</code></td>
+<td>移除已注册的 AI 模型</td>
+</tr>
+<tr>
+<td><code>drop_ai_model_endpoint</code></td>
+<td>移除 AI 模型端点</td>
+</tr>
+<tr>
+<td><code>ai_complete</code></td>
+<td>调用 LLM 进行文本生成</td>
+</tr>
+<tr>
+<td><code>ai_rerank</code></td>
+<td>使用 AI 模型按相关性重排文档</td>
+</tr>
+<tr>
+<td><code>get_registered_ai_models</code></td>
+<td>列出所有已注册的 AI 模型</td>
+</tr>
+<tr>
+<td><code>get_ai_model_endpoints</code></td>
+<td>列出所有 AI 模型端点</td>
+</tr>
+</tbody></table>
+<h2 id="AI-记忆系统"><a href="#AI-记忆系统" class="headerlink" title="AI 记忆系统"></a>AI 记忆系统</h2><p>seekdb MCP Server 提供了强大的 AI 记忆功能，让 AI 助手能够跨会话记住信息：</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>seekdb_memory_query</code></td>
+<td>语义搜索记忆</td>
+</tr>
+<tr>
+<td><code>seekdb_memory_insert</code></td>
+<td>存储新记忆</td>
+</tr>
+<tr>
+<td><code>seekdb_memory_update</code></td>
+<td>更新记忆</td>
+</tr>
+<tr>
+<td><code>seekdb_memory_delete</code></td>
+<td>删除记忆</td>
+</tr>
+</tbody></table>
+<p><strong>使用场景</strong>：</p>
+<ul>
+<li>AI 记住你的技术栈偏好（如 “我习惯使用 Python”）</li>
+<li>AI 记住项目信息（如 “这个项目使用 FastAPI”）</li>
+<li>AI 记住个人偏好（如 “我喜欢简洁的代码风格”）</li>
+</ul>
+<h2 id="数据导入导出"><a href="#数据导入导出" class="headerlink" title="数据导入导出"></a>数据导入导出</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>import_csv_file_to_seekdb</code></td>
+<td>导入 CSV 文件</td>
+</tr>
+<tr>
+<td><code>export_csv_file_from_seekdb</code></td>
+<td>导出数据到 CSV</td>
+</tr>
+</tbody></table>
+<h2 id="SQL-操作"><a href="#SQL-操作" class="headerlink" title="SQL 操作"></a>SQL 操作</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>execute_sql</code></td>
+<td>执行 SQL 查询</td>
+</tr>
+<tr>
+<td><code>get_current_time</code></td>
+<td>获取数据库当前时间</td>
+</tr>
+</tbody></table>
+<h1 id="更多工具探索"><a href="#更多工具探索" class="headerlink" title="更多工具探索"></a>更多工具探索</h1><p>除了本文介绍的功能，seekdb MCP Server 还支持：</p>
+<ul>
+<li>AI 函数调用<ul>
+<li>使用 AI 模型分析这段文本的情感倾向：”今天天气真好，心情愉悦！”</li>
+</ul>
+</li>
+<li>CSV 数据导入<ul>
+<li>将 &#x2F;path&#x2F;to&#x2F;products.csv 导入为向量集合，使用第 2 列（产品描述）作为文档</li>
+</ul>
+</li>
+</ul>
+<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h3 id="Q-需要安装-seekdb-吗？"><a href="#Q-需要安装-seekdb-吗？" class="headerlink" title="Q: 需要安装 seekdb 吗？"></a>Q: 需要安装 seekdb 吗？</h3><p><strong>A:</strong> 不需要！seekdb MCP Server 使用嵌入式模式，seekdb 已经包含在内，无需单独安装。</p>
+<h3 id="Q-数据存储在哪里？"><a href="#Q-数据存储在哪里？" class="headerlink" title="Q: 数据存储在哪里？"></a>Q: 数据存储在哪里？</h3><p><strong>A:</strong> 数据存储在本地文件系统中，默认在当前用户家目录下。你的数据完全在本地，不会上传到任何云端。</p>
+<h3 id="Q-支持哪些操作系统？"><a href="#Q-支持哪些操作系统？" class="headerlink" title="Q: 支持哪些操作系统？"></a>Q: 支持哪些操作系统？</h3><p><strong>A:</strong> 目前支持 Linux（glibc &gt;&#x3D; 2.28），支持 x86_64 和 aarch64 架构。</p>
+<h3 id="Q-如何升级？"><a href="#Q-如何升级？" class="headerlink" title="Q: 如何升级？"></a>Q: 如何升级？</h3><p><strong>A:</strong> 使用 <code>uvx</code> 时会自动使用最新版本。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p><strong>seekdb MCP Server</strong> 让数据库操作变得前所未有的简单：</p>
+<table>
+<thead>
+<tr>
+<th>传统方式</th>
+<th>MCP 方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>学习 SQL 语法</td>
+<td>用自然语言描述需求</td>
+</tr>
+<tr>
+<td>编写代码调用 API</td>
+<td>AI 自动执行操作</td>
+</tr>
+<tr>
+<td>手动管理向量嵌入</td>
+<td>自动生成和索引</td>
+</tr>
+<tr>
+<td>分别处理搜索逻辑</td>
+<td>一句话混合搜索</td>
+</tr>
+</tbody></table>
+<p>无论你是想快速构建 RAG 应用，还是想让 AI 助手拥有”长期记忆”，seekdb MCP Server 都是你的最佳选择。</p>
+<p><strong>开始你的 AI 原生数据库之旅吧！</strong> 🚀</p>
+<p><strong>参考资料</strong></p>
+<p>[1] seekdb 部署文档: <em><span class="exturl" data-url="aHR0cHM6Ly93d3cub2NlYW5iYXNlLmFpL2RvY3MvZGVwbG95LW92ZXJ2aWV3Lw==">https://www.oceanbase.ai/docs/deploy-overview/<i class="fa fa-external-link-alt"></i></span></em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/Cursor/" rel="tag"># Cursor</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/AI-%E5%8E%9F%E7%94%9F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI 原生数据库</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%90%9C%E7%B4%A2/" rel="tag"># 向量搜索</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/" rel="prev" title="不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座">
+                  <i class="fa fa-angle-left"></i> 不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-23-vibe-coding-google-ai-studio/" rel="next" title="Vibe Coding 小记 —— Google AI Studio">
+                  Vibe Coding 小记 —— Google AI Studio <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

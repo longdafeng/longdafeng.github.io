@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="本文解析 RAG 架构从 Naive、Advanced 到 Modular 的演进路径与生产落地痛点，介绍基于 RAGFlow 深度优化、以 OceanBase 为一体化底座的开源产品 PowerRAG，涵盖文档解析、混合检索、效果评测三大模块与典型应用场景。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）">
+<meta property="og:url" content="https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="本文解析 RAG 架构从 Naive、Advanced 到 Modular 的演进路径与生产落地痛点，介绍基于 RAGFlow 深度优化、以 OceanBase 为一体化底座的开源产品 PowerRAG，涵盖文档解析、混合检索、效果评测三大模块与典型应用场景。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/01.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/02.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/03.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/04.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/05.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/06.png">
+<meta property="og:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/07.png">
+<meta property="article:published_time" content="2026-01-28T18:35:26.000Z">
+<meta property="article:modified_time" content="2026-01-28T18:35:26.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerRAG">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="RAGFlow">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="文档解析">
+<meta property="article:tag" content="混合检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/unified-ai-data-stack-part2/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/","path":"2026/2026-01-29-unified-ai-data-stack-part2/","title":"告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二） | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#RAG-%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B%EF%BC%9A%E4%BB%8E-Naive-RAG-%E5%88%B0-Modular-RAG"><span class="nav-number">1.</span> <span class="nav-text">RAG 架构演进：从 Naive RAG 到 Modular RAG</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Naive-RAG%EF%BC%9A%E5%9F%BA%E7%A1%80%E8%8C%83%E5%BC%8F"><span class="nav-number">1.1.</span> <span class="nav-text">1. Naive RAG：基础范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Advanced-RAG%EF%BC%9A%E6%A3%80%E7%B4%A2%E5%A2%9E%E5%BC%BA"><span class="nav-number">1.2.</span> <span class="nav-text">2. Advanced RAG：检索增强</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Modular-RAG%EF%BC%9A%E6%A8%A1%E5%9D%97%E5%8C%96%E9%87%8D%E6%9E%84"><span class="nav-number">1.3.</span> <span class="nav-text">3. Modular RAG：模块化重构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAG-%E8%90%BD%E5%9C%B0%E7%9A%84%E5%9B%B0%E5%A2%83%EF%BC%9A%E4%B8%80%E5%91%A8%E5%87%BA-Demo%EF%BC%8C%E5%8D%8A%E5%B9%B4%E7%94%A8%E4%B8%8D%E5%A5%BD"><span class="nav-number">2.</span> <span class="nav-text">RAG 落地的困境：一周出 Demo，半年用不好</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerRAG%EF%BC%9A%E5%B8%AE%E5%8A%A9%E6%8F%90%E5%8D%87-RAG-%E6%95%88%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text">PowerRAG：帮助提升 RAG 效果</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90%EF%BC%9A%E6%9E%84%E5%BB%BA-AI-%E5%8F%AF%E7%90%86%E8%A7%A3%E7%9A%84%E7%9F%A5%E8%AF%86%E6%BA%90"><span class="nav-number">3.1.</span> <span class="nav-text">文档解析：构建 AI 可理解的知识源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E6%A3%80%E7%B4%A2%EF%BC%9A%E5%85%85%E5%88%86%E5%88%A9%E7%94%A8%E6%95%B0%E6%8D%AE%E5%BA%93%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E8%83%BD%E5%8A%9B"><span class="nav-number">3.2.</span> <span class="nav-text">知识检索：充分利用数据库混合检索能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%88%E6%9E%9C%E8%AF%84%E6%B5%8B%EF%BC%9A%E8%AE%A9-RAG-%E5%8F%AF%E4%BB%A5%E2%80%9D%E8%BF%9B%E5%8C%96%E2%80%9D"><span class="nav-number">3.3.</span> <span class="nav-text">效果评测：让 RAG 可以”进化”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerRAG-%E7%9A%84%E5%85%B8%E5%9E%8B%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">4.</span> <span class="nav-text">PowerRAG 的典型应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%AF%86%E9%9B%86%E5%9E%8B-RAG-%E5%9C%BA%E6%99%AF%EF%BC%9A%E5%A4%84%E7%90%86%E5%A4%8D%E6%9D%82%E9%AB%98%E4%BB%B7%E5%80%BC%E6%96%87%E6%A1%A3"><span class="nav-number">4.1.</span> <span class="nav-text">数据密集型 RAG 场景：处理复杂高价值文档</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9C%80%E8%A6%81%E7%B2%BE%E5%87%86%E5%BC%95%E7%94%A8%E7%9A%84%E9%97%AE%E7%AD%94%E5%9C%BA%E6%99%AF%EF%BC%9A%E6%94%AF%E6%8C%81%E5%8F%AF%E4%BF%A1%E7%9F%A5%E8%AF%86%E8%BE%93%E5%87%BA"><span class="nav-number">4.2.</span> <span class="nav-text">需要精准引用的问答场景：支持可信知识输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%9B%86%E6%88%90%E5%9C%BA%E6%99%AF%EF%BC%9A%E4%BD%9C%E4%B8%BA%E4%B8%8A%E6%B8%B8%E8%83%BD%E5%8A%9B%E6%A8%A1%E5%9D%97%E8%A2%AB%E8%B0%83%E7%94%A8%E7%9A%84%E9%AB%98%E6%80%A7%E8%83%BD-RAG-%E5%BE%AE%E6%9C%8D%E5%8A%A1%EF%BC%8CAPI-%E9%9B%86%E6%88%90-Dify-%E7%AD%89%E5%B9%B3%E5%8F%B0"><span class="nav-number">4.3.</span> <span class="nav-text">微服务集成场景：作为上游能力模块被调用的高性能 RAG 微服务，API 集成 Dify 等平台</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二） | Longda's Interesting World">
+      <meta itemprop="description" content="本文解析 RAG 架构从 Naive、Advanced 到 Modular 的演进路径与生产落地痛点，介绍基于 RAGFlow 深度优化、以 OceanBase 为一体化底座的开源产品 PowerRAG，涵盖文档解析、混合检索、效果评测三大模块与典型应用场景。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-01-29 02:35:26" itemprop="dateCreated datePublished" datetime="2026-01-29T02:35:26+08:00">2026-01-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">傅榕锋</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BA%A7%E5%93%81%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">产品详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>11 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">本文解析 RAG 架构从 Naive、Advanced 到 Modular 的演进路径与生产落地痛点，介绍基于 RAGFlow 深度优化、以 OceanBase 为一体化底座的开源产品 PowerRAG，涵盖文档解析、混合检索、效果评测三大模块与典型应用场景。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）","description":"本文解析 RAG 架构从 Naive、Advanced 到 Modular 的演进路径与生产落地痛点，介绍基于 RAGFlow 深度优化、以 OceanBase 为一体化底座的开源产品 PowerRAG，涵盖文档解析、混合检索、效果评测三大模块与典型应用场景。","image":"https://ilongda.com/img/unified-ai-data-stack-part2/01.png","wordCount":2985,"datePublished":"2026-01-28T18:35:26.000Z","dateModified":"2026-01-28T18:35:26.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/"},"url":"https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","混合检索","seekdb","PowerRAG","RAGFlow","文档解析"],"articleSection":["产品详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"产品详解","item":"https://ilongda.com/categories/产品详解/"},{"@type":"ListItem","position":3,"name":"告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）","item":"https://ilongda.com/2026/2026-01-29-unified-ai-data-stack-part2/"}]}</script>
+<blockquote>
+<p>作者：傅榕锋，OceanBase 高级技术专家</p>
+<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+</blockquote>
+<p>在上一篇文章中，我们介绍了可替代关系型数据库+向量数据库+文档数据库”三库并行”的AI原生数据库seekdb。在实际应用场景中，seekdb作为底层数据库，上层还有许多业务需要的能力组件，比如对检索、上下文工程、记忆等。由于大模型在训练时无法包含企业私有知识，也难以跟上最新资讯的变化。为了解决这个问题，我们引入 RAG（检索增强生成）。当用户提问时，系统先从外部知识库中检索相关文档，再将这些内容作为上下文输入给大模型，辅助它生成更准确、及时的回答。简单来说，<strong>RAG &#x3D; “查资料 + 写答案”——让大模型不再”凭记忆瞎猜”，而是”有据可依”</strong>。</p>
+<span id="more"></span>
+
+<h2 id="RAG-架构演进：从-Naive-RAG-到-Modular-RAG"><a href="#RAG-架构演进：从-Naive-RAG-到-Modular-RAG" class="headerlink" title="RAG 架构演进：从 Naive RAG 到 Modular RAG"></a>RAG 架构演进：从 Naive RAG 到 Modular RAG</h2><p>RAG 的发展经历了三个典型阶段：Naive RAG → Advanced RAG → Modular RAG，逐步从简单流程演变为可灵活组装的模块化系统。</p>
+<h3 id="1-Naive-RAG：基础范式"><a href="#1-Naive-RAG：基础范式" class="headerlink" title="1. Naive RAG：基础范式"></a>1. Naive RAG：基础范式</h3><p>最原始的 RAG 架构包含三个核心步骤。</p>
+<ul>
+<li>Indexing：将文档切分并嵌入向量。</li>
+<li>Retrieval：根据用户查询检索相关片段。</li>
+<li>Generation：将检索结果输入大模型生成回答。</li>
+</ul>
+<p>该方案结构简单、易于实现，在通用场景下表现良好，但缺乏对检索质量的优化能力。</p>
+<h3 id="2-Advanced-RAG：检索增强"><a href="#2-Advanced-RAG：检索增强" class="headerlink" title="2. Advanced RAG：检索增强"></a>2. Advanced RAG：检索增强</h3><p>为提升召回效果，Advanced RAG 在检索前后引入了增强机制，显著提升检索准确率，避免”垃圾输入导致错误输出”。</p>
+<p><strong>Pre-Retrieval（检索前）</strong></p>
+<ul>
+<li>Query Rewrite：对用户问题进行语义改写，提升匹配精度。</li>
+<li>HyDE（Hypothetical Document Embedding）：先生成假设答案，再用于检索，提高相关性。</li>
+</ul>
+<p><strong>Post-Retrieval（检索后）</strong></p>
+<ul>
+<li>Rerank：使用轻量模型对召回结果重新排序。</li>
+<li>Filter：过滤无效或低质量片段，减少噪声干扰。</li>
+</ul>
+<h3 id="3-Modular-RAG：模块化重构"><a href="#3-Modular-RAG：模块化重构" class="headerlink" title="3. Modular RAG：模块化重构"></a>3. Modular RAG：模块化重构</h3><p>随着应用场景复杂化，Advanced RAG 演进为 Modular RAG，将 Indexing、Pre-Retrieval、Retrieval、Post-Retrieval、Generation 五个阶段丰富并进行模块化，整个流程拆解为多个可插拔模块，支持按需组合，开发者可根据业务需求自由拼装最适合的 RAG 流程，包含如下模块。</p>
+<ul>
+<li>Chunk Optimization：优化文本切片策略，提升上下文完整性。</li>
+<li>Structural Organization：构建知识层级结构，支持多粒度检索。</li>
+<li>Query Transformation &#x2F; Expansion：扩展查询维度，提升召回广度。</li>
+<li>Retriever Selection：支持混合检索（关键词 + 向量 + SQL 等）。</li>
+<li>Compression &amp; Selection：压缩长文档，选择最优片段。</li>
+<li>Verification：验证输出是否合规、是否存在幻觉或隐私泄露。</li>
+<li>Routing：根据问题类型选择不同处理路径。</li>
+<li>Orchestration：控制执行流程，决定是否需要检索、何时生成。</li>
+<li>Knowledge Guide：引导推理路径，结合知识图谱进行结构化推理。</li>
+</ul>
+<p>总而言之，Naive RAG 适合快速验证和简单问答、Advanced RAG 提升了检索质量、Modular RAG 实现了高度灵活性与可扩展性，能够应对复杂、多样化的 AI 应用场景。</p>
+<p><img data-src="/img/unified-ai-data-stack-part2/01.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h2 id="RAG-落地的困境：一周出-Demo，半年用不好"><a href="#RAG-落地的困境：一周出-Demo，半年用不好" class="headerlink" title="RAG 落地的困境：一周出 Demo，半年用不好"></a>RAG 落地的困境：一周出 Demo，半年用不好</h2><p>但当 RAG 在生产落地后，暴露了许多问题，包括内容缺失、高相关内容缺失、排序后内容缺失、未提取出内容、格式错误、不够&#x2F;过于细节、内容不完整、遇到扩展性问题、结构化数据处理、复杂 PDF、上下文问题、模型安全性。归根结底可以分为文档解析问题和检索问题两类。PowerRAG 针对这两类问题进行了解决，并加入了一些新能力。</p>
+<p><img data-src="/img/unified-ai-data-stack-part2/02.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h2 id="PowerRAG：帮助提升-RAG-效果"><a href="#PowerRAG：帮助提升-RAG-效果" class="headerlink" title="PowerRAG：帮助提升 RAG 效果"></a>PowerRAG：帮助提升 RAG 效果</h2><p>PowerRAG 是基于开源项目 RAGFlow 深度优化并二次开发的 RAG 产品，采用 Apache 2.0 协议开源。它以 OceanBase 作为一体化数据处理底座，将文档解析、切片、存储与检索等核心流程全部集成于 OceanBase 中，实现高性能、高可用的数据支撑。与原始 RAGFlow 相比，PowerRAG 主要增强优化了文档处理、数据检索和效果评估反馈三个关键模块，支持原子 API（例如解析、分片）提供。</p>
+<p><img data-src="/img/unified-ai-data-stack-part2/03.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h3 id="文档解析：构建-AI-可理解的知识源"><a href="#文档解析：构建-AI-可理解的知识源" class="headerlink" title="文档解析：构建 AI 可理解的知识源"></a>文档解析：构建 AI 可理解的知识源</h3><p>传统文档切片常导致语义断裂、信息丢失。PowerRAG 通过多模态解析与智能分块，实现高质量知识输入。下文以一个比较复杂的文档为例，介绍文档处理的流程及模块。</p>
+<ol>
+<li>文档解析与分块：识别页眉&#x2F;页脚、段落、图像、表格等不同模块、不同模块按照不同的处理流程进行处理。</li>
+<li>智能过滤：自动识别并剔除无意义内容（如纯页码），避免污染知识库。</li>
+<li>段落上下文保留：由于段落内容较多，因此引入标题信息，重建段落间的逻辑关联。</li>
+<li>图像语义识别：使用视觉模型对图像进行语义查询，针对流程图、饼图等进行图像裁剪，使用专用模型提取文本描述。</li>
+<li>表格结构识别：将表格转化为结构化字段（JSON&#x2F;键值对），提升可检索性。</li>
+<li>最终，每个分块均为”语义完整、结构清晰”的知识单元，支持后续高效检索与生成。</li>
+</ol>
+<p><img data-src="/img/unified-ai-data-stack-part2/04.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h3 id="知识检索：充分利用数据库混合检索能力"><a href="#知识检索：充分利用数据库混合检索能力" class="headerlink" title="知识检索：充分利用数据库混合检索能力"></a>知识检索：充分利用数据库混合检索能力</h3><p>PowerRAG 基于 OceanBase-CE&#x2F;seekdb 构建，全面支持全文索引、标量+向量的混合检索（包括前、后过滤）等多种混合检索模式，解决传统方案中检索能力不足、性能滞后的问题。</p>
+<p><strong>全文 + 向量</strong></p>
+<ul>
+<li>分词器：内置高性能中文分词器，同时支持通过插件扩展韩语、日语、泰语等小语种分词能力，满足全球化场景需求。</li>
+<li>支持实时索引更新：不同于 Elasticsearch 等产品存在索引延迟，OceanBase-CE&#x2F;seekdb 支持写入即生效，这对 RAG 中的”反思-写回”机制至关重要——例如 Agent 发现错误后立即更新知识，下一次查询即可生效。</li>
+<li>支持 NL Mode（自然语言查询）：用户输入的原始问题（如”有没有支持16GB内存以上的笔记本？”）可直接用于全文检索，无需应用层手动切词。全文索引使用的 BM25 Token 分值算法和检索使用的算法相同，确保 Token 对齐，避免”查不到”的问题。</li>
+</ul>
+<p><strong>标量 + 向量</strong></p>
+<p>系统内置优化器，能根据过滤率动态决定执行顺序：高过滤率时先做标量过滤再向量检索（前过滤），低过滤率时则反向执行（后过滤），甚至支持迭代过滤等高级策略，最大化性能。</p>
+<p><strong>JSON + 向量</strong></p>
+<p>支持 JSON 等其他多种数据类型的高效解析和索引。在 RAG 场景中，每个文档片段通常附带元数据（如来源、分类、时间）。OceanBase-CE&#x2F;seekdb 完整支持 JSON 字段的在线索引与查询，避免”只能存不能查”的窘境。</p>
+<p><img data-src="/img/unified-ai-data-stack-part2/05.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h3 id="效果评测：让-RAG-可以”进化”"><a href="#效果评测：让-RAG-可以”进化”" class="headerlink" title="效果评测：让 RAG 可以”进化”"></a>效果评测：让 RAG 可以”进化”</h3><p>RAG 系统上线只是起点，持续优化才是关键。PowerRAG 引入全链路效果评估与反馈机制，让系统具备”自我进化”能力。</p>
+<p><strong>BadCase 分析治理</strong></p>
+<ul>
+<li>通过异常监控发现低质量回答。</li>
+<li>结合根因分析（AI 分类、归类、分发、方案）定位问题。</li>
+<li>提供任务管理（badcase 任务分发、进度跟踪）、方案配置，推动闭环修复。</li>
+</ul>
+<p><strong>GoodCase 挖掘</strong></p>
+<ul>
+<li>捕捉用户认可的回答。</li>
+<li>生成典型用例，用于训练和优化模型偏好。</li>
+<li>支持数据标注与场景沉淀。</li>
+</ul>
+<p><strong>Prompt 管理</strong></p>
+<ul>
+<li>提供 Prompt 库、版本管理与调用追踪。</li>
+<li>支持快速回滚历史版本，避免调整失误导致服务退化。</li>
+</ul>
+<p><strong>评测</strong></p>
+<ul>
+<li>支持评测模板设计、执行与结果分析。</li>
+<li>验证新模块、新模型是否适配当前场景。</li>
+</ul>
+<p><strong>观测与可视化</strong></p>
+<ul>
+<li>多源链路数据采集与实时处理。</li>
+<li>观测数据结构化，支持可视化展示。</li>
+<li>全流程可观测，支撑快速定位与优化。</li>
+</ul>
+<p><img data-src="/img/unified-ai-data-stack-part2/06.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<h2 id="PowerRAG-的典型应用场景"><a href="#PowerRAG-的典型应用场景" class="headerlink" title="PowerRAG 的典型应用场景"></a>PowerRAG 的典型应用场景</h2><p>PowerRAG 作为基于 RAGFlow 深度优化的企业级 RAG 平台，已成功落地多个复杂业务场景。其核心优势在于深度文档理解、高精度检索召回、原子化 API 集成能力，适用于不同规模与需求的企业应用。</p>
+<h3 id="数据密集型-RAG-场景：处理复杂高价值文档"><a href="#数据密集型-RAG-场景：处理复杂高价值文档" class="headerlink" title="数据密集型 RAG 场景：处理复杂高价值文档"></a>数据密集型 RAG 场景：处理复杂高价值文档</h3><p><strong>实际案例：金融机构季度&#x2F;年度财务报告问答系统</strong>。在金融、审计等专业领域，文档通常包含大量表格、图表、扫描件及复杂排版结构（如多栏布局、嵌套标题）。传统方法难以准确提取关键信息，导致知识库质量低下。</p>
+<p><strong>PowerRAG 核心优势：</strong></p>
+<ul>
+<li>支持业界领先的 SOTA 解析模型（如 dots.ocr、MinerU），实现对 PDF、扫描件中图像、表格、文本的精准识别。</li>
+<li>能够从复杂布局中提取结构化数据（如收入表、资产负债表）并生成可检索片段。</li>
+<li>保留原始上下文关系，确保生成回答具备事实依据。</li>
+</ul>
+<p><strong>应用价值：让”看不懂的财报”变为”可查询的知识资产”</strong>，支撑智能问答、合规审查、趋势分析等高级应用。</p>
+<h3 id="需要精准引用的问答场景：支持可信知识输出"><a href="#需要精准引用的问答场景：支持可信知识输出" class="headerlink" title="需要精准引用的问答场景：支持可信知识输出"></a>需要精准引用的问答场景：支持可信知识输出</h3><p><strong>实际案例：制造业专业技术支持与故障排除知识库</strong>。在工业、IT 运维等领域，用户不仅需要答案，更要求每一步操作有明确出处（如”根据《设备维护手册第5章》执行步骤3”）。这要求系统具备高精度召回 + 可溯源推理能力。</p>
+<p><strong>PowerRAG 核心优势：</strong></p>
+<ul>
+<li>实现多路召回 + 融合重排序，支持向量、BM25、自定义评分混合检索。</li>
+<li>综合语义相关性与关键词匹配，提升结果准确性。</li>
+<li>所有召回片段均关联原始文档位置，支持”引用溯源”，增强用户信任度。</li>
+</ul>
+<p><strong>应用价值：构建”可解释、可验证”的专业级知识问答系统</strong>，满足高可靠性业务需求。</p>
+<h3 id="微服务集成场景：作为上游能力模块被调用的高性能-RAG-微服务，API-集成-Dify-等平台"><a href="#微服务集成场景：作为上游能力模块被调用的高性能-RAG-微服务，API-集成-Dify-等平台" class="headerlink" title="微服务集成场景：作为上游能力模块被调用的高性能 RAG 微服务，API 集成 Dify 等平台"></a>微服务集成场景：作为上游能力模块被调用的高性能 RAG 微服务，API 集成 Dify 等平台</h3><p><strong>实际案例：混合部署企业内容管理系统（ECM）</strong>。许多企业已有成熟的内容管理平台（如 ECM、OA、知识库系统），希望在不重构原有架构的前提下引入 AI 能力。PowerRAG 提供了轻量级、低耦合的集成方案。</p>
+<p><strong>PowerRAG 核心优势：</strong></p>
+<ul>
+<li>提供原子化 API 接口，包括文档解析、智能切片、向量&#x2F;全文召回。</li>
+<li>支持通过 SDK 方式快速接入 Dify、LangChain 等主流 AI 平台。</li>
+<li>可作为独立微服务部署，无缝集成至现有系统。</li>
+</ul>
+<p><strong>应用价值</strong>：以插件式方式赋能传统系统，实现智能化升级，降低改造成本与技术门槛。</p>
+<p><img data-src="/img/unified-ai-data-stack-part2/07.png" alt="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）"></p>
+<p>在一个先进的AI Agent中，除了RAG能力，还需要一项记忆能力。如果说PowerRAG（检索增强生成）是上下文工程的一种重要实现手段，那么记忆能力是为RAG（乃至更广泛的Agent系统）提供持续、结构化上下文的支撑技术。下一篇文章，讲述OceanBase在上下文工程中记忆能力的实践。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/PowerRAG/" rel="tag"># PowerRAG</a>
+              <a href="/tags/RAGFlow/" rel="tag"># RAGFlow</a>
+              <a href="/tags/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90/" rel="tag"># 文档解析</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-01-28-unified-ai-data-stack-part1/" rel="prev" title="告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（一）">
+                  <i class="fa fa-angle-left"></i> 告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（一）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-02-06-community-carnival-2026/" rel="next" title="社区嘉年华现场直击！开源开放，生态共赢！13岁少年拿下 AI Coding 第二名！">
+                  社区嘉年华现场直击！开源开放，生态共赢！13岁少年拿下 AI Coding 第二名！ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

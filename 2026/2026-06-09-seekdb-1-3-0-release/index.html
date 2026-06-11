@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase seekdb 1.3.0 发布，引入基于 Change Stream 的异步索引模型，将写入与索引构建解耦，streaming 场景吞吐提升约 22 倍、并发 P99 几乎无抖动，并带来 Fork&#x2F;Diff &amp; Merge 向量列等能力。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase seekdb 1.3.0 发布，引入基于 Change Stream 的异步索引模型，将写入与索引构建解耦，streaming 场景吞吐提升约 22 倍、并发 P99 几乎无抖动，并带来 Fork&#x2F;Diff &amp; Merge 向量列等能力。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-3-0-release/01.png">
+<meta property="article:published_time" content="2026-06-09T13:06:21.000Z">
+<meta property="article:modified_time" content="2026-06-09T13:06:21.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="HNSW">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="向量数据库">
+<meta property="article:tag" content="混合检索">
+<meta property="article:tag" content="版本发布">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-1-3-0-release/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/","path":"2026/2026-06-09-seekdb-1-3-0-release/","title":"OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase seekdb 1.3.0 发布，引入基于 Change Stream 的异步索引模型，将写入与索引构建解耦，streaming 场景吞吐提升约 22 倍、并发 P99 几乎无抖动，并带来 Fork&#x2F;Diff &amp; Merge 向量列等能力。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-09 21:06:21" itemprop="dateCreated datePublished" datetime="2026-06-09T21:06:21+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">羡林</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BA%A7%E5%93%81%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">产品详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>1.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>6 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase seekdb 1.3.0 发布，引入基于 Change Stream 的异步索引模型，将写入与索引构建解耦，streaming 场景吞吐提升约 22 倍、并发 P99 几乎无抖动，并带来 Fork/Diff & Merge 向量列等能力。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动","description":"OceanBase seekdb 1.3.0 发布，引入基于 Change Stream 的异步索引模型，将写入与索引构建解耦，streaming 场景吞吐提升约 22 倍、并发 P99 几乎无抖动，并带来 Fork/Diff & Merge 向量列等能力。","image":"https://ilongda.com/img/seekdb-1-3-0-release/01.png","wordCount":1822,"datePublished":"2026-06-09T13:06:21.000Z","dateModified":"2026-06-09T13:06:21.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/"},"url":"https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/","inLanguage":"zh-CN","keywords":["向量数据库","HNSW","OceanBase","AI Agent","混合检索","seekdb","版本发布"],"articleSection":["产品详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"产品详解","item":"https://ilongda.com/categories/产品详解/"},{"@type":"ListItem","position":3,"name":"OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动","item":"https://ilongda.com/2026/2026-06-09-seekdb-1-3-0-release/"}]}</script>
+<blockquote>
+<p>🚀 想亲自体验这 22 倍的性能飞跃吗？seekdb 已在 GitHub 开源，欢迎来 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 试玩！异步索引、Fork Table 等新鲜特性都已就位，就等你来探索～</p>
+</blockquote>
+<p>OceanBase seekdb 1.3.0 版本：一次以”多平台覆盖与高性能”为主题的重大版本更新。</p>
+<ul>
+<li>引入了基于 Change Stream 增量框架的异步索引模型，将写入操作与索引构建彻底解耦</li>
+<li>提升了 AI Agent 负载的检索性能与写入吞吐——streaming 场景下吞吐量相比同步模式提升约 22 倍。</li>
+<li>Diff &amp; Merge 支持向量列</li>
+<li>Fork Table &#x2F; Fork Database 与异步索引全面对齐</li>
+<li>多版本数据管理能力增强</li>
+</ul>
+<p>完整更新日志见： <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGIvcmVsZWFzZXMvdGFnL3YxLjMuMA==">GitHub Release v1.3.0<i class="fa fa-external-link-alt"></i></span></p>
+<p>本文是 OceanBase seekdb 1.3.0 的技术解读，我们从 Agent 真实负载场景切入，结合第三方测试数据，详细说明该版本在架构层面的设计取舍与解决思路。如果你正在为 Agent 选型，希望这篇文章能帮你少踩一个坑。</p>
+<span id="more"></span>
+
+<p><strong>Agent 的真实负载是 streaming workload——大多数向量数据库不是为它设计的。</strong></p>
+<p>如果你正在为 Agent 选向量数据库，大概率参考的是 ann-benchmarks 或者各家官方发的性能对比。那些测试跑的是这样的负载：先批量导入全部数据，建好索引，再做只读查询。</p>
+<p>这不是 Agent 的负载，Agent 的真实负载是这样的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> step <span class="keyword">in</span> agent.run():</span><br><span class="line">    memory.write(step.observation)        <span class="comment"># 持续写入</span></span><br><span class="line">    relevant = memory.search(step.query)  <span class="comment"># 毫秒后检索</span></span><br></pre></td></tr></table></figure>
+
+<p>写入和检索同时发生，间隔是毫秒级，而且是并发的。这套负载有个名字——streaming workload。</p>
+<p>VectorDBBench 专门为此设计了 StreamingPerformanceCase：固定速率持续写入 + 并发查询，跟生产环境的 Agent 一模一样。</p>
+<p>VectorDBBench 由 Zilliz（Milvus 背后的公司）维护，是一个第三方开源 benchmark 框架。我们用它测了 6 款主流向量数据库。</p>
+<p><strong>一个被忽略的指标：并发下你的 P99 会涨多少？</strong></p>
+<p>测试条件：Cohere 10M 数据集（768 维），16 vCPU &#x2F; 64 GiB，统一 HNSW 索引参数（M&#x3D;16 &#x2F; ef_construction&#x3D;256 &#x2F; ef_search&#x3D;200），持续写入 500 行&#x2F;秒。</p>
+<p><img data-src="/img/seekdb-1-3-0-release/01.png" alt="图片"></p>
+<p>大多数人看 benchmark 只看 QPS 和串行延迟。但 Agent 在生产环境里不是单线程运行的。<strong>真正决定你 SLA 的是并发 P99——以及它在并发加大后涨了多少倍。</strong></p>
+<p>看图里”P99 Jitter”那组：</p>
+<ul>
+<li>ES：10.3 倍——串行 P99 只有 5.2ms（比 OceanBase seekdb 快），但并发一开就涨到 53.6ms</li>
+<li>某向量数据库 A：9.7 倍——串行 15.9ms，并发直接飙到 153.6ms</li>
+<li>OceanBase seekdb：1.1 倍——从 19.7ms 到 21.7ms，几乎不动</li>
+</ul>
+<p>这不是参数调优的问题——是架构问题。下一节详细解释。</p>
+<p>※ 完整测试脚本和配置：github.com&#x2F;oceanbase&#x2F;vdb-streambench，欢迎提 PR 补充更多产品。</p>
+<p><strong>为什么 streaming 负载下 P99 会炸</strong></p>
+<p>向量数据库 A、B、D 在它们擅长的场景（批量导入 + 只读查询）下表现优秀——它们本来就是为那个场景设计的。但 streaming 写入会暴露一个结构性的问题：不断产生新的 segment。查询时需要 fanout 到 N 个 segment 分别做 knn 再合并结果。单线程下勉强可控，<strong>并发一上来，N 个 segment × M 个查询线程在 CPU 上互相争抢，P99 就会飙升。</strong></p>
+<p><strong>大多数向量数据库的索引段数量会随 streaming 写入膨胀，并发查询的争抢越来越严重。OceanBase seekdb 的索引数量是固定的（永远只有两个），所以不会。</strong></p>
+<p>具体来说，OceanBase seekdb 1.3.0 为 streaming 负载设计了两个机制：</p>
+<p><strong>第一，写入路径不碰索引。</strong> 事务提交后只写 redo log 就返回。一条独立的 Change Stream 管道在后台异步消费 redo log，把向量写入内存中的 delta HNSW 索引。写入和索引构建物理上完全解耦——写入不会被索引构建阻塞。</p>
+<p><strong>第二，查询路径固定只走两个索引。</strong> OceanBase seekdb 维护一个 delta HNSW（增量层，接收新写入）和一个 snapshot HNSW（主存量层），类似 LSM-Tree 的分层思路。查询时对两个索引各做一次 knn search 再合并结果——不管写入了多少数据，索引数量不膨胀，并发查询不争抢。</p>
+<p><strong>Agent 需要的不只是快——还需要后悔药</strong></p>
+<p>性能讲完了。但做过 Agent 的人都知道，还有一个痛点：Agent 需要试探性地修改数据（改 memory、跑实验、可能写坏表），<strong>你需要一个安全的沙箱和回滚机制。</strong></p>
+<p>大多数向量数据库没有这个概念。OceanBase seekdb 直接在内核实现了 Copy-on-Write：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 秒级快照，不复制数据</span></span><br><span class="line">FORK DATABASE agent_state <span class="keyword">TO</span> sandbox_42;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Agent 在沙箱里随便折腾</span></span><br><span class="line">USE sandbox_42;</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> memory(embedding, content)</span><br><span class="line"><span class="keyword">VALUES</span>(<span class="string">&#x27;[0.1,...]&#x27;</span>, <span class="string">&#x27;new observation&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 试探成功 → merge 回主线</span></span><br><span class="line"><span class="keyword">MERGE</span> <span class="keyword">TABLE</span> sandbox_42.memory <span class="keyword">INTO</span> agent_state.memory STRATEGY THEIRS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 试探失败 → 扔掉，主线不受影响</span></span><br><span class="line"><span class="keyword">DROP</span> DATABASE sandbox_42;</span><br></pre></td></tr></table></figure>
+
+<p>这是内核级 COW，不是应用层的 snapshot&#x2F;restore。fork 秒级完成，不复制数据，每个沙箱是完整可写的数据库（表结构、向量索引、自增列全部正常）。三种冲突策略（ <code>FAIL</code> &#x2F; <code>THEIRS</code> &#x2F; <code>OURS</code> ）让你精确控制 Agent 的修改有多少可以被信任。同时支持 <code>FORK DATABASE</code> 和 <code>FORK TABLE</code> 两种粒度。</p>
+<p><strong>一条 SQL 完成混合检索</strong></p>
+<p>Agent 的检索通常不是纯向量相似度。你可能需要同时过滤作者、时间范围，再加上全文匹配。在 OceanBase seekdb 里，这是一条 SQL 的事：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> id, title, l2_distance(emb, <span class="string">&#x27;[0.12,0.34,...]&#x27;</span>) <span class="keyword">AS</span> dist</span><br><span class="line"><span class="keyword">FROM</span> docs</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">MATCH</span>(content) AGAINST(<span class="string">&#x27;quarterly report&#x27;</span>)</span><br><span class="line">  <span class="keyword">AND</span> author_id <span class="operator">=</span> <span class="number">42</span></span><br><span class="line">  <span class="keyword">AND</span> created_at <span class="operator">&gt;</span> <span class="string">&#x27;2026-01-01&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> dist APPROXIMATE LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>向量 + 全文 + 标量过滤在同一个执行计划里下推，不需要客户端拼装多次查询结果。完整 MySQL 协议兼容，LangChain &#x2F; LlamaIndex &#x2F; Dify &#x2F; 任何 MySQL 客户端直接对接。</p>
+<p><strong>30 秒试一下</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U pyseekdb</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyseekdb</span><br><span class="line">client = pyseekdb.Client(path=<span class="string">&quot;./agent_state.db&quot;</span>)</span><br><span class="line">memory = client.get_or_create_collection(name=<span class="string">&quot;episodic&quot;</span>)</span><br><span class="line"></span><br><span class="line">memory.upsert(ids=[<span class="string">&quot;1&quot;</span>, <span class="string">&quot;2&quot;</span>, <span class="string">&quot;3&quot;</span>], documents=[</span><br><span class="line">    <span class="string">&quot;user prefers dark mode&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user speaks English and Chinese&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user timezone is UTC+8&quot;</span>,</span><br><span class="line">])</span><br><span class="line">memory.refresh_index()</span><br><span class="line">results = memory.query(query_texts=<span class="string">&quot;ui preferences?&quot;</span>, n_results=<span class="number">1</span>)</span><br><span class="line"><span class="built_in">print</span>(results[<span class="string">&quot;documents&quot;</span>])</span><br><span class="line"></span><br><span class="line">memory.upsert(ids=[<span class="string">&quot;4&quot;</span>], documents=[<span class="string">&quot;user saw pricing page 3 times today&quot;</span>])</span><br><span class="line">memory.refresh_index()</span><br><span class="line">results = memory.query(query_texts=<span class="string">&quot;purchase intent signals&quot;</span>, n_results=<span class="number">1</span>)</span><br><span class="line"><span class="built_in">print</span>(results[<span class="string">&quot;documents&quot;</span>])</span><br></pre></td></tr></table></figure>
+
+<p>无需 server，无需 schema，嵌入式模式在进程内运行。</p>
+<p><strong>关于 OceanBase seekdb</strong></p>
+<p>OceanBase seekdb 完全开源（Apache 2.0），由 OceanBase 团队开发。你可能已经在用 OceanBase 了——它跑在支付宝、淘宝、滴滴、小米等公司的生产环境里。</p>
+<p>OceanBase seekdb 继承了同一套存储引擎和 SQL 执行器，专注于 Agent 场景的向量 + 关系型混合负载——开源半年已有 2,500+ GitHub star，LangChain &#x2F; LlamaIndex &#x2F; Dify &#x2F; Coze 等主流框架均已集成。</p>
+<p>如果你正在为 Agent 选数据库——花 30 秒跑一下上面的 demo。</p>
+<p><strong>⭐</strong> github.com&#x2F;oceanbase&#x2F;seekdb — 一个 star 让更多人发现这个项目，也让我们有动力继续投入。</p>
+<p>遇到问题或想讨论你的 Agent 场景：GitHub Issues · GitHub Discussions</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 向量数据库</a>
+              <a href="/tags/HNSW/" rel="tag"># HNSW</a>
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E7%89%88%E6%9C%AC%E5%8F%91%E5%B8%83/" rel="tag"># 版本发布</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-08-powermem-forgetting-design/" rel="prev" title="从神经元到代码工程：PowerMem 记忆系统的遗忘设计">
+                  <i class="fa fa-angle-left"></i> 从神经元到代码工程：PowerMem 记忆系统的遗忘设计
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

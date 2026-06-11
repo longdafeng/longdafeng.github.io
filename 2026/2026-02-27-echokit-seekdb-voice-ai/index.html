@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":true,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":false,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="EchoKit 是 WasmEdge 团队开源的 Rust 语音 AI 框架，支持本地部署与模块化替换 ASR&#x2F;LLM&#x2F;TTS，并选用 OceanBase seekdb 作为知识库，借助混合搜索与内置 Embedding 实现低延迟的私有化语音助手。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架">
+<meta property="og:url" content="https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/index.html">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="EchoKit 是 WasmEdge 团队开源的 Rust 语音 AI 框架，支持本地部署与模块化替换 ASR&#x2F;LLM&#x2F;TTS，并选用 OceanBase seekdb 作为知识库，借助混合搜索与内置 Embedding 实现低延迟的私有化语音助手。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/echokit-seekdb-voice-ai/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/echokit-seekdb-voice-ai/02.webp">
+<meta property="article:published_time" content="2026-02-27T01:23:55.000Z">
+<meta property="article:modified_time" content="2026-02-27T01:23:55.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="EchoKit">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="混合搜索">
+<meta property="article:tag" content="语音 AI">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/echokit-seekdb-voice-ai/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh_CN","comments":true,"permalink":"https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/","path":"2026/2026-02-27-echokit-seekdb-voice-ai/","title":"EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架 | Longda's Interesting World</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-83056277-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-83056277-1","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.3.1/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Longda's Interesting World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="Searching..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93%E5%89%8D%E8%AF%AD%E9%9F%B3-AI-%E6%9C%8D%E5%8A%A1%E9%9D%A2%E4%B8%B4%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">当前语音 AI 服务面临的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84%E8%AF%A6%E8%A7%A3"><span class="nav-number">3.</span> <span class="nav-text">技术架构详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-seekdb-%E5%9C%A8%E5%85%B6%E4%B8%AD%E6%89%AE%E6%BC%94%E7%9A%84%E8%A7%92%E8%89%B2"><span class="nav-number">4.</span> <span class="nav-text">OceanBase seekdb 在其中扮演的角色</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">5.</span> <span class="nav-text">实际应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E5%92%8C%E4%BD%BF%E7%94%A8"><span class="nav-number">6.</span> <span class="nav-text">部署和使用</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda's Interesting World</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2xvbmdkYWZlbmc=" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="bWFpbHRvOmh1c3RqYWNraWVAZ21haWwuY29t" title="E-Mail → mailto:hustjackie@gmail.com"><i class="fa fa-envelope fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly94LmNvbS9sb25nZGFmZW5n" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng"><i class="fab fa-twitter fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2luL2xvbmdkYS1mZW5nLw==" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;"><i class="fab fa-linkedin fa-fw"></i></span>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="Back to top">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          Links
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <span class="exturl" data-url="aHR0cHM6Ly9lbi5vY2VhbmJhc2UuY29t" title="https:&#x2F;&#x2F;en.oceanbase.com">OceanBase</span>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh_CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda's Interesting World">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架 | Longda's Interesting World">
+      <meta itemprop="description" content="EchoKit 是 WasmEdge 团队开源的 Rust 语音 AI 框架，支持本地部署与模块化替换 ASR&#x2F;LLM&#x2F;TTS，并选用 OceanBase seekdb 作为知识库，借助混合搜索与内置 Embedding 实现低延迟的私有化语音助手。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-27 09:23:55" itemprop="dateCreated datePublished" datetime="2026-02-27T09:23:55+08:00">2026-02-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">Written by: </span>
+      <span itemprop="name">WasmEdge 团队</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>3.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>14 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">EchoKit 是 WasmEdge 团队开源的 Rust 语音 AI 框架，支持本地部署与模块化替换 ASR/LLM/TTS，并选用 OceanBase seekdb 作为知识库，借助混合搜索与内置 Embedding 实现低延迟的私有化语音助手。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架","description":"EchoKit 是 WasmEdge 团队开源的 Rust 语音 AI 框架，支持本地部署与模块化替换 ASR/LLM/TTS，并选用 OceanBase seekdb 作为知识库，借助混合搜索与内置 Embedding 实现低延迟的私有化语音助手。","image":"https://ilongda.com/img/echokit-seekdb-voice-ai/01.webp","wordCount":3740,"datePublished":"2026-02-27T01:23:55.000Z","dateModified":"2026-02-27T01:23:55.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/"},"url":"https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","MCP","seekdb","混合搜索","EchoKit","语音 AI","Rust"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架","item":"https://ilongda.com/2026/2026-02-27-echokit-seekdb-voice-ai/"}]}</script>
+<blockquote>
+<p>🌟 小贴士：文中使用的 seekdb 是 OceanBase 开源的 AI 原生数据库，欢迎大家到 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL29jZWFuYmFzZS9zZWVrZGI=">https://github.com/oceanbase/seekdb<i class="fa fa-external-link-alt"></i></span> 体验，相信能为你的 AI 应用开发带来更简洁高效的数据管理方案！</p>
+</blockquote>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p><strong>EchoKit</strong> 是由 WasmEdge 团队最新开源的一个语音 AI 框架项目。WasmEdge 本身是 Linux 基金会旗下的一个开源项目，在 WebAssembly 运行时领域有着广泛的应用。EchoKit 则是团队在语音 AI 领域的新尝试，整个项目使用 Rust 语言编写，这也为其带来了高性能和低资源占用的特性。</p>
+<p>项目的核心理念很明确，就是要提供一套完全开源、可以在本地部署的语音 AI 解决方案。这样一来，开发者就可以构建出既保护隐私、又高度可定制的智能语音助手。不同于市面上那些必须依赖云端服务的产品，EchoKit 给了开发者完全的控制权。</p>
+<p><strong>在知识库和数据检索这一层，EchoKit 选择了 OceanBase seekdb。</strong></p>
+<span id="more"></span>
+
+<p><strong>OceanBase</strong> 是一家在数据库领域深耕多年的公司，其分布式数据库在双十一等极端场景下经过了充分的验证。seekdb 是 OceanBase 在 2025 年 11 月发布的一款 AI 原生混合搜索数据库，以 Apache 2.0 协议开源。</p>
+<p>seekdb 的定位很明确，他不是传统意义上的数据库，而是一个为 AI 时代重新设计的数据库。他在单个引擎中统一了关系型数据、向量数据、全文本、JSON，支持混合搜索和数据库内的 AI 工作流。这种设计理念与 EchoKit 的需求高度契合。传统的做法是使用多个独立的系统来处理不同类型的数据，比如用 PostgreSQL 存储结构化数据，用 Elasticsearch 做全文搜索，用专门的向量数据库做语义搜索。这样的架构复杂度高，数据同步是个问题，查询性能也会受影响。OceanBase seekdb 把这些能力整合到一个引擎里，大大简化了系统架构。</p>
+<h2 id="当前语音-AI-服务面临的问题"><a href="#当前语音-AI-服务面临的问题" class="headerlink" title="当前语音 AI 服务面临的问题"></a>当前语音 AI 服务面临的问题</h2><p>现在市面上的语音 AI 服务，比如 ChatGPT 的语音功能，确实在对话流畅度和响应速度上做得很不错。你跟它聊天的时候，基本感觉不到延迟，对话也很自然。但是这类服务存在一些根本性的问题，在某些场景下就显得力不从心了。</p>
+<p>最明显的一个问题就是隐私。当你使用这些云端服务的时候，你的语音数据、对话内容、个人信息都必须上传到服务提供商的服务器上进行处理。这就导致一个很尴尬的情况：你问它“我家的 WiFi 密码是什么”，它肯定答不上来，因为它根本不知道，你也不可能把这种私密信息告诉它。更进一步说，如果你想让语音助手帮你管理家里的智能设备、查询个人财务信息、访问公司内部数据，这些场景下的隐私和安全问题就变得非常突出。</p>
+<p>第二个问题是供应商锁定。大多数语音 AI 解决方案都依赖特定的云服务提供商或者 API。比如你用了 OpenAI 的 Live API，那你就被绑定在他们的服务上了。如果哪天他们调整价格、修改服务条款，或者干脆停止服务，你的应用就会受到很大影响。而且不同的服务提供商在性能、成本、支持的语言上都有差异，被锁定在一家就意味着失去了选择的灵活性。</p>
+<p>第三个问题是可控性和定制化程度。使用云端服务的时候，你基本上只能用他们提供的模型和功能。你没法深度定制模型的行为，没法调整处理流程，也没法集成自己的知识库。比如你是一个韩国的开发者，想用一个专门针对韩语优化的语音识别模型，或者你有一些行业专属的知识库想要集成进去，这些在云端服务上都很难实现。</p>
+<p>EchoKit 的出现就是为了解决这些问题。通过提供完整的开源固件和服务器框架，开发者可以选择在本地部署，比如直接跑在自己的 Mac 电脑上，或者部署在边缘设备上。也可以采用混合部署的方式，把一部分功能放在本地，另一部分放在云端。更重要的是，你可以完全自主选择使用哪家的云服务，不会被任何一个特定的 API 所限制。</p>
+<h2 id="技术架构详解"><a href="#技术架构详解" class="headerlink" title="技术架构详解"></a>技术架构详解</h2><p>EchoKit 的技术架构设计得比较清晰，整个处理流程可以分为几个关键步骤。</p>
+<p>首先是语音输入和检测阶段。用户通过刷好了 EchoKit 固件的 ESP32 语音设备进行语音输入。这个阶段有一个很重要的技术叫 VAD，也就是 Voice Activity Detection，语音活动检测。它的作用是判断用户什么时候开始说话、什么时候说完了，从而准确地检测出语句的边界。这个功能看起来简单，但对于语音交互的体验来说非常关键。如果检测不准，要么会截断你的话，要么会等太久才开始处理。</p>
+<p>第二步是语音识别，也就是 ASR（Automatic Speech Recognition）。EchoKit 默认使用的是 Whisper，这是 OpenAI 开源的一个语音识别模型，效果很不错。但这里的灵活性在于，你完全可以替换成其他的开源 ASR 模型。比如说，如果你是针对特定语言场景做开发，你可以选择一个专门针对那个语言优化过的模型。演讲中提到的例子是韩语，如果你是韩国的开发者，你可以用一个韩语识别效果更好的模型来替换 Whisper。这种灵活性是云端服务很难提供的。</p>
+<p>第三步是语言模型处理，也就是 LLM 阶段。这一步是整个流程的大脑，负责理解用户的意图，并决定如何响应。在这个阶段，系统会自主决策是否需要调用外部工具。比如用户问了一个需要实时信息的问题，系统可能会决定去网上搜索。如果用户的问题涉及到知识库中的信息，系统会调用 seekdb 进行数据库查询。EchoKit 还支持 MCP（Model Context Protocol）工具调用，这是一个标准化的工具调用协议，可以让 AI 助手调用各种外部工具和服务。</p>
+<p>最后一步是语音合成，也就是 TTS（Text-to-Speech）。系统把生成的文本转换成语音输出给用户。这里同样支持多种 TTS 引擎，你可以选择低延迟的开源 TTS 模型。演讲中提到千问最近发布了一个延迟比较低的 TTS 模型，这种新的模型都可以集成进来。更有意思的是，EchoKit 还支持语音克隆功能，这个后面会详细讲到。</p>
+<p>整个架构的设计理念就是模块化和可替换。每一个环节都可以根据你的需求进行调整和优化，这种灵活性是这个框架的核心价值所在。</p>
+<p><img data-src="/img/echokit-seekdb-voice-ai/01.webp" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架"></p>
+<h2 id="OceanBase-seekdb-在其中扮演的角色"><a href="#OceanBase-seekdb-在其中扮演的角色" class="headerlink" title="OceanBase seekdb 在其中扮演的角色"></a>OceanBase seekdb 在其中扮演的角色</h2><p>在 EchoKit 的架构中，OceanBase seekdb 被选作知识库解决方案，这个选择是有充分理由的。</p>
+<p><strong>首先是延迟问题</strong>。对于语音交互来说，响应速度是用户体验的关键。如果你问一个问题，系统要等好几秒才能回答，这个体验就很糟糕。seekdb 的查询响应速度非常快，这对于实时语音交互来说至关重要。当用户提出一个需要查询知识库的问题时，系统可以快速从 seekdb 中检索到相关信息，然后生成回答，整个过程不会有明显的延迟。</p>
+<p><strong>其次是搜索能力的多样性</strong>。seekdb 支持多种搜索模式，包括关键词搜索、精确搜索、语义搜索，以及这些模式的混合搜索。这种能力在实际应用中非常有用。比如用户问“最近 AI 领域有哪些技术突破”，这个问题就需要多种搜索能力的配合。系统需要理解“技术突破”的语义含义，这是语义搜索；需要精确匹配“AI”这个关键词，这是关键词搜索；还需要按照“最近”这个时间范围进行过滤，这是元数据的精确过滤。seekdb 可以把这些搜索方式结合起来，返回最相关、最准确的结果。</p>
+<p><strong>第三个优势是内置的 Embedding 功能</strong>。seekdb 具有内置的 embedding 功能，这意味着你不需要单独部署一个 embedding 服务，整个向量化处理流程都被简化了。这对于降低系统复杂度、减少部署难度来说是很有帮助的。</p>
+<p><strong>最后是语义混搜排序能力</strong>。seekdb 可以同时进行语义匹配、关键词匹配和元数据精确过滤，然后对结果进行综合排序。这种能力特别适合复杂的知识检索场景。在实际应用中，用户的问题往往不是单一维度的，需要系统能够理解问题的多个方面，然后从知识库中找出最匹配的信息。</p>
+<p>seekdb 还可以作为 MCP Server 被调用。这意味着它不仅仅是一个被动的数据库，而是可以作为一个工具被 AI 助手主动调用。这种设计让整个系统的架构更加灵活。</p>
+<p><img data-src="/img/echokit-seekdb-voice-ai/02.webp" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架"></p>
+<h2 id="实际应用场景"><a href="#实际应用场景" class="headerlink" title="实际应用场景"></a>实际应用场景</h2><p>为了更好地理解 EchoKit 和 OceanBase seekdb 的结合能带来什么，我们可以看几个具体的应用场景。</p>
+<p>第一个是金融场景下的营收监控。假设你是一个公司的管理者，你想通过语音快速了解公司的财务状况。你可以直接对着语音助手说：“看一下我们 Q4 这个季度的营收，如果低于目标就给我一个警示。”</p>
+<p>系统的处理流程是这样的：首先，你的语音输入被 ASR 转换成文字。然后，LLM 理解了你的意图，知道你要查询 Q4 的营收数据，并且需要跟目标进行对比。接着，系统决定调用营收 API 来获取实际的营收数据。同时，系统会从 seekdb 中查询 Q4 的营收目标是多少。拿到这两个数据之后，系统进行对比，发现实际营收低于目标。最后，系统通过 TTS 生成语音反馈：“营收低于 12% 的目标。”</p>
+<p>这个场景的关键在于，所有的数据都可以保存在本地。你的财务数据不需要上传到任何云端服务，整个查询和分析过程都在你自己的设备上完成。这对于企业来说，隐私和安全性得到了充分保障。</p>
+<p>第二个场景是技术信息检索。假设你是一个开发者，想了解最近的技术动态。你问语音助手：“最近 AI 领域有哪些技术突破？”</p>
+<p>这时候，seekdb 的混合搜索能力就派上用场了。系统会同时进行语义匹配，理解“技术突破”这个概念的含义；进行关键词匹配，精确找到包含“AI”、“突破”等关键词的内容；还会进行元数据过滤，只返回“最近”这个时间范围内的信息。这三种搜索方式结合起来，可以确保返回的结果既相关又准确。</p>
+<p>第三个场景是个人知识管理。很多人都有自己的笔记、文档、收藏的文章等等。你可以把这些内容导入到 seekdb 中，然后通过语音来查询。比如你想不起来之前看过的某篇文章里的一个观点，你可以用自然语言描述一下，系统就能帮你找出来。而且因为是本地部署，你不用担心自己的笔记内容被上传到云端。</p>
+<h2 id="部署和使用"><a href="#部署和使用" class="headerlink" title="部署和使用"></a>部署和使用</h2><p>EchoKit 的部署过程相对来说比较简单。首先你需要从 GitHub 上克隆项目代码 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NlY29uZC1zdGF0ZS9lY2hva2l0X3NlcnZlcg==">https://github.com/second-state/echokit_server<i class="fa fa-external-link-alt"></i></span>，然后主要的配置工作集中在 config.toml 这个文件上。</p>
+<p>在配置文件中，你需要设置 ASR、LLM、TTS 的 API 配置。这里的灵活性很大，你可以选择使用本地模型，也可以使用云端的 API。比如 ASR 你可以用本地的 Whisper，也可以用云端的语音识别服务；LLM 你可以用本地部署的开源模型，也可以用 OpenAI 的 API；TTS 同样可以本地或云端。</p>
+<p>系统提供了两种工作模式。第一种是三段式模式，也就是 ASR → LLM → TTS 这样分开处理。这种模式的优势是灵活性最高，每个环节都可以独立选择模型，而且可以在 LLM 阶段加载知识库、调用工具。这种模式推荐用于需要高度定制的场景。</p>
+<p>第二种是端到端模式，直接使用像 ChatGPT Live API 或千问语音 API 这样的服务。这种模式的优势是速度更快，因为是一次调用完成全流程，中间没有额外的转换开销。但相应的，定制化程度就比较低了。你可以根据自己的需求来选择使用哪种模式。</p>
+<p>如果你要集成知识库，需要配置 seekdb 数据库。你可以把自己的文档、CSV 文件等数据导入进去。seekdb 会自动处理 embedding 和索引，之后就可以通过语音来查询这些知识了。</p>
+<p>由于 EchoKit 是用 Rust 编写的，整体的体积很小，性能也很高。这意味着即使在配置不是特别高的设备上，也可以流畅运行。部署完成后，系统可以快速启动，响应速度也很快。</p>
+<p>EchoKit server 部署好以后可以在 web 端和它对话 <span class="exturl" data-url="aHR0cHM6Ly9lY2hva2l0LmRldi9jaGF0Lw==">https://echokit.dev/chat/<i class="fa fa-external-link-alt"></i></span>，测试是否成功运行。</p>
+<p>接下来就可以刷固件到你的硬件（可以自己组装 ESP32 或者购买我们已经刷好固件的设备 <span class="exturl" data-url="aHR0cHM6Ly9lY2hva2l0LmRldi8=">https://echokit.dev/<i class="fa fa-external-link-alt"></i></span>）上，并且在 setup 页面填上你的 server url，和你的语音盒子开始对话啦。如果想克隆自己的音色，也可以使用我们的声音克隆工具噢！</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/EchoKit/" rel="tag"># EchoKit</a>
+              <a href="/tags/%E8%AF%AD%E9%9F%B3-AI/" rel="tag"># 语音 AI</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-02-26-seekdb-agent-persistent-memory/" rel="prev" title="使用 seekdb 为 AI Agent 实现持久化记忆：从&quot;全量上下文&quot;到&quot;精准召回&quot;">
+                  <i class="fa fa-angle-left"></i> 使用 seekdb 为 AI Agent 实现持久化记忆：从"全量上下文"到"精准召回"
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-03-03-seekdb-ai-data-sandbox/" rel="next" title="从 Vibe Coding 到 AI Agent，OceanBase seekdb 打造 AI 时代毫秒级数据沙箱">
+                  从 Vibe Coding 到 AI Agent，OceanBase seekdb 打造 AI 时代毫秒级数据沙箱 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><span class="exturl" data-url="aHR0cHM6Ly9iZWlhbi5taWl0Lmdvdi5jbg==">浙ICP备20005107号-2 </span>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>Word count total: </span>
+    <span title="Word count total">644k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>Reading time total &asymp;</span>
+    <span title="Reading time total">39:02</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>
