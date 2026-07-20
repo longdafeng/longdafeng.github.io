@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="信也科技 OceanBase 实践：风控核心升级与 AI 数据底座">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/02.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/03.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/04.webp">
+<meta property="article:published_time" content="2026-06-25T14:44:08.000Z">
+<meta property="article:modified_time" content="2026-06-25T14:44:08.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 数据底座">
+<meta property="article:tag" content="AIOps">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="信也科技">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="智能风控">
+<meta property="article:tag" content="金融科技">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/","path":"2026/2026-06-25-xinye-technology-oceanbase-practice/","title":"信也科技 OceanBase 实践：风控核心升级与 AI 数据底座"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>信也科技 OceanBase 实践：风控核心升级与 AI 数据底座 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%86%E5%8F%B2%E6%9E%B6%E6%9E%84%E7%97%9B%E7%82%B9%EF%BC%9A%E4%BC%A0%E7%BB%9F-MySQL-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">历史架构痛点：传统 MySQL 分库分表的技术挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B%E5%8E%86%E7%A8%8B%EF%BC%9A%E4%BB%8E-TiDB-%E5%88%B0-OceanBase"><span class="nav-number">2.</span> <span class="nav-text">分布式数据库选型历程：从 TiDB 到 OceanBase</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%8E%A8%E5%8A%A8%E7%A0%94%E5%8F%91%E5%9B%A2%E9%98%9F%E4%BD%BF%E7%94%A8-OceanBase"><span class="nav-number">3.</span> <span class="nav-text">如何推动研发团队使用 OceanBase</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%E7%A0%B4%E5%B1%80%EF%BC%9A%E4%BB%8E%E6%A0%B8%E5%BF%83%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E8%90%BD%E5%9C%B0%E5%88%B0%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E7%BB%B4"><span class="nav-number">4.</span> <span class="nav-text">实战破局：从核心业务场景落地到自动化运维</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E5%8D%87%E7%BA%A7%EF%BC%8C%E5%AE%9E%E7%8E%B0%E9%99%8D%E6%9C%AC%E5%A2%9E%E6%95%88%E3%80%81%E9%AB%98%E5%8F%AF%E7%94%A8%E3%80%81%E9%AB%98%E5%8F%AF%E9%9D%A0"><span class="nav-number">4.1.</span> <span class="nav-text">技术升级，实现降本增效、高可用、高可靠</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8%E5%8C%96%E8%BF%90%E7%BB%B4%E4%B8%8E%E7%94%9F%E6%80%81%E6%89%93%E9%80%9A"><span class="nav-number">4.2.</span> <span class="nav-text">自动化运维与生态打通</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E6%AC%A1%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E4%B8%8E%E5%A4%8D%E7%9B%98"><span class="nav-number">4.3.</span> <span class="nav-text">一次线上故障与复盘</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E8%A7%84%E5%88%92%EF%BC%9A%E6%8E%A2%E7%B4%A2%E4%B8%80%E4%BD%93%E5%8C%96%E5%90%91%E9%87%8F%E5%BA%95%E5%BA%A7%E4%B8%8E%E5%85%A8%E8%87%AA%E5%8A%A8%E8%BF%90%E7%BB%B4"><span class="nav-number">5.</span> <span class="nav-text">未来规划：探索一体化向量底座与全自动运维</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-07-16-duxiaoman-database-selection/" rel="bookmark">
+        <time class="popular-posts-time">2025-07-16</time>
+        <br>
+      OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-21-baofu-payment-oceanbase-unified-data-base/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-21</time>
+        <br>
+      不止于替换 HBase：宝付支付借力 OceanBase，构建面向未来的“TP+AP+KV+AI”统一数据基座
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-16-pharma-crm-database-upgrade/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-16</time>
+        <br>
+      千万会员，亿级交易：当 CRM 系统不堪重负，头部药企如何升级 OceanBase 实现“实时精准营销”？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-17-didi-oceanbase-ops-practice/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-17</time>
+        <br>
+      OceanBase 在滴滴大规模运维经验以及新功能落地实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-13-vivo-database-technology/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-13</time>
+        <br>
+      vivo 国产数据库技术储备：以 OceanBase 突破大规模数据的存储与性能瓶颈
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="信也科技 OceanBase 实践：风控核心升级与 AI 数据底座 | Longda's Interesting World">
+      <meta itemprop="description" content="信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          信也科技 OceanBase 实践：风控核心升级与 AI 数据底座
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-25 22:44:08" itemprop="dateCreated datePublished" datetime="2026-06-25T22:44:08+08:00">2026-06-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">信也科技</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>19 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"信也科技 OceanBase 实践：风控核心升级与 AI 数据底座","description":"信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。","image":"https://ilongda.com/img/2026-06-25-xinye-technology-oceanbase-practice/01.webp","wordCount":5180,"datePublished":"2026-06-25T14:44:08.000Z","dateModified":"2026-06-25T14:44:08.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/"},"url":"https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","金融科技","信也科技","智能风控","AI 数据底座","AIOps"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"信也科技 OceanBase 实践：风控核心升级与 AI 数据底座","item":"https://ilongda.com/2026/2026-06-25-xinye-technology-oceanbase-practice/"}]}</script>
+<blockquote>
+<p>从风控核心库，到 AI 数据底座与 AIOps，OceanBase 在信也科技的演进里角色越来越重。</p>
+</blockquote>
+<p>信也科技（纽交所：FINV）是上市金融科技集团，监管要求严，对数据合规、隐私与安全几乎零容忍。业务上至少要同时满足三点：</p>
+<ul>
+<li><strong>数据一致性</strong>：全球资金交易场景下，主备切换或故障恢复都不能丢数。</li>
+<li><strong>高可用</strong>：机房级故障时，业务要能秒级接管。</li>
+<li><strong>弹性扩容</strong>：多市场突发洪峰时，底层库要能在线平滑扩容。</li>
+</ul>
+<p>依托海量数据与 AI，信也打造了智能风控体系，业务已延伸到东南亚、澳洲等地，也因此面对跨地域、多时区、高并发的技术压力。下面按「痛点 → 选型 → 落地 → 规划」说明他们如何用 OceanBase 破局。</p>
+<span id="more"></span>
+
+<h2 id="历史架构痛点：传统-MySQL-分库分表的技术挑战"><a href="#历史架构痛点：传统-MySQL-分库分表的技术挑战" class="headerlink" title="历史架构痛点：传统 MySQL 分库分表的技术挑战"></a>历史架构痛点：传统 MySQL 分库分表的技术挑战</h2><p>信也许多业务最初使用 MySQL 分库分表方案支撑，在该方案中，以下四个痛点对 DBA 而言应该并不陌生。</p>
+<p><strong>第一，研发效能黑洞，跨库查询与分表治理问题。</strong> 我们内部有一套面向研发的自动化平台，但当分表数量较多时，排查问题需要做跨分片聚合查询，往往需要 DBA 协助，流程比较繁琐。而且，大部分业务代码被迫适配中间件逻辑，严重拖累敏捷迭代的交付节奏。</p>
+<p><strong>第二，扩容如履薄冰，极高运维风险。</strong> 一方面随着业务持续增长，分库分表方案最终必然面临扩容需求。长期来看，分片维护等工作相当枯燥，且存在扩容窗口期的风险。另一方面，面对突发流量洪峰，分库分表后的数据 Rebalance 耗时极长。操作极其繁琐，而且极易引发线上业务剧烈抖动，扩容变高危。</p>
+<p><strong>第三，成本指数膨胀，单机容量触顶。</strong> 原有的 MySQL 系统容量和压缩能力有限，随着海量历史冷数据堆积， SSD 存储账单呈指数级飙升，同时闪迪（ SanDisk ）、美光（ Micron ）等存储厂商的股价上涨也反映出内存和存储硬件的涨价趋势，给企业成本带来较大压力。</p>
+<p><strong>第四，敏捷迭代绊脚石：DDL 变更阻塞。</strong> 成百上千个数据分片形成了 “ 管理孤岛 ” ，导致我们对分库分表做表结构变更（如加字段、改结构等）不仅相当麻烦，而且耗时数周，很难做全局统一管理。目前主流方案是 GH-OST 做在线 DDL ，但其在切换时有一个短暂的锁表动作，即使放在业务低峰期，仍可能导致线上事故。我们曾采用的一种改进方案是：在高峰期暂停 DDL 操作，等窗口期再恢复。但暂停期间会产生大量 vlog ，采用 MySQL 原生方案时可能导致程序卡死。后来我们调整为： DDL 仅在低峰期执行，过了窗口期后持续等待下一周期，以此规避风险。</p>
+<h2 id="分布式数据库选型历程：从-TiDB-到-OceanBase"><a href="#分布式数据库选型历程：从-TiDB-到-OceanBase" class="headerlink" title="分布式数据库选型历程：从 TiDB 到 OceanBase"></a>分布式数据库选型历程：从 TiDB 到 OceanBase</h2><p>我们最初并没有主动考虑数据库选型的问题。随着数据不断膨胀， MySQL 分库分表的方案反复面临扩容和成本挑战。当时的解决思路之一是将冷数据迁移到成本更低的存储系统。</p>
+<p>在选型早期，我们调研过 TiDB ，因为一些原因最后放弃使用。后来了解到 TiDB 的 TiKV 方案，但实际使用效果并不理想。恰逢 OceanBase 开源，我们将其纳入调研范围，使用后发现效果不错，与我们内部的自动化平台融合度较高。</p>
+<p>选择 OceanBase 主要基于三点：</p>
+<ul>
+<li><strong>存储成本降低。</strong> OceanBase 采用与 MySQL 相同的 LSM-Tree 算法，但在压缩层面做了深度优化，显著降低了存储成本。</li>
+<li><strong>弹性扩容便捷。</strong> 作为分布式数据库，当归档集群资源不足时，可以平滑地增加几台 OBServer 节点即可解决问题，操作简单。</li>
+<li><strong>金融级高可用方案。</strong> 作为互联网金融企业，对数据一致性要求极高，OceanBase 的金融级高可用架构满足这一需求。</li>
+</ul>
+<h2 id="如何推动研发团队使用-OceanBase"><a href="#如何推动研发团队使用-OceanBase" class="headerlink" title="如何推动研发团队使用 OceanBase"></a>如何推动研发团队使用 OceanBase</h2><p>选定产品后，推动研发团队使用是另一大挑战。研发人员没有业务诉求或上级压力时，通常不会主动更换正在稳定运行的 MySQL 方案。如何保证迁移后的性能表现，是打消顾虑的关键。</p>
+<p>OceanBase 提供了不错的配套工具：</p>
+<ul>
+<li>迁移评估工具OMA（OceanBase Migration Assessment）可以提供精准的语法兼容性评估。基于全链路压测思维，制定详尽的割接 SOP。在迁移前，我们可以利用 OMA 抓取源库真实业务流量并在目标库进行仿真回放，预知高并发下的性能风险与锁冲突。</li>
+<li>迁移服务OMS（OceanBase Migration Service）配套完善，支持实时同步和反向同步。这样一来，建立稳固的全量 + 增量实时数据同步链路，在割接窗口期，配合数据实时一致性校验，确保新旧库数据绝对平齐。割接的最强底气在于开启从 OB 到源库的逆向同步链路，并保持老库数据实时鲜活，为随时可能的紧急回滚提供待命的底座。</li>
+</ul>
+<p><strong>我们主要采用两种方案</strong> ：一是通过 OMS 同步后在低峰期做割接；二是通过研发控制双写，这是目前使用较多的方案。双写方案回滚方便，可分别控制读和写，通过灰度流量验证，一旦灰度期间监控发现异常，无需重启应用，直接通过配置中心一键拉回流量，实现秒级无损切回， <strong>真正做到进可攻，退可守。</strong></p>
+<h2 id="实战破局：从核心业务场景落地到自动化运维"><a href="#实战破局：从核心业务场景落地到自动化运维" class="headerlink" title="实战破局：从核心业务场景落地到自动化运维"></a>实战破局：从核心业务场景落地到自动化运维</h2><h3 id="技术升级，实现降本增效、高可用、高可靠"><a href="#技术升级，实现降本增效、高可用、高可靠" class="headerlink" title="技术升级，实现降本增效、高可用、高可靠"></a>技术升级，实现降本增效、高可用、高可靠</h3><h4 id="1-极致降本：LSM-Tree-引擎对海量数据的存储重塑"><a href="#1-极致降本：LSM-Tree-引擎对海量数据的存储重塑" class="headerlink" title="1. 极致降本：LSM-Tree 引擎对海量数据的存储重塑"></a>1. 极致降本：LSM-Tree 引擎对海量数据的存储重塑</h4><p>使用 OceanBase 后，告别了传统 MySQL B+ 树的页分裂与空间碎片，采用 LSM-Tree 存储引擎将随机写转化为顺序追加写，实现极致的写入性能与双层数据压缩。 <strong>89TB 的数据被压缩至 29TB，存储空间节约约 67%。</strong></p>
+<p><strong>业务场景一：历史存量业务（冷热分离）。</strong> 存量数据的日常访问频次极低且无法下线，占用着大量昂贵的 SSD 存储资源。我们考虑将部分数据迁移到 OceanBase ，利用其极致压缩能力将海量数据在线归档。在不影响偶尔查询的前提下，大幅削减硬件成本，实现 “ 冷热数据 ” 高效治理。</p>
+<p><strong>业务场景二：营销投放业务（高频并发）。</strong> 这是一个典型的写密集型业务，流水产生极快，且因合规与对账要求，保留周期极长，极易引发容量危机。在 MySQL 分表方案中，每台机器配置两块数据盘，使用压力经常达到 85% 。</p>
+<p>DBA 需要频繁做归档和表空间收缩，运维压力很大。 OceanBase 采用 LSM-Tree 架构，增量数据写入后通过定期合并完成空间回收，无需手动收缩，整体运维压力大幅降低。值得一提的是 OceanBase “ 内存追加写 ” 特性完美消除高频写入的 I&#x2F;O 瓶颈，底层高压缩比彻底瓦解长期保留的容量焦虑，让业务敢于记录详尽流水。</p>
+<h4 id="2-同城双活架构与极致高可用实践"><a href="#2-同城双活架构与极致高可用实践" class="headerlink" title="2. 同城双活架构与极致高可用实践"></a>2. 同城双活架构与极致高可用实践</h4><p><strong>业务场景三：同城双活演练。</strong> 我们每年进行两次同城双活演练，两个机房之间将流量和数据库全部切换。</p>
+<p><img src="/img/2026-06-25-xinye-technology-oceanbase-practice/01.webp" alt="信也科技同城双活与租户级容灾架构" decoding="async"></p>
+<blockquote>
+<p>备租户 (Standby Tenant) 容灾体系。打破传统主备架构局限，基于底层 Redo Log 异步&#x2F;强同步传输，实现跨机房的“租户级”物理容灾。无论遭遇多极端的机房级故障，坚守底层数据零丢失的绝对红线。</p>
+<p>“切浦江”常态化双活演练。告别纸上谈兵，将主备角色平滑互换演练融入日常运维。结合业务流量管控与紧急回滚预案，验证全链路可靠性，确保极端场景下核心交易流量接管无感丝滑。</p>
+</blockquote>
+<p>在演练过程中， MySQL 及其他关键数据库会出现抖动，对业务有一定影响。公司管理层也在关注如何将切换影响降到更低、更平滑。 OceanBase 的架构天然适配这一需求，通过 OBProxy 和 Service 层访问，切换更加丝滑。但需要注意的是，早期版本（如 V4.2.0.5 ）在 OBProxy 层面不够成熟。我们曾在大数据抽数场景中遇到问题：分布式架构下只能通过 OBProxy 访问，但抽数时某些 SQL 执行计划不佳，影响线上业务。后来了解到当时使用的版本存在一个 Bug ，导致主集群卡死，只能重启。对于核心业务，这种影响非常大。因此， <strong>如果线上核心业务使用 OceanBase，强烈建议配置 OBProxy。</strong></p>
+<h4 id="3-资源池化与多租户架构：打破物理孤岛，实现极致弹性"><a href="#3-资源池化与多租户架构：打破物理孤岛，实现极致弹性" class="headerlink" title="3. 资源池化与多租户架构：打破物理孤岛，实现极致弹性"></a>3. 资源池化与多租户架构：打破物理孤岛，实现极致弹性</h4><p><strong>业务场景四：多租户资源隔离。</strong> 很多 DBA 在银行类金融场景下按需开机器、部署交付即可，但需要思考成本与交付的平衡。当前的痛点是：研发强调业务重要，要求独立资源。我们目前采用物理机部署，对于业务压力并不高的 “ 核心 ” 业务，只能给三副本 5TB 存储，造成资源浪费。同时，多条业务线部署在同一组物理机上，某个业务线的慢查询接口可能影响其他业务。</p>
+<p>OceanBase 的多租户能力可以解决这一问题。</p>
+<ul>
+<li>告别物理机孤岛：打破传统架构按“峰值”预占硬件的痛点，实现资源池化管理。按需动态分配 CPU&#x2F;内存，彻底消除物理机闲置造成的成本浪费。</li>
+<li>租户级物理硬隔离：通过底层的 CPU 绑核与 IOPS 阈值控制，实现租户间的物理级硬隔离。确保营销等高 I&#x2F;O 业务突发打满时，核心交易链路绝对不受“噪音效应”干扰。</li>
+<li>分钟级动态扩缩容：以 Unit 为最小迁移单位，实现业务零感知的在线扩容与缩容。轻松应对跨地域、多时区的突发业务洪峰与节假日高并发。<br><img src="/img/2026-06-25-xinye-technology-oceanbase-practice/02.webp" alt="OceanBase 多租户资源池化架构示意" loading="lazy" decoding="async"></li>
+</ul>
+<p>使用 OceanBase 后，<strong>整体资源利用率提升约 40%，新业务节点部署周期缩短约 90%</strong>。早期采购还有一条经验：CPU 买少了、存储配大了，CPU 打满后磁盘还空着。<strong>建议采购时选择高 CPU 规格（如 96C），与内存配比大约 1:2。</strong></p>
+<h3 id="自动化运维与生态打通"><a href="#自动化运维与生态打通" class="headerlink" title="自动化运维与生态打通"></a>自动化运维与生态打通</h3><p>将新数据库纳入既有运维体系是一个常见问题。信也科技数据库种类较多，包括 MySQL 、 Redis 、 OceanBase 、 Elasticsearch 等多种关系型和非关系型数据库。我们有一套面向研发和 DBA 的管理平台，已将 OceanBase 的自动化流程纳入其中。</p>
+<p>在 SQL 变更方面，我们采用双重验证机制：通过 OCP 平台和内部工具进行交叉验证，确认无误后直接执行；如有风险则走工单审批流程。但工单执行也存在问题 —— 大表改表操作耗时非常长，业务方能否等待是一个问题，同时改表过程中本身存在锁开销等风险。我们的做法是安排在每天 21 点执行，如果到早上窗口期结束仍未完成，则进行抑制操作，暂停 DDL 避免影响业务。</p>
+<p>在开发平台方面，我们参考了阿里云的建表体验，将开发规范内置到平台中，研发人员无需关心索引、表备注、字符集等规范细节，只需填写表名、备注和字段类型，提交后平台自动处理。</p>
+<p><img src="/img/2026-06-25-xinye-technology-oceanbase-practice/03.webp" alt="OceanBase 自动化运维与生态打通" loading="lazy" decoding="async"></p>
+<p>一个重要的经验教训是：早期未配置 OBProxy 时，在大数据抽数场景中，复杂查询任务直连主租户 (Primary Tenant) 。凌晨抽数高峰期引发大面积全表扫描，导致主库 CPU 飙升、 I&#x2F;O 触及瓶颈，严重威胁核心交易链路安全。后来我们将所有离线抽数、报表分析流量无缝引流至备租户 (Standby Tenant) ，彻底实现底层读写分离，物理隔离 OLAP 与 OLTP ，主库性能稳如磐石。</p>
+<h3 id="一次线上故障与复盘"><a href="#一次线上故障与复盘" class="headerlink" title="一次线上故障与复盘"></a>一次线上故障与复盘</h3><p>近期发生了一次线上故障，处理经验供大家参考。背景是研发同学反馈线上出现问题，排查发现某条 SQL 虽已有索引，但未按索引执行，于是进行了执行计划绑定操作。</p>
+<p>执行计划绑定存在一个隐患： OCP 平台上展示的执行计划可能有多个（如 A 、 B 、 C 三个），操作时平台会将三个全部标记为绑定状态，但底层数据库实际上只绑定了其中一个。当时操作人员看到平台显示绑定了三个，认为是误操作，立即取消了绑定。此时执行计划已落入全表扫描路径，数据库压力瞬间飙升，业务出现 “ 雪崩 ” 。</p>
+<p>我们的应急处理过程是：</p>
+<ul>
+<li>第一步解绑，但解绑后并未恢复，因为错误的执行计划已产生，全部走全表扫描。</li>
+<li>第二步做限流，也未能起效。</li>
+<li>第三步切备库，切到备库后，旧连接上的请求仍在原库执行，新连接到备库后逐步恢复。</li>
+</ul>
+<p>对此，我们复盘后得出几个要点：</p>
+<ul>
+<li><strong>深入理解底层实现</strong> ：不要盲目相信 OCP 平台上的显示信息，需要到数据库底层查看对应表，确认是否真正绑定了目标执行计划。</li>
+<li><strong>完善上线前的 review 机制</strong> ：在测试环节识别有问题的接口，拦截问题代码发布到线上。</li>
+<li><strong>建立快速止血能力</strong> ：在平台上提供快速 kill 会话的能力，降低故障影响时长。</li>
+</ul>
+<p>同时，也总结了两个DBA避坑硬核心法。一是 <strong>拒绝盲信 UI 工具</strong> ：任何工具都有黑盒盲区。执行计划绑定后，必须切回黑屏查询 GV$OB_SQL_OUTLINE 确认真实的物理执行路径；二是 <strong>敬畏数据，硬核复核</strong> ：挑选历史计划时，绝不可单看”平均耗时最短”这个单一维度，谨防极端极少样本导致的性能假象。</p>
+<h2 id="未来规划：探索一体化向量底座与全自动运维"><a href="#未来规划：探索一体化向量底座与全自动运维" class="headerlink" title="未来规划：探索一体化向量底座与全自动运维"></a>未来规划：探索一体化向量底座与全自动运维</h2><p>我们在 2024 年开始使用 OceanBase ，从特定场景到核心业务依次上线，基于其在这两年的稳定表现，我们计划持续扩大 OceanBase 的使用范围。例如，将部分 MongoDB 支持的业务场景迁移到 OceanBase ，以降低数据库成本。</p>
+<p>未来，我们还将基于 OceanBase 优化 AIOps 、重塑归档体系、演进一体化向量底座。</p>
+<h4 id="1-从手工救火到-AIOps-智能自愈体系的蜕变"><a href="#1-从手工救火到-AIOps-智能自愈体系的蜕变" class="headerlink" title="1.从手工救火到 AIOps 智能自愈体系的蜕变"></a>1.从手工救火到 AIOps 智能自愈体系的蜕变</h4><p>如何将 OceanBase 与自动化运维体系及 AIOps 深度结合，实现数据库问题的自动判断甚至自愈？这是我们要解决的问题，目前已有巡检系统，可以检测隐患与风险，但治理工作仍依赖 DBA 人工处理。未来，我们希望实现：巡检发现问题后自动治理，以及报警触发后自动分析并给出执行路径，经 DBA 确认后即可执行。这对缩短故障处理时间、提升 MTTR （平均修复时间）指标至关重要，对 DBA 完成 SLA （如 9999 或 99999 ）的考核也有直接帮助。</p>
+<p>为此，我们将通过三方面构建全链路治理体系。</p>
+<ul>
+<li>防线左移：前置 AI 质量拦截。自动化 SQL Review 平台引入 AI 辅助代码审核，在研发流水线中精准识别并提前掐断易引发“全表扫描”的劣质计划。</li>
+<li>极速响应：智能 RCA 与自动止血。打破传统堆砌告警模式，构建基于监控日志的智能根因分析 (RCA)。实现“诊断-&gt;止血”联动，将人工排查时间从分钟级压缩至秒级。</li>
+<li>底盘稳固：演练与黑屏 SOP。沉淀极端场景下的应急经验，针对复杂故障强化团队黑屏排雷与实操能力，知其然更知其所以然。</li>
+</ul>
+<p>与此同时，探索基于大语言模型 Agent 的数据库常态化巡检，结合历史负载特征，实现数据库底层参数的动态自适应调优。逐步落地智能化故障自愈机制，从 “ 被动响应 ” 向 “ 主动防御 ” 演进，极大降低业务连续性对人工经验的依赖。</p>
+<h4 id="2-重塑归档体系：从底座演进到全链路自动化治理"><a href="#2-重塑归档体系：从底座演进到全链路自动化治理" class="headerlink" title="2.重塑归档体系：从底座演进到全链路自动化治理"></a>2.重塑归档体系：从底座演进到全链路自动化治理</h4><p>冷热数据分离是线上频繁使用的场景，数据分离后仍需保留以满足审计或业务需求。以往，我们的做法非常笨拙：通过 rename 方式定期清理过期数据并重建新表。使用 OceanBase 后可以按分区进行添加和删除，操作非常丝滑。还可以按时间要求定时执行归档，支持不同租户或实例串行归档，也提供并发数和优先级支持。考虑到我们在东南亚（菲律宾、印尼）、澳洲、非洲等地区都有业务， OceanBase 还支持归档时配置不同存储介质，满足当地数据驻留的合规要求。</p>
+<p>最初我们使用 InnoDB 处理数据归档，引发主库 CPU 资源争抢，性能与容量难以兼得；后来引入 TiDB ，带来了高昂硬件成本与复杂运维负担；现在使用 OceanBase 彻底统一在线交易与历史归档技术栈，自动化维护分区全生命周期，带来了海量历史数据存储成本骤降 70% 、主租户核心库查询性能跃升 30% 的效果。</p>
+<h4 id="3-AI-Native：一体化向量底座与业务展望"><a href="#3-AI-Native：一体化向量底座与业务展望" class="headerlink" title="3.AI Native：一体化向量底座与业务展望"></a>3.AI Native：一体化向量底座与业务展望</h4><p>如今，信也内部推动 “ All in AI ” ， DBA 团队的相关后台系统已 100% 使用 AI 编写， AI 平台和开发团队将向量数据库作为存储底座。</p>
+<p>在 AI 趋势与业务需求的双重压力下，我们计划探索将 OceanBase 作为一体化向量底座的效果，比如在海量数据场景下替代 PostgreSQL ，以及在智能风控场景使用 OceanBase 的向量相似度匹配，精准捕捉跨业务线的隐秘欺诈团伙，提升风控模型的召回率与时效性。</p>
+<p>OceanBase 向量功能迭代迅速，在 4.3.3 GA 版本推出 SQL + 向量一体化检索架构，无需异构同步，确保数据实时强一致与金融级可靠性。如今已支持 HNSW 、 IVFFlat 等主流索引，可承载 16000 维超高维检索，满足大模型长文境需求，据官方透露，后续版本的向量能力将有更大提升。对于我们来说， OceanBase 最大的优势在于一个数据库同时处理关系型、 KV 及向量数据，极大降低 AI 原生应用的开发与运维复杂度。</p>
+<p>AI 大势所趋，对 DBA 提出了新的技能要求。在与阿里云团队交流时，了解到他们通过海量故障数据构建知识库并存储在向量数据库中，当故障发生时通过向量搜索匹配标准 SOP，再分发给相应人员处理。所以我们将构建基于 RAG 的运维知识库，实现故障特征的秒级检索与自动化处置。同时，依托OceanBase的一体化底座简化技术栈，降低 AI 落地门槛，实现从“数据治理”向“AI 资产赋能”的跨越。</p>
+<p><img src="/img/2026-06-25-xinye-technology-oceanbase-practice/04.webp" alt="一体化向量底座支撑 AI 业务示意" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+<p>用户案例 · 目录</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/%E9%87%91%E8%9E%8D%E7%A7%91%E6%8A%80/" rel="tag"># 金融科技</a>
+              <a href="/tags/%E4%BF%A1%E4%B9%9F%E7%A7%91%E6%8A%80/" rel="tag"># 信也科技</a>
+              <a href="/tags/%E6%99%BA%E8%83%BD%E9%A3%8E%E6%8E%A7/" rel="tag"># 智能风控</a>
+              <a href="/tags/AI-%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7/" rel="tag"># AI 数据底座</a>
+              <a href="/tags/AIOps/" rel="tag"># AIOps</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-22-seekdb-world-cup-prediction/" rel="prev" title="用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟">
+                  <i class="fa fa-angle-left"></i> 用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="next" title="GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript">
+                  GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

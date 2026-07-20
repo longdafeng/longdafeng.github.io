@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座">
+<meta property="og:url" content="https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/02.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/04.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/05.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/06.webp">
+<meta property="article:published_time" content="2026-07-01T14:44:07.000Z">
+<meta property="article:modified_time" content="2026-07-01T14:44:07.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI 数据合成">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="多模数据">
+<meta property="article:tag" content="混合搜索">
+<meta property="article:tag" content="生命科学">
+<meta property="article:tag" content="算秩未来">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/","path":"2026/2026-07-01-oceanbase-life-science-hybrid-search/","title":"算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF%E6%A0%88%EF%BC%9A%E4%B8%9A%E5%8A%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B5%B0%E5%90%91%E5%A4%9A%E6%A8%A1%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0"><span class="nav-number">1.</span> <span class="nav-text">数据库技术栈：业务数据库走向多模数据平台</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9-OceanBase-%E7%9A%84%E9%9C%80%E6%B1%82%E8%B5%B7%E7%82%B9%EF%BC%9A%E7%94%9F%E5%91%BD%E7%A7%91%E5%AD%A6%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E8%AF%AD%E6%96%99%E5%90%88%E6%88%90"><span class="nav-number">2.</span> <span class="nav-text">对 OceanBase 的需求起点：生命科学大模型训练语料合成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E8%AE%BE%E8%AE%A1%EF%BC%9A%E4%BB%8E%E5%8E%9F%E5%A7%8B%E6%96%87%E6%A1%A3%E5%88%B0%E5%8F%AF%E6%9F%A5%E8%AF%A2%E7%9A%84%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.</span> <span class="nav-text">模型设计：从原始文档到可查询的关系模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E5%AE%9E%E8%B7%B5%EF%BC%9A%E5%90%8C%E4%B8%80%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7%E8%A6%86%E7%9B%96%E4%B8%89%E7%B1%BB%E7%94%9F%E5%91%BD%E7%A7%91%E5%AD%A6%E5%8F%AC%E5%9B%9E"><span class="nav-number">4.</span> <span class="nav-text">查询实践：同一数据底座覆盖三类生命科学召回</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%9A%E5%8A%A1%E4%BB%B7%E5%80%BC%EF%BC%9A%E4%B8%80%E5%A5%97%E7%B3%BB%E7%BB%9F%E8%A7%A3%E5%86%B3%E5%A4%9A%E7%A7%8D%E9%97%AE%E9%A2%98"><span class="nav-number">4.1.</span> <span class="nav-text">业务价值：一套系统解决多种问题</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-26-why-oceanbase-opensource-seekdb/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-26</time>
+        <br>
+      AI 时代，OceanBase 为什么要开源一款 AI 原生数据库 seekdb？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-10-22-quwan-ai-yuangong-zhushou/" rel="bookmark">
+        <time class="popular-posts-time">2025-10-22</time>
+        <br>
+      成熟稳定省钱好用的AI应用怎么开发 - 趣丸科技基于OceanBase打造员工助手的技术实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-09-11-game-vector-search-oceanbase/" rel="bookmark">
+        <time class="popular-posts-time">2025-09-11</time>
+        <br>
+      向量检索技术优化步骤详解——游戏公司智能客服与推荐系统落地OceanBase
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-07-16-duxiaoman-database-selection/" rel="bookmark">
+        <time class="popular-posts-time">2025-07-16</time>
+        <br>
+      OceanBase: 度小满列举五大技术场景拆解数据库选型方案，降本、性能、效率均翻倍
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-06-25-huolala-oceanbase-vector-search/" rel="bookmark">
+        <time class="popular-posts-time">2025-06-25</time>
+        <br>
+      OceanBase向量检索在货拉拉的探索和实践
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座 | Longda's Interesting World">
+      <meta itemprop="description" content="算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-07-01 22:44:07" itemprop="dateCreated datePublished" datetime="2026-07-01T22:44:07+08:00">2026-07-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">算秩未来</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座","description":"算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。","image":"https://ilongda.com/img/2026-07-01-oceanbase-life-science-hybrid-search/01.webp","wordCount":2448,"datePublished":"2026-07-01T14:44:07.000Z","dateModified":"2026-07-01T14:44:07.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/"},"url":"https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/","inLanguage":"zh-CN","keywords":["OceanBase","向量检索","混合搜索","算秩未来","生命科学","AI 数据合成","多模数据"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座","item":"https://ilongda.com/2026/2026-07-01-oceanbase-life-science-hybrid-search/"}]}</script>
+<p>算秩未来面向医疗、教育、材料与科研等场景，提供 GPU &#x2F; CPU 算力与 MaaS 服务。训练语料要落库、要能被 Agent &#x2F; RAG 查回来时，他们遇到一个典型难题：标量过滤、全文检索、向量语义检索如果拆到多套系统，同步成本与召回质量都会失控。</p>
+<p>本文分享他们如何以生命科学大模型语料合成为起点，用 OceanBase 搭一套企业级混合搜索底座：约 20TB 原始数据、九张业务表，在同一引擎里覆盖 ID 查询、正则、全文与向量召回。</p>
+<span id="more"></span>
+
+<h2 id="数据库技术栈：业务数据库走向多模数据平台"><a href="#数据库技术栈：业务数据库走向多模数据平台" class="headerlink" title="数据库技术栈：业务数据库走向多模数据平台"></a>数据库技术栈：业务数据库走向多模数据平台</h2><p>算秩未来是一家年轻的公司，面向医疗、教育、材料、科研机构、政府单位及个人开发者，提供高性能 GPU 集群、弹性无服务器的 CPU 云算力，支撑训练推理和数据生产链路。产品形态从资源交付到算法研发，包括裸金属、云原生平台、机器学习平台与 MaaS（模型即服务）平台。</p>
+<p>业务侧要求实时交付、弹性计费，还有自动运维和异构计算；MaaS 面向开发者后，模型调用量也很大。因此数据库种类偏多，大致分三层：</p>
+<ul>
+<li><strong>在线交易层</strong>：数据量不大，用 MySQL 支撑账号、订单、Token 调用量、计费等表。长远看，数据量上来后 MySQL 仍会被替换。</li>
+<li><strong>缓存与消息层</strong>：Redis 缓存热点；Kafka 承担异步事件、日志传输与消息队列。</li>
+<li><strong>分析与检索层</strong>：OceanBase、Doris、NebulaGraph 支撑 OLAP、日志、实体关系、全文与向量等复杂探索。不少 AI 开源框架自带 PG 协议，因此也接入了 PostgreSQL。</li>
+</ul>
+<p>所有实例容器化部署：MySQL &#x2F; PostgreSQL 用 Operator，OceanBase 用 OceanBase Operator，Kafka 用 Strimzi，Redis 用官方 Helm。容器化推进很快，但坑也不少，方案仍在迭代。</p>
+<h2 id="对-OceanBase-的需求起点：生命科学大模型训练语料合成"><a href="#对-OceanBase-的需求起点：生命科学大模型训练语料合成" class="headerlink" title="对 OceanBase 的需求起点：生命科学大模型训练语料合成"></a>对 OceanBase 的需求起点：生命科学大模型训练语料合成</h2><p>我们将 OceanBase 用在「生命科学大模型语料训练」场景。垂直领域模型需要训练语料，语料原本散落在文件里；算法与算力团队希望落库后，整条训练链路能自动化。<strong>对数据库的核心要求是：既能按唯一 ID 查，又能做正则匹配、全文索引，还要具备向量检索能力。</strong></p>
+<p>压力主要来自三方面：</p>
+<ol>
+<li><strong>规模</strong>：算法侧语料约 20TB、约 31 亿条量级，生物相关文件约 14,070 个，库内设计为 9 张业务表。术语覆盖小分子 &#x2F; SMILES、DNA、RNA、基因、蛋白等，来源含 NIH 等机构。核心诉求是把<strong>文件资产变成可治理、可索引、可追溯的数据资产</strong>。</li>
+<li><strong>查询形态</strong>：从人工查资料，变成 Agent &#x2F; RAG 调用。除唯一索引外，还要标量过滤、全文、正则、语义向量，常常还要组合使用。高精度召回场景下，混合搜索几乎是标配。</li>
+<li><strong>结构多样</strong>：若按传统方式拆库存储，库种越多，同步与链路越碎，成本越高。</li>
+</ol>
+<p>拆开用多套系统时，常见短板是：</p>
+<ul>
+<li>正排快，但盖不住别名与非标准表述</li>
+<li>全文能搜文本，却和业务主键割裂</li>
+<li>向量能找相似，却缺权威业务过滤</li>
+<li>纯向量库的标签过滤往往不够强</li>
+<li>多库同步带来冗余、运维与成本上升</li>
+</ul>
+<p><strong>缺的是一套能扛生命科学混合检索的统一底座。</strong> 我们试过 MySQL、PostgreSQL 和其他分布式库：要么存储太贵，要么引擎性能不够。</p>
+<p>与 OceanBase 交流后，存储引擎设计令人印象深刻：既能明显压低存储成本，性能也往往强于传统向量库；其余特性也贴合我们的选型清单。</p>
+<table>
+<thead>
+<tr>
+<th>选型需求</th>
+<th>OceanBase 如何满足</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>兼容 MySQL 协议</td>
+<td>兼容 MySQL；不少向量库不支持或性能差异大，难用常见 SDK 访问</td>
+</tr>
+<tr>
+<td>分布式性能</td>
+<td>一体化架构 + LSM-Tree，高压缩；约 20TB 数据可压约 30%</td>
+</tr>
+<tr>
+<td>容器化部署</td>
+<td>全云原生环境，提供体系化的容器部署能力</td>
+</tr>
+<tr>
+<td>标量 &#x2F; 全文 &#x2F; 向量</td>
+<td>原生混合检索，并具备部分图能力</td>
+</tr>
+<tr>
+<td>企业级稳定</td>
+<td>稳定性经市场验证</td>
+</tr>
+<tr>
+<td>弹性扩展</td>
+<td>企业级管理 + 原生混合检索，适合做统一输出底座，降低多系统复杂度</td>
+</tr>
+</tbody></table>
+<h2 id="模型设计：从原始文档到可查询的关系模型"><a href="#模型设计：从原始文档到可查询的关系模型" class="headerlink" title="模型设计：从原始文档到可查询的关系模型"></a>模型设计：从原始文档到可查询的关系模型</h2><p>选型后需要对模型进行设计，将原始文档（Json 格式）文本落库。借助 AI 工具提效，我们能够在几十分钟内完成代码编写，跑完直接落库。</p>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/01.webp" alt="生命科学语料从文档到关系模型映射" decoding="async"></p>
+<p>整个阶段需要筛选出关键字段，变成结构化表结构。需要设计哪些字段单独提出、哪些字段放 Json 类型。存在多层嵌套，有父子表关系，拆了三张父子表。</p>
+<p>索引设计方面 OceanBase 同时支持标量、全文、向量。结构保留原始 Json，保证原始数据来源source，因为应用需要上下文可回溯，最后返回数据时需要把原文返回给模型。</p>
+<p>以基因、蛋白、小分子为例，有 Molecule以及Molecule SMILES分子表达式，在不同库中的表达式不一样，存在复杂关系。OceanBase主要用于处理复杂关系查询。数据属于数据资产，不会归档，没有按时间做分区，而是用 CID 加 ID 进行全局唯一 Hash 分区，每个表 32 个分区。</p>
+<p>核心原则是：C 端统一分区，Json 和索引保证稳定，提供差异化检索服务。希望数据结构化后能够精准召回。</p>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/02.webp" alt="业务表与全文向量索引协同设计示意" loading="lazy" decoding="async"></p>
+<h2 id="查询实践：同一数据底座覆盖三类生命科学召回"><a href="#查询实践：同一数据底座覆盖三类生命科学召回" class="headerlink" title="查询实践：同一数据底座覆盖三类生命科学召回"></a>查询实践：同一数据底座覆盖三类生命科学召回</h2><p>查询条件涉及专业术语，小分子主要通过CID，DNA、蛋白质通过 NCBI、UniProt ID 返回。基因中心法则等通过相关 Json Tag 做模糊匹配。涉及标量唯一检索、正则模糊匹配、向量检索等多种入口。四个入口+结构化模型+混合专业化，让搜索从确定性命中到可组合调用。</p>
+<p>目前该项目还在进行中，只做了前半部分。框架定义为三层。</p>
+<ul>
+<li>L1：精确查找，通过唯一 ID（CID 或 InChI）精确命中。</li>
+<li>L2：模糊查找，通过基因名等做全文检索。</li>
+<li>L3：语义查找，通过向量检索召回。</li>
+</ul>
+<blockquote>
+<p>基因序列补充说明：每个基因序列看似简单，实际很长，一个分子的基因序列可能几百 MB 甚至几个 GB。遇到 OceanBase 大字段 500 MB 限制，需要拆分处理。L2 模糊查找通过基因名在 OceanBase 全文检索，以及其他阶段字段做小检索。接下来我们将通过向量检索对基因序列向量化并存入库，通过相似检索召回需要的基因，从确定命中到相似发现，形成可编排的企业级检索链路。</p>
+</blockquote>
+<p>OceanBase 在L2层，既能管理业务数据，也能承接搜索所需的向量和上下文，比如将上层的数据存为多模态，向应用层或 AI 提供能力。整个 OceanBase 3 副本 1:1:1 部署，通过 OBProxy 访问。</p>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/03.png" alt="标量全文向量三类召回统一查询示意" loading="lazy" decoding="async"></p>
+<p>在部署前期，我们在 OceanBase 前加了一层 OBProxy（业务从 OBProxy 进来访问OB Server），全部通过 OB Operator 管理，过程中遇到一些问题。</p>
+<ul>
+<li>Dashboard 扩容 Zone 后 add server 超时偏短，Pod创建成功但OBZone &#x2F; OBServer状态异常。需手动执行 alter system add server，再用 OBResourceRescue重置 OBServer状态。</li>
+<li>扩容 Zone 只支持 nodeSelector，缺少 pod affinity 配置入口。</li>
+<li>Dashboard 上缩容节点或 Zone 存在状态机不一致问题，容易误操作，且修复集群状态比较繁琐。</li>
+<li>拓扑、任务进度、异常原因和恢复建议没有在同一视图中连接起来。</li>
+</ul>
+<p>基于此，我们希望OceanBase能够尽快将运维体验和 AI 搜索能力一起补齐。</p>
+<ul>
+<li>Dashboard + Operator 提供一键扩容：预检查、affinity、进度、失败恢复和回滚 Runbook。</li>
+<li>增强 PostgreSQL 协议兼容，降低 PostgreSQL 生态应用、驱动和 SQL 迁移成本。</li>
+<li>补齐图检索 &#x2F; 知识图谱关系召回，与标量、全文、向量形成GraphRAG混合链路。</li>
+</ul>
+<h3 id="业务价值：一套系统解决多种问题"><a href="#业务价值：一套系统解决多种问题" class="headerlink" title="业务价值：一套系统解决多种问题"></a>业务价值：一套系统解决多种问题</h3><p>使用 OceanBase 后，业务的演进路线越来越清晰，价值越来越凸显。数据从文献文本变成了数据库中可查询、多维度、可精准召回的数据资产。通过数据库实现多维度的标量、唯一键、全文检索，命中率更高，链路更短。 <strong>整个链路只需一套系统就能解决问题，不再需要 MySQL、Elasticsearch、 Milvus或其他大型数据库拼凑。对我们来说，这就是最优解。</strong></p>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/04.webp" alt="混合搜索底座覆盖多类业务查询" loading="lazy" decoding="async"></p>
+<p>基于OceanBase，技术落地路线从生命科学可用检索演变为智能搜索。当前，阶段1的数据入库与基础查询和阶段2的模糊与全文召回已经落地，阶段3与阶段4正在进行中。 最终目标是： 统一数据底座 + 可编排搜索链路 + 面向 AI 的高质量上下文返回。</p>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/05.webp" alt="统一数据底座降低多库同步成本" loading="lazy" decoding="async"></p>
+<p>用统一数据底座，承接 AI 时代的企业混合搜索。</p>
+<blockquote>
+<p>OceanBase 混合搜索方案将精确查询、模糊检索和语义召回统一到企业级数据架构中，让大规模复杂数据既能被可靠管理，也能被 AI 高效调用。</p>
+</blockquote>
+<p><img src="/img/2026-07-01-oceanbase-life-science-hybrid-search/06.webp" alt="OceanBase 混合搜索业务价值总结" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2/" rel="tag"># 混合搜索</a>
+              <a href="/tags/%E7%AE%97%E7%A7%A9%E6%9C%AA%E6%9D%A5/" rel="tag"># 算秩未来</a>
+              <a href="/tags/%E7%94%9F%E5%91%BD%E7%A7%91%E5%AD%A6/" rel="tag"># 生命科学</a>
+              <a href="/tags/AI-%E6%95%B0%E6%8D%AE%E5%90%88%E6%88%90/" rel="tag"># AI 数据合成</a>
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%95%B0%E6%8D%AE/" rel="tag"># 多模数据</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="prev" title="GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript">
+                  <i class="fa fa-angle-left"></i> GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-02-easy-data-ai-course/" rel="next" title="Easy Data x AI 课程共建：补上 Agent 时代的数据基础课">
+                  Easy Data x AI 课程共建：补上 Agent 时代的数据基础课 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

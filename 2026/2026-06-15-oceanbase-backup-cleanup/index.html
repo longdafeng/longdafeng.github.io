@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase 备份空间清不掉？物理备份自动清理原理详解">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/03.jpg">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/06.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/07.png">
+<meta property="article:published_time" content="2026-06-14T23:52:11.000Z">
+<meta property="article:modified_time" content="2026-06-14T23:52:11.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OBServer">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="备份恢复">
+<meta property="article:tag" content="备份清理">
+<meta property="article:tag" content="数据库运维">
+<meta property="article:tag" content="物理备份">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/","path":"2026/2026-06-15-oceanbase-backup-cleanup/","title":"OceanBase 备份空间清不掉？物理备份自动清理原理详解"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 备份空间清不掉？物理备份自动清理原理详解 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-%E5%A4%87%E4%BB%BD%E7%90%86%E8%AE%BA%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">OceanBase 备份理论知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-%E5%A4%87%E4%BB%BD%E7%9B%AE%E5%BD%95%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">OceanBase 备份目录分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD%E7%A9%BA%E9%97%B4%E6%B8%85%E7%90%86%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">备份空间清理分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E5%A4%87%E4%BB%BD%E7%A9%BA%E9%97%B4%E5%A4%A7%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-number">5.</span> <span class="nav-text">日志备份空间大的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E9%98%85%E8%AF%BB"><span class="nav-number">7.</span> <span class="nav-text">更多阅读</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-17-didi-oceanbase-ops-practice/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-17</time>
+        <br>
+      OceanBase 在滴滴大规模运维经验以及新功能落地实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-10-11-ai-gaibian-shujuku-chanpin/" rel="bookmark">
+        <time class="popular-posts-time">2025-10-13</time>
+        <br>
+      AI改变数据库产品实践探索 - obloader agent与OceanBase Agent
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-08-04-oceanbase-agent-database-ops/" rel="bookmark">
+        <time class="popular-posts-time">2025-08-04</time>
+        <br>
+      告别繁琐手动分析，OceanBase Agent 助力轻松运维数据库！
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-07-24-mcp-obcloud-workflow/" rel="bookmark">
+        <time class="popular-posts-time">2025-07-24</time>
+        <br>
+      AI替代传统GUI：基于 MCP 的 OBCloud 工作流
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-07-21-oceanbase-auto-increment-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2025-07-21</time>
+        <br>
+      OceanBase 的自增列进化史及最佳实践
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 备份空间清不掉？物理备份自动清理原理详解 | Longda's Interesting World">
+      <meta itemprop="description" content="详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 备份空间清不掉？物理备份自动清理原理详解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-15 07:52:11" itemprop="dateCreated datePublished" datetime="2026-06-15T07:52:11+08:00">2026-06-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">数据库技术闲谈</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>24 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 备份空间清不掉？物理备份自动清理原理详解","description":"详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。","image":"https://ilongda.com/img/2026-06-15-oceanbase-backup-cleanup/01.png","wordCount":6834,"datePublished":"2026-06-14T23:52:11.000Z","dateModified":"2026-06-14T23:52:11.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/"},"url":"https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/","inLanguage":"zh-CN","keywords":["OceanBase","数据库运维","物理备份","备份恢复","备份清理","OBServer"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 备份空间清不掉？物理备份自动清理原理详解","item":"https://ilongda.com/2026/2026-06-15-oceanbase-backup-cleanup/"}]}</script>
+<blockquote>
+<p>来源：微信公众号「数据库技术闲谈」<br>原文链接：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/clUMLLVIUWQSCYfJjhj6xQ">OceanBase 奇案：是谁清理了我备份的数据？</a></p>
+</blockquote>
+<h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>本文由庆涛大佬，带大家“逐帧”分析 OceanBase 备份的自动清理原理。</p>
+<p>一句话先说清问题：OceanBase 明明开了备份自动清理，为什么空间还是降不下来？答案往往不在“保留天数”本身，而在备份集依赖、日志归档链路，以及可还原时间点（RPO）怎么定义。</p>
+<p>对于 OceanBase 运维专家来说，这套原理并不难；但对习惯 Oracle &#x2F; MySQL 备份思路的传统 DBA，看完可能会觉得“跟原来不太一样，还挺有意思”。</p>
+<p>通常来说，使用 OceanBase 有主备库和备份恢复两道安全机制。备份在日常运维里占比不高，真要靠它恢复时才会被想起来。今天不聊怎么恢复，而聊更少被提起、却很贵的话题：备份空间为什么按直觉“过期了”却清不掉。</p>
+<span id="more"></span>
+
+<p>大部分客户都会直接给 OceanBase 分配几 TB 的备份空间，而且只在少数场景才会盯使用率：一是 PoC 考察自动清理，二是云上备份账单突然变高的时候。</p>
+<p>OceanBase 的备份有自动清理功能，很多人会把它理解成“过了保留期就删文件”。实际清理行为没这么简单。当客户对备份空间锱铢必较时，就会发现：有些备份看起来不需要了，却还在。</p>
+<p>本文接下来会逐一说明 OceanBase 物理备份和空间清理的原理与现象。</p>
+<blockquote>
+<p>说明：本文中的备份，特指物理备份。</p>
+<p>社区运营小编曾经在 OB 很低的版本中，支持过通过备份 SQL 来进行逻辑备份，然后通过 SQL 回放来进行逻辑恢复。不过从 3.x 版本开始，又把逻辑备份全面优化成了物理备份。本文仅讨论物理备份。</p>
+<p>很低的版本指 OB 1.x ~ 2.x，大多数来自 OB 社区的读者应该都没听说过这些版本，所以这段历史可以直接忽略，不必细究。</p>
+</blockquote>
+<p>OceanBase 的数据，包括业务数据和数据变化的日志（WAL 日志或 REDO 日志），OceanBase 的备份自然包括数据备份和日志备份。虽然终端用户只关心数据，但是数据库的设计里，WAL 日志就是数据安全，多副本复制和高可用的必不可少的成本。在 OLAP 业务里，这个日志的成本可能还会非常的突出。</p>
+<p>OceanBase 的备份配置可以通过 SQL 配置，也可以在 OCP 里配置（集群备份或者租户备份，后者覆盖前者），或者在第三方备份产品里配置。注意：这三个途径是彼此冲突的，特别是后面两个途径。</p>
+<h2 id="OceanBase-备份理论知识"><a href="#OceanBase-备份理论知识" class="headerlink" title="OceanBase 备份理论知识"></a>OceanBase 备份理论知识</h2><p>OceanBase 的备份策略配置相比 ORACLE 要相对复杂一些，因为需要先了解相关的理论。</p>
+<p>OceanBase 是分布式架构，每个节点都有可能需要备份到相同的路径，所以备份介质通常是 NFS 路径挂载到本地文件系统，实现多个节点共享访问。共享访问是要点，这个 NFS 在客户那边一般是通过 NAS 存储提供，少数通过独立的服务器做 NFS Server 提供。还有一部分是第三方备份产品提供。NFS 备份介质一般性能都不错，风险是 NFS 路径必须保持高可用。如果 NFS 路径不可用会导致备份异常，所有 OceanBase 主机上的备份的文件系统访问也会出现 HANG。这个在传统数据库的备份里一样存在。</p>
+<p>所以，OceanBase 的备份更推荐是对象存储，通过 OSS 或 S3 协议访问，OceanBase 节点跟备份介质没有直接的物理联系，而且对象存储的备份 IO 性能通常相对差一些。对象存储的备份问题也不少，特别是市面上有很多种国产对象存储，它们实现的协议并不完全一致。这个后面单独写一篇文章，来给大家阐述。</p>
+<p>备份介质可以是 SATA SSD 或者 HDD，或者二者混合存储，在性能和成本之间取一个平衡。通常来说备份在凌晨低峰期发起，持续时间在 5h 以内完成都是安全的，更长的时间可能导致白天业务高峰期时备份还在跑。</p>
+<p>OceanBase 的架构分集群和租户两层，所以备份策略的配置入口支持集群和租户两个。但是实际备份的实体是租户，不是集群。集群里配置的是所有租户的备份策略，也可以指定特定租户的备份策略。租户里配置的是本租户的备份策略。</p>
+<p>OceanBase 的备份分数据备份和日志备份，这两个备份策略还不能相同，需要分别配置。并且必须配置日志备份并启动日志备份，数据备份的配置才能发挥作用。日志备份启动后就是 OceanBase 自动调度做的，平均 2 分钟一次，是近实时备份。OceanBase 把这个也叫日志归档，实时是它的优点。数据备份不会自动调度，需要手动触发，通常通过 OCP 调度。</p>
+<p>在 4.2.5 以及以后版本，OceanBase 的数据备份可以发起多次，但在一个周期（24h）内发起的多次数据备份其内容很可能是完全一样的，都是租户最近一次合并产生的数据快照。所以有时候客户会说一会业务要做一个重大发布，先把数据库“物理备份”一下。这个想法放在传统 ORACLE 数据库里有意义，在 OceanBase 里很可能毫无意义。除非记得在再次备份之前先对租户发起一个“合并”操作。先合并成功，再做数据备份是有意义的。所以，合并和备份的调度时间要做好规划。尽力保证数据全量备份只会在合并成功后才进行。</p>
+<p>数据备份又细分为全量备份和增量备份。增量备份记录的是距离最近的全量备份或增量备份以后数据变化的部分。这里不像 ORACLE RMAN 还有累积增量备份概念。日志备份记录的是 WAL 日志，也就是数据变化的过程日志。日志备份有增量的效果，实际沟通中可能会跟增量备份混淆，所以表述备份一定要准确。关于增量，举个例子：一张表插入 1000 万数据，然后没多久就删除了这 1000 万数据，假设随后凌晨发生的是增量备份，那么增量备份里跟这个表有关的数据块大小没有什么变化。但是日志备份里会有这 1000 万数据的插入日志和删除日志。 默认情况下，不推荐用数据备份的增量备份。因为可能引来备份空间膨胀问题。后面会阐述。</p>
+<p>OceanBase 的日志备份以流的形式备份，默认一段日志被备份后就不会再次被备份，所以日志备份文件要保证时间线上的连贯。如果中间中断了，那么这个日志备份就不能用于还原到这个任意时间点了。因为“链条断了”。备份文件的丢失，或者日志备份启动后又停止了，都会造成日志备份流的断流。日志备份就是备份租户的日志流（Log Stream）。租户的日志流没有启停的说法，也没有断流的说法，只是备份有这个。这是 OceanBase 跟 ORACLE 和 MYSQL 一个显著的区别。在 ORACLE 里，备份归档文件如果丢了，到其他地方去找一个回来就可以弥补，但是在 OceanBase 里不一定能行。官方没有这种功能介绍，我也没有做过这种测试）。日志备份每次启动称为一个 Round，数字会加 1 。日志流的备份还有个 piece 的概念，姑且翻译为分片 。日志备份参数里会指定日志流的备份多久切换一个分片，取值范围是 [1d,7d]。粒度就是天，不支持更小，最小 1 天。这个非常重要，强烈建议设置为 1 天。后面也会阐述。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/01.png" alt="OceanBase 数据备份与日志备份架构" decoding="async"></p>
+<p><em>图：OceanBase 备份架构全景（数据备份 + 日志备份 + Round + Piece）</em></p>
+<p>备份的保留策略，通常谈的是备份保留天数，这个说起来比较好理解。但是在 OceanBase 里这样沟通备份策略是错误的。 备份应该保留多少天，不是说保留多少天就是多少天，而是根据备份的目标定的。备份的目的是用于还原，所以真正的运维需求是保留的备份能用于还原的最早还原时间点。可以理解为这个点是 RPO 的最大值。通常我们说 OceanBase 高可用能力做到 RPO&#x3D;0，另外一种需求就是还原数据库到某个历史时间点，那就是 RPO&gt;0，备份的保留就是让这个 RPO 尽可能大，满足客户的还原需求。所以，跟客户沟通的不应该是备份的保留天数是多少，而是客户期望的 RPO 最大是多大。</p>
+<p>比如说 OCP 产品里默认的备份策略说“保留天数”是 7 天。这个是不严谨的，极大的误导了客户。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/02.png" alt="OCP 备份保留策略配置界面" loading="lazy" decoding="async"></p>
+<p><em>图：OCP 备份策略</em></p>
+<p>实际上 OCP 说的是备份保留能满足还原 RPO 等于 7天 。那么实际保留的备份天数一定会大于 7 天，最糟糕的情形是会保留 14 天的备份。</p>
+<p>为了弥补产品 OCP 上这个“保留天数”带来的误解，OCP 产品文档详细的描述了这个 OceanBase 备份保留参数 <code>recovery_window</code> 的计算逻辑 （相当于文档给产品打了个补丁）。（从 OceanBase 参数的命名也能看出内核研发想表达的也是跟还原目标有关的意思。）</p>
+<p>文档地址：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001499877">https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001499877</a> 这里我直接贴文档的解释：</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/03.jpg" alt="备份集依赖与可还原时间点关系" loading="lazy" decoding="async"></p>
+<p><em>图：OceanBase 的 recovery_window 参数</em></p>
+<h2 id="OceanBase-备份目录分析"><a href="#OceanBase-备份目录分析" class="headerlink" title="OceanBase 备份目录分析"></a>OceanBase 备份目录分析</h2><p>首先是数据备份的配置。下面主要演示 SQL 命令行配置方法， OCP 和 第三方备份产品的备份都是发 SQL 完成。</p>
+<p>租户备份路径查看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">select tenant_id, path,dest_id,dest_type,CHECK_FILE_NAME ,LAST_CHECK_TIMESTAMP from oceanbase.DBA_OB_BACKUP_STORAGE_INFO \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">           tenant_id: 1002</span><br><span class="line">                path: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br><span class="line">             dest_id: 1001</span><br><span class="line">           dest_type: archive_log</span><br><span class="line">     CHECK_FILE_NAME: 1002_connect_file_20260107T112233.obbak</span><br><span class="line">LAST_CHECK_TIMESTAMP: 2026-01-07 11:23:06.461397</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">           tenant_id: 1002</span><br><span class="line">                path: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">             dest_id: 1002</span><br><span class="line">           dest_type: backup_data</span><br><span class="line">     CHECK_FILE_NAME: 1002_connect_file_20260107T112233.obbak</span><br><span class="line">LAST_CHECK_TIMESTAMP: 2026-06-10 04:00:33.454802</span><br></pre></td></tr></table></figure>
+
+<p>从这里能看到数据备份和日志备份的路径默认是分开的。这个 <code>dest_id</code> 值（1001 和 1002）后面有用。这个路径很长，命名有一定规范，这些是 OCP 的行为，不是 OceanBase 的行为。所以不是一定要写成这样，但是这样确实规范很多，特别是有很多 OceanBase 集群和租户要备份的时候。</p>
+<p>查看数据备份路径特点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data ------------------</span><br><span class="line">                                               2026-06-10 04:26:03 +0800 /..</span><br><span class="line">238.7 GiB [########################]    285  2026-06-10 04:26:03 +0800 /backup_set_158_full</span><br><span class="line">236.0 GiB [####################### ]    282  2026-06-09 04:30:35 +0800 /backup_set_157_full</span><br><span class="line">  2.0 KiB [                        ]      4  2026-06-10 04:26:03 +0800 /backup_sets</span><br><span class="line">512.0   B [                        ]         2026-01-07 11:22:33 +0800  format.obbak</span><br><span class="line">512.0   B [                        ]      1  2026-01-07 11:22:33 +0800 /check_file</span><br></pre></td></tr></table></figure>
+
+<p>这个备份目录特点：</p>
+<ul>
+<li>下面有个文件 <code>format.obbak</code> 和 <code>check_file</code> 目录，表示这是一个备份目录。不要去删这两个文件（目录）。</li>
+<li>以 <code>backup_set_数字_full</code> 命名的大文件夹就是备份文件夹，每次全量备份一个文件夹（增量备份也是一个文件夹，关键字 <code>incr</code> 替换 <code>full</code>）。</li>
+</ul>
+<p>现在看到的是空间优化后的结果，之前这里最多的时候有 14 个文件夹。这种场景往往是备份策略设置每周一个全备，其他全是增量备份。</p>
+<p>上面是数据备份目录，再看看日志备份目录，稍微复杂一些。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/04.png" alt="OceanBase 备份目录层级结构示意" loading="lazy" decoding="async"></p>
+<p><em>图：OceanBase NFS 备份目录结构（data + clog + piece + logstream）</em></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog ------------------------------------------------</span><br><span class="line">                                               2026-06-10 17:22:11 +0800 /..</span><br><span class="line">  3.1 TiB [########################] 50,660  2026-06-09 11:26:16 +0800 /piece_d1001r1p153</span><br><span class="line">  2.8 TiB [#####################   ] 45,730  2026-06-10 11:25:48 +0800 /piece_d1001r1p154</span><br><span class="line">558.1 GiB [####                    ]  8,949  2026-06-10 17:22:11 +0800 /piece_d1001r1p155</span><br><span class="line">  2.5 KiB [                        ]      5  2026-06-10 11:25:48 +0800 /pieces</span><br><span class="line">512.0   B [                        ]         2026-01-07 11:22:33 +0800  format.obbak</span><br><span class="line">512.0   B [                        ]      1  2026-01-07 11:22:33 +0800 /check_file</span><br><span class="line">512.0   B [                        ]      1  2026-01-07 11:23:16 +0800 /rounds</span><br></pre></td></tr></table></figure>
+
+<p>这个备份目录特点：</p>
+<ul>
+<li>下面有个文件 <code>format.obbak</code> 和 <code>check_file</code> 目录，表示这是一个备份目录。不要去删这两个文件（目录）。</li>
+<li>以 <code>piece_d数字r数字p数字</code> 命名的文件夹就是日志备份，每个文件夹表示一个日志分片(piece）的备份，p 后面的数字就表示当前这个日志分片编号。d 后面的数字表示这是日志备份，r 后面的数字表示启动日志备份的次数。通常是 1 ，如果你反复停止和启动日志备份，这个数字会累加。</li>
+</ul>
+<p>这里变化的通常是分片数字。我这里的环境是每天切换一个日志备份分片。至于切换的时间点（时分秒）并不是想象的整点，或者根本无法设置切换的时间点。实际切换时间点就是由启动成功日志备份的时间决定的。所以，1000 个 OceanBase 客户，就有 1000 个 OceanBase 日志备份分片切换时间点（时分秒）。我很难认为这是一个很好的设计。</p>
+<p>如果只是分析日志备份空间清理问题，目录看到这一层就够了。不过到这里我们就多看一点。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog/piece_d1001r1p154 -----------------------------------------------------------------------</span><br><span class="line">                                               2026-06-10 11:25:48 +0800 /..</span><br><span class="line">972.5 GiB [########################] 15,563  2026-06-10 11:25:48 +0800 /logstream_1003</span><br><span class="line">956.3 GiB [####################### ] 15,305  2026-06-10 11:25:45 +0800 /logstream_1002</span><br><span class="line">922.2 GiB [######################  ] 14,758  2026-06-10 11:25:42 +0800 /logstream_1001</span><br><span class="line">  4.8 GiB [                        ]     93  2026-06-10 11:25:39 +0800 /logstream_15</span><br><span class="line"> 80.5 KiB [                        ]         2026-06-10 11:25:48 +0800  file_info.obarc</span><br><span class="line">  1.0 KiB [                        ]         2026-06-09 11:26:17 +0800  tenant_archive_piece_infos.obarc</span><br><span class="line">512.0   B [                        ]         2026-06-10 11:25:48 +0800  single_piece_info.obarc</span><br><span class="line">512.0   B [                        ]      2  2026-06-10 11:24:48 +0800 /checkpoint</span><br><span class="line">512.0   B [                        ]         2026-06-10 11:25:48 +0800  piece_d1001r1p154_20260609T112316_20260610T112316.obarc</span><br></pre></td></tr></table></figure>
+
+<p>这里看的是一个具体的日志备份分片目录细节，<code>logstream_数字</code> 文件夹表示的就是日志流的备份，看来日志备份是以日志流为单位去组织存储的。租户的日志流可能有 1~4 个，这个以前介绍过。日志的备份是根据 OceanBase 文档描述是优先选择日志流的备副本所在节点（数据备份也是如此）。</p>
+<h2 id="备份空间清理分析"><a href="#备份空间清理分析" class="headerlink" title="备份空间清理分析"></a>备份空间清理分析</h2><p>首先查看当前的备份参数 <code>recovery_window</code> 设置（或者叫备份还原的 RPO 目标值。我尽量不用那个词不达意的保留天数）。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SELECT policy_name, RECOVERY_WINDOW  FROM oceanbase.DBA_OB_BACKUP_DELETE_POLICY \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">    policy_name: default</span><br><span class="line">RECOVERY_WINDOW: 1d</span><br></pre></td></tr></table></figure>
+
+<p>最早是 7d，后来空间太大了，改为 3d ，还是很大，最后改为 1d ，不能再小了。</p>
+<p>然后查看备份清理任务。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line">select job_id, type, PARAMETER ,START_TIMESTAMP ,END_TIMESTAMP ,STATUS , concat(SUCCESS_TASK_COUNT ,&#x27; / &#x27;, task_count ) task_info from oceanbase.DBA_OB_BACKUP_DELETE_JOB_HISTORY WHERE 1=1 order by job_id desc limit 15 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">         job_id: 3859</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 17:55:40.561998</span><br><span class="line">START_TIMESTAMP: 2026-06-10 17:55:40.562762</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 17:55:40.584452</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">         job_id: 3858</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 16:55:40.406901</span><br><span class="line">START_TIMESTAMP: 2026-06-10 16:55:40.407672</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 16:55:40.424844</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 3. row ***************************</span><br><span class="line">         job_id: 3857</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 15:55:40.252236</span><br><span class="line">START_TIMESTAMP: 2026-06-10 15:55:40.253079</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 15:55:40.271519</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 4. row ***************************</span><br><span class="line">         job_id: 3856</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 14:55:40.095898</span><br><span class="line">START_TIMESTAMP: 2026-06-10 14:55:40.096637</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 14:55:40.118587</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 5. row ***************************</span><br><span class="line">         job_id: 3855</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 13:55:39.943337</span><br><span class="line">START_TIMESTAMP: 2026-06-10 13:55:39.944174</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 13:55:39.965111</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 6. row ***************************</span><br><span class="line">         job_id: 3854</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 12:55:39.787493</span><br><span class="line">START_TIMESTAMP: 2026-06-10 12:55:39.788274</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 12:55:39.805527</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 7. row ***************************</span><br><span class="line">         job_id: 3853</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 11:55:39.631708</span><br><span class="line">START_TIMESTAMP: 2026-06-10 11:55:39.632641</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 11:55:39.652143</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 8. row ***************************</span><br><span class="line">         job_id: 3852</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 10:55:39.441597</span><br><span class="line">START_TIMESTAMP: 2026-06-10 10:55:39.442838</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 10:55:39.491902</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 9. row ***************************</span><br><span class="line">         job_id: 3851</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 09:55:39.281553</span><br><span class="line">START_TIMESTAMP: 2026-06-10 09:55:39.282451</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 09:55:39.304357</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 10. row ***************************</span><br><span class="line">         job_id: 3850</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 08:55:39.127329</span><br><span class="line">START_TIMESTAMP: 2026-06-10 08:55:39.128209</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 08:55:39.151443</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 11. row ***************************</span><br><span class="line">         job_id: 3849</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 07:55:38.970745</span><br><span class="line">START_TIMESTAMP: 2026-06-10 07:55:38.971699</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 07:55:38.992953</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 12. row ***************************</span><br><span class="line">         job_id: 3848</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 06:55:38.812554</span><br><span class="line">START_TIMESTAMP: 2026-06-10 06:55:38.813549</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 06:55:38.832302</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 13. row ***************************</span><br><span class="line">         job_id: 3847</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 05:55:38.645012</span><br><span class="line">START_TIMESTAMP: 2026-06-10 05:55:38.645994</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 05:55:38.674352</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br><span class="line">*************************** 14. row ***************************</span><br><span class="line">         job_id: 3846</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 04:55:32.715925</span><br><span class="line">START_TIMESTAMP: 2026-06-10 04:55:32.716860</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 04:56:08.496986</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 1 / 1</span><br><span class="line">*************************** 15. row ***************************</span><br><span class="line">         job_id: 3844</span><br><span class="line">           type: DELETE OBSOLETE BACKUP</span><br><span class="line">      PARAMETER: 2026-06-09 03:55:32.551669</span><br><span class="line">START_TIMESTAMP: 2026-06-10 03:55:32.552715</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 03:55:32.577311</span><br><span class="line">         STATUS: COMPLETED</span><br><span class="line">      task_info: 0 / 0</span><br></pre></td></tr></table></figure>
+
+<p>从这里可以看到每个小时，OceanBase 自动启动备份清理任务（不是 OCP 启动），这个时间点（时分秒）也很有规律，都在每个小时的 55 分左右，为什么会这样我还没有找到。</p>
+<p>其次，虽然每小时都在跑清理任务，但是并不是每次任务都真的清理了数据。大部分的 <code>task_count</code> 都是 0 。最近的是 4 点 55 分左右清理的。因为全量备份启动时间是 4 点，大概 4 点 30 分左右全量备份结束了。因此按照前面的理论计算，为了实现 RPO 为 1 天，更早的数据备份以及部分日志备份应该被清理掉。所以 4 点 55 分的清理可以理解。</p>
+<p>但是此后的每次清理却没有实际清理备份，这个就很奇怪了。 理论上说，随着时间的推进，总会有日志备份不再被需要而被清理。除非是在前面被一次性清理掉了。一次性清理掉也是符合预期的，因为仅凭最早的日志备份是不能用于还原的，所以在新的数据备份产生的时候，就意味着最早的数据备份以及随后的日志备份都处于不被需要的状态（obsolete）。</p>
+<p>不过我们不用猜测，可以实际看看清理了什么。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/05.png" alt="备份空间未按预期释放的排查思路" loading="lazy" decoding="async"></p>
+<p><em>图：OceanBase 备份清理机制（每小时触发 + piece 粒度淘汰）</em></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line">select task_id, job_id, TASK_TYPE , ROUND_ID ,DEST_ID ,START_TIMESTAMP ,END_TIMESTAMP , status, FINISH_LS_COUNT ,RESULT , PATH from oceanbase.DBA_OB_BACKUP_DELETE_TASK_HISTORY where 1=1 order by job_id desc ,TASK_ID  desc limit 10 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">        task_id: 466</span><br><span class="line">         job_id: 3846</span><br><span class="line">      TASK_TYPE: BACKUP SET</span><br><span class="line">       ROUND_ID: 0</span><br><span class="line">        DEST_ID: 1002</span><br><span class="line">START_TIMESTAMP: 2026-06-10 04:55:32.744342</span><br><span class="line">  END_TIMESTAMP: 2026-06-10 04:56:08.480831</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">        task_id: 464</span><br><span class="line">         job_id: 3836</span><br><span class="line">      TASK_TYPE: BACKUP PIECE</span><br><span class="line">       ROUND_ID: 1</span><br><span class="line">        DEST_ID: 1001</span><br><span class="line">START_TIMESTAMP: 2026-06-09 19:55:19.774380</span><br><span class="line">  END_TIMESTAMP: 2026-06-09 20:10:01.147932</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br><span class="line">*************************** 3. row ***************************</span><br><span class="line">        task_id: 463</span><br><span class="line">         job_id: 3836</span><br><span class="line">      TASK_TYPE: BACKUP SET</span><br><span class="line">       ROUND_ID: 0</span><br><span class="line">        DEST_ID: 1002</span><br><span class="line">START_TIMESTAMP: 2026-06-09 19:55:19.756638</span><br><span class="line">  END_TIMESTAMP: 2026-06-09 19:55:55.752544</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">*************************** 4. row ***************************</span><br><span class="line">        task_id: 462</span><br><span class="line">         job_id: 3821</span><br><span class="line">      TASK_TYPE: BACKUP PIECE</span><br><span class="line">       ROUND_ID: 1</span><br><span class="line">        DEST_ID: 1001</span><br><span class="line">START_TIMESTAMP: 2026-06-09 04:55:07.895869</span><br><span class="line">  END_TIMESTAMP: 2026-06-09 05:01:47.202273</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br><span class="line">*************************** 5. row ***************************</span><br><span class="line">        task_id: 461</span><br><span class="line">         job_id: 3821</span><br><span class="line">      TASK_TYPE: BACKUP SET</span><br><span class="line">       ROUND_ID: 0</span><br><span class="line">        DEST_ID: 1002</span><br><span class="line">START_TIMESTAMP: 2026-06-09 04:55:07.881379</span><br><span class="line">  END_TIMESTAMP: 2026-06-09 04:55:43.285124</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">*************************** 6. row ***************************</span><br><span class="line">        task_id: 458</span><br><span class="line">         job_id: 3805</span><br><span class="line">      TASK_TYPE: BACKUP PIECE</span><br><span class="line">       ROUND_ID: 1</span><br><span class="line">        DEST_ID: 1001</span><br><span class="line">START_TIMESTAMP: 2026-06-08 14:54:51.926005</span><br><span class="line">  END_TIMESTAMP: 2026-06-08 15:12:35.393356</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br><span class="line">*************************** 7. row ***************************</span><br><span class="line">        task_id: 457</span><br><span class="line">         job_id: 3805</span><br><span class="line">      TASK_TYPE: BACKUP SET</span><br><span class="line">       ROUND_ID: 0</span><br><span class="line">        DEST_ID: 1002</span><br><span class="line">START_TIMESTAMP: 2026-06-08 14:54:51.910983</span><br><span class="line">  END_TIMESTAMP: 2026-06-08 14:55:28.670751</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">*************************** 8. row ***************************</span><br><span class="line">        task_id: 456</span><br><span class="line">         job_id: 3795</span><br><span class="line">      TASK_TYPE: BACKUP PIECE</span><br><span class="line">       ROUND_ID: 1</span><br><span class="line">        DEST_ID: 1001</span><br><span class="line">START_TIMESTAMP: 2026-06-08 04:54:27.779813</span><br><span class="line">  END_TIMESTAMP: 2026-06-08 05:06:19.944003</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br><span class="line">*************************** 9. row ***************************</span><br><span class="line">        task_id: 455</span><br><span class="line">         job_id: 3795</span><br><span class="line">      TASK_TYPE: BACKUP SET</span><br><span class="line">       ROUND_ID: 0</span><br><span class="line">        DEST_ID: 1002</span><br><span class="line">START_TIMESTAMP: 2026-06-08 04:54:27.766664</span><br><span class="line">  END_TIMESTAMP: 2026-06-08 04:55:04.158958</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data</span><br><span class="line">*************************** 10. row ***************************</span><br><span class="line">        task_id: 453</span><br><span class="line">         job_id: 3770</span><br><span class="line">      TASK_TYPE: BACKUP PIECE</span><br><span class="line">       ROUND_ID: 1</span><br><span class="line">        DEST_ID: 1001</span><br><span class="line">START_TIMESTAMP: 2026-06-07 04:54:10.030664</span><br><span class="line">  END_TIMESTAMP: 2026-06-07 05:01:53.615006</span><br><span class="line">         status: COMPLETED</span><br><span class="line">FINISH_LS_COUNT: 4</span><br><span class="line">         RESULT: 0</span><br><span class="line">           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog</span><br></pre></td></tr></table></figure>
+
+<p>从这段记录看，每天也就清理一次数据备份和日志备份。</p>
+<p>再看看数据备份文件的状态。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">select BACKUP_SET_ID , BACKUP_TYPE ,START_TIMESTAMP ,END_TIMESTAMP ,START_REPLAY_SCN_DISPLAY , STATUS ,FILE_STATUS ,FILE_COUNT ,ELAPSED_SECONDES from oceanbase.DBA_OB_BACKUP_SET_FILES order by BACKUP_SET_ID desc limit 5 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">           BACKUP_SET_ID: 158</span><br><span class="line">             BACKUP_TYPE: FULL</span><br><span class="line">         START_TIMESTAMP: 2026-06-10 04:00:05.622073</span><br><span class="line">           END_TIMESTAMP: 2026-06-10 04:26:03.158353</span><br><span class="line">START_REPLAY_SCN_DISPLAY: 2026-06-10 02:17:38.960160</span><br><span class="line">                  STATUS: SUCCESS</span><br><span class="line">             FILE_STATUS: AVAILABLE</span><br><span class="line">              FILE_COUNT: 0</span><br><span class="line">        ELAPSED_SECONDES: 1558</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">           BACKUP_SET_ID: 157</span><br><span class="line">             BACKUP_TYPE: FULL</span><br><span class="line">         START_TIMESTAMP: 2026-06-09 04:00:04.345129</span><br><span class="line">           END_TIMESTAMP: 2026-06-09 04:30:35.335842</span><br><span class="line">START_REPLAY_SCN_DISPLAY: 2026-06-09 01:49:54.467299</span><br><span class="line">                  STATUS: SUCCESS</span><br><span class="line">             FILE_STATUS: AVAILABLE</span><br><span class="line">              FILE_COUNT: 0</span><br><span class="line">        ELAPSED_SECONDES: 1831</span><br><span class="line">*************************** 3. row ***************************</span><br><span class="line">           BACKUP_SET_ID: 156</span><br><span class="line">             BACKUP_TYPE: FULL</span><br><span class="line">         START_TIMESTAMP: 2026-06-08 18:36:23.016296</span><br><span class="line">           END_TIMESTAMP: 2026-06-08 19:06:47.962207</span><br><span class="line">START_REPLAY_SCN_DISPLAY: 2026-06-08 18:15:20.863016</span><br><span class="line">                  STATUS: SUCCESS</span><br><span class="line">             FILE_STATUS: DELETED</span><br><span class="line">              FILE_COUNT: 0</span><br><span class="line">        ELAPSED_SECONDES: 1825</span><br><span class="line">*************************** 4. row ***************************</span><br><span class="line">           BACKUP_SET_ID: 155</span><br><span class="line">             BACKUP_TYPE: FULL</span><br><span class="line">         START_TIMESTAMP: 2026-06-08 04:00:05.374333</span><br><span class="line">           END_TIMESTAMP: 2026-06-08 04:25:44.933878</span><br><span class="line">START_REPLAY_SCN_DISPLAY: 2026-06-08 02:37:20.290484</span><br><span class="line">                  STATUS: SUCCESS</span><br><span class="line">             FILE_STATUS: DELETED</span><br><span class="line">              FILE_COUNT: 0</span><br><span class="line">        ELAPSED_SECONDES: 1540</span><br><span class="line">*************************** 5. row ***************************</span><br><span class="line">           BACKUP_SET_ID: 154</span><br><span class="line">             BACKUP_TYPE: FULL</span><br><span class="line">         START_TIMESTAMP: 2026-06-07 04:00:04.985212</span><br><span class="line">           END_TIMESTAMP: 2026-06-07 04:30:41.643439</span><br><span class="line">START_REPLAY_SCN_DISPLAY: 2026-06-07 02:14:55.974754</span><br><span class="line">                  STATUS: SUCCESS</span><br><span class="line">             FILE_STATUS: DELETED</span><br><span class="line">              FILE_COUNT: 0</span><br><span class="line">        ELAPSED_SECONDES: 1837</span><br></pre></td></tr></table></figure>
+
+<p>从这里看，9 号以前的数据备份都被清理了，9 号和 10 号的数据备份都在。所以简单说保留了 2 天的备份。</p>
+<p>看看日志备份文件状态。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">select DEST_ID ,PIECE_ID  , status, START_SCN_DISPLAY , END_SCN_DISPLAY  , OUTPUT_BYTES_DISPLAY ,FILE_STATUS from oceanbase.DBA_OB_ARCHIVELOG_PIECE_FILES order by DEST_ID ,ROUND_ID ,PIECE_ID desc limit 5 \G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">             DEST_ID: 1001</span><br><span class="line">            PIECE_ID: 155</span><br><span class="line">              status: ACTIVE</span><br><span class="line">   START_SCN_DISPLAY: 2026-06-10 11:23:16.490548</span><br><span class="line">     END_SCN_DISPLAY: 2026-06-11 11:23:16.490548</span><br><span class="line">OUTPUT_BYTES_DISPLAY: 653.36GB</span><br><span class="line">         FILE_STATUS: AVAILABLE</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">             DEST_ID: 1001</span><br><span class="line">            PIECE_ID: 154</span><br><span class="line">              status: FROZEN</span><br><span class="line">   START_SCN_DISPLAY: 2026-06-09 11:23:16.490548</span><br><span class="line">     END_SCN_DISPLAY: 2026-06-10 11:23:16.490548</span><br><span class="line">OUTPUT_BYTES_DISPLAY: 2.79TB</span><br><span class="line">         FILE_STATUS: AVAILABLE</span><br><span class="line">*************************** 3. row ***************************</span><br><span class="line">             DEST_ID: 1001</span><br><span class="line">            PIECE_ID: 153</span><br><span class="line">              status: FROZEN</span><br><span class="line">   START_SCN_DISPLAY: 2026-06-08 11:23:16.490548</span><br><span class="line">     END_SCN_DISPLAY: 2026-06-09 11:23:16.490548</span><br><span class="line">OUTPUT_BYTES_DISPLAY: 3.09TB</span><br><span class="line">         FILE_STATUS: AVAILABLE</span><br><span class="line">*************************** 4. row ***************************</span><br><span class="line">             DEST_ID: 1001</span><br><span class="line">            PIECE_ID: 152</span><br><span class="line">              status: FROZEN</span><br><span class="line">   START_SCN_DISPLAY: 2026-06-07 11:23:16.490548</span><br><span class="line">     END_SCN_DISPLAY: 2026-06-08 11:23:16.490548</span><br><span class="line">OUTPUT_BYTES_DISPLAY: 5.70TB</span><br><span class="line">         FILE_STATUS: DELETED</span><br><span class="line">*************************** 5. row ***************************</span><br><span class="line">             DEST_ID: 1001</span><br><span class="line">            PIECE_ID: 151</span><br><span class="line">              status: FROZEN</span><br><span class="line">   START_SCN_DISPLAY: 2026-06-06 11:23:16.490548</span><br><span class="line">     END_SCN_DISPLAY: 2026-06-07 11:23:16.490548</span><br><span class="line">OUTPUT_BYTES_DISPLAY: 3.01TB</span><br><span class="line">         FILE_STATUS: DELETED</span><br></pre></td></tr></table></figure>
+
+<p>从这段记录看，日志备份分片保留了 8 号、9 号、10 号的日志备份（分片切换时间点不是整点，而是 11 点 23 分）。8 号之前的日志备份被删除了。所以可以简单的说，保留了 3 天的日志备份。这里疑点最大的就是最早的日志备份分片 8 号为什么还在。这是因为 8 号 4 点以后的日志备份还是被需要的，这导致整个日志备份分片都是需要的。也就是 OceanBase 清理日志备份分片的里粒度是分片（piece），而不是单个的日志备份文件。单个日志备份文件长下面这样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog/piece_d1001r1p153/logstream_1001/log ----------------------------------------------------</span><br><span class="line">                                               2026-06-09 11:24:05 +0800 /..</span><br><span class="line"> 32.2 MiB [############            ]         2026-06-08 11:23:20 +0800  779627.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779628.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779629.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779630.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779631.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:22 +0800  779632.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:23 +0800  779633.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:23 +0800  779634.obarc</span><br><span class="line"> 64.0 MiB [########################]         2026-06-08 11:23:25 +0800  779635.obarc</span><br></pre></td></tr></table></figure>
+
+<p>总结起来就是这个业务 OceanBase 租户，为了实现备份还原 RPO 为 1 天的目标，保留了 2 天的数据备份和 3 天的日志备份。</p>
+<h2 id="日志备份空间大的原因"><a href="#日志备份空间大的原因" class="headerlink" title="日志备份空间大的原因"></a>日志备份空间大的原因</h2><p>大部分客户不会关注到这个备份空间清理的问题，除非这个空间成为“成本”。仔细分析上面数据会发现数据备份每天大小大概 240G 左右，但是日志备份每天大小变化范围在 2.8T ~ 5.7T 。</p>
+<p>其原因是这个 OceanBase 集群场景是数据仓库场景，有大量的 ETL ，其中大量用到临时表。 OceanBase 终于在 4.2.5 （也可能是其他版本）实现跟 ORACLE 特性一样的临时表，支持 <code>on commit delete rows</code> 和 <code>on commit preserve rows</code> 。但是这些临时表还是跟 ORACLE 的临时表有个显著的差异就是 OceanBase 的临时表会写 WAL 日志。目前咨询了 4.4.2 版本，还是这样。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/06.png" alt="日志备份占用空间偏大的常见原因" loading="lazy" decoding="async"></p>
+<p><em>图：ETL 临时表 → WAL 日志 → 备份空间膨胀 &amp; 实际保留对比</em></p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>OCP 里的备份“保留天数”设置功能对应的是设置租户备份的 <code>recovery_window</code> 参数，这个是跟还原的能力（RPO）有关的描述，间接影响备份的保留天数。从实际效果看，如果 OCP 里设置“保留天数”是 1 天，实际上会保留 2 天的数据备份，以及 3 天的日志备份。其实运维承诺的就应该是备份的还原的能力而不是保留天数。这个也适合传统数据库。</p>
+<p>如果还想进一步缩小这个备份空间的大小，那就要精细化控制合并和备份的调度时间，以及在备份被调度之前，提前 10 分钟去启动日志备份（可能要晚上加个班）。不过看到 OCP 的备份里有个选项说是可以在数据备份的时候才启动日志备份，数据备份结束再关闭日志备份。这个功能没有在客户环境测试过。如果有人用过，欢迎留言分享。</p>
+<p><img src="/img/2026-06-15-oceanbase-backup-cleanup/07.png" alt="OceanBase 备份清理机制结论总结" loading="lazy" decoding="async"></p>
+<h2 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h2><ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247487142&idx=1&sn=9cad48330b897400c9902053dd508bd1&scene=21#wechat_redirect">OceanBase V4 日志流设计分析</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247485683&idx=1&sn=63b3e309b8f31c55f662c04667d13ca3&scene=21#wechat_redirect">OceanBase 社区版 4.1 备份恢复实践</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247485674&idx=1&sn=42f4e266483acd63b4daf495f0391dd8&scene=21#wechat_redirect">OceanBase 企业版 3.2 备份恢复实践</a></li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247488089&idx=1&sn=22a480ae6e1bc57727542a1c45c77076&scene=21#wechat_redirect">OceanBase 奇案分享：是谁拉起了 OceanBase 进程？</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/" rel="tag"># 数据库运维</a>
+              <a href="/tags/%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD/" rel="tag"># 物理备份</a>
+              <a href="/tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag"># 备份恢复</a>
+              <a href="/tags/%E5%A4%87%E4%BB%BD%E6%B8%85%E7%90%86/" rel="tag"># 备份清理</a>
+              <a href="/tags/OBServer/" rel="tag"># OBServer</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-12-powermem-memory-lifecycle/" rel="prev" title="PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完">
+                  <i class="fa fa-angle-left"></i> PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-22-seekdb-world-cup-prediction/" rel="next" title="用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟">
+                  用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

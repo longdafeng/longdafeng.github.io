@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PowerMem 操作手册：从 Linux 部署到 Claude Code &#x2F; OpenClaw 接入">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-12-powermem-operation-guide/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/06.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/07.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/08.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/09.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/10.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/11.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/12.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/13.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/14.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/15.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/16.png">
+<meta property="article:published_time" content="2026-06-11T22:18:50.000Z">
+<meta property="article:modified_time" content="2026-06-11T22:18:50.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="操作手册">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-06-12-powermem-operation-guide/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-12-powermem-operation-guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-12-powermem-operation-guide/","path":"2026/2026-06-12-powermem-operation-guide/","title":"PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-12-powermem-operation-guide/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81Linux-%E6%9C%8D%E5%8A%A1%E7%AB%AF%EF%BC%9A%E5%AE%89%E8%A3%85%E3%80%81%E9%85%8D%E7%BD%AE%E3%80%81%E5%90%AF%E5%8A%A8"><span class="nav-number">1.</span> <span class="nav-text">一、Linux 服务端：安装、配置、启动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 环境要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%AE%89%E8%A3%85"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E5%88%9D%E5%A7%8B%E5%8C%96%E9%85%8D%E7%BD%AE"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 初始化配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 启动服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Dashboard-%E4%BD%BF%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">二、Dashboard 使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%AE%BF%E9%97%AE-Dashboard"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 访问 Dashboard</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Dashboard-%E5%8A%9F%E8%83%BD"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Dashboard 功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%BC%80%E5%90%AF%E8%AE%A4%E8%AF%81%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 开启认证（可选）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-API-%E6%96%87%E6%A1%A3"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 API 文档</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9C%AC%E5%9C%B0-Claude-Code-%E8%BF%9E%E6%8E%A5-PowerMem-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">三、本地 Claude Code 连接 PowerMem 服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%9C%A8-Dashboard-%E8%8E%B7%E5%8F%96-API-Key"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 在 Dashboard 获取 API Key</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%80%9A%E8%BF%87-Marketplace-%E5%AE%89%E8%A3%85%E6%8F%92%E4%BB%B6"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 通过 Marketplace 安装插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%88%9D%E5%A7%8B%E5%8C%96%E6%8F%92%E4%BB%B6"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 初始化插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-Windows-%E7%94%A8%E6%88%B7%EF%BC%9A%E4%BF%AE%E5%A4%8D-hooks-%E5%91%BD%E4%BB%A4"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 Windows 用户：修复 hooks 命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E9%85%8D%E7%BD%AE%E8%BF%9E%E6%8E%A5%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 配置连接远程服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E9%87%8D%E5%90%AF-Claude-Code"><span class="nav-number">3.6.</span> <span class="nav-text">3.6 重启 Claude Code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-7-%E9%AA%8C%E8%AF%81"><span class="nav-number">3.7.</span> <span class="nav-text">3.7 验证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81OpenClaw-%E5%AE%89%E8%A3%85-PowerMem-%E5%B9%B6%E8%BF%9E%E6%8E%A5%E8%90%BD%E5%BA%93"><span class="nav-number">4.</span> <span class="nav-text">四、OpenClaw 安装 PowerMem 并连接落库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%AE%89%E8%A3%85%E6%8F%92%E4%BB%B6"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 安装插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E9%85%8D%E7%BD%AE%E5%B5%8C%E5%85%A5%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 配置嵌入模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E8%BF%9E%E6%8E%A5%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 连接远程服务器（可选）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E9%AA%8C%E8%AF%81"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 验证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerMem-%E8%AE%B0%E5%BF%86%E5%A6%82%E4%BD%95%E2%80%9D%E8%87%AA%E8%BF%9B%E5%8C%96%E2%80%9D%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">PowerMem 记忆如何”自进化”？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">快速参考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E4%BD%93%E9%93%BE%E8%B7%AF%E5%9B%BE"><span class="nav-number">6.1.</span> <span class="nav-text">整体链路图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E9%80%9F%E6%9F%A5"><span class="nav-number">6.2.</span> <span class="nav-text">常用命令速查</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-06-ai-agent-database-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-06</time>
+        <br>
+      AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-29</time>
+        <br>
+      GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-02-easy-data-ai-course/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-02</time>
+        <br>
+      Easy Data x AI 课程共建：补上 Agent 时代的数据基础课
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-22-seekdb-world-cup-prediction/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-22</time>
+        <br>
+      用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-memory-lifecycle/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-12-powermem-operation-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="PowerMem 操作手册：从 Linux 部署到 Claude Code &#x2F; OpenClaw 接入 | Longda's Interesting World">
+      <meta itemprop="description" content="PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-12 06:18:50" itemprop="dateCreated datePublished" datetime="2026-06-12T06:18:50+08:00">2026-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%94%A8%E6%88%B7%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index"><span itemprop="name">用户实践</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>7 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入","description":"PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。","image":"https://ilongda.com/img/2026-06-12-powermem-operation-guide/01.png","wordCount":1847,"datePublished":"2026-06-11T22:18:50.000Z","dateModified":"2026-06-11T22:18:50.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-12-powermem-operation-guide/"},"url":"https://ilongda.com/2026/2026-06-12-powermem-operation-guide/","inLanguage":"zh-CN","keywords":["OceanBase","AI Agent","MCP","seekdb","PowerMem","Python","操作手册"],"articleSection":["用户实践"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"用户实践","item":"https://ilongda.com/categories/用户实践/"},{"@type":"ListItem","position":3,"name":"PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入","item":"https://ilongda.com/2026/2026-06-12-powermem-operation-guide/"}]}</script>
+<p><img src="/img/2026-06-12-powermem-operation-guide/01.png" alt="PowerMem Agent 记忆层部署总览" decoding="async"></p>
+<blockquote>
+<p>💡 仓库在这：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">oceanbase&#x2F;powermem</a>。想给 Agent 加上会检索、会整理、会遗忘的记忆，按本文顺序做完就能跑通。</p>
+</blockquote>
+<p>本手册覆盖完整链路：Linux 服务端安装与配置 → 启动 HTTP &#x2F; Dashboard → 本地 Claude Code 连接 → OpenClaw 落库。按章节顺序操作即可，无需先读原理。</p>
+<span id="more"></span>
+
+<hr>
+<h2 id="一、Linux-服务端：安装、配置、启动"><a href="#一、Linux-服务端：安装、配置、启动" class="headerlink" title="一、Linux 服务端：安装、配置、启动"></a>一、Linux 服务端：安装、配置、启动</h2><p><img src="/img/2026-06-12-powermem-operation-guide/02.png" alt="Linux 服务端安装与启动步骤示意" loading="lazy" decoding="async"></p>
+<h3 id="1-1-环境要求"><a href="#1-1-环境要求" class="headerlink" title="1.1 环境要求"></a>1.1 环境要求</h3><ul>
+<li>Python &gt;&#x3D; 3.11</li>
+<li>pip 或 uv（推荐 uv，更快）</li>
+</ul>
+<h3 id="1-2-安装"><a href="#1-2-安装" class="headerlink" title="1.2 安装"></a>1.2 安装</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从 PyPI 安装（生产环境推荐）</span></span><br><span class="line">uv pip install <span class="string">&quot;powermem[cli,server,mcp,seekdb]&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 或从源码安装（开发环境）</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/oceanbase/powermem.git</span><br><span class="line"><span class="built_in">cd</span> powermem</span><br><span class="line">uv pip install -e <span class="string">&quot;.[cli,server,mcp,seekdb]&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>各 extras 说明：</p>
+<table>
+<thead>
+<tr>
+<th>extras</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cli</code></td>
+<td><code>pmem</code> 命令行工具</td>
+</tr>
+<tr>
+<td><code>server</code></td>
+<td><code>powermem-server</code> HTTP API 服务器</td>
+</tr>
+<tr>
+<td><code>mcp</code></td>
+<td>MCP 协议支持</td>
+</tr>
+<tr>
+<td><code>seekdb</code></td>
+<td>内嵌向量数据库（零配置，无需单独部署数据库）</td>
+</tr>
+</tbody></table>
+<h3 id="1-3-初始化配置"><a href="#1-3-初始化配置" class="headerlink" title="1.3 初始化配置"></a>1.3 初始化配置</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 交互式生成 .env 配置文件</span></span><br><span class="line">pmem config init</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/2026-06-12-powermem-operation-guide/03.png" alt="PowerMem 交互式初始化配置界面" loading="lazy" decoding="async"></p>
+<p>也可手动创建 <code>.env</code> 文件。以下是我的配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># DATABASE_PROVIDER=oceanbase</span></span><br><span class="line">DATABASE_PROVIDER=sqlite</span><br><span class="line">SQLITE_PATH=/root/data/package/powermem/powermem.db</span><br><span class="line"><span class="comment"># LLM_PROVIDER=anthropic</span></span><br><span class="line">LLM_PROVIDER=openai</span><br><span class="line"><span class="comment"># ANTHROPIC_LLM_BASE_URL=https://token-plan-cn.xiaomimimo.com/anthropic</span></span><br><span class="line"><span class="comment"># LLM_API_KEY=tp-xxx</span></span><br><span class="line"><span class="comment"># LLM_MODEL=mimo-v2.5-pro</span></span><br><span class="line">LLM_API_KEY=xxx</span><br><span class="line">LLM_MODEL=step-3.7-flash</span><br><span class="line">OPENAI_LLM_BASE_URL=https://api.stepfun.com/step_plan/v1</span><br><span class="line">EMBEDDING_PROVIDER=siliconflow</span><br><span class="line">EMBEDDING_API_KEY=sk-xx</span><br><span class="line">EMBEDDING_MODEL=BAAI/bge-m3</span><br><span class="line"><span class="comment"># OCEANBASE_EMBEDDING_MODEL_DIMS=1024</span></span><br><span class="line"><span class="comment"># EMBEDDING_DIMS=1024</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注意事项：</strong></p>
+<ul>
+<li><code>SQLITE_PATH</code> 必须是完整的数据库文件路径（如 <code>/root/data/powermem/powermem.db</code>），不能只是文件夹路径</li>
+<li>使用 seekdb 时，<code>EMBEDDING_DIMS</code> 或 <code>OCEANBASE_EMBEDDING_MODEL_DIMS</code> 是必填项，维度要和嵌入模型匹配</li>
+<li>硅基流动的嵌入模型如果不走 seekdb，可以不配 <code>EMBEDDING_DIMS</code></li>
+</ul>
+<h3 id="1-4-启动服务器"><a href="#1-4-启动服务器" class="headerlink" title="1.4 启动服务器"></a>1.4 启动服务器</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">powermem-server --host 0.0.0.0 --port 8848</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--host</code></td>
+<td><code>0.0.0.0</code></td>
+<td>监听地址</td>
+</tr>
+<tr>
+<td><code>--port</code></td>
+<td><code>8848</code></td>
+<td>监听端口</td>
+</tr>
+<tr>
+<td><code>--workers</code></td>
+<td><code>4</code></td>
+<td>工作进程数（内嵌存储自动降为 1）</td>
+</tr>
+<tr>
+<td><code>--reload</code></td>
+<td>关闭</td>
+<td>开发模式，代码变更自动重载</td>
+</tr>
+<tr>
+<td><code>--log-level</code></td>
+<td><code>INFO</code></td>
+<td>日志级别</td>
+</tr>
+</tbody></table>
+<p>首次启动会比较慢（60-120 秒），因为需要初始化 seekdb 和下载嵌入模型。</p>
+<p>验证启动成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl http://localhost:8848/api/v1/system/health</span><br><span class="line"><span class="comment"># 返回 &#123;&quot;status&quot;:&quot;ok&quot;&#125; 即成功</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="二、Dashboard-使用"><a href="#二、Dashboard-使用" class="headerlink" title="二、Dashboard 使用"></a>二、Dashboard 使用</h2><p><img src="/img/2026-06-12-powermem-operation-guide/04.png" alt="PowerMem Dashboard 功能入口总览" loading="lazy" decoding="async"></p>
+<h3 id="2-1-访问-Dashboard"><a href="#2-1-访问-Dashboard" class="headerlink" title="2.1 访问 Dashboard"></a>2.1 访问 Dashboard</h3><p>服务器启动后，浏览器打开：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://&lt;服务器IP&gt;:8848/dashboard/</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/2026-06-12-powermem-operation-guide/05.png" alt="浏览器访问 PowerMem Dashboard 首页" loading="lazy" decoding="async"></p>
+<p><img src="/img/2026-06-12-powermem-operation-guide/06.png" alt="Dashboard 记忆列表与检索面板" loading="lazy" decoding="async"></p>
+<h3 id="2-2-Dashboard-功能"><a href="#2-2-Dashboard-功能" class="headerlink" title="2.2 Dashboard 功能"></a>2.2 Dashboard 功能</h3><table>
+<thead>
+<tr>
+<th>页面</th>
+<th>路径</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>总览</td>
+<td><code>/dashboard/</code></td>
+<td>记忆总量、增长趋势、质量指标、系统健康</td>
+</tr>
+<tr>
+<td>记忆管理</td>
+<td><code>/dashboard/memories</code></td>
+<td>浏览、搜索、查看、删除记忆</td>
+</tr>
+<tr>
+<td>用户画像</td>
+<td><code>/dashboard/user-profile</code></td>
+<td>查看用户级别的聚合画像</td>
+</tr>
+<tr>
+<td>设置</td>
+<td><code>/dashboard/settings</code></td>
+<td>配置 API Key（仅在服务端开启认证时需要）</td>
+</tr>
+</tbody></table>
+<h3 id="2-3-开启认证（可选）"><a href="#2-3-开启认证（可选）" class="headerlink" title="2.3 开启认证（可选）"></a>2.3 开启认证（可选）</h3><p>在 <code>.env</code> 中添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POWERMEM_SERVER_AUTH_ENABLED=<span class="literal">true</span></span><br><span class="line">POWERMEM_SERVER_API_KEYS=your-secret-key</span><br></pre></td></tr></table></figure>
+
+<p>重启服务器后，所有 API 请求需携带 <code>X-API-Key</code> 头。Dashboard 的 Settings 页面可配置 Key。</p>
+<h3 id="2-4-API-文档"><a href="#2-4-API-文档" class="headerlink" title="2.4 API 文档"></a>2.4 API 文档</h3><p>服务器自带 Swagger 文档：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://&lt;服务器IP&gt;:8848/docs</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="三、本地-Claude-Code-连接-PowerMem-服务器"><a href="#三、本地-Claude-Code-连接-PowerMem-服务器" class="headerlink" title="三、本地 Claude Code 连接 PowerMem 服务器"></a>三、本地 Claude Code 连接 PowerMem 服务器</h2><p><img src="/img/2026-06-12-powermem-operation-guide/07.png" alt="Claude Code 连接远程 PowerMem 示意" loading="lazy" decoding="async"></p>
+<p>以下步骤在本地 Windows&#x2F;Mac 操作，服务器在远程 Linux。</p>
+<h3 id="3-1-在-Dashboard-获取-API-Key"><a href="#3-1-在-Dashboard-获取-API-Key" class="headerlink" title="3.1 在 Dashboard 获取 API Key"></a>3.1 在 Dashboard 获取 API Key</h3><p>如果服务端开启了认证，先在 Dashboard Settings 页面拿到 API Key。</p>
+<p><img src="/img/2026-06-12-powermem-operation-guide/08.png" alt="Dashboard 中创建并复制 API Key" loading="lazy" decoding="async"></p>
+<h3 id="3-2-通过-Marketplace-安装插件"><a href="#3-2-通过-Marketplace-安装插件" class="headerlink" title="3.2 通过 Marketplace 安装插件"></a>3.2 通过 Marketplace 安装插件</h3><p>在 Claude Code 中依次执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/plugin marketplace add oceanbase/powermem</span><br><span class="line">/plugin install memory-powermem@powermem</span><br><span class="line">/reload-plugins</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果网络不通，也可以从源码安装：<code>claude --plugin-dir /path/to/powermem/apps/claude-code-plugin</code></p>
+</blockquote>
+<h3 id="3-3-初始化插件"><a href="#3-3-初始化插件" class="headerlink" title="3.3 初始化插件"></a>3.3 初始化插件</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/memory-powermem:init</span><br></pre></td></tr></table></figure>
+
+<p>这会自动创建插件本地虚拟环境、安装 powermem 后端、启动管理服务器。</p>
+<h3 id="3-4-Windows-用户：修复-hooks-命令"><a href="#3-4-Windows-用户：修复-hooks-命令" class="headerlink" title="3.4 Windows 用户：修复 hooks 命令"></a>3.4 Windows 用户：修复 hooks 命令</h3><p><strong>init 生成的 hooks.json 默认使用 <strong><code>sh</code></strong>，Windows 需要改为 PowerShell。</strong></p>
+<p><img src="/img/2026-06-12-powermem-operation-guide/09.png" alt="Windows 下修复 hooks 命令路径" loading="lazy" decoding="async"></p>
+<p>hooks 文件位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\&lt;你的用户名&gt;\.claude\plugins\cache\powermem\memory-powermem\0.1.0\hooks\hooks.json</span><br></pre></td></tr></table></figure>
+
+<p>将所有 <code>sh &quot;${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh&quot;</code> 替换为：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;powershell.exe -NoProfile -ExecutionPolicy Bypass -File \&quot;$&#123;CLAUDE_PLUGIN_ROOT&#125;/hooks/run-hook.ps1\&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>完整示例：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;hooks&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;UserPromptSubmit&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;hooks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;command&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;powershell.exe -NoProfile -ExecutionPolicy Bypass -File \&quot;$&#123;CLAUDE_PLUGIN_ROOT&#125;/hooks/run-hook.ps1\&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;timeout&quot;</span><span class="punctuation">:</span> <span class="number">120</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;SessionEnd&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;hooks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;command&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;powershell.exe -NoProfile -ExecutionPolicy Bypass -File \&quot;$&#123;CLAUDE_PLUGIN_ROOT&#125;/hooks/run-hook.ps1\&quot;&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PostCompact&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;matcher&quot;</span><span class="punctuation">:</span> <span class="string">&quot;auto|manual&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;hooks&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;command&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;powershell.exe -NoProfile -ExecutionPolicy Bypass -File \&quot;$&#123;CLAUDE_PLUGIN_ROOT&#125;/hooks/run-hook.ps1\&quot;&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-5-配置连接远程服务器"><a href="#3-5-配置连接远程服务器" class="headerlink" title="3.5 配置连接远程服务器"></a>3.5 配置连接远程服务器</h3><p>如果 powermem-server 不在本机（比如在远程 Linux），需要配置环境变量。</p>
+<p>方式一：在 Claude Code 的 <code>settings.json</code> 中配置（推荐）：</p>
+<p>编辑 <code>~/.claude/settings.json</code>，添加：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;env&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;POWERMEM_BASE_URL&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://&lt;服务器IP&gt;:8848&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;POWERMEM_API_KEY&quot;</span><span class="punctuation">:</span> <span class="string">&quot;your-secret-key&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/2026-06-12-powermem-operation-guide/10.png" alt="配置 Claude Code 连接远程服务器" loading="lazy" decoding="async"></p>
+<p>方式二：在启动 Claude Code 前设置环境变量：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> POWERMEM_BASE_URL=http://&lt;服务器IP&gt;:8848</span><br><span class="line"><span class="built_in">export</span> POWERMEM_API_KEY=your-secret-key</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-6-重启-Claude-Code"><a href="#3-6-重启-Claude-Code" class="headerlink" title="3.6 重启 Claude Code"></a>3.6 重启 Claude Code</h3><p>重新启动 Claude Code 即可生效。</p>
+<h3 id="3-7-验证"><a href="#3-7-验证" class="headerlink" title="3.7 验证"></a>3.7 验证</h3><p>记忆落库时机：</p>
+<ul>
+<li><strong>用户发送消息时</strong>：自动检索相关记忆，注入到上下文中（默认开启）</li>
+<li><strong>执行 &#x2F;compact 时</strong>：将压缩摘要保存为记忆</li>
+<li><strong>退出会话时</strong>：将完整会话记录保存为记忆</li>
+</ul>
+<p>验证方法：结束一个会话后，在 Dashboard 的 Memories 页面查看是否有新记忆写入。</p>
+<hr>
+<h2 id="四、OpenClaw-安装-PowerMem-并连接落库"><a href="#四、OpenClaw-安装-PowerMem-并连接落库" class="headerlink" title="四、OpenClaw 安装 PowerMem 并连接落库"></a>四、OpenClaw 安装 PowerMem 并连接落库</h2><p><img src="/img/2026-06-12-powermem-operation-guide/11.png" alt="OpenClaw 安装 PowerMem 插件流程" loading="lazy" decoding="async"></p>
+<h3 id="4-1-安装插件"><a href="#4-1-安装插件" class="headerlink" title="4.1 安装插件"></a>4.1 安装插件</h3><p>直接跟 OpenClaw 说：</p>
+<blockquote>
+<p>通过 memory-powermem 帮我安装一下 powermem 记忆引擎插件</p>
+</blockquote>
+<p>或手动执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw plugins install memory-powermem</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-配置嵌入模型"><a href="#4-2-配置嵌入模型" class="headerlink" title="4.2 配置嵌入模型"></a>4.2 配置嵌入模型</h3><p>阿里云百炼的 coding plan 没有嵌入模型，需要手动编辑 powermem 环境文件：</p>
+<p>找到插件数据目录下的 <code>powermem.env</code>（通常在 <code>~/.openclaw/</code> 下），添加&#x2F;修改嵌入模型相关配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">EMBEDDING_PROVIDER=siliconflow</span><br><span class="line">EMBEDDING_API_KEY=sk-xxx</span><br><span class="line">EMBEDDING_MODEL=BAAI/bge-m3</span><br><span class="line">EMBEDDING_DIMS=1024</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/2026-06-12-powermem-operation-guide/12.png" alt="OpenClaw 选择嵌入模型提供商" loading="lazy" decoding="async"></p>
+<blockquote>
+<p>根据实际使用的嵌入服务调整 provider、model 和维度。</p>
+</blockquote>
+<p><img src="/img/2026-06-12-powermem-operation-guide/13.png" alt="填写嵌入模型名称与维度参数" loading="lazy" decoding="async"></p>
+<p><img src="/img/2026-06-12-powermem-operation-guide/14.png" alt="嵌入模型配置完成后的确认界面" loading="lazy" decoding="async"></p>
+<h3 id="4-3-连接远程服务器（可选）"><a href="#4-3-连接远程服务器（可选）" class="headerlink" title="4.3 连接远程服务器（可选）"></a>4.3 连接远程服务器（可选）</h3><p>默认 CLI 模式使用本地 <code>pmem</code> 存储，无需额外服务器。</p>
+<p>如果需要共享团队的 PowerMem 后端，在 OpenClaw 中配置 <code>requestConfig.memory_db</code> 指向服务器地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://&lt;服务器IP&gt;:8848</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-4-验证"><a href="#4-4-验证" class="headerlink" title="4.4 验证"></a>4.4 验证</h3><ol>
+<li>让 OpenClaw 记住一句话：<code>帮我记住测试探针：dragonfruit-zx9</code></li>
+<li>新开对话，让 OpenClaw 回忆：<code>dragonfruit-zx9 是什么</code></li>
+<li>能正确召回即表示工作正常</li>
+</ol>
+<hr>
+<h2 id="PowerMem-记忆如何”自进化”？"><a href="#PowerMem-记忆如何”自进化”？" class="headerlink" title="PowerMem 记忆如何”自进化”？"></a>PowerMem 记忆如何”自进化”？</h2><p><img src="/img/2026-06-12-powermem-operation-guide/15.png" alt="PowerMem 记忆捕获存储检索进化闭环" loading="lazy" decoding="async"></p>
+<p>PowerMem 不止是一个存储桶——它是一个<strong>持续进化的记忆层</strong>。每条记忆从捕获到落库再到被检索，经历一个完整的生命周期：</p>
+<ol>
+<li><strong>捕获（Capture）</strong>：用户每次发消息，PowerMem 自动检索相关记忆注入上下文；执行 <code>/compact</code> 时，压缩摘要自动落为记忆；会话结束时，完整会话记录被保存</li>
+<li><strong>存储（Store）</strong>：文本经过 Embedding 向量化，与元数据一同落入 SQLite &#x2F; OceanBase 数据库，被持久化保存</li>
+<li><strong>检索（Retrieve）</strong>：用户提问时，语义向量检索找到最相关的 Top-K 条记忆，注入到上下文中增强 Agent 回答质量</li>
+<li><strong>进化（Evolve）</strong>：重复记忆被去重合并，用户画像持续更新，过期记忆淘汰、新记忆增强</li>
+</ol>
+<p>这个四步循环让 Agent 越用越聪明，越用越懂你。</p>
+<hr>
+<h2 id="快速参考"><a href="#快速参考" class="headerlink" title="快速参考"></a>快速参考</h2><p><img src="/img/2026-06-12-powermem-operation-guide/16.png" alt="PowerMem 常用命令快速参考表" loading="lazy" decoding="async"></p>
+<h3 id="整体链路图"><a href="#整体链路图" class="headerlink" title="整体链路图"></a>整体链路图</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────────────────────────────────────────────┐</span><br><span class="line">│  Linux 服务器                                            │</span><br><span class="line">│                                                          │</span><br><span class="line">│  ┌─────────────┐    ┌──────────────┐                     │</span><br><span class="line">│  │ powermem    │    │  Dashboard   │                     │</span><br><span class="line">│  │ -server     │    │  :8848/      │                     │</span><br><span class="line">│  │ :8848       │    │  dashboard/  │                     │</span><br><span class="line">│  └──────┬──────┘    └──────────────┘                     │</span><br><span class="line">│         │                                                │</span><br><span class="line">│    .env 配置                                             │</span><br><span class="line">│    - DATABASE_PROVIDER                                   │</span><br><span class="line">│    - LLM_PROVIDER / API_KEY / MODEL                      │</span><br><span class="line">│    - EMBEDDING_PROVIDER / API_KEY / MODEL                │</span><br><span class="line">└─────────┬────────────────────────────────────────────────┘</span><br><span class="line">          │ HTTP API (:8848)</span><br><span class="line">          │</span><br><span class="line">     ┌────┴─────────────┐</span><br><span class="line">     │                  │</span><br><span class="line">     ▼                  ▼</span><br><span class="line">┌──────────┐      ┌──────────┐</span><br><span class="line">│ Claude   │      │ OpenClaw │</span><br><span class="line">│ Code     │      │          │</span><br><span class="line">│ (插件    │      │ (插件    │</span><br><span class="line">│  hooks)  │      │ CLI/HTTP)│</span><br><span class="line">└──────────┘      └──────────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="常用命令速查"><a href="#常用命令速查" class="headerlink" title="常用命令速查"></a>常用命令速查</h3><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>安装</td>
+<td><code>uv pip install &quot;powermem[cli,server,mcp,seekdb]&quot;</code></td>
+</tr>
+<tr>
+<td>初始化配置</td>
+<td><code>pmem config init</code></td>
+</tr>
+<tr>
+<td>启动服务器</td>
+<td><code>powermem-server --host 0.0.0.0 --port 8848</code></td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td><code>curl http://localhost:8848/api/v1/system/health</code></td>
+</tr>
+<tr>
+<td>Dashboard</td>
+<td><code>http://localhost:8848/dashboard/</code></td>
+</tr>
+<tr>
+<td>API 文档</td>
+<td><code>http://localhost:8848/docs</code></td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C/" rel="tag"># 操作手册</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/" rel="prev" title="OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍">
+                  <i class="fa fa-angle-left"></i> OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-12-powermem-memory-lifecycle/" rel="next" title="PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完">
+                  PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

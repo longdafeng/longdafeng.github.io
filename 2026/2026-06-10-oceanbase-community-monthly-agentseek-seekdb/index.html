@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd &#x2F; obdiag 与生态认证同步更新。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd &#x2F; obdiag 与生态认证同步更新。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/01.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/02.webp">
+<meta property="article:published_time" content="2026-06-10T14:34:16.000Z">
+<meta property="article:modified_time" content="2026-06-10T14:34:16.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="AgentSeek">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="异步索引">
+<meta property="article:tag" content="智能运维">
+<meta property="article:tag" content="社区月报">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/01.webp">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/","path":"2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/","title":"OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E4%BA%A7%E5%93%81%E6%9B%B4%E6%96%B0"><span class="nav-number">1.</span> <span class="nav-text">AI 产品更新</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-seekdb-1-3-0-%E5%8F%91%E5%B8%83%EF%BC%9A%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87-22-%E5%80%8D%EF%BC%8CP99-%E6%97%A0%E6%8A%96%E5%8A%A8"><span class="nav-number">1.1.</span> <span class="nav-text">OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-AgentSeek%EF%BC%88%E6%99%BA%E8%83%BD%E4%BD%93%E5%B7%A5%E7%A8%8B%E5%A5%97%E4%BB%B6%EF%BC%89%E9%A6%96%E4%B8%AA%E7%89%88%E6%9C%AC%E5%8F%91%E5%B8%83"><span class="nav-number">1.2.</span> <span class="nav-text">OceanBase AgentSeek（智能体工程套件）首个版本发布</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E5%85%B7%E4%BE%A7%E9%87%8D%E8%A6%81%E6%9B%B4%E6%96%B0"><span class="nav-number">2.</span> <span class="nav-text">工具侧重要更新</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#obd-v4-4-0%EF%BC%9A%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%E5%B7%A5%E5%85%B7%E6%96%B0%E5%A2%9E%E6%94%AF%E6%8C%81%E5%8F%AF%E8%A7%86%E5%8C%96%E9%83%A8%E7%BD%B2-seekdb"><span class="nav-number">2.1.</span> <span class="nav-text">obd v4.4.0：安装部署工具新增支持可视化部署 seekdb</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#obdiag-7-v5-0-0%EF%BC%9Aobdiag-agent-%E6%94%AF%E6%8C%81%E6%9B%B4%E4%B8%B0%E5%AF%8C%E7%9A%84%E4%BA%A4%E4%BA%92%E4%BD%93%E9%AA%8C"><span class="nav-number">2.2.</span> <span class="nav-text">obdiag[7] v5.0.0：obdiag agent 支持更丰富的交互体验</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%80%81%E4%BA%A7%E5%93%81%E8%AE%A4%E8%AF%81%E8%BF%9B%E5%B1%95%EF%BC%9A%E6%96%B0%E5%A2%9E-1-%E6%AC%BE%E5%85%BC%E5%AE%B9%E4%BA%A7%E5%93%81"><span class="nav-number">3.</span> <span class="nav-text">生态产品认证进展：新增 1 款兼容产品</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BE%E5%8C%BA%E5%8A%A8%E6%80%81"><span class="nav-number">4.</span> <span class="nav-text">社区动态</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-21-oceanbase-community-monthly-2026-05/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-21</time>
+        <br>
+      OceanBase 社区月报：PowerMem、OMS、obdiag 全面更新
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-02-06-community-carnival-2026/" rel="bookmark">
+        <time class="popular-posts-time">2026-02-06</time>
+        <br>
+      社区嘉年华现场直击！开源开放，生态共赢！13岁少年拿下 AI Coding 第二名！
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-06-ai-agent-database-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-06</time>
+        <br>
+      AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-operation-guide/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-09-seekdb-1-3-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-09</time>
+        <br>
+      OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd &#x2F; obdiag 与生态认证同步更新。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-10 22:34:16" itemprop="dateCreated datePublished" datetime="2026-06-10T22:34:16+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">萧峯</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%9C%80%E6%96%B0%E5%8A%A8%E6%80%81/" itemprop="url" rel="index"><span itemprop="name">最新动态</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd / obdiag 与生态认证同步更新。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍","description":"OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd / obdiag 与生态认证同步更新。","image":"https://ilongda.com/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/01.webp","wordCount":1442,"datePublished":"2026-06-10T14:34:16.000Z","dateModified":"2026-06-10T14:34:16.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/"},"url":"https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/","inLanguage":"zh-CN","keywords":["OceanBase","智能运维","AI Agent","seekdb","AgentSeek","社区月报","异步索引"],"articleSection":["最新动态"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"最新动态","item":"https://ilongda.com/categories/最新动态/"},{"@type":"ListItem","position":3,"name":"OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍","item":"https://ilongda.com/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/"}]}</script>
+<blockquote>
+<p><strong>本期速览</strong></p>
+<ul>
+<li><strong>seekdb 1.3.0</strong>：异步索引模型，streaming 写入吞吐相对同步模式约提升 22 倍</li>
+<li><strong>AgentSeek</strong>：基于 OceanBase &amp; LangChain 的智能体工程套件首个版本，覆盖数据底座到应用层</li>
+<li><strong>obd v4.4.0 &#x2F; obdiag v5.0.0</strong>：可视化部署 seekdb；Agent 诊断体验基于 LangChain &#x2F; LangGraph 增强</li>
+<li>生态兼容认证新增 1 款产品</li>
+</ul>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="AI-产品更新"><a href="#AI-产品更新" class="headerlink" title="AI 产品更新"></a>AI 产品更新</h2><h3 id="OceanBase-seekdb-1-3-0-发布：性能提升-22-倍，P99-无抖动"><a href="#OceanBase-seekdb-1-3-0-发布：性能提升-22-倍，P99-无抖动" class="headerlink" title="OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动"></a>OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动</h3><p>OceanBase seekdb 正式发布了 1.3.0 版本——一次以「多平台覆盖与高性能」为主题的重大版本更新。</p>
+<p><img src="/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/01.webp" alt="seekdb 1.3.0 异步索引与流式写入性能提升" decoding="async"></p>
+<p>该版本引入了基于 Change Stream 增量框架的 <strong>异步索引模型</strong> ，将写入操作与索引构建彻底解耦，为 AI Agent 负载带来极致的写入吞吐和稳定的检索性能—— <strong>streaming 场景下吞吐量相比同步模式提升约 22 倍</strong> 。同时 Diff &amp; Merge 现已支持向量列，Fork Table &#x2F; Fork Database 与异步索引全面对齐，进一步增强多版本数据管理能力。</p>
+<p>完整更新日志见：GitHub Release v1.3.0 <sup>[1]</sup></p>
+<h3 id="OceanBase-AgentSeek（智能体工程套件）首个版本发布"><a href="#OceanBase-AgentSeek（智能体工程套件）首个版本发布" class="headerlink" title="OceanBase AgentSeek（智能体工程套件）首个版本发布"></a>OceanBase AgentSeek（智能体工程套件）首个版本发布</h3><p><strong>OceanBase AgentSeek 是基于 OceanBase &amp; LangChain 打造的智能体工程套件</strong> ，提供一系列工具和库，帮助开发者快速构建具备数据闭环能力的智能体飞轮。</p>
+<p><img src="/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/02.webp" alt="AgentSeek 智能体工程套件五层架构" loading="lazy" decoding="async"></p>
+<p>AgentSeek 完整架构图</p>
+<p>作为智能体工程套件，AgentSeek 旨在补全以下架构（并非全自研，而是融合开源生态）：</p>
+<ol>
+<li><strong>数据底座</strong> ：与 OceanBase 合作，提供从端侧（seekdb）到云端的支持，兼容 MySQL 协议，方便国内用户。</li>
+<li><strong>上下文语义层</strong> ：统一管理记忆、RAG 内容、工具调用结果等，具备自进化、可检索、证据链溯源能力。</li>
+<li><strong>运行时层</strong> ：核心层，将本地应用转化为服务，支持 Docker、K8S 等部署方式，初步集成 Agent Protocol、MCP、A2A 等协议，旨在服务化 LangChain 生态应用。</li>
+<li><strong>网关层</strong> ：对接钉钉、飞书、Slack、Discord 等 IM 工具，作为智能体入口。同时支持通过 AG-UI 等协议快速构建功能全面的智能体前端界面（支持 Human-in-the-loop、流式输出等）。</li>
+<li><strong>应用层</strong> ：基于运行时层和标准协议，构建具体智能体应用。</li>
+</ol>
+<p>所有提及项目均已开源，欢迎试用、贡献 PR&#x2F;Issue！</p>
+<ul>
+<li><strong>AgentSeek</strong><sup><strong>[2]</strong></sup></li>
+<li><strong>AgentSeek-api</strong><sup><strong>[3]</strong></sup></li>
+<li><strong>ContextSeek</strong><sup><strong>[4]</strong></sup></li>
+<li><strong>langchain-oceanbase</strong><sup><strong>[5]</strong></sup></li>
+<li><strong>OceanBase seekdb</strong><sup><strong>[6]</strong></sup></li>
+</ul>
+<h2 id="工具侧重要更新"><a href="#工具侧重要更新" class="headerlink" title="工具侧重要更新"></a>工具侧重要更新</h2><h3 id="obd-v4-4-0：安装部署工具新增支持可视化部署-seekdb"><a href="#obd-v4-4-0：安装部署工具新增支持可视化部署-seekdb" class="headerlink" title="obd v4.4.0：安装部署工具新增支持可视化部署 seekdb"></a>obd v4.4.0：安装部署工具新增支持可视化部署 seekdb</h3><p>主要新增功能如下：</p>
+<ul>
+<li>支持 <strong>可视化部署 seekdb</strong> 。</li>
+<li>支持为 seekdb 部署监控组件 obagent&#x2F;prometheus&#x2F;ob-dashboard。</li>
+<li>支持 obshell https 协议。</li>
+<li>新增 <code>obd cluster tenant set-sync-mode</code> 命令，支持设置主备租户同步模式（最大性能&#x2F;最大可用&#x2F;最大保护）。</li>
+<li>新增 <code>--sync-mode</code> 、 <code>--net-timeout</code> 、 <code>--health-check-time</code> 参数，支持在创建时指定同步模式和网络超时配置。</li>
+<li>新增 <strong>switchover</strong> （计划内切换）和 <strong>failover</strong> （故障切换）相关插件，支持主备租户角色切换操作。</li>
+</ul>
+<h3 id="obdiag-7-v5-0-0：obdiag-agent-支持更丰富的交互体验"><a href="#obdiag-7-v5-0-0：obdiag-agent-支持更丰富的交互体验" class="headerlink" title="obdiag[7] v5.0.0：obdiag agent 支持更丰富的交互体验"></a>obdiag[7] v5.0.0：obdiag agent 支持更丰富的交互体验</h3><p>自 obdiag <strong>V5.0.0</strong> 起，Agent 底层迁移至基于 <strong>LangChain&#x2F;LangGraph</strong> 的 <strong>deepagents TUI</strong> ，支持更丰富的交互体验（如 Textual 终端 UI、技能管理、子 Agent 等）。Agent 支持自然语言描述诊断需求，并调用 obdiag 的采集、分析、巡检、根因分析等能力。</p>
+<h2 id="生态产品认证进展：新增-1-款兼容产品"><a href="#生态产品认证进展：新增-1-款兼容产品" class="headerlink" title="生态产品认证进展：新增 1 款兼容产品"></a>生态产品认证进展：新增 1 款兼容产品</h2><p>5 月新增 1 款生态兼容认证产品，详情如下：</p>
+<table>
+<thead>
+<tr>
+<th>伙伴名称</th>
+<th>产品名称</th>
+<th>产品版本</th>
+<th>OB 版本</th>
+<th>证书编号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>国投人力资源服务有限公司</td>
+<td>国聘网校数智化培训平台</td>
+<td>V2.0</td>
+<td>V4</td>
+<td>OB2026050001B</td>
+</tr>
+</tbody></table>
+<h2 id="社区动态"><a href="#社区动态" class="headerlink" title="社区动态"></a>社区动态</h2><p>5 月 30 日，由 OceanBase 与 LangChain Community 联合主办的「 <strong>构建高可靠、低成本企业级 Agent Infra</strong> 」线下技术沙龙，在上海张江科学之门圆满落幕。活动汇聚数据库、大模型、Agent 开发领域一线技术从业者、企业技术负责人与开源社区开发者，围绕以下四大核心内容深度交流：</p>
+<ul>
+<li>Agent 原生数据底座建设</li>
+<li>AgentSeek 平台落地</li>
+<li>真实产业案例拆解</li>
+<li>现场实操演示</li>
+</ul>
+<p>活动完成自研企业级智能体工程平台 <strong>AgentSeek 重磅首发</strong> ，为上海本地 AI 开发者带来一场聚焦落地、干货密集的技术分享会。</p>
+<p>查看活动回顾： <a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491420&idx=1&sn=7586b385bc5a5b7e1a4f09ec9e9de7ed&scene=21#wechat_redirect">上海 Meetup 干货全集：信也降本、算秩未来混合检索，AgentSeek 智能体工程一站通关</a></p>
+<p>6 月，社区将围绕 AgentSeek 陆续开展线上直播活动，介绍关于上下文进化、Agent 构建、AI 基础设施与 AgentOps 等方面的思路和选择。欢迎大家关注 6 月线上活动： <a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491380&idx=1&sn=cc6b7e69dadc8260bfee59cf1e167659&scene=21#wechat_redirect">Agent 自进化的另一条路——让上下文成为活的数据资产</a> ~</p>
+<p>Agent自进化：上下文变资产</p>
+<blockquote>
+<p>我们每个月都会和大家展开一次社区进展的汇报沟通会，希望通过更多的互动交流让 OceanBase 开源社区更加透明，实现信息共享，也希望能营造更加轻松的氛围，为大家答疑解惑，让大家畅所欲言。</p>
+<p>如果您对我们的社区有任何建议，欢迎在 OceanBase GitHub <sup>[8]</sup> 上提 Issues 或 PR，也欢迎大家成为 Contributor，参与到社区建设中来~</p>
+</blockquote>
+<p>参考资料</p>
+<p>[1]</p>
+<p>GitHub Release v1.3.0: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.3.0">https://github.com/oceanbase/seekdb/releases/tag/v1.3.0</a></p>
+<p>[2]</p>
+<p>AgentSeek: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/ob-labs/agentseek">https://github.com/ob-labs/agentseek</a></p>
+<p>[3]</p>
+<p>AgentSeek-api: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/ob-labs/agentseek-api">https://github.com/ob-labs/agentseek-api</a></p>
+<p>[4]</p>
+<p>ContextSeek: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/ob-labs/contextseek">https://github.com/ob-labs/contextseek</a></p>
+<p>[5]</p>
+<p>langchain-oceanbase: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/langchain-oceanbase">https://github.com/oceanbase/langchain-oceanbase</a></p>
+<p>[6]</p>
+<p>OceanBase seekdb: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">https://github.com/oceanbase/seekdb</a></p>
+<p>[7]</p>
+<p>obdiag: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/obdiag">https://github.com/oceanbase/obdiag</a></p>
+<p>[8]</p>
+<p>OceanBase GitHub: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/oceanbase">https://github.com/oceanbase/oceanbase</a></p>
+<p>社区月报 · 目录</p>
+<p>作者提示: 个人观点，仅供参考</p>
+<p>阅读原文</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%99%BA%E8%83%BD%E8%BF%90%E7%BB%B4/" rel="tag"># 智能运维</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/AgentSeek/" rel="tag"># AgentSeek</a>
+              <a href="/tags/%E7%A4%BE%E5%8C%BA%E6%9C%88%E6%8A%A5/" rel="tag"># 社区月报</a>
+              <a href="/tags/%E5%BC%82%E6%AD%A5%E7%B4%A2%E5%BC%95/" rel="tag"># 异步索引</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-09-seekdb-1-3-0-release/" rel="prev" title="OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动">
+                  <i class="fa fa-angle-left"></i> OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-12-powermem-operation-guide/" rel="next" title="PowerMem 操作手册：从 Linux 部署到 Claude Code &#x2F; OpenClaw 接入">
+                  PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Longda's Interesting World (ilongda.com)
 # Technical blog: database internals, machine learning, paper reviews, tools
 # Author: Longda Feng
-# Generated: 2026-06-11T11:57:16.589Z
+# Generated: 2026-07-20T03:23:51.103Z
 # Full content archive for LLM consumption
 
 ---
@@ -27269,6 +27269,4012 @@ OceanBase seekdb 继承了同一套存储引擎和 SQL 执行器，专注于 Age
 **⭐** github.com/oceanbase/seekdb — 一个 star 让更多人发现这个项目，也让我们有动力继续投入。
 
 遇到问题或想讨论你的 Agent 场景：GitHub Issues · GitHub Discussions
+
+
+---
+# Article: OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍
+# URL: https://ilongda.com/2026-06-10/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/
+# Published: 2026-06-10
+# Updated: 2026-06-10
+# Keywords: OceanBase,seekdb,AgentSeek,AI Agent,社区月报,异步索引,obd,obdiag
+
+OceanBase 社区月报：seekdb 1.3.0 异步索引与流式写入提速约 22 倍，AgentSeek 智能体工程套件首发，obd / obdiag 与生态认证同步更新。
+
+> **本期速览**
+>
+> + **seekdb 1.3.0**：异步索引模型，streaming 写入吞吐相对同步模式约提升 22 倍
+> + **AgentSeek**：基于 OceanBase & LangChain 的智能体工程套件首个版本，覆盖数据底座到应用层
+> + **obd v4.4.0 / obdiag v5.0.0**：可视化部署 seekdb；Agent 诊断体验基于 LangChain / LangGraph 增强
+> + 生态兼容认证新增 1 款产品
+
+## AI 产品更新
+
+### OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+
+OceanBase seekdb 正式发布了 1.3.0 版本——一次以「多平台覆盖与高性能」为主题的重大版本更新。
+
+![seekdb 1.3.0 异步索引与流式写入性能提升](/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/01.webp)
+
+该版本引入了基于 Change Stream 增量框架的 **异步索引模型** ，将写入操作与索引构建彻底解耦，为 AI Agent 负载带来极致的写入吞吐和稳定的检索性能—— **streaming 场景下吞吐量相比同步模式提升约 22 倍** 。同时 Diff & Merge 现已支持向量列，Fork Table / Fork Database 与异步索引全面对齐，进一步增强多版本数据管理能力。
+
+完整更新日志见：GitHub Release v1.3.0 [1]
+
+### OceanBase AgentSeek（智能体工程套件）首个版本发布
+
+**OceanBase AgentSeek 是基于 OceanBase & LangChain 打造的智能体工程套件** ，提供一系列工具和库，帮助开发者快速构建具备数据闭环能力的智能体飞轮。
+
+![AgentSeek 智能体工程套件五层架构](/img/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/02.webp)
+
+AgentSeek 完整架构图
+
+作为智能体工程套件，AgentSeek 旨在补全以下架构（并非全自研，而是融合开源生态）：
+
+1. **数据底座** ：与 OceanBase 合作，提供从端侧（seekdb）到云端的支持，兼容 MySQL 协议，方便国内用户。
+2. **上下文语义层** ：统一管理记忆、RAG 内容、工具调用结果等，具备自进化、可检索、证据链溯源能力。
+3. **运行时层** ：核心层，将本地应用转化为服务，支持 Docker、K8S 等部署方式，初步集成 Agent Protocol、MCP、A2A 等协议，旨在服务化 LangChain 生态应用。
+4. **网关层** ：对接钉钉、飞书、Slack、Discord 等 IM 工具，作为智能体入口。同时支持通过 AG-UI 等协议快速构建功能全面的智能体前端界面（支持 Human-in-the-loop、流式输出等）。
+5. **应用层** ：基于运行时层和标准协议，构建具体智能体应用。
+
+所有提及项目均已开源，欢迎试用、贡献 PR/Issue！
+
++ **AgentSeek****[2]**
++ **AgentSeek-api****[3]**
++ **ContextSeek****[4]**
++ **langchain-oceanbase****[5]**
++ **OceanBase seekdb****[6]**
+
+## 工具侧重要更新
+
+### obd v4.4.0：安装部署工具新增支持可视化部署 seekdb
+
+主要新增功能如下：
+
++ 支持 **可视化部署 seekdb** 。
++ 支持为 seekdb 部署监控组件 obagent/prometheus/ob-dashboard。
++ 支持 obshell https 协议。
++ 新增 `obd cluster tenant set-sync-mode` 命令，支持设置主备租户同步模式（最大性能/最大可用/最大保护）。
++ 新增 `--sync-mode` 、 `--net-timeout` 、 `--health-check-time` 参数，支持在创建时指定同步模式和网络超时配置。
++ 新增 **switchover** （计划内切换）和 **failover** （故障切换）相关插件，支持主备租户角色切换操作。
+
+### obdiag[7] v5.0.0：obdiag agent 支持更丰富的交互体验
+
+自 obdiag **V5.0.0** 起，Agent 底层迁移至基于 **LangChain/LangGraph** 的 **deepagents TUI** ，支持更丰富的交互体验（如 Textual 终端 UI、技能管理、子 Agent 等）。Agent 支持自然语言描述诊断需求，并调用 obdiag 的采集、分析、巡检、根因分析等能力。
+
+## 生态产品认证进展：新增 1 款兼容产品
+
+5 月新增 1 款生态兼容认证产品，详情如下：
+
+| 伙伴名称 | 产品名称 | 产品版本 | OB 版本 | 证书编号 |
+| --- | --- | --- | --- | --- |
+| 国投人力资源服务有限公司 | 国聘网校数智化培训平台 | V2.0 | V4 | OB2026050001B |
+
+## 社区动态
+
+5 月 30 日，由 OceanBase 与 LangChain Community 联合主办的「 **构建高可靠、低成本企业级 Agent Infra** 」线下技术沙龙，在上海张江科学之门圆满落幕。活动汇聚数据库、大模型、Agent 开发领域一线技术从业者、企业技术负责人与开源社区开发者，围绕以下四大核心内容深度交流：
+
++ Agent 原生数据底座建设
++ AgentSeek 平台落地
++ 真实产业案例拆解
++ 现场实操演示
+
+活动完成自研企业级智能体工程平台 **AgentSeek 重磅首发** ，为上海本地 AI 开发者带来一场聚焦落地、干货密集的技术分享会。
+
+查看活动回顾： [上海 Meetup 干货全集：信也降本、算秩未来混合检索，AgentSeek 智能体工程一站通关](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491420&idx=1&sn=7586b385bc5a5b7e1a4f09ec9e9de7ed&scene=21#wechat_redirect)
+
+6 月，社区将围绕 AgentSeek 陆续开展线上直播活动，介绍关于上下文进化、Agent 构建、AI 基础设施与 AgentOps 等方面的思路和选择。欢迎大家关注 6 月线上活动： [Agent 自进化的另一条路——让上下文成为活的数据资产](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491380&idx=1&sn=cc6b7e69dadc8260bfee59cf1e167659&scene=21#wechat_redirect) \~
+
+Agent自进化：上下文变资产
+
+> 我们每个月都会和大家展开一次社区进展的汇报沟通会，希望通过更多的互动交流让 OceanBase 开源社区更加透明，实现信息共享，也希望能营造更加轻松的氛围，为大家答疑解惑，让大家畅所欲言。
+>
+> 如果您对我们的社区有任何建议，欢迎在 OceanBase GitHub [8] 上提 Issues 或 PR，也欢迎大家成为 Contributor，参与到社区建设中来\~
+
+参考资料
+
+[1]
+
+GitHub Release v1.3.0: [https://github.com/oceanbase/seekdb/releases/tag/v1.3.0](https://github.com/oceanbase/seekdb/releases/tag/v1.3.0)
+
+[2]
+
+AgentSeek: [https://github.com/ob-labs/agentseek](https://github.com/ob-labs/agentseek)
+
+[3]
+
+AgentSeek-api: [https://github.com/ob-labs/agentseek-api](https://github.com/ob-labs/agentseek-api)
+
+[4]
+
+ContextSeek: [https://github.com/ob-labs/contextseek](https://github.com/ob-labs/contextseek)
+
+[5]
+
+langchain-oceanbase: [https://github.com/oceanbase/langchain-oceanbase](https://github.com/oceanbase/langchain-oceanbase)
+
+[6]
+
+OceanBase seekdb: [https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+
+[7]
+
+obdiag: [https://github.com/oceanbase/obdiag](https://github.com/oceanbase/obdiag)
+
+[8]
+
+OceanBase GitHub: [https://github.com/oceanbase/oceanbase](https://github.com/oceanbase/oceanbase)
+
+社区月报 · 目录
+
+作者提示: 个人观点，仅供参考
+
+阅读原文
+
+
+---
+# Article: PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完
+# URL: https://ilongda.com/2026-06-12/2026-06-12-powermem-memory-lifecycle/
+# Published: 2026-06-12
+# Updated: 2026-06-12
+# Keywords: PowerMem,AI Agent,智能记忆,OceanBase,向量检索,遗忘机制,记忆衰减,工程实践
+
+用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。
+
+> 时间让记忆蒙尘，访问是唯一的擦拭。尘太厚、无人问，便是遗忘。
+
+> 💡 想亲手试试 Agent 记忆层？欢迎到 [PowerMem](https://github.com/oceanbase/powermem) 逛逛——开箱就能给 Agent 加上会整理、会遗忘的长期记忆。
+
+前一篇 [记忆系统的遗忘设计，从神经元到代码工程](https://www.cnblogs.com/knqiufan/p/20130795) 从认知科学讲了遗忘：突触可塑性、艾宾浩斯曲线、间隔重复。那是“为什么要忘”。
+
+这篇换视角：以一条消息为线索，跟着它在 PowerMem（OceanBase 开源的 AI 记忆引擎）里走完从写入到淘汰的全程，看遗忘机制在工程里怎么落地。
+
+一句话概括：消息一旦写入就开始衰减；真正决定它去留的，是之后有没有被再次访问。
+
+## 一、重要性评估：这条信息值得记住吗？
+
+先说一个场景。假设发了这么一条消息：
+
+> 下周五下午三点和产品团队在 3 号会议室评审 Q2 需求文档。
+
+当这条消息进入记忆系统后，第一个问题不是问「怎么记住」，而是要先判断「值不值得记住」。如果所有信息都以相同的权重被存储和检索，随着数据量增长，系统会面临两个问题：检索信噪比持续下降，存储成本不可控。
+
+香农信息论也解释了这件事：高概率事件的信息量趋近于零，不值得长期存储；低概率但关键事件的信息量极大，必须持久化保留。
+
+**重要性评估就是干这件事的，它是信息过滤器。** 它会为每条信息打一个分数，这个分数决定后续的衰减速度、复习频率和淘汰优先级。
+
+那么重要性如何评估？
+
+### 1.1 六维度评估模型
+
+在 PowerMem 中评估一条信息的重要性比想象中复杂。它使用了一个**六维评估模型**，即从六个维度进行综合评估、加权汇总：
+
+| 维度                         | 权重 | 评估什么                       |
+
+| ---------------------------- | ---- | ------------------------------ |
+
+| relevance（关联度）          | 0.30 | 信息与用户当前上下文的关联程度 |
+
+| novelty（新颖度）            | 0.20 | 信息的新鲜程度，是否为首次出现 |
+
+| emotional\_impact（情感强度） | 0.15 | 信息是否包含强烈的情感色彩     |
+
+| actionable（可操作性）       | 0.15 | 信息是否需要用户采取行动       |
+
+| factual（事实性）            | 0.10 | 信息的客观事实程度             |
+
+| personal（个人相关性）       | 0.10 | 信息与用户个人的关联程度       |
+
+拿前面举例的会议消息来说。它与「Q2 的工作」高度相关（relevance ≈ 0.8），包含明确的时间地点（factual ≈ 0.8），用户必须参加不能错过（actionable ≈ 0.9），但情感上中性（emotional\_impact ≈ 0.2），那么从使用六维评估模型加权计算出的**重要性分数**大致如下：
+
+```plain
+
+0.3×0.8 + 0.2×0.5 + 0.15×0.2 + 0.15×0.9 + 0.1×0.8 + 0.1×0.6 ≈ 0.72
+```
+
+即最终得出的重要性评估分数为 0.72。
+
+六维评估模型是重要性评估的重要理论基础。
+
+### 1.2 双路径评估：LLM 与规则引擎
+
+PowerMem 设计了两条重要性评估执行路径，确保系统在任何情况下都能给出评分。第一条路径就是基于六维评估模型得出的评分，第二路径则是在第一条路径不可用时进行优雅降级的规则引擎计算方案。
+
+**路径一：LLM 深度评估（优先）**
+
+当 LLM 可用时会直接走这一条评估路径。系统要求 LLM 根据六维度评估模型从六个维度分别分析，返回结构化 JSON。得到的结果示例如下：
+
+```json
+
+{
+
+    "importance_score": 0.72,
+
+    "reasoning": "会议安排对用户具有明确的时间约束和行动要求",
+
+    "criteria_scores": {
+
+        "relevance": 0.8,
+
+        "novelty": 0.5,
+
+        "emotional_impact": 0.2,
+
+        "actionable": 0.9,
+
+        "factual": 0.8,
+
+        "personal": 0.6
+
+    }
+
+}
+```
+
+PowerMem 从这个 LLM 回复的结构化 JSON 中提取 `importance_score` 字段作为重要性评分。
+
+但实际上因为 LLM 的回答会有一定的不可预知性，所以为了确保即使 LLM 返回格式不规范系统也不会崩溃，可以拿到对应的评分数据，PowerMem 使用了一种**三级回退**的方式来进行解析：首先尝试解析 JSON 拿到最准确的数据，若解析失败则用正则表达式匹配评分数字，若再失败，即返回保底的默认值 0.5。
+
+> 值得注意的是，LLM 返回的结构化 JSON 中的六维数据实际上并未直接参与最后的权重的计算，在这里让 LLM 返回六维数据只是为了通过 Chain-of-Thought 的结构化分解来辅助 LLM 推理，让最终答案更可靠稳定。
+
+**路径二：规则引擎（兜底）**
+
+当 LLM 不可用时，路径一则失效，规则引擎会接管重要性分数的计算。虽然精度会有所下降，但能保证系统能正常运行。
+
+规则引擎基于一组可量化的信号来累加分数的：
+
++ 内容长度 > 100 字符：+0.1；> 50 字符：+0.05
++ 命中关键词：每个 +0.1
++ 包含 `?` 或 `!`：各 +0.05
++ 元数据标记了优先级（high/medium）：+0.2/+0.1
++ 最终分数上限为 1.0
+
+规则引擎评分精度不如 LLM 评分，但确保了系统在 LLM 不可用时仍能正常运行，这种\*\*优雅降级（graceful degradation）\*\*设计是生产级系统的重要特征。即不会因为一个外部服务的故障，就导致整个记忆系统停摆。
+
+![PowerMem 双路径重要性评估流程](/img/2026-06-12-powermem-memory-lifecycle/01.png)
+
+---
+
+## 二、分类与参数初始化
+
+### 2.1 三层记忆模型
+
+重要性分数确定了之后，下一步就要给信息分类，来决定这条信息属于哪一层的记忆。
+
+不知道大家还是否记得前一篇聊过的大脑的记忆分层机制。即信息先进入容量有限的海马体（短期存储），经过记忆巩固后转移至新皮层（长期存储），只有那些被反复激活的、与已有知识建立了丰富关联的、或伴随强烈情绪体验的信息，才能获得优先转移权。
+
+PowerMem 把这个过程翻译为三层模型：
+
+| 层级                       | 生物学类比 | 倍率 | 典型存活时间 |
+
+| -------------------------- | ---------- | ---- | ------------ |
+
+| **working**（工作记忆）    | 前额叶皮层 | ×0.5 | 数小时\~1 天  |
+
+| **short\_term**（短期记忆） | 海马体     | ×1.5 | 数天\~数周    |
+
+| **long\_term**（长期记忆）  | 新皮层     | ×2.0 | 数周\~数月    |
+
+而分类的逻辑又以重要性分数为依据：`≥ 0.8` 进入 long\_term，`≥ 0.6` 进入 short\_term，其余归入 working。**不同层级的衰减速率不同，层级越高衰减越慢，信息活得越久：**
+
+```python
+
+if score >= self._algo.long_term_threshold:   # 0.8
+
+    return "long_term"
+
+if score >= self._algo.short_term_threshold:  # 0.6
+
+    return "short_term"
+
+return "working"
+```
+
+前面算出来的会议信息重要性评分为 importance = 0.72，命中了 `≥ 0.6` 但不到 `0.8`。所以落入 **short\_term（短期记忆）**。
+
+![PowerMem 工作记忆与长期记忆分层模型](/img/2026-06-12-powermem-memory-lifecycle/02.png)
+
+### 2.2 遗忘参数初始化
+
+分类分完了，但是分类只回答了「这条信息该待在哪一层」，更具体的问题是：**应该忘多快？为了巩固记忆什么时候要再复习一遍？**
+
+PowerMem 在分类完成后会为每条记忆生成一整套**可随生命周期演进的数值档案**。即系统会为这条记忆建立一份元数据卡片用来记录这条信息记忆的强度、衰减参数、复习计划和管理状态等。
+
+元数据卡片在结构上分成两块：
+
+| 字段                         | 职责                                                         |
+
+| ---------------------------- | ------------------------------------------------------------ |
+
+| `metadata.intelligence`      | **一些数值指标**：重要性、层级、保留率、衰减率、复习时刻表、访问/复习计数等 |
+
+| `metadata.memory_management` | **记忆生命周期开关**：是否待晋升、待遗忘、待归档、是否仍活跃 |
+
+依旧以会议信息为例（importance = 0.72，short\_term），逐一说明核心参数的设计意图和计算方式。
+
+#### 2.2.1 初始保留率
+
+初始保留率决定了一条信息在形成瞬间的牢固程度，越重要的信息在写入时就应该被赋予越高的初始保留率，低重要性内容在认知层面本就应更脆弱，更容易在竞争中让出存储与检索带宽。
+
+在 PowerMem 中的初始保留率就是重要性分数乘以一个默认为 1.0 的全局配置参数：
+
+```python
+
+initial_retention = self.initial_retention * importance_score
+
+# 会议示例：1.0 × 0.72 = 0.72
+```
+
+得到的初始保留率实际上会写入两个字段：
+
++ `initial_retention` 字段，用于记录创建时的快照（当初记得有多牢）
++ `current_retention` 字段，用于跟踪当前的有效保留水平
+
+创建时两者数值相同，之后 `current_retention` 会随衰减和复习而变化。
+
+#### 2.2.2 关于遗忘速度
+
+working / short\_term / long\_term 对应到认知学科中的工作记忆、海马体、新皮层，即越接近长期存储层，单位时间内的遗忘应该越慢。所以不同的记忆层级需要有各自不同的衰减系数。
+
+在 PowerMem 中不同记忆层级的衰减系数为：
+
+```python
+
+{
+
+    "working":    0.5,  # 强度参数 S 最小，忘得最快
+
+    "short_term": 1.5,
+
+    "long_term":  2.0,  # 强度参数 S 最大，忘得最慢
+
+}
+```
+
+那么针对开头的会议信息，这条信息落在了 short\_term，故系数为 1.5，当前这条消息的衰减率为：
+
+```plain
+
+0.1（全局基础衰减率） × 1.5（short_term 衰减系数） = 0.15
+```
+
+若记忆分类在 working，那么衰减率为：
+
+```plain
+
+0.1（全局基础衰减率） × 0.5（working 衰减系数） = 0.05
+```
+
+若记忆分类在 long\_term，那么衰减率为：
+
+```plain
+
+0.1（全局基础衰减率） × 2（long_term 衰减系数） = 0.2
+```
+
+可以看到 **不同的记忆分类衰减率不同，参数越大遗忘越慢**。
+
+#### 2.2.3 如何做复习调度
+
+在认知学原理中有提到，间隔重复的核心原则是复习先密后疏，要在快要忘记但还能拯救的时间窗内进行复习，不能太早（等于白看一遍），也不能太晚（已经彻底忘了）。
+
+所以 PowerMem **在记忆创建时就排好复习时间点，而不是等到需要时才临时决定。**
+
+PowerMem 通过两步生成这张复习时刻表：
+
+**第一步：给定基准间隔。**
+
+系统预设五个基准间隔（小时）：`[1, 6, 24, 72, 168]`，分别对应约 1 小时、6 小时、1 天、3 天、7 天。五个间隔是全局配置，所有记忆共享同一组基准值。
+
+**第二步：按重要性压缩间隔。**
+
+基准间隔对所有记忆一视同仁，但不同重要性不同分类的记忆不该用同一个节奏复习，一条密码信息应该比一句闲聊被更频繁地唤醒。所以 PowerMem 用了一个公式，根据重要性分数对**每个基准间隔**做压缩：
+
+```python
+
+adjusted_interval = interval * (1 - importance_score * adjustment_factor)
+```
+
++ `interval` 是基准间隔的数据（如 1h、6h、24h）
++ `importance_score` 是前面算出来的会议信息的重要性参数 0.72
++ `adjustment_factor` 是压缩系数（默认 0.3），控制压缩的力度
++ 乘积 `importance_score × adjustment_factor` 决定了最多能压缩多少
++ 最终结果 `adjusted_interval` 是压缩后的实际间隔，下限 0.5 小时
+
+这么解释公式还是太抽象，还是用会议信息（importance = 0.72）来拆一遍。
+
+这时压缩乘子（即对应公式中的 `(1 - importance_score * adjustment_factor)` 部分）是：
+
+```plain
+
+1 - 0.72 × 0.3 = 0.784
+```
+
+也就是说，每个基准间隔都会变成原来的 78.4%。通过计算得出的五个时间点如下：
+
+| 次序    | 基准间隔 | 调整后间隔            | 建议复习时刻（示意） |
+
+| ------- | -------- | --------------------- | -------------------- |
+
+| 第 1 次 | 1h       | ≈ 0.78h（约 47 分钟） | T₀ + 47min           |
+
+| 第 2 次 | 6h       | ≈ 4.7h                | T₀ + 4.7h            |
+
+| 第 3 次 | 24h      | ≈ 18.8h               | T₀ + 18.8h           |
+
+| 第 4 次 | 72h      | ≈ 56.4h（约 2.4 天）  | T₀ + 2.4d            |
+
+| 第 5 次 | 168h     | ≈ 131.7h（约 5.5 天） | T₀ + 5.5d            |
+
+换个角度再看，如果一条信息没有那么重要，假设 importance = 0.3，压缩乘子则变成：
+
+```plain
+
+1 - 0.3 × 0.3 = 0.91
+```
+
+即每个基准间隔都会变成原来的 91%，这条信息的五个复习时间点会更靠后：
+
+| 次序    | 基准间隔 | 调整后间隔             | 建议复习时刻（示意） |
+
+| ------- | -------- | ---------------------- | -------------------- |
+
+| 第 1 次 | 1h       | ≈ 0.91h（约 55 分钟）  | T₀ + 55min           |
+
+| 第 2 次 | 6h       | ≈ 5.46h                | T₀ + 5.46h           |
+
+| 第 3 次 | 24h      | ≈ 21.84h               | T₀ + 21.84h          |
+
+| 第 4 次 | 72h      | ≈ 65.52h（约 2.7 天）  | T₀ + 2.7d            |
+
+| 第 5 次 | 168h     | ≈ 152.88h（约 6.4 天） | T₀ + 6.4d            |
+
+效果很明显。importance = 0.72 的会议信息，五轮复习的间隔时间点都被明显提前；importance = 0.3 的不那么重要的信息，复习间隔只被轻微压缩。复习次数越往后，复习时间的差距越大。
+
+**重要性越高，系统越早把它拉回复习窗口，记忆被重新巩固的机会也就越多。**
+
+当算完五个时间点后 PowerMem 会把它们存入完整的复习时刻表，同时会初始化几个字段，配合复习时刻表工作：
+
+| 字段                   | 含义                                                         |
+
+| ---------------------- | ------------------------------------------------------------ |
+
+| `next_review`          | 时刻表中的第一个时间点，即**下一次建议复习**的时间。系统通过这个字段知道最近一次复习该在什么时候 |
+
+| `last_reviewed`        | 最近一次复习的时间戳。刚创建时等于创建时刻，之后每完成一次复习就更新 |
+
+| `review_count`         | 已经完成了几轮复习。创建时为 0，每完成一轮加 1               |
+
+| `reinforcement_factor` | 复习成功后保留率的提升幅度（默认 0.3）。决定每次温故能补回多少遗忘 |
+
+这几个字段和时刻表一起，构成了一套完整的复习追踪机制：
+
++ `next_review` 告诉系统什么时候该复习
++ `review_count` 和 `last_reviewed` 记录已经复习了多少次
++ `reinforcement_factor` 决定复习一次能恢复多少
+
+当到达 `next_review` 并完成一次复习时，`review_count` 递增、`last_reviewed` 更新、`current_retention` 按 `reinforcement_factor` 提升，`next_review` 推进到下一个时间点。
+
+至此形成**提取再巩固**的工程闭环。
+
+#### 2.2.4 生命周期状态机
+
+除了保留率、衰减率、复习时刻这些连续的数值，记忆在系统中还有一些生命周期状态需要管理：
+
++ 这条记忆是否该晋升到更高的层级？
++ 是否该被淘汰？
++ 是否该从活跃检索池中移除？
+
+在 PowerMem 中也都有对应的标志位，创建时初始化为全新、活跃、尚未触发任何处置：
+
+```json
+
+{
+
+    "should_promote": false,  // 是否应该晋升到更高的层级
+
+    "should_forget": false,   // 是否应该被淘汰
+
+    "should_archive": false,  // 是否应该从活跃检索池转入归档
+
+    "is_active": true         // 是否仍处于活跃状态
+
+}
+```
+
++ `should_promote`：这条记忆是否应该晋升到更高的层级（如 working → short\_term）。如果一条 working 记忆被反复访问，说明它对用户很有价值，应该晋升到 short\_term 甚至 long\_term，获得更慢的衰减速度。
++ `should_forget`：这条记忆是否应该被淘汰。当衰减因子跌破阈值（0.3）或者一条记忆在 7 天内从未被任何人访问过，系统就会标记它为待遗忘。
++ `should_archive`：这条记忆是否应该从活跃检索池转入归档。**归档不同于遗忘，归档的记忆不会被物理删除，只是不再参与日常检索。**
++ `is_active`：这条记忆是否仍处于活跃状态，参与正常的检索和服务。
+
+除此之外，PowerMem 还会初始化一个 `access_count` 计数器，记录这条记忆被访问了多少次，这个计数器和标志位们配合工作（比如 `should_promote` 的判断条件之一就是被访问超过 3 次）。
+
+#### 2.2.5 落库：完整的元数据档案
+
+所有参数都计算完毕后，系统将它们打包成一个结构化的字典返回。在新增记忆时，合并进记忆的 `metadata` 元数据中，与正文内容一并写入存储后端。
+
+至此参数建档完成。**计时器从这一刻开始滴答作响。**
+
+---
+
+## 三、衰减计算
+
+时间开始走，记忆系统中的遗忘机制也开始运作，保留率开始随着时间的流逝慢慢往下掉。
+
+先回顾一下艾宾浩斯遗忘曲线的数学形式：`R(t) = e^(-λt)`，它时指数衰减的。
+
+### 3.1 PowerMem 的衰减公式
+
+PowerMem 把理论公式翻译为代码：
+
+```python
+
+rate = self.decay_rate if decay_rate is None else decay_rate
+
+decay_factor = math.exp(-hours_elapsed / (24 * rate))
+```
+
+要看懂这条会议信息**衰减的有多快**，关键是要看懂分母 `24 × rate` 这个数。`24 × rate`** 是这条记忆的特征衰减时间，单位是小时。**
+
+把这个数记作 **S**（Strength），即 `S = 24 × rate`。S 越大，分母越大，指数衰减就越慢，记忆活得就越久。代入公式会变为更清爽的形式：
+
+```plain
+
+decay_factor = e^(-t / S)
+```
+
+这个公式有一个很漂亮的性质：**当时间 **`t`** 走过一个 S，保留率必然衰减到 **`e^(-1) ≈ 37%`**。** 也就是说，无论 S 是几个小时，只要时间走完一个 S 剩下的记忆都是原来的 37%。这是指数衰减的固有特征。
+
+所以只要知道 S 是多少小时，就大致知道这条记忆遗忘的节奏。
+
+还是拿这条会议信息举例，它落在 short\_term，rate = 0.15，那么：
+
+```plain
+
+S = 24 × 0.15 = 3.6（小时）
+```
+
+也就是说，这条会议信息每过 **3.6 小时**，保留率就会衰减到上一刻的 37% 左右。
+
+> 最后还有一处工程细节，PowerMem 中存在一条回退机制：调用方首先会按记忆类型算出类型专属的衰减率并传入，但如果调用方没有传，就使用全局默认的衰减率进行计算。这种机制保证了即使旧版本的元数据中缺少类型信息，衰减计算也不会出错。
+
+### 3.2 彩蛋，一个关键的工程取舍
+
+PowerMem 用的衰减公式和经典艾宾浩斯论文里的公式其实是等价的，只是写法不同。经典论文写的是 `R(t) = e^(-λt)`，那个 λ 叫做衰减常数，和 PowerMem 的 S 互为倒数：`λ = 1 / S`。
+
+之所以提这件事，是因为如果把 PowerMem 的默认参数和经典艾宾浩斯实验的参数放在一起对比，就能发现一个有意思的细节：从经典的艾宾浩斯实验数据反推出 λ ≈ 0.821。但 PowerMem 默认配置对应的 λ ≈ 0.417，大约只有文档推导值的一半：
+
+| 参数来源             | λ 值   | 1 小时后保留率 | 设计意图                           |
+
+| -------------------- | ------ | -------------- | ---------------------------------- |
+
+| 经典艾宾浩斯实验数据 | \~0.821 | \~44%           | 无意义音节（ZOF、WUX），纯记忆实验 |
+
+| PowerMem 默认配置    | \~0.417 | \~66%           | 语义信息，天然遗忘更慢             |
+
+这个差异不是 bug，而是一个工程决策。
+
+理论上艾宾浩斯使用的是无意义音节，人类对这类孤立符号的遗忘速度最快，但 PowerMem 存储的是具有语义关联的实际信息，对语义信息的遗忘自然会比孤立音节更慢，所以 PowerMem 使用了更温和的衰减速率来匹配这一现实。
+
+通过衰减参数（可在 `.env` 中配置 `INTELLIGENT_MEMORY_DECAY_RATE`）也可以精细控制遗忘的激进程度：
+
+| decay\_rate  | S = 24 × rate | λ = 1/S | 1 小时后保留率 | 风格     |
+
+| ----------- | ------------- | ------- | -------------- | -------- |
+
+| 0.05        | 1.2           | \~0.833  | \~43%           | 激进遗忘 |
+
+| 0.1（默认） | 2.4           | \~0.417  | \~66%           | 平衡     |
+
+| 0.2         | 4.8           | \~0.208  | \~81%           | 温和遗忘 |
+
+衰减参数越小，遗忘越激进。
+
+![记忆衰减计算中的工程取舍示意](/img/2026-06-12-powermem-memory-lifecycle/03.png)
+
+### 3.3 衰减时间表
+
+好，现在把上面的一切串起来，就会得到这条会议信息完整的衰减过程：
+
+| 时间       | 距创建时长 | 衰减因子 | 状态                    |
+
+| ---------- | ---------- | -------- | ----------------------- |
+
+| 刚创建     | 0h         | 1.000    | 新鲜                    |
+
+| 1 小时后   | 1h         | ≈ 0.757  | 轻度衰减                |
+
+| 4.3 小时后 | 4.3h       | ≈ 0.300  | **跌破遗忘阈值（0.3）** |
+
+| 6 小时后   | 6h         | ≈ 0.189  | 深度衰减                |
+
+| 24 小时后  | 24h        | ≈ 0.0013 | 几乎归零                |
+
+可以看到一条 short\_term 记忆在约 4.3 小时后衰减因子就会跌破 0.3 的遗忘阈值，但这并不意味着它会被立即删除，遗忘决策的执行时机，取决于记忆何时被访问。
+
+---
+
+## 四、访问触发
+
+### 4.1 将遗忘决策延迟到访问时
+
+衰减一直在后台进行，但遗忘的决策只在实际访问记忆时才被执行。
+
+这里有个认知学背景：当一个已巩固的记忆被主动提取时它会暂时回到可塑状态，然后需要重新巩固。这个提取到再巩固的循环会加强对应的神经连接。
+
+在工程层面，这意味着记忆的命运不应该由时间单向决定，而应该在每次被访问时重新评估。
+
+**访问是记忆系统最重要的反馈信号。** 一条信息被频繁访问说明它对用户有价值，应该被保留甚至晋升。一条信息长期无人问津，即使最初很重要也应该被遗忘。这种懒惰求值的设计降低了系统的计算负担，不需要后台定时任务批量扫描所有记忆。
+
+### 4.2 四道关卡
+
+当用户通过 `Memory.get()` 或 `Memory.search()` 访问记忆时，会依次执行四道检查。
+
+**第一关：遗忘检查**
+
+两个触发遗忘的条件：
+
+```python
+
+# 衰减因子跌破阈值
+
+rate = self._resolve_decay_rate(memory)
+
+decay_factor = self.calculate_decay(created_at, decay_rate=rate)
+
+if decay_factor  timedelta(days=7):
+
+    return True
+```
+
+两个条件满足其一即触发遗忘。第一条，衰减到了阈值以下，该淘汰了。第二条也容易理解，**从未被使用过本身就是最强的遗忘信号。**
+
+满足了遗忘触发条件，调用方负责执行删除。
+
+**第二关：晋升检查**
+
+三个条件，满足其一即晋升：
+
+```python
+
+# 高频访问（被访问 3 次以上）
+
+if access_count >= 3:
+
+    return True
+
+# 通过时间检验（存活超过 24 小时）
+
+if time_elapsed > timedelta(hours=24):
+
+    return True
+
+# 本质上很重要（重要性分数大于0.6）
+
+if importance >= self.short_term_threshold:  # 0.6
+
+    return True
+```
+
+晋升的效果：`working → short_term` 或 `short_term → long_term`。衰减速率倍率从高降到低，信息获得更长的寿命。
+
+在会议信息这个例子中，importance=0.72 ≥ 0.6，**第一次访问时就直接满足晋升条件**。如果它此时还是 short\_term，将升级为 long\_term。一条信息通过晋升机制，实现了从临时便签到长期知识的演变。
+
+这是人脑记忆巩固过程的工程对应。
+
+**第三关：归档检查**
+
+两个条件：
+
+```python
+
+# 自然老化（超过 30 天）
+
+if time_elapsed > timedelta(days=30):
+
+    return True
+
+# 本质上不重要（重要性分数小于0.3）
+
+if importance  记忆的困难不在于存不进去，而在于取不出来。随着存储信息增多，记忆之间的交叉干扰呈指数级增长。
+
+当用户搜索「Q2 评审」时，如果系统只按语义相似度排序，可能出现这种情况：一条 3 个月前的会议纪要语义完美匹配，排在最前面。而昨天刚更新的评审时间变更信息排在后面。**语义匹配度最高 ≠ 用户最需要。**
+
+PowerMem 通过为搜索结果引入时间维度来解决这个问题。
+
+### 5.2 排序公式
+
+先上公式：
+
+```plain
+
+final_score = relevance_score × decay_factor
+```
+
++ `relevance_score` 是关键词匹配度
++ `decay_factor` 是前面提到的衰减因子
+
+这个公式做了一次**交叉排序**。高语义匹配但时间久远的记忆，可能被中等匹配度但非常新鲜的记忆超越：
+
+| 记忆                         | 语义匹配度 | 衰减因子 | final\_score | 排名 |
+
+| ---------------------------- | ---------- | -------- | ----------- | ---- |
+
+| 1 分钟前的闲聊，中等匹配     | 0.45       | 0.99     | **0.45**    | 1    |
+
+| 3 小时前的会议记录，高度匹配 | 0.92       | 0.29     | **0.27**    | 2    |
+
+| 10 天前的会议记录，完美匹配  | 0.98       | \~0.00    | \~0.00       | 末尾 |
+
+大白话讲，新鲜度在搜索排序中有一票否决权。再怎么匹配，衰减到接近零的老记忆也会被沉到底部。
+
+![PowerMem 检索结果排序加权公式](/img/2026-06-12-powermem-memory-lifecycle/05.png)
+
+此外，搜索本身也是记忆访问。**在进行搜索时，会对每条搜索结果依次调用 **`Memory.get`**，实现批量生命周期管理。**
+
+---
+
+## 六、全局优化
+
+### 6.1 为什么需要全局优化
+
+前面讲的都是针对单条记忆的实时管理。但记忆系统还需要周期性的全局治理。随着信息不断积累，重复、冗余、碎片化等问题都会逐渐显现。
+
+这类似于大脑在睡眠阶段进行的记忆整理。海马体将记忆重放并转移至新皮层，同时去除重复信息、合并相似记忆、强化重要连接。
+
+PowerMem 提供三种互补的优化策略。
+
+### 6.2 三种优化策略
+
+**（1）精确去重**
+
+基于内容哈希的精确匹配。系统维护一个 `hash → [memories]` 的映射，保留每组中最早创建的记录，删除其余。一次最多处理 10,000 条记录。
+
+完全相同的两条信息只留一条。这是最基础的清理。
+
+**（2）语义去重**
+
+基于 embedding 余弦相似度，识别语义高度近似但措辞不同的记忆。使用 O(N×M) 逐对比较，默认阈值 0.95。相似度超过阈值的较新记忆被删除，保留最早的那条。
+
+比如「Q2 评审改到下周三了」和「Q2 review 推迟到下周三」语义相同但文字不同，语义去重能识别出来。
+
+**（3）记忆压缩**
+
+对多条语义相似但不严格重复的记忆，使用 LLM 将其总结为一条精炼的合成记忆。流程分两步：
+
+1. **贪心聚类**：将相似度超过阈值（默认 0.85）的记忆归为一组
+2. **LLM 摘要**：使用提示模板让 LLM 生成精炼摘要，用一条合成记忆替换整个聚类
+
+这三个机制与遗忘衰减协同，构成从\*\*微观（逐条衰减）到宏观（批量压缩）\*\*的完整记忆质量管理体系。
+
+![记忆全局优化的三种精简策略](/img/2026-06-12-powermem-memory-lifecycle/06.png)
+
+---
+
+## 总结
+
+信息量不小。回顾这条会议信息在 PowerMem 中走过的路：
+
+```plain
+
+"下周五下午三点评审 Q2 需求文档" 进入系统
+
+  ↓
+
+重要性评估 → "这条信息有多重要？" → 0.72
+
+  ↓
+
+分类 → "分到哪一层？" → 短期记忆
+
+  ↓
+
+参数初始化 → "配一个衰减计时器" → 衰减率和复习间隔已排好
+
+  ↓
+
+时间流逝 → 衰减进行中，保留率持续下降
+
+  ↓
+
+被访问 → "还活着吗？需要升级吗？" → 检查通过，晋升为长期记忆
+
+  ↓
+
+被搜索 → "排在第几位？" → 时间新鲜度 × 语义匹配度
+
+  ↓
+
+全局优化 → "有重复吗？能压缩吗？" → 去重与合并
+```
+
+核心思路贯穿始终：**用有限资源保留最有价值的信息，同时保持检索的高信噪比。**
+
+六个节点各司其职：
+
++ **重要性评估**解决记住什么
++ **分类**解决记住多久
++ **衰减**解决何时淘汰
++ **访问触发**解决动态调整
++ **搜索加权**解决怎么找到
++ **全局优化**解决怎么精简
+
+我觉得 PowerMem 这套设计最有意思的地方在于，它没有把遗忘当作一个”**要不要删**”的二元问题来处理，从写入的那一刻起衰减就在发生。但衰减不等于删除，它只是一个持续变化的权重，真正决定一条记忆命运的，是它有没有被再次访问，这跟人脑的工作方式很一致。
+
+**遗忘不是记忆系统的事后补救，而是贯穿整个生命周期的核心设计维度。**
+
+![PowerMem 记忆完整生命周期总览](/img/2026-06-12-powermem-memory-lifecycle/07.png)
+
+---
+
+**参考资料：**
+
+1. PowerMem GitHub Repository — [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+2. PowerMem Docs — [Ebbinghaus Forgetting Curve Guide](https://github.com/oceanbase/powermem/blob/main/docs/guides/0008-ebbinghaus_forgetting_curve.md)
+
+---
+
+*本文基于 PowerMem v1.1.1 源码分析撰写，所有代码引用均来自实际项目。*
+
+
+---
+# Article: PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+# URL: https://ilongda.com/2026-06-12/2026-06-12-powermem-operation-guide/
+# Published: 2026-06-12
+# Updated: 2026-06-12
+# Keywords: PowerMem,OceanBase,AI Agent,MCP,Python,seekdb,记忆层,操作手册
+
+PowerMem 简明操作手册：Linux 安装配置、HTTP 服务、Dashboard、Claude Code 与 OpenClaw 接入，快速搭建可自进化的 Agent 记忆层。
+
+![PowerMem Agent 记忆层部署总览](/img/2026-06-12-powermem-operation-guide/01.png)
+
+> 💡 仓库在这：[oceanbase/powermem](https://github.com/oceanbase/powermem)。想给 Agent 加上会检索、会整理、会遗忘的记忆，按本文顺序做完就能跑通。
+
+本手册覆盖完整链路：Linux 服务端安装与配置 → 启动 HTTP / Dashboard → 本地 Claude Code 连接 → OpenClaw 落库。按章节顺序操作即可，无需先读原理。
+
+---
+
+## 一、Linux 服务端：安装、配置、启动
+
+![Linux 服务端安装与启动步骤示意](/img/2026-06-12-powermem-operation-guide/02.png)
+
+### 1.1 环境要求
+
++ Python >= 3.11
++ pip 或 uv（推荐 uv，更快）
+
+### 1.2 安装
+
+```bash
+# 从 PyPI 安装（生产环境推荐）
+uv pip install "powermem[cli,server,mcp,seekdb]"
+
+# 或从源码安装（开发环境）
+git clone https://github.com/oceanbase/powermem.git
+cd powermem
+uv pip install -e ".[cli,server,mcp,seekdb]"
+```
+
+各 extras 说明：
+
+| extras | 作用 |
+| --- | --- |
+| `cli` | `pmem` 命令行工具 |
+| `server` | `powermem-server` HTTP API 服务器 |
+| `mcp` | MCP 协议支持 |
+| `seekdb` | 内嵌向量数据库（零配置，无需单独部署数据库） |
+
+### 1.3 初始化配置
+
+```bash
+# 交互式生成 .env 配置文件
+pmem config init
+```
+
+![PowerMem 交互式初始化配置界面](/img/2026-06-12-powermem-operation-guide/03.png)
+
+也可手动创建 `.env` 文件。以下是我的配置：
+
+```bash
+# DATABASE_PROVIDER=oceanbase
+DATABASE_PROVIDER=sqlite
+SQLITE_PATH=/root/data/package/powermem/powermem.db
+# LLM_PROVIDER=anthropic
+LLM_PROVIDER=openai
+# ANTHROPIC_LLM_BASE_URL=https://token-plan-cn.xiaomimimo.com/anthropic
+# LLM_API_KEY=tp-xxx
+# LLM_MODEL=mimo-v2.5-pro
+LLM_API_KEY=xxx
+LLM_MODEL=step-3.7-flash
+OPENAI_LLM_BASE_URL=https://api.stepfun.com/step_plan/v1
+EMBEDDING_PROVIDER=siliconflow
+EMBEDDING_API_KEY=sk-xx
+EMBEDDING_MODEL=BAAI/bge-m3
+# OCEANBASE_EMBEDDING_MODEL_DIMS=1024
+# EMBEDDING_DIMS=1024
+```
+
+**注意事项：**
+
++ `SQLITE_PATH` 必须是完整的数据库文件路径（如 `/root/data/powermem/powermem.db`），不能只是文件夹路径
++ 使用 seekdb 时，`EMBEDDING_DIMS` 或 `OCEANBASE_EMBEDDING_MODEL_DIMS` 是必填项，维度要和嵌入模型匹配
++ 硅基流动的嵌入模型如果不走 seekdb，可以不配 `EMBEDDING_DIMS`
+
+### 1.4 启动服务器
+
+```bash
+powermem-server --host 0.0.0.0 --port 8848
+```
+
+参数说明：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `--host` | `0.0.0.0` | 监听地址 |
+| `--port` | `8848` | 监听端口 |
+| `--workers` | `4` | 工作进程数（内嵌存储自动降为 1） |
+| `--reload` | 关闭 | 开发模式，代码变更自动重载 |
+| `--log-level` | `INFO` | 日志级别 |
+
+首次启动会比较慢（60-120 秒），因为需要初始化 seekdb 和下载嵌入模型。
+
+验证启动成功：
+
+```bash
+curl http://localhost:8848/api/v1/system/health
+# 返回 {"status":"ok"} 即成功
+```
+
+---
+
+## 二、Dashboard 使用
+
+![PowerMem Dashboard 功能入口总览](/img/2026-06-12-powermem-operation-guide/04.png)
+
+### 2.1 访问 Dashboard
+
+服务器启动后，浏览器打开：
+
+```plain
+http://:8848/dashboard/
+```
+
+![浏览器访问 PowerMem Dashboard 首页](/img/2026-06-12-powermem-operation-guide/05.png)
+
+![Dashboard 记忆列表与检索面板](/img/2026-06-12-powermem-operation-guide/06.png)
+
+### 2.2 Dashboard 功能
+
+| 页面 | 路径 | 功能 |
+| --- | --- | --- |
+| 总览 | `/dashboard/` | 记忆总量、增长趋势、质量指标、系统健康 |
+| 记忆管理 | `/dashboard/memories` | 浏览、搜索、查看、删除记忆 |
+| 用户画像 | `/dashboard/user-profile` | 查看用户级别的聚合画像 |
+| 设置 | `/dashboard/settings` | 配置 API Key（仅在服务端开启认证时需要） |
+
+### 2.3 开启认证（可选）
+
+在 `.env` 中添加：
+
+```bash
+POWERMEM_SERVER_AUTH_ENABLED=true
+POWERMEM_SERVER_API_KEYS=your-secret-key
+```
+
+重启服务器后，所有 API 请求需携带 `X-API-Key` 头。Dashboard 的 Settings 页面可配置 Key。
+
+### 2.4 API 文档
+
+服务器自带 Swagger 文档：
+
+```plain
+http://:8848/docs
+```
+
+---
+
+## 三、本地 Claude Code 连接 PowerMem 服务器
+
+![Claude Code 连接远程 PowerMem 示意](/img/2026-06-12-powermem-operation-guide/07.png)
+
+以下步骤在本地 Windows/Mac 操作，服务器在远程 Linux。
+
+### 3.1 在 Dashboard 获取 API Key
+
+如果服务端开启了认证，先在 Dashboard Settings 页面拿到 API Key。
+
+![Dashboard 中创建并复制 API Key](/img/2026-06-12-powermem-operation-guide/08.png)
+
+### 3.2 通过 Marketplace 安装插件
+
+在 Claude Code 中依次执行：
+
+```plain
+/plugin marketplace add oceanbase/powermem
+/plugin install memory-powermem@powermem
+/reload-plugins
+```
+
+> 如果网络不通，也可以从源码安装：`claude --plugin-dir /path/to/powermem/apps/claude-code-plugin`
+
+### 3.3 初始化插件
+
+```plain
+/memory-powermem:init
+```
+
+这会自动创建插件本地虚拟环境、安装 powermem 后端、启动管理服务器。
+
+### 3.4 Windows 用户：修复 hooks 命令
+
+**init 生成的 hooks.json 默认使用 **`sh`**，Windows 需要改为 PowerShell。**
+
+![Windows 下修复 hooks 命令路径](/img/2026-06-12-powermem-operation-guide/09.png)
+
+hooks 文件位置：
+
+```plain
+C:\Users\\.claude\plugins\cache\powermem\memory-powermem\0.1.0\hooks\hooks.json
+```
+
+将所有 `sh "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh"` 替换为：
+
+```json
+"command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.ps1\""
+```
+
+完整示例：
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.ps1\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.ps1\""
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 3.5 配置连接远程服务器
+
+如果 powermem-server 不在本机（比如在远程 Linux），需要配置环境变量。
+
+方式一：在 Claude Code 的 `settings.json` 中配置（推荐）：
+
+编辑 `~/.claude/settings.json`，添加：
+
+```json
+{
+  "env": {
+    "POWERMEM_BASE_URL": "http://:8848",
+    "POWERMEM_API_KEY": "your-secret-key"
+  }
+}
+```
+
+![配置 Claude Code 连接远程服务器](/img/2026-06-12-powermem-operation-guide/10.png)
+
+方式二：在启动 Claude Code 前设置环境变量：
+
+```bash
+export POWERMEM_BASE_URL=http://:8848
+export POWERMEM_API_KEY=your-secret-key
+```
+
+### 3.6 重启 Claude Code
+
+重新启动 Claude Code 即可生效。
+
+### 3.7 验证
+
+记忆落库时机：
+
++ **用户发送消息时**：自动检索相关记忆，注入到上下文中（默认开启）
++ **执行 /compact 时**：将压缩摘要保存为记忆
++ **退出会话时**：将完整会话记录保存为记忆
+
+验证方法：结束一个会话后，在 Dashboard 的 Memories 页面查看是否有新记忆写入。
+
+---
+
+## 四、OpenClaw 安装 PowerMem 并连接落库
+
+![OpenClaw 安装 PowerMem 插件流程](/img/2026-06-12-powermem-operation-guide/11.png)
+
+### 4.1 安装插件
+
+直接跟 OpenClaw 说：
+
+> 通过 memory-powermem 帮我安装一下 powermem 记忆引擎插件
+
+或手动执行：
+
+```bash
+openclaw plugins install memory-powermem
+```
+
+### 4.2 配置嵌入模型
+
+阿里云百炼的 coding plan 没有嵌入模型，需要手动编辑 powermem 环境文件：
+
+找到插件数据目录下的 `powermem.env`（通常在 `~/.openclaw/` 下），添加/修改嵌入模型相关配置：
+
+```bash
+EMBEDDING_PROVIDER=siliconflow
+EMBEDDING_API_KEY=sk-xxx
+EMBEDDING_MODEL=BAAI/bge-m3
+EMBEDDING_DIMS=1024
+```
+
+![OpenClaw 选择嵌入模型提供商](/img/2026-06-12-powermem-operation-guide/12.png)
+
+> 根据实际使用的嵌入服务调整 provider、model 和维度。
+
+![填写嵌入模型名称与维度参数](/img/2026-06-12-powermem-operation-guide/13.png)
+
+![嵌入模型配置完成后的确认界面](/img/2026-06-12-powermem-operation-guide/14.png)
+
+### 4.3 连接远程服务器（可选）
+
+默认 CLI 模式使用本地 `pmem` 存储，无需额外服务器。
+
+如果需要共享团队的 PowerMem 后端，在 OpenClaw 中配置 `requestConfig.memory_db` 指向服务器地址：
+
+```plain
+http://:8848
+```
+
+### 4.4 验证
+
+1. 让 OpenClaw 记住一句话：`帮我记住测试探针：dragonfruit-zx9`
+2. 新开对话，让 OpenClaw 回忆：`dragonfruit-zx9 是什么`
+3. 能正确召回即表示工作正常
+
+---
+
+## PowerMem 记忆如何"自进化"？
+
+![PowerMem 记忆捕获存储检索进化闭环](/img/2026-06-12-powermem-operation-guide/15.png)
+
+PowerMem 不止是一个存储桶——它是一个**持续进化的记忆层**。每条记忆从捕获到落库再到被检索，经历一个完整的生命周期：
+
+1. **捕获（Capture）**：用户每次发消息，PowerMem 自动检索相关记忆注入上下文；执行 `/compact` 时，压缩摘要自动落为记忆；会话结束时，完整会话记录被保存
+2. **存储（Store）**：文本经过 Embedding 向量化，与元数据一同落入 SQLite / OceanBase 数据库，被持久化保存
+3. **检索（Retrieve）**：用户提问时，语义向量检索找到最相关的 Top-K 条记忆，注入到上下文中增强 Agent 回答质量
+4. **进化（Evolve）**：重复记忆被去重合并，用户画像持续更新，过期记忆淘汰、新记忆增强
+
+这个四步循环让 Agent 越用越聪明，越用越懂你。
+
+---
+
+## 快速参考
+
+![PowerMem 常用命令快速参考表](/img/2026-06-12-powermem-operation-guide/16.png)
+
+### 整体链路图
+
+```plain
+┌──────────────────────────────────────────────────────────┐
+│  Linux 服务器                                            │
+│                                                          │
+│  ┌─────────────┐    ┌──────────────┐                     │
+│  │ powermem    │    │  Dashboard   │                     │
+│  │ -server     │    │  :8848/      │                     │
+│  │ :8848       │    │  dashboard/  │                     │
+│  └──────┬──────┘    └──────────────┘                     │
+│         │                                                │
+│    .env 配置                                             │
+│    - DATABASE_PROVIDER                                   │
+│    - LLM_PROVIDER / API_KEY / MODEL                      │
+│    - EMBEDDING_PROVIDER / API_KEY / MODEL                │
+└─────────┬────────────────────────────────────────────────┘
+          │ HTTP API (:8848)
+          │
+     ┌────┴─────────────┐
+     │                  │
+     ▼                  ▼
+┌──────────┐      ┌──────────┐
+│ Claude   │      │ OpenClaw │
+│ Code     │      │          │
+│ (插件    │      │ (插件    │
+│  hooks)  │      │ CLI/HTTP)│
+└──────────┘      └──────────┘
+```
+
+### 常用命令速查
+
+| 操作 | 命令 |
+| --- | --- |
+| 安装 | `uv pip install "powermem[cli,server,mcp,seekdb]"` |
+| 初始化配置 | `pmem config init` |
+| 启动服务器 | `powermem-server --host 0.0.0.0 --port 8848` |
+| 健康检查 | `curl http://localhost:8848/api/v1/system/health` |
+| Dashboard | `http://localhost:8848/dashboard/` |
+| API 文档 | `http://localhost:8848/docs` |
+
+
+---
+# Article: OceanBase 备份空间清不掉？物理备份自动清理原理详解
+# URL: https://ilongda.com/2026-06-15/2026-06-15-oceanbase-backup-cleanup/
+# Published: 2026-06-15
+# Updated: 2026-06-15
+# Keywords: OceanBase,物理备份,备份恢复,备份清理,数据库运维,备份空间,保留策略
+
+详解 OceanBase 物理备份保留策略、备份集依赖与自动清理：为何空间未按直觉释放，以及如何排查日志归档与可还原点问题。
+
+> 来源：微信公众号「数据库技术闲谈」  
+> 原文链接：[OceanBase 奇案：是谁清理了我备份的数据？](https://mp.weixin.qq.com/s/clUMLLVIUWQSCYfJjhj6xQ)
+
+## 楔子
+
+本文由庆涛大佬，带大家“逐帧”分析 OceanBase 备份的自动清理原理。
+
+一句话先说清问题：OceanBase 明明开了备份自动清理，为什么空间还是降不下来？答案往往不在“保留天数”本身，而在备份集依赖、日志归档链路，以及可还原时间点（RPO）怎么定义。
+
+对于 OceanBase 运维专家来说，这套原理并不难；但对习惯 Oracle / MySQL 备份思路的传统 DBA，看完可能会觉得“跟原来不太一样，还挺有意思”。
+
+通常来说，使用 OceanBase 有主备库和备份恢复两道安全机制。备份在日常运维里占比不高，真要靠它恢复时才会被想起来。今天不聊怎么恢复，而聊更少被提起、却很贵的话题：备份空间为什么按直觉“过期了”却清不掉。
+
+大部分客户都会直接给 OceanBase 分配几 TB 的备份空间，而且只在少数场景才会盯使用率：一是 PoC 考察自动清理，二是云上备份账单突然变高的时候。
+
+OceanBase 的备份有自动清理功能，很多人会把它理解成“过了保留期就删文件”。实际清理行为没这么简单。当客户对备份空间锱铢必较时，就会发现：有些备份看起来不需要了，却还在。
+
+本文接下来会逐一说明 OceanBase 物理备份和空间清理的原理与现象。
+
+> 说明：本文中的备份，特指物理备份。
+>
+> 社区运营小编曾经在 OB 很低的版本中，支持过通过备份 SQL 来进行逻辑备份，然后通过 SQL 回放来进行逻辑恢复。不过从 3.x 版本开始，又把逻辑备份全面优化成了物理备份。本文仅讨论物理备份。
+>
+> 很低的版本指 OB 1.x \~ 2.x，大多数来自 OB 社区的读者应该都没听说过这些版本，所以这段历史可以直接忽略，不必细究。
+
+OceanBase 的数据，包括业务数据和数据变化的日志（WAL 日志或 REDO 日志），OceanBase 的备份自然包括数据备份和日志备份。虽然终端用户只关心数据，但是数据库的设计里，WAL 日志就是数据安全，多副本复制和高可用的必不可少的成本。在 OLAP 业务里，这个日志的成本可能还会非常的突出。
+
+OceanBase 的备份配置可以通过 SQL 配置，也可以在 OCP 里配置（集群备份或者租户备份，后者覆盖前者），或者在第三方备份产品里配置。注意：这三个途径是彼此冲突的，特别是后面两个途径。
+
+## OceanBase 备份理论知识
+
+OceanBase 的备份策略配置相比 ORACLE 要相对复杂一些，因为需要先了解相关的理论。
+
+OceanBase 是分布式架构，每个节点都有可能需要备份到相同的路径，所以备份介质通常是 NFS 路径挂载到本地文件系统，实现多个节点共享访问。共享访问是要点，这个 NFS 在客户那边一般是通过 NAS 存储提供，少数通过独立的服务器做 NFS Server 提供。还有一部分是第三方备份产品提供。NFS 备份介质一般性能都不错，风险是 NFS 路径必须保持高可用。如果 NFS 路径不可用会导致备份异常，所有 OceanBase 主机上的备份的文件系统访问也会出现 HANG。这个在传统数据库的备份里一样存在。
+
+所以，OceanBase 的备份更推荐是对象存储，通过 OSS 或 S3 协议访问，OceanBase 节点跟备份介质没有直接的物理联系，而且对象存储的备份 IO 性能通常相对差一些。对象存储的备份问题也不少，特别是市面上有很多种国产对象存储，它们实现的协议并不完全一致。这个后面单独写一篇文章，来给大家阐述。
+
+备份介质可以是 SATA SSD 或者 HDD，或者二者混合存储，在性能和成本之间取一个平衡。通常来说备份在凌晨低峰期发起，持续时间在 5h 以内完成都是安全的，更长的时间可能导致白天业务高峰期时备份还在跑。
+
+OceanBase 的架构分集群和租户两层，所以备份策略的配置入口支持集群和租户两个。但是实际备份的实体是租户，不是集群。集群里配置的是所有租户的备份策略，也可以指定特定租户的备份策略。租户里配置的是本租户的备份策略。
+
+OceanBase 的备份分数据备份和日志备份，这两个备份策略还不能相同，需要分别配置。并且必须配置日志备份并启动日志备份，数据备份的配置才能发挥作用。日志备份启动后就是 OceanBase 自动调度做的，平均 2 分钟一次，是近实时备份。OceanBase 把这个也叫日志归档，实时是它的优点。数据备份不会自动调度，需要手动触发，通常通过 OCP 调度。
+
+在 4.2.5 以及以后版本，OceanBase 的数据备份可以发起多次，但在一个周期（24h）内发起的多次数据备份其内容很可能是完全一样的，都是租户最近一次合并产生的数据快照。所以有时候客户会说一会业务要做一个重大发布，先把数据库“物理备份”一下。这个想法放在传统 ORACLE 数据库里有意义，在 OceanBase 里很可能毫无意义。除非记得在再次备份之前先对租户发起一个“合并”操作。先合并成功，再做数据备份是有意义的。所以，合并和备份的调度时间要做好规划。尽力保证数据全量备份只会在合并成功后才进行。
+
+数据备份又细分为全量备份和增量备份。增量备份记录的是距离最近的全量备份或增量备份以后数据变化的部分。这里不像 ORACLE RMAN 还有累积增量备份概念。日志备份记录的是 WAL 日志，也就是数据变化的过程日志。日志备份有增量的效果，实际沟通中可能会跟增量备份混淆，所以表述备份一定要准确。关于增量，举个例子：一张表插入 1000 万数据，然后没多久就删除了这 1000 万数据，假设随后凌晨发生的是增量备份，那么增量备份里跟这个表有关的数据块大小没有什么变化。但是日志备份里会有这 1000 万数据的插入日志和删除日志。 默认情况下，不推荐用数据备份的增量备份。因为可能引来备份空间膨胀问题。后面会阐述。
+
+OceanBase 的日志备份以流的形式备份，默认一段日志被备份后就不会再次被备份，所以日志备份文件要保证时间线上的连贯。如果中间中断了，那么这个日志备份就不能用于还原到这个任意时间点了。因为“链条断了”。备份文件的丢失，或者日志备份启动后又停止了，都会造成日志备份流的断流。日志备份就是备份租户的日志流（Log Stream）。租户的日志流没有启停的说法，也没有断流的说法，只是备份有这个。这是 OceanBase 跟 ORACLE 和 MYSQL 一个显著的区别。在 ORACLE 里，备份归档文件如果丢了，到其他地方去找一个回来就可以弥补，但是在 OceanBase 里不一定能行。官方没有这种功能介绍，我也没有做过这种测试）。日志备份每次启动称为一个 Round，数字会加 1 。日志流的备份还有个 piece 的概念，姑且翻译为分片 。日志备份参数里会指定日志流的备份多久切换一个分片，取值范围是 \[1d,7d\]。粒度就是天，不支持更小，最小 1 天。这个非常重要，强烈建议设置为 1 天。后面也会阐述。
+
+![OceanBase 数据备份与日志备份架构](/img/2026-06-15-oceanbase-backup-cleanup/01.png)
+
+*图：OceanBase 备份架构全景（数据备份 + 日志备份 + Round + Piece）*
+
+备份的保留策略，通常谈的是备份保留天数，这个说起来比较好理解。但是在 OceanBase 里这样沟通备份策略是错误的。 备份应该保留多少天，不是说保留多少天就是多少天，而是根据备份的目标定的。备份的目的是用于还原，所以真正的运维需求是保留的备份能用于还原的最早还原时间点。可以理解为这个点是 RPO 的最大值。通常我们说 OceanBase 高可用能力做到 RPO=0，另外一种需求就是还原数据库到某个历史时间点，那就是 RPO>0，备份的保留就是让这个 RPO 尽可能大，满足客户的还原需求。所以，跟客户沟通的不应该是备份的保留天数是多少，而是客户期望的 RPO 最大是多大。
+
+比如说 OCP 产品里默认的备份策略说“保留天数”是 7 天。这个是不严谨的，极大的误导了客户。
+
+![OCP 备份保留策略配置界面](/img/2026-06-15-oceanbase-backup-cleanup/02.png)
+
+*图：OCP 备份策略*
+
+实际上 OCP 说的是备份保留能满足还原 RPO 等于 7天 。那么实际保留的备份天数一定会大于 7 天，最糟糕的情形是会保留 14 天的备份。
+
+为了弥补产品 OCP 上这个“保留天数”带来的误解，OCP 产品文档详细的描述了这个 OceanBase 备份保留参数 `recovery_window` 的计算逻辑 （相当于文档给产品打了个补丁）。（从 OceanBase 参数的命名也能看出内核研发想表达的也是跟还原目标有关的意思。）
+
+文档地址：[https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001499877](https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000001499877) 这里我直接贴文档的解释：
+
+![备份集依赖与可还原时间点关系](/img/2026-06-15-oceanbase-backup-cleanup/03.jpg)
+
+*图：OceanBase 的 recovery\_window 参数*
+
+## OceanBase 备份目录分析
+
+首先是数据备份的配置。下面主要演示 SQL 命令行配置方法， OCP 和 第三方备份产品的备份都是发 SQL 完成。
+
+租户备份路径查看：
+
+```plain
+select tenant_id, path,dest_id,dest_type,CHECK_FILE_NAME ,LAST_CHECK_TIMESTAMP from oceanbase.DBA_OB_BACKUP_STORAGE_INFO \G
+*************************** 1. row ***************************
+           tenant_id: 1002
+                path: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+             dest_id: 1001
+           dest_type: archive_log
+     CHECK_FILE_NAME: 1002_connect_file_20260107T112233.obbak
+LAST_CHECK_TIMESTAMP: 2026-01-07 11:23:06.461397
+*************************** 2. row ***************************
+           tenant_id: 1002
+                path: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+             dest_id: 1002
+           dest_type: backup_data
+     CHECK_FILE_NAME: 1002_connect_file_20260107T112233.obbak
+LAST_CHECK_TIMESTAMP: 2026-06-10 04:00:33.454802
+```
+
+从这里能看到数据备份和日志备份的路径默认是分开的。这个 `dest_id` 值（1001 和 1002）后面有用。这个路径很长，命名有一定规范，这些是 OCP 的行为，不是 OceanBase 的行为。所以不是一定要写成这样，但是这样确实规范很多，特别是有很多 OceanBase 集群和租户要备份的时候。
+
+查看数据备份路径特点：
+
+```plain
+--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data ------------------
+                                               2026-06-10 04:26:03 +0800 /..
+238.7 GiB [########################]    285  2026-06-10 04:26:03 +0800 /backup_set_158_full
+236.0 GiB [####################### ]    282  2026-06-09 04:30:35 +0800 /backup_set_157_full
+  2.0 KiB [                        ]      4  2026-06-10 04:26:03 +0800 /backup_sets
+512.0   B [                        ]         2026-01-07 11:22:33 +0800  format.obbak
+512.0   B [                        ]      1  2026-01-07 11:22:33 +0800 /check_file
+```
+
+这个备份目录特点：
+
++ 下面有个文件 `format.obbak` 和 `check_file` 目录，表示这是一个备份目录。不要去删这两个文件（目录）。
++ 以 `backup_set_数字_full` 命名的大文件夹就是备份文件夹，每次全量备份一个文件夹（增量备份也是一个文件夹，关键字 `incr` 替换 `full`）。
+
+现在看到的是空间优化后的结果，之前这里最多的时候有 14 个文件夹。这种场景往往是备份策略设置每周一个全备，其他全是增量备份。
+
+上面是数据备份目录，再看看日志备份目录，稍微复杂一些。
+
+![OceanBase 备份目录层级结构示意](/img/2026-06-15-oceanbase-backup-cleanup/04.png)
+
+*图：OceanBase NFS 备份目录结构（data + clog + piece + logstream）*
+
+```plain
+--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog ------------------------------------------------
+                                               2026-06-10 17:22:11 +0800 /..
+  3.1 TiB [########################] 50,660  2026-06-09 11:26:16 +0800 /piece_d1001r1p153
+  2.8 TiB [#####################   ] 45,730  2026-06-10 11:25:48 +0800 /piece_d1001r1p154
+558.1 GiB [####                    ]  8,949  2026-06-10 17:22:11 +0800 /piece_d1001r1p155
+  2.5 KiB [                        ]      5  2026-06-10 11:25:48 +0800 /pieces
+512.0   B [                        ]         2026-01-07 11:22:33 +0800  format.obbak
+512.0   B [                        ]      1  2026-01-07 11:22:33 +0800 /check_file
+512.0   B [                        ]      1  2026-01-07 11:23:16 +0800 /rounds
+```
+
+这个备份目录特点：
+
++ 下面有个文件 `format.obbak` 和 `check_file` 目录，表示这是一个备份目录。不要去删这两个文件（目录）。
++ 以 `piece_d数字r数字p数字` 命名的文件夹就是日志备份，每个文件夹表示一个日志分片(piece）的备份，p 后面的数字就表示当前这个日志分片编号。d 后面的数字表示这是日志备份，r 后面的数字表示启动日志备份的次数。通常是 1 ，如果你反复停止和启动日志备份，这个数字会累加。
+
+这里变化的通常是分片数字。我这里的环境是每天切换一个日志备份分片。至于切换的时间点（时分秒）并不是想象的整点，或者根本无法设置切换的时间点。实际切换时间点就是由启动成功日志备份的时间决定的。所以，1000 个 OceanBase 客户，就有 1000 个 OceanBase 日志备份分片切换时间点（时分秒）。我很难认为这是一个很好的设计。
+
+如果只是分析日志备份空间清理问题，目录看到这一层就够了。不过到这里我们就多看一点。
+
+```plain
+--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog/piece_d1001r1p154 -----------------------------------------------------------------------
+                                               2026-06-10 11:25:48 +0800 /..
+972.5 GiB [########################] 15,563  2026-06-10 11:25:48 +0800 /logstream_1003
+956.3 GiB [####################### ] 15,305  2026-06-10 11:25:45 +0800 /logstream_1002
+922.2 GiB [######################  ] 14,758  2026-06-10 11:25:42 +0800 /logstream_1001
+  4.8 GiB [                        ]     93  2026-06-10 11:25:39 +0800 /logstream_15
+ 80.5 KiB [                        ]         2026-06-10 11:25:48 +0800  file_info.obarc
+  1.0 KiB [                        ]         2026-06-09 11:26:17 +0800  tenant_archive_piece_infos.obarc
+512.0   B [                        ]         2026-06-10 11:25:48 +0800  single_piece_info.obarc
+512.0   B [                        ]      2  2026-06-10 11:24:48 +0800 /checkpoint
+512.0   B [                        ]         2026-06-10 11:25:48 +0800  piece_d1001r1p154_20260609T112316_20260610T112316.obarc
+```
+
+这里看的是一个具体的日志备份分片目录细节，`logstream_数字` 文件夹表示的就是日志流的备份，看来日志备份是以日志流为单位去组织存储的。租户的日志流可能有 1\~4 个，这个以前介绍过。日志的备份是根据 OceanBase 文档描述是优先选择日志流的备副本所在节点（数据备份也是如此）。
+
+## 备份空间清理分析
+
+首先查看当前的备份参数 `recovery_window` 设置（或者叫备份还原的 RPO 目标值。我尽量不用那个词不达意的保留天数）。
+
+```plain
+SELECT policy_name, RECOVERY_WINDOW  FROM oceanbase.DBA_OB_BACKUP_DELETE_POLICY \G
+*************************** 1. row ***************************
+    policy_name: default
+RECOVERY_WINDOW: 1d
+```
+
+最早是 7d，后来空间太大了，改为 3d ，还是很大，最后改为 1d ，不能再小了。
+
+然后查看备份清理任务。
+
+```plain
+select job_id, type, PARAMETER ,START_TIMESTAMP ,END_TIMESTAMP ,STATUS , concat(SUCCESS_TASK_COUNT ,' / ', task_count ) task_info from oceanbase.DBA_OB_BACKUP_DELETE_JOB_HISTORY WHERE 1=1 order by job_id desc limit 15 \G
+*************************** 1. row ***************************
+         job_id: 3859
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 17:55:40.561998
+START_TIMESTAMP: 2026-06-10 17:55:40.562762
+  END_TIMESTAMP: 2026-06-10 17:55:40.584452
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 2. row ***************************
+         job_id: 3858
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 16:55:40.406901
+START_TIMESTAMP: 2026-06-10 16:55:40.407672
+  END_TIMESTAMP: 2026-06-10 16:55:40.424844
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 3. row ***************************
+         job_id: 3857
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 15:55:40.252236
+START_TIMESTAMP: 2026-06-10 15:55:40.253079
+  END_TIMESTAMP: 2026-06-10 15:55:40.271519
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 4. row ***************************
+         job_id: 3856
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 14:55:40.095898
+START_TIMESTAMP: 2026-06-10 14:55:40.096637
+  END_TIMESTAMP: 2026-06-10 14:55:40.118587
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 5. row ***************************
+         job_id: 3855
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 13:55:39.943337
+START_TIMESTAMP: 2026-06-10 13:55:39.944174
+  END_TIMESTAMP: 2026-06-10 13:55:39.965111
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 6. row ***************************
+         job_id: 3854
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 12:55:39.787493
+START_TIMESTAMP: 2026-06-10 12:55:39.788274
+  END_TIMESTAMP: 2026-06-10 12:55:39.805527
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 7. row ***************************
+         job_id: 3853
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 11:55:39.631708
+START_TIMESTAMP: 2026-06-10 11:55:39.632641
+  END_TIMESTAMP: 2026-06-10 11:55:39.652143
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 8. row ***************************
+         job_id: 3852
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 10:55:39.441597
+START_TIMESTAMP: 2026-06-10 10:55:39.442838
+  END_TIMESTAMP: 2026-06-10 10:55:39.491902
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 9. row ***************************
+         job_id: 3851
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 09:55:39.281553
+START_TIMESTAMP: 2026-06-10 09:55:39.282451
+  END_TIMESTAMP: 2026-06-10 09:55:39.304357
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 10. row ***************************
+         job_id: 3850
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 08:55:39.127329
+START_TIMESTAMP: 2026-06-10 08:55:39.128209
+  END_TIMESTAMP: 2026-06-10 08:55:39.151443
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 11. row ***************************
+         job_id: 3849
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 07:55:38.970745
+START_TIMESTAMP: 2026-06-10 07:55:38.971699
+  END_TIMESTAMP: 2026-06-10 07:55:38.992953
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 12. row ***************************
+         job_id: 3848
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 06:55:38.812554
+START_TIMESTAMP: 2026-06-10 06:55:38.813549
+  END_TIMESTAMP: 2026-06-10 06:55:38.832302
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 13. row ***************************
+         job_id: 3847
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 05:55:38.645012
+START_TIMESTAMP: 2026-06-10 05:55:38.645994
+  END_TIMESTAMP: 2026-06-10 05:55:38.674352
+         STATUS: COMPLETED
+      task_info: 0 / 0
+*************************** 14. row ***************************
+         job_id: 3846
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 04:55:32.715925
+START_TIMESTAMP: 2026-06-10 04:55:32.716860
+  END_TIMESTAMP: 2026-06-10 04:56:08.496986
+         STATUS: COMPLETED
+      task_info: 1 / 1
+*************************** 15. row ***************************
+         job_id: 3844
+           type: DELETE OBSOLETE BACKUP
+      PARAMETER: 2026-06-09 03:55:32.551669
+START_TIMESTAMP: 2026-06-10 03:55:32.552715
+  END_TIMESTAMP: 2026-06-10 03:55:32.577311
+         STATUS: COMPLETED
+      task_info: 0 / 0
+```
+
+从这里可以看到每个小时，OceanBase 自动启动备份清理任务（不是 OCP 启动），这个时间点（时分秒）也很有规律，都在每个小时的 55 分左右，为什么会这样我还没有找到。
+
+其次，虽然每小时都在跑清理任务，但是并不是每次任务都真的清理了数据。大部分的 `task_count` 都是 0 。最近的是 4 点 55 分左右清理的。因为全量备份启动时间是 4 点，大概 4 点 30 分左右全量备份结束了。因此按照前面的理论计算，为了实现 RPO 为 1 天，更早的数据备份以及部分日志备份应该被清理掉。所以 4 点 55 分的清理可以理解。
+
+但是此后的每次清理却没有实际清理备份，这个就很奇怪了。 理论上说，随着时间的推进，总会有日志备份不再被需要而被清理。除非是在前面被一次性清理掉了。一次性清理掉也是符合预期的，因为仅凭最早的日志备份是不能用于还原的，所以在新的数据备份产生的时候，就意味着最早的数据备份以及随后的日志备份都处于不被需要的状态（obsolete）。
+
+不过我们不用猜测，可以实际看看清理了什么。
+
+![备份空间未按预期释放的排查思路](/img/2026-06-15-oceanbase-backup-cleanup/05.png)
+
+*图：OceanBase 备份清理机制（每小时触发 + piece 粒度淘汰）*
+
+```plain
+select task_id, job_id, TASK_TYPE , ROUND_ID ,DEST_ID ,START_TIMESTAMP ,END_TIMESTAMP , status, FINISH_LS_COUNT ,RESULT , PATH from oceanbase.DBA_OB_BACKUP_DELETE_TASK_HISTORY where 1=1 order by job_id desc ,TASK_ID  desc limit 10 \G
+*************************** 1. row ***************************
+        task_id: 466
+         job_id: 3846
+      TASK_TYPE: BACKUP SET
+       ROUND_ID: 0
+        DEST_ID: 1002
+START_TIMESTAMP: 2026-06-10 04:55:32.744342
+  END_TIMESTAMP: 2026-06-10 04:56:08.480831
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+*************************** 2. row ***************************
+        task_id: 464
+         job_id: 3836
+      TASK_TYPE: BACKUP PIECE
+       ROUND_ID: 1
+        DEST_ID: 1001
+START_TIMESTAMP: 2026-06-09 19:55:19.774380
+  END_TIMESTAMP: 2026-06-09 20:10:01.147932
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+*************************** 3. row ***************************
+        task_id: 463
+         job_id: 3836
+      TASK_TYPE: BACKUP SET
+       ROUND_ID: 0
+        DEST_ID: 1002
+START_TIMESTAMP: 2026-06-09 19:55:19.756638
+  END_TIMESTAMP: 2026-06-09 19:55:55.752544
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+*************************** 4. row ***************************
+        task_id: 462
+         job_id: 3821
+      TASK_TYPE: BACKUP PIECE
+       ROUND_ID: 1
+        DEST_ID: 1001
+START_TIMESTAMP: 2026-06-09 04:55:07.895869
+  END_TIMESTAMP: 2026-06-09 05:01:47.202273
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+*************************** 5. row ***************************
+        task_id: 461
+         job_id: 3821
+      TASK_TYPE: BACKUP SET
+       ROUND_ID: 0
+        DEST_ID: 1002
+START_TIMESTAMP: 2026-06-09 04:55:07.881379
+  END_TIMESTAMP: 2026-06-09 04:55:43.285124
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+*************************** 6. row ***************************
+        task_id: 458
+         job_id: 3805
+      TASK_TYPE: BACKUP PIECE
+       ROUND_ID: 1
+        DEST_ID: 1001
+START_TIMESTAMP: 2026-06-08 14:54:51.926005
+  END_TIMESTAMP: 2026-06-08 15:12:35.393356
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+*************************** 7. row ***************************
+        task_id: 457
+         job_id: 3805
+      TASK_TYPE: BACKUP SET
+       ROUND_ID: 0
+        DEST_ID: 1002
+START_TIMESTAMP: 2026-06-08 14:54:51.910983
+  END_TIMESTAMP: 2026-06-08 14:55:28.670751
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+*************************** 8. row ***************************
+        task_id: 456
+         job_id: 3795
+      TASK_TYPE: BACKUP PIECE
+       ROUND_ID: 1
+        DEST_ID: 1001
+START_TIMESTAMP: 2026-06-08 04:54:27.779813
+  END_TIMESTAMP: 2026-06-08 05:06:19.944003
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+*************************** 9. row ***************************
+        task_id: 455
+         job_id: 3795
+      TASK_TYPE: BACKUP SET
+       ROUND_ID: 0
+        DEST_ID: 1002
+START_TIMESTAMP: 2026-06-08 04:54:27.766664
+  END_TIMESTAMP: 2026-06-08 04:55:04.158958
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/data
+*************************** 10. row ***************************
+        task_id: 453
+         job_id: 3770
+      TASK_TYPE: BACKUP PIECE
+       ROUND_ID: 1
+        DEST_ID: 1001
+START_TIMESTAMP: 2026-06-07 04:54:10.030664
+  END_TIMESTAMP: 2026-06-07 05:01:53.615006
+         status: COMPLETED
+FINISH_LS_COUNT: 4
+         RESULT: 0
+           PATH: file:///nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog
+```
+
+从这段记录看，每天也就清理一次数据备份和日志备份。
+
+再看看数据备份文件的状态。
+
+```plain
+select BACKUP_SET_ID , BACKUP_TYPE ,START_TIMESTAMP ,END_TIMESTAMP ,START_REPLAY_SCN_DISPLAY , STATUS ,FILE_STATUS ,FILE_COUNT ,ELAPSED_SECONDES from oceanbase.DBA_OB_BACKUP_SET_FILES order by BACKUP_SET_ID desc limit 5 \G
+*************************** 1. row ***************************
+           BACKUP_SET_ID: 158
+             BACKUP_TYPE: FULL
+         START_TIMESTAMP: 2026-06-10 04:00:05.622073
+           END_TIMESTAMP: 2026-06-10 04:26:03.158353
+START_REPLAY_SCN_DISPLAY: 2026-06-10 02:17:38.960160
+                  STATUS: SUCCESS
+             FILE_STATUS: AVAILABLE
+              FILE_COUNT: 0
+        ELAPSED_SECONDES: 1558
+*************************** 2. row ***************************
+           BACKUP_SET_ID: 157
+             BACKUP_TYPE: FULL
+         START_TIMESTAMP: 2026-06-09 04:00:04.345129
+           END_TIMESTAMP: 2026-06-09 04:30:35.335842
+START_REPLAY_SCN_DISPLAY: 2026-06-09 01:49:54.467299
+                  STATUS: SUCCESS
+             FILE_STATUS: AVAILABLE
+              FILE_COUNT: 0
+        ELAPSED_SECONDES: 1831
+*************************** 3. row ***************************
+           BACKUP_SET_ID: 156
+             BACKUP_TYPE: FULL
+         START_TIMESTAMP: 2026-06-08 18:36:23.016296
+           END_TIMESTAMP: 2026-06-08 19:06:47.962207
+START_REPLAY_SCN_DISPLAY: 2026-06-08 18:15:20.863016
+                  STATUS: SUCCESS
+             FILE_STATUS: DELETED
+              FILE_COUNT: 0
+        ELAPSED_SECONDES: 1825
+*************************** 4. row ***************************
+           BACKUP_SET_ID: 155
+             BACKUP_TYPE: FULL
+         START_TIMESTAMP: 2026-06-08 04:00:05.374333
+           END_TIMESTAMP: 2026-06-08 04:25:44.933878
+START_REPLAY_SCN_DISPLAY: 2026-06-08 02:37:20.290484
+                  STATUS: SUCCESS
+             FILE_STATUS: DELETED
+              FILE_COUNT: 0
+        ELAPSED_SECONDES: 1540
+*************************** 5. row ***************************
+           BACKUP_SET_ID: 154
+             BACKUP_TYPE: FULL
+         START_TIMESTAMP: 2026-06-07 04:00:04.985212
+           END_TIMESTAMP: 2026-06-07 04:30:41.643439
+START_REPLAY_SCN_DISPLAY: 2026-06-07 02:14:55.974754
+                  STATUS: SUCCESS
+             FILE_STATUS: DELETED
+              FILE_COUNT: 0
+        ELAPSED_SECONDES: 1837
+```
+
+从这里看，9 号以前的数据备份都被清理了，9 号和 10 号的数据备份都在。所以简单说保留了 2 天的备份。
+
+看看日志备份文件状态。
+
+```plain
+select DEST_ID ,PIECE_ID  , status, START_SCN_DISPLAY , END_SCN_DISPLAY  , OUTPUT_BYTES_DISPLAY ,FILE_STATUS from oceanbase.DBA_OB_ARCHIVELOG_PIECE_FILES order by DEST_ID ,ROUND_ID ,PIECE_ID desc limit 5 \G
+*************************** 1. row ***************************
+             DEST_ID: 1001
+            PIECE_ID: 155
+              status: ACTIVE
+   START_SCN_DISPLAY: 2026-06-10 11:23:16.490548
+     END_SCN_DISPLAY: 2026-06-11 11:23:16.490548
+OUTPUT_BYTES_DISPLAY: 653.36GB
+         FILE_STATUS: AVAILABLE
+*************************** 2. row ***************************
+             DEST_ID: 1001
+            PIECE_ID: 154
+              status: FROZEN
+   START_SCN_DISPLAY: 2026-06-09 11:23:16.490548
+     END_SCN_DISPLAY: 2026-06-10 11:23:16.490548
+OUTPUT_BYTES_DISPLAY: 2.79TB
+         FILE_STATUS: AVAILABLE
+*************************** 3. row ***************************
+             DEST_ID: 1001
+            PIECE_ID: 153
+              status: FROZEN
+   START_SCN_DISPLAY: 2026-06-08 11:23:16.490548
+     END_SCN_DISPLAY: 2026-06-09 11:23:16.490548
+OUTPUT_BYTES_DISPLAY: 3.09TB
+         FILE_STATUS: AVAILABLE
+*************************** 4. row ***************************
+             DEST_ID: 1001
+            PIECE_ID: 152
+              status: FROZEN
+   START_SCN_DISPLAY: 2026-06-07 11:23:16.490548
+     END_SCN_DISPLAY: 2026-06-08 11:23:16.490548
+OUTPUT_BYTES_DISPLAY: 5.70TB
+         FILE_STATUS: DELETED
+*************************** 5. row ***************************
+             DEST_ID: 1001
+            PIECE_ID: 151
+              status: FROZEN
+   START_SCN_DISPLAY: 2026-06-06 11:23:16.490548
+     END_SCN_DISPLAY: 2026-06-07 11:23:16.490548
+OUTPUT_BYTES_DISPLAY: 3.01TB
+         FILE_STATUS: DELETED
+```
+
+从这段记录看，日志备份分片保留了 8 号、9 号、10 号的日志备份（分片切换时间点不是整点，而是 11 点 23 分）。8 号之前的日志备份被删除了。所以可以简单的说，保留了 3 天的日志备份。这里疑点最大的就是最早的日志备份分片 8 号为什么还在。这是因为 8 号 4 点以后的日志备份还是被需要的，这导致整个日志备份分片都是需要的。也就是 OceanBase 清理日志备份分片的里粒度是分片（piece），而不是单个的日志备份文件。单个日志备份文件长下面这样：
+
+```plain
+--- /nfs-server/ob***/obbackup01/***ob/1767617455/tenant_incarnation_1/1002/clog/piece_d1001r1p153/logstream_1001/log ----------------------------------------------------
+                                               2026-06-09 11:24:05 +0800 /..
+ 32.2 MiB [############            ]         2026-06-08 11:23:20 +0800  779627.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779628.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779629.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779630.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:21 +0800  779631.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:22 +0800  779632.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:23 +0800  779633.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:23 +0800  779634.obarc
+ 64.0 MiB [########################]         2026-06-08 11:23:25 +0800  779635.obarc
+```
+
+总结起来就是这个业务 OceanBase 租户，为了实现备份还原 RPO 为 1 天的目标，保留了 2 天的数据备份和 3 天的日志备份。
+
+## 日志备份空间大的原因
+
+大部分客户不会关注到这个备份空间清理的问题，除非这个空间成为“成本”。仔细分析上面数据会发现数据备份每天大小大概 240G 左右，但是日志备份每天大小变化范围在 2.8T \~ 5.7T 。
+
+其原因是这个 OceanBase 集群场景是数据仓库场景，有大量的 ETL ，其中大量用到临时表。 OceanBase 终于在 4.2.5 （也可能是其他版本）实现跟 ORACLE 特性一样的临时表，支持 `on commit delete rows` 和 `on commit preserve rows` 。但是这些临时表还是跟 ORACLE 的临时表有个显著的差异就是 OceanBase 的临时表会写 WAL 日志。目前咨询了 4.4.2 版本，还是这样。
+
+![日志备份占用空间偏大的常见原因](/img/2026-06-15-oceanbase-backup-cleanup/06.png)
+
+*图：ETL 临时表 → WAL 日志 → 备份空间膨胀 & 实际保留对比*
+
+## 结论
+
+OCP 里的备份“保留天数”设置功能对应的是设置租户备份的 `recovery_window` 参数，这个是跟还原的能力（RPO）有关的描述，间接影响备份的保留天数。从实际效果看，如果 OCP 里设置“保留天数”是 1 天，实际上会保留 2 天的数据备份，以及 3 天的日志备份。其实运维承诺的就应该是备份的还原的能力而不是保留天数。这个也适合传统数据库。
+
+如果还想进一步缩小这个备份空间的大小，那就要精细化控制合并和备份的调度时间，以及在备份被调度之前，提前 10 分钟去启动日志备份（可能要晚上加个班）。不过看到 OCP 的备份里有个选项说是可以在数据备份的时候才启动日志备份，数据备份结束再关闭日志备份。这个功能没有在客户环境测试过。如果有人用过，欢迎留言分享。
+
+![OceanBase 备份清理机制结论总结](/img/2026-06-15-oceanbase-backup-cleanup/07.png)
+
+## 更多阅读
+
++ [OceanBase V4 日志流设计分析](https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247487142&idx=1&sn=9cad48330b897400c9902053dd508bd1&scene=21#wechat_redirect)
++ [OceanBase 社区版 4.1 备份恢复实践](https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247485683&idx=1&sn=63b3e309b8f31c55f662c04667d13ca3&scene=21#wechat_redirect)
++ [OceanBase 企业版 3.2 备份恢复实践](https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247485674&idx=1&sn=42f4e266483acd63b4daf495f0391dd8&scene=21#wechat_redirect)
++ [OceanBase 奇案分享：是谁拉起了 OceanBase 进程？](https://mp.weixin.qq.com/s?__biz=MzU3OTc2MDQxNg==&mid=2247488089&idx=1&sn=22a480ae6e1bc57727542a1c45c77076&scene=21#wechat_redirect)
+
+
+---
+# Article: 用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟
+# URL: https://ilongda.com/2026-06-22/2026-06-22-seekdb-world-cup-prediction/
+# Published: 2026-06-22
+# Updated: 2026-06-22
+# Keywords: seekdb,OceanBase,世界杯预测,数据建模,概率模拟,AI Native,Python,数据分析
+
+用 OceanBase seekdb 建模 2026 世界杯：Elo 与泊松分布生成赛果，蒙特卡洛模拟夺冠概率，完整展示 AI Native 数据分析实践。
+
+> 🚀 想自己跑一遍模拟？先把 [seekdb](https://github.com/oceanbase/seekdb) 装起来——轻量 AI Native 数据库，关系表 + SQL + 存储过程就能把世界杯“踢”一千遍。
+
+## 楔子
+
+2026 年世界杯首次扩军到 48 支球队，赛程变成 12 个小组、104 场比赛。对预测来说，难点不只是球队变多，而是路径组合变多：小组第三也可能晋级，淘汰赛对阵还会受小组排名影响，冠军预测难度近似指数上升。
+
+![2026 世界杯扩军后的预测难度示意](/img/2026-06-22-seekdb-world-cup-prediction/01.webp)
+
+很多大模型厂商也在预测世界杯结果，但流程往往是黑盒，读者只能看到结论、看不到方法。本文换一种做法：不直接甩出“冠军是谁”，而是把预测过程摊开——数据从哪来、比赛怎么模拟、概率怎么统计。
+
+我们会在轻量 AI Native 数据库 seekdb 里，搭一套从数据建模到概率模拟的完整流程：用历史比赛数据生成单场结果，重复模拟整届世界杯，再统计每支球队夺冠频率。既知其然，也知其所以然。
+
+![seekdb 世界杯冠军预测完整流程](/img/2026-06-22-seekdb-world-cup-prediction/02.png)
+
+欢迎对照自己的判断，看看 seekdb 模拟结果是否合拍。也欢迎关注 OceanBase 社区公众号「老纪的技术唠嗑局」，我们会持续更新 AI 与 Data 相关技术内容。
+
+这套流程很适合放在 seekdb：结构化数据进关系表，中间状态用 SQL 管理，重复模拟交给存储过程。
+
+![蒙特卡洛模拟得到的冠军概率分布](/img/2026-06-22-seekdb-world-cup-prediction/03.webp)
+
+## 零、先看预测结果
+
+我在 seekdb 中模拟举办了 1000 次 2026 美加墨世界杯，各支球队获取冠军的次数和夺冠概率数据如下：
+
+```plain
+obclient(root@fifa2026)[world_cup]> CALL sp_simulate_worldcup(1000, 'champion_probs_1k_verify');
+Query OK, 0 rows affected
+
+obclient(root@fifa2026)[world_cup]> select team_name, champion_prob, champion_count
+    -> from champion_probs_1k_verify
+    -> orderby champion_prob desc;
++----------------+---------------+----------------+
+| team_name      | champion_prob | champion_count |
++----------------+---------------+----------------+
+| Spain          |        0.2090 |            209 |
+| Argentina      |        0.1300 |            130 |
+| Brazil         |        0.1140 |            114 |
+| France         |        0.1030 |            103 |
+| Netherlands    |        0.0500 |             50 |
+| Colombia       |        0.0500 |             50 |
+| Germany        |        0.0450 |             45 |
+| England        |        0.0440 |             44 |
+| Portugal       |        0.0410 |             41 |
+| Ecuador        |        0.0380 |             38 |
+| Mexico         |        0.0330 |             33 |
+| Morocco        |        0.0270 |             27 |
+| Japan          |        0.0260 |             26 |
+| Uruguay        |        0.0200 |             20 |
+| Belgium        |        0.0190 |             19 |
+| Croatia        |        0.0120 |             12 |
+| United States  |        0.0110 |             11 |
+| Korea Republic |        0.0060 |              6 |
+| Australia      |        0.0050 |              5 |
+| Switzerland    |        0.0040 |              4 |
+| Czech Republic |        0.0030 |              3 |
+| Canada         |        0.0030 |              3 |
+| Senegal        |        0.0030 |              3 |
+| Turkey         |        0.0020 |              2 |
+| Iran           |        0.0010 |              1 |
+| Norway         |        0.0010 |              1 |
++----------------+---------------+----------------+
+```
+
+在这次 1000 次模拟中，西班牙夺冠 209 次，概率 20.9%；阿根廷夺冠 130 次，概率 13.0%；巴西夺冠 114 次，概率 11.4%；法国夺冠 103 次，概率 10.3%。荷兰、德国、英格兰、葡萄牙、哥伦比亚处于第二梯队。
+
+小编突然想起，小学班主任曾经在 2002 年韩日世界杯期间，给我们讲过的一个笑话。
+
+印象中是说：上帝来看韩日世界杯。
+
+日本球迷问上帝：“我们日本什么时候能拿一次世界杯？”
+
+上帝说：“100 年以后吧。”
+
+日本球迷哭着说：“那我肯定看不到了……”
+
+韩国球迷问上帝：“我们韩国什么时候能拿一次世界杯？”
+
+上帝说：“500 年以后吧。”
+
+韩国球迷哭着说：“那我肯定看不到了……”
+
+中国球迷问上帝：“我们中国什么时候能拿一次世界杯？”
+
+上帝哭着说：“那我肯定看不到了……”
+
+当时因为年纪太小，全班同学听完之后，都不明所以。老师无奈，只简单解释了一句“上帝也是有寿命的”，就开始讲课了。
+
+根据上面的模拟结果，日本夺冠概率为 2.6%，约等于平均 154 年能夺冠一次；韩国夺冠概率为 0.6%，约等于平均 667 年能夺冠一次。
+
+seekdb 的这两个模拟结果，居然跟上帝说的都差不多……
+
+![1000 次模拟后各国夺冠概率排名](/img/2026-06-22-seekdb-world-cup-prediction/04.webp)
+
+闲言少叙，我们也要开始讲课了，下面先从预测方法讲起。
+
+## 一、预测办法：小组赛比分模拟 + 淘汰赛胜率抽样 + 蒙特卡洛
+
+![小组赛泊松模拟与淘汰赛 Elo 抽样](/img/2026-06-22-seekdb-world-cup-prediction/05.webp)
+
+这版实现采用分阶段模型：小组赛用泊松分布生成比分，淘汰赛用 Elo 胜率直接抽样决定胜者，用蒙特卡洛方法负责重复执行整届赛事流程。
+
+先补两句背景：泊松分布常用于描述一段固定时间或空间内某类事件发生的次数，适合建模“90 分钟内进几个球”这类低频计数问题；蒙特卡洛方法则是通过大量随机抽样逼近概率结果，适合把“不确定的一场比赛”扩展成“多次模拟后的概率分布”。
+
+### 1. Elo 评分体系：用于淘汰赛胜率抽样
+
+![Elo 评分体系用于淘汰赛胜率计算](/img/2026-06-22-seekdb-world-cup-prediction/06.webp)
+
+Elo 是一种动态衡量球队相对实力的方法。每支球队根据历史比赛结果获得一个分数，赢强队加分多，输弱队减分多。我在 OceanBase seekdb 的表中为每支球队存储了截至 2026 年 6 月的 Elo 评分。在模拟任意一场比赛时，我们通过 Elo 分差计算双方的预期胜率：
+
+`主队胜率 = 1/(1+10^((客队 Elo - 主队 Elo - 主场优势)/400))` 。
+
+在本文的 SQL 实现中，Elo 主要用于淘汰赛阶段。为了让流程保持清晰，淘汰赛不再生成具体比分，而是根据双方 Elo 差值计算胜率，并用随机抽样决定晋级球队。
+
+### 2. 泊松分布：用于小组赛生成随机比分
+
+![泊松分布生成小组赛随机比分示意](/img/2026-06-22-seekdb-world-cup-prediction/07.webp)
+
+足球比赛进球数是典型的泊松事件，低发生率、独立、均值等于方差。我们假设每支球队在比赛中的预期进球数（λ）由以下公式决定：
+
+`λ = 赛事平均进球 × 进攻强度 × 对手防守强度 × 主场优势系数` 。
+
+其中，进攻强度和防守强度来自球队近三年的场均进球和场均失球数据，并与整个赛事的平均水平进行比较。主场优势系数仅为东道主在 `team1_id` 位置时生效（设为 1.25），其余均为 1.0。然后，从泊松分布中随机抽样得到主客队进球数，从而产生一场小组赛的随机比分。这种方法天然包含了爆冷的可能，弱队一旦抽到大于 λ 的进球数，就能击败强队。
+
+### 3. 蒙特卡洛大规模模拟
+
+![蒙特卡洛大规模重复模拟赛程示意](/img/2026-06-22-seekdb-world-cup-prediction/08.webp)
+
+单次随机抽样的结果带有偶然性，为此我们采用蒙特卡洛方法：重复模拟 1000 次甚至 10000 次。每次模拟中，我们按赛程逐场生成小组赛比分，计算小组积分，确定每组前两名及 8 个成绩最好的小组第三晋级 32 强；然后按简化版淘汰赛对阵继续模拟，直至决出冠军。最终，统计每支球队在多次模拟中夺冠的次数，即为其夺冠概率。seekdb 的存储过程和循环控制可以支撑这种批量重复计算。
+
+## 二、数据准备：四张核心表的构建
+
+要运行上述预测模型，必须在 seekdb 中准备好四张环环相扣的数据表。先说明数据口径：本文重点是演示如何在 seekdb 内完成一套端到端的赛事模拟流程，示例数据参考公开比赛结果和球队强弱分层整理，并不等同于专业机构的完整预测数据集。因此，最终概率更适合作为技术演示结果，而不是投注或严肃预测依据。
+
+![预测所用四张核心数据表结构](/img/2026-06-22-seekdb-world-cup-prediction/09.webp)
+
+### 1. 球队基础信息表（teams）
+
+包含 48 支参赛球队的固定属性：球队 ID、中英文名称、所属大洲、FIFA 排名、Elo 评分、总市场价值以及东道主标识。
+
+### 2. 历史比赛结果表（matches）
+
+存储 2019 年至 2025 年间的关键国际 A 级赛事，包括 2022 年世界杯、2024 年欧洲杯、2024 年美洲杯、2024 年非洲杯以及多场友谊赛和预选赛，总计超过 65 场比赛。每条记录包含赛季年份、赛事名称、主客队 ID、实际进球数、比赛日期和地点。这些数据用于计算球队的进攻/防守强度以及 Elo 评分的初始值。
+
+### 3. 球队赛季统计表（team\_season\_stats）
+
+**这是模型中最重要的特征表** 。每支球队每年一条记录，汇总该赛季的所有比赛数据：总场次、胜/平/负场次、总进球、总失球、零封场次、场均控球率、场均射门/射正以及预期进球数。对于 48 支球队，我们整理了 2023、2024、2025 三个赛季的示例特征数据。
+
+### 4. 世界杯 2026 模拟赛程表（worldcup\_2026\_fixtures）
+
+参考 2026 年世界杯小组赛结构，生成 72 场比赛记录。每条记录包含比赛阶段、主队 ID、客队 ID 以及一个比赛顺序号。注意，淘汰赛阶段的对阵并不预先存储，而是在每次蒙特卡洛模拟中根据 32 强晋级结果动态生成。
+
+除此之外，我还需要一些计算结果的中间表，具体 `DDL` 可见下一个章节。
+
+## 三、从空库开始准备 SQL 环境
+
+![在 seekdb 中准备世界杯 SQL 环境](/img/2026-06-22-seekdb-world-cup-prediction/10.webp)
+
+先把数据库和表都建好：
+
+```plain
+DROP DATABASE IF EXISTS world_cup;
+CREATE DATABASE world_cup;
+USE world_cup;
+
+CREATE TABLE teams (
+  team_id INT PRIMARY KEY,
+  full_name VARCHAR(100) NOT NULL,
+  short_name VARCHAR(50) NOT NULL,
+  country_code VARCHAR(10) NOT NULL,
+  fifa_ranking INT,
+  elo_rating DECIMAL(10,2),
+  confederation VARCHAR(20),
+  market_value DECIMAL(18,2),
+  is_host BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE matches (
+  match_id INT AUTO_INCREMENT PRIMARY KEY,
+  season_year INT NOT NULL,
+  tournament_name VARCHAR(100) NOT NULL,
+  home_team_id INT NOT NULL,
+  away_team_id INT NOT NULL,
+  home_goals INT NOT NULL,
+  away_goals INT NOT NULL,
+  match_date DATE,
+  location VARCHAR(100)
+);
+
+CREATE TABLE team_season_stats (
+  team_id INT NOT NULL,
+  season_year INT NOT NULL,
+  matches_played INT NOT NULL,
+  wins INT NOT NULL,
+  draws INT NOT NULL,
+  losses INT NOT NULL,
+  goals_for INT NOT NULL,
+  goals_against INT NOT NULL,
+  clean_sheets INT NOT NULL,
+  avg_possession DECIMAL(5,2),
+  avg_shots DECIMAL(5,2),
+  avg_shots_on_target DECIMAL(5,2),
+  expected_goals DECIMAL(8,2),
+  PRIMARY KEY (team_id, season_year)
+);
+
+CREATE TABLE worldcup_2026_fixtures (
+  fixture_id INT AUTO_INCREMENT PRIMARY KEY,
+  stage VARCHAR(30) NOT NULL,
+  team1_id INT NOT NULL,
+  team2_id INT NOT NULL,
+  match_order INT NOT NULL,
+  group_char CHAR(1)
+);
+
+-- 以下为模拟过程中的中间表
+CREATE TABLE team_params (
+  team_id INT PRIMARY KEY,
+  attack DECIMAL(10,4) NOT NULL,
+  defence DECIMAL(10,4) NOT NULL,
+  elo_rating DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE group_stats (
+  team_id INT PRIMARY KEY,
+  group_char CHAR(1) NOT NULL,
+  points INT NOT NULL DEFAULT 0,
+  goal_diff INT NOT NULL DEFAULT 0,
+  goals_for INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE group_ranking (
+  team_id INT NOT NULL,
+  group_char CHAR(1) NOT NULL,
+  points INT NOT NULL,
+  goal_diff INT NOT NULL,
+  goals_for INT NOT NULL,
+  rank_in_group INT NOT NULL
+);
+
+CREATE TABLE round32 (
+  team_id INT NOT NULL,
+  group_char CHAR(1) NOT NULL,
+  group_rank INT NOT NULL,
+  points INT NOT NULL,
+  goal_diff INT NOT NULL,
+  goals_for INT NOT NULL
+);
+
+CREATE TABLE knockout_results (
+  match_id INT AUTO_INCREMENT PRIMARY KEY,
+  team1_id INT,
+  team2_id INT,
+  round_name VARCHAR(30) NOT NULL,
+  winner_id INT
+);
+
+CREATE TABLE tmp_champions (
+  sim_id INT NOT NULL,
+  champion_id INT NOT NULL
+);
+```
+
+第二步，导入球队、历史比赛、赛季统计和赛程数据。正文只放几行示意，完整数据见文末附录 A。
+
+```plain
+TRUNCATE TABLE teams;
+INSERT INTO teams (team_id, full_name, short_name, country_code, fifa_ranking, elo_rating, confederation, market_value, is_host) VALUES
+(1, 'Mexico', 'Mexico', 'MEX', 15, 1933.00, 'CONCACAF', 150000000.00, TRUE),
+(5, 'Canada', 'Canada', 'CAN', 30, 1810.00, 'CONCACAF', 95000000.00, TRUE),
+(13, 'United States', 'USA', 'USA', 16, 1840.00, 'CONCACAF', 280000000.00, TRUE);
+
+TRUNCATE TABLE matches;
+INSERT INTO matches (season_year, tournament_name, home_team_id, away_team_id, home_goals, away_goals, match_date, location) VALUES
+(2022, 'World Cup', 22, 17, 2, 1, '2022-11-23', 'Khalifa Stadium');
+
+TRUNCATE TABLE team_season_stats;
+INSERT INTO team_season_stats (...) VALUES (...);
+
+TRUNCATE TABLE worldcup_2026_fixtures;
+INSERT INTO worldcup_2026_fixtures (...) VALUES (...);
+```
+
+## 四、编写存储过程
+
+![世界杯模拟存储过程核心逻辑示意](/img/2026-06-22-seekdb-world-cup-prediction/11.webp)
+
+在完成数据建模与导入之后，我面临的核心挑战是：如何在不依赖外部程序的情况下，在 seekdb 内部完成上万次蒙特卡洛模拟？答案是充分利用 seekdb 对存储过程、循环控制、随机函数以及临时表的强大支持。
+
+我设计了一个主存储过程 `sp_simulate_worldcup` ，它接受两个参数：模拟次数 `num_sims` 和输出结果表名。整个模拟过程被封装在数据库内，无需导出数据到 Python 或 R，最大程度减少了网络传输和上下文切换的开销。存储过程的内部逻辑可以划分为四大模块：
+
+### 1. 参数计算与预处理
+
+首先，从 `team_season_stats` 表中计算全局平均进球数（ `avg_goals_total` ）以及每支球队的进攻系数（ `attack=球队场均进球/avg_goals_total` ）和防守系数（ `defence=球队场均失球/avg_goals_total` ）。这些系数会被存入临时表 `team_params` 中，供每场比赛调用。同时，确定东道主集合（ `host_ids` ），用于主场优势判定。
+
+### 2. 单次模拟的完整流程
+
+每一次模拟都遵循以下子步骤：
+
++ 小组赛模拟：遍历 `worldcup_2026_fixtures` 表中 `stage='Group'` 的 72 场比赛。对于每场比赛，根据 `team1_id` 是否属于东道主决定是否乘以主场优势系数（1.25），利用泊松分布生成随机主客队进球数，进而确定胜、平、负。实时更新每组球队的积分、净胜球和总进球数。
++ 确定晋级 32 强：按照积分>净胜球>进球数的规则对每个小组排序，选出前两名；再汇总所有小组第三名，按相同规则排序，取前 8 名作为成绩最好的小组第三。最终形成 32 强名单，并记录其 Elo 评分和所在小组排名。
++ 淘汰赛模拟：为了聚焦 OceanBase 内部模拟流程，本文采用简化版 32 强对阵规则：将晋级球队按小组字母和组内排名排序后两两配对。这不是 FIFA 官方 bracket，会影响部分球队的路径难度，因此结果更适合作为数据库模拟能力演示。淘汰赛阶段不再生成具体比分，而是根据双方 Elo 差值计算胜率，并用随机抽样决定晋级球队。
++ 记录本次冠军：将本次模拟的冠军球队 ID 写入一个临时结果集。
+
+### 3. 蒙特卡洛循环
+
+利用 WHILE 循环重复执行上述单次模拟 `num_sims` 次。每次模拟前会清理上一次的中间数据，确保各次模拟之间相互独立。为了加速，我尽量使用临时表而非永久表，并避免在循环内进行不必要的提交操作。
+
+### 4. 结果聚合与输出
+
+循环结束后，对临时结果集中的冠军记录按球队分组计数，得到每支球队的夺冠次数，再除以 `num_sims` 得到夺冠概率。最终将结果写入用户指定的输出表中。
+
+生成存储过程前，还需要一个辅助的 `UDF` ，生成泊松分布
+
+```plain
+DELIMITER $$
+
+CREATE FUNCTION fn_poisson(lambda DECIMAL(10,4))
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE L DECIMAL(20,10);
+    DECLARE k INT DEFAULT 0;
+    DECLARE p DECIMAL(20,10) DEFAULT 1.0;
+    DECLARE u DECIMAL(20,10);
+
+    SET L = EXP(-lambda);
+    SET u = RAND();
+
+    WHILE u > L DO
+        SET k = k + 1;
+        SET p = p * lambda / k;
+        SET L = L + p;
+    END WHILE;
+
+    RETURN k;
+END$$
+
+DELIMITER ;
+```
+
+完整的蒙特卡洛存储过程较长，正文只保留设计思路。完整可执行版本见文末附录 B。
+
+sp\_simulate\_worldcup(num\_sims, result\_table) 存储过程的执行流程为：
+
+1. 读取 2025 赛季统计，生成每支球队的进攻系数、防守系数和 Elo 参数。
+2. 循环执行 num\_sims 次完整世界杯模拟。
+3. 每次模拟先清空小组积分、排名、32 强和淘汰赛中间表。
+4. 遍历 72 场小组赛，用泊松分布生成比分并更新积分、净胜球和进球数。
+5. 按积分、净胜球、进球数筛出 12 个小组前二和 8 个最佳小组第三。
+6. 使用简化版 bracket 生成 32 强对阵，并用 Elo 胜率抽样推进淘汰赛。
+7. 记录每次模拟的冠军。
+8. 按球队聚合 champion\_count、champion\_prob 和 simulations，写入结果表。
+
+## 五、模拟结果
+
+我在本地 seekdb MySQL 兼容环境中验证了整套 SQL。由于存储过程中使用了 `RAND()` ，每次运行都会有轻微波动，下面结果取自一次 1000 次模拟。测试环境和耗时仅供参考。
+
+模拟举办 1000 次世界杯，获取冠军分布数据：
+
+```plain
+obclient(root@fifa2026)[world_cup]> CALL sp_simulate_worldcup(1000, 'champion_probs_1k_verify');
+Query OK, 0 rows affected
+
+obclient(root@fifa2026)[world_cup]> select team_name, champion_prob, champion_count
+    -> from champion_probs_1k_verify
+    -> orderby champion_prob desc;
++----------------+---------------+----------------+
+| team_name      | champion_prob | champion_count |
++----------------+---------------+----------------+
+| Spain          |        0.2090 |            209 |
+| Argentina      |        0.1300 |            130 |
+| Brazil         |        0.1140 |            114 |
+| France         |        0.1030 |            103 |
+| Netherlands    |        0.0500 |             50 |
+| Colombia       |        0.0500 |             50 |
+| Germany        |        0.0450 |             45 |
+| England        |        0.0440 |             44 |
+| Portugal       |        0.0410 |             41 |
+| Ecuador        |        0.0380 |             38 |
+| Mexico         |        0.0330 |             33 |
+| Morocco        |        0.0270 |             27 |
+| Japan          |        0.0260 |             26 |
+| Uruguay        |        0.0200 |             20 |
+| Belgium        |        0.0190 |             19 |
+| Croatia        |        0.0120 |             12 |
+| United States  |        0.0110 |             11 |
+| Korea Republic |        0.0060 |              6 |
+| Australia      |        0.0050 |              5 |
+| Switzerland    |        0.0040 |              4 |
+| Czech Republic |        0.0030 |              3 |
+| Canada         |        0.0030 |              3 |
+| Senegal        |        0.0030 |              3 |
+| Turkey         |        0.0020 |              2 |
+| Iran           |        0.0010 |              1 |
+| Norway         |        0.0010 |              1 |
++----------------+---------------+----------------+
+```
+
+在这次 1000 次模拟中，西班牙夺冠 209 次，概率 20.9%；阿根廷夺冠 130 次，概率 13.0%；巴西夺冠 114 次，概率 11.4%；法国夺冠 103 次，概率 10.3%。
+
+当然，这只是基于当前示例模型的概率换算，不代表真实预测结论。
+
+> 说明：
+>
+> 这里的 `champion_count` 表示球队在本轮模拟中夺冠的次数， `champion_prob` 表示夺冠次数除以总模拟次数， `simulations` 表示本次总模拟次数。由于每次运行都会重新随机抽样，概率小幅变化是正常现象。
+
+## 六、为什么把模拟放在 OceanBase seekdb 里？
+
+这篇文章的重点不是证明数据库比 Python 更适合写所有模拟逻辑，而是展示当数据已经在 seekdb 里时，如何把一套概率模拟流程留在库内完成。
+
+第一，数据和计算更近。球队、比赛、赛季统计、赛程、中间排名和最终结果都在同一个数据库里，不需要频繁导出到外部脚本再导回来。
+
+第二，SQL 对排名类逻辑很直接。小组积分、净胜球、进球数排序，以及最佳小组第三筛选，都可以用窗口函数完成。
+
+第三，存储过程适合表达重复模拟。蒙特卡洛的核心就是循环执行同一套流程，seekdb 的存储过程、游标、临时状态表和动态 SQL 可以把这条链路完整封装起来。
+
+第四，后续优化空间清晰。当前实现偏演示，仍有不少优化点，例如减少循环内 `TRUNCATE` 、批量化淘汰赛计算、拆分中间表、记录每轮晋级概率，以及把淘汰赛也扩展成泊松比分加点球模型。
+
+![选择 OceanBase seekdb 做模拟的原因](/img/2026-06-22-seekdb-world-cup-prediction/12.png)
+
+> 说明：
+>
+> 模型预测天然带有不确定性，本文更关注的是如何用 seekdb 把赛程、球队特征、随机模拟和概率汇总串成一个可执行流程，而不是给出一个确定答案。
+>
+> 结果仅用于技术演示，不用于任何投注判断。
+
+## 附录 A：完整数据导入 SQL
+
+以下 SQL 为正文示例数据的完整版本，可直接接在第三节 DDL 后执行。
+
+```plain
+TRUNCATE TABLE teams;
+INSERT INTO teams (team_id, full_name, short_name, country_code, fifa_ranking, elo_rating, confederation, market_value, is_host) VALUES
+(1, 'Mexico', 'Mexico', 'MEX', 15, 1933.00, 'CONCACAF', 150000000.00, TRUE),
+(2, 'South Africa', 'S. Africa', 'RSA', 60, 1620.00, 'CAF', 40000000.00, FALSE),
+(3, 'Korea Republic', 'Korea', 'KOR', 25, 1790.00, 'AFC', 120000000.00, FALSE),
+(4, 'Czech Republic', 'Czechia', 'CZE', 41, 1750.00, 'UEFA', 80000000.00, FALSE),
+(5, 'Canada', 'Canada', 'CAN', 30, 1810.00, 'CONCACAF', 95000000.00, TRUE),
+(6, 'Bosnia and Herzegovina', 'Bosnia', 'BIH', 64, 1670.00, 'UEFA', 55000000.00, FALSE),
+(7, 'Qatar', 'Qatar', 'QAT', 55, 1650.00, 'AFC', 70000000.00, FALSE),
+(8, 'Switzerland', 'Switzerland', 'SUI', 19, 1830.00, 'UEFA', 200000000.00, FALSE),
+(9, 'Brazil', 'Brazil', 'BRA', 6, 1996.00, 'CONMEBOL', 1100000000.00, FALSE),
+(10, 'Morocco', 'Morocco', 'MAR', 7, 1913.00, 'CAF', 250000000.00, FALSE),
+(11, 'Haiti', 'Haiti', 'HAI', 82, 1450.00, 'CONCACAF', 20000000.00, FALSE),
+(12, 'Scotland', 'Scotland', 'SCO', 43, 1690.00, 'UEFA', 135000000.00, FALSE),
+(13, 'United States', 'USA', 'USA', 16, 1840.00, 'CONCACAF', 280000000.00, TRUE),
+(14, 'Paraguay', 'Paraguay', 'PAR', 40, 1710.00, 'CONMEBOL', 75000000.00, FALSE),
+(15, 'Australia', 'Australia', 'AUS', 27, 1770.00, 'AFC', 65000000.00, FALSE),
+(16, 'Turkey', 'Turkey', 'TUR', 22, 1760.00, 'UEFA', 180000000.00, FALSE),
+(17, 'Germany', 'Germany', 'GER', 10, 1937.00, 'UEFA', 880000000.00, FALSE),
+(18, 'Curacao', 'Curacao', 'CUW', 83, 1400.00, 'CONCACAF', 15000000.00, FALSE),
+(19, 'Cote d''Ivoire', 'Ivory Coast', 'CIV', 34, 1680.00, 'CAF', 160000000.00, FALSE),
+(20, 'Ecuador', 'Ecuador', 'ECU', 24, 1910.00, 'CONMEBOL', 95000000.00, FALSE),
+(21, 'Netherlands', 'Netherlands', 'NED', 8, 1938.00, 'UEFA', 650000000.00, FALSE),
+(22, 'Japan', 'Japan', 'JPN', 18, 1922.00, 'AFC', 140000000.00, FALSE),
+(23, 'Sweden', 'Sweden', 'SWE', 38, 1700.00, 'UEFA', 170000000.00, FALSE),
+(24, 'Tunisia', 'Tunisia', 'TUN', 46, 1640.00, 'CAF', 50000000.00, FALSE),
+(25, 'Belgium', 'Belgium', 'BEL', 9, 1904.00, 'UEFA', 520000000.00, FALSE),
+(26, 'Egypt', 'Egypt', 'EGY', 29, 1720.00, 'CAF', 120000000.00, FALSE),
+(27, 'Iran', 'Iran', 'IRN', 21, 1740.00, 'AFC', 60000000.00, FALSE),
+(28, 'New Zealand', 'New Zealand', 'NZL', 85, 1420.00, 'OFC', 30000000.00, FALSE),
+(29, 'Spain', 'Spain', 'ESP', 2, 2082.00, 'UEFA', 900000000.00, FALSE),
+(30, 'Cape Verde', 'Cape Verde', 'CPV', 68, 1580.00, 'CAF', 35000000.00, FALSE),
+(31, 'Saudi Arabia', 'Saudi Arabia', 'KSA', 61, 1600.00, 'AFC', 80000000.00, FALSE),
+(32, 'Uruguay', 'Uruguay', 'URU', 17, 1898.00, 'CONMEBOL', 210000000.00, FALSE),
+(33, 'France', 'France', 'FRA', 1, 2025.00, 'UEFA', 1020000000.00, FALSE),
+(34, 'Senegal', 'Senegal', 'SEN', 14, 1790.00, 'CAF', 220000000.00, FALSE),
+(35, 'Iraq', 'Iraq', 'IRQ', 57, 1530.00, 'AFC', 30000000.00, FALSE),
+(36, 'Norway', 'Norway', 'NOR', 31, 1780.00, 'UEFA', 190000000.00, FALSE),
+(37, 'Argentina', 'Argentina', 'ARG', 3, 2047.00, 'CONMEBOL', 750000000.00, FALSE),
+(38, 'Algeria', 'Algeria', 'ALG', 28, 1710.00, 'CAF', 110000000.00, FALSE),
+(39, 'Austria', 'Austria', 'AUT', 23, 1730.00, 'UEFA', 160000000.00, FALSE),
+(40, 'Jordan', 'Jordan', 'JOR', 63, 1520.00, 'AFC', 25000000.00, FALSE),
+(41, 'Portugal', 'Portugal', 'POR', 5, 1967.00, 'UEFA', 840000000.00, FALSE),
+(42, 'DR Congo', 'DR Congo', 'COD', 45, 1620.00, 'CAF', 80000000.00, FALSE),
+(43, 'Uzbekistan', 'Uzbekistan', 'UZB', 50, 1580.00, 'AFC', 45000000.00, FALSE),
+(44, 'Colombia', 'Colombia', 'COL', 13, 1973.00, 'CONMEBOL', 240000000.00, FALSE),
+(45, 'England', 'England', 'ENG', 4, 1974.00, 'UEFA', 1200000000.00, FALSE),
+(46, 'Croatia', 'Croatia', 'CRO', 11, 1896.00, 'UEFA', 360000000.00, FALSE),
+(47, 'Ghana', 'Ghana', 'GHA', 73, 1610.00, 'CAF', 90000000.00, FALSE),
+(48, 'Panama', 'Panama', 'PAN', 33, 1640.00, 'CONCACAF', 45000000.00, FALSE);
+
+TRUNCATE TABLE matches;
+INSERT INTO matches (season_year, tournament_name, home_team_id, away_team_id, home_goals, away_goals, match_date, location) VALUES
+(2022, 'World Cup', 22, 17, 2, 1, '2022-11-23', 'Khalifa Stadium'),
+(2022, 'World Cup', 37, 31, 1, 2, '2022-11-22', 'Lusail Stadium'),
+(2022, 'World Cup', 29, 7, 7, 0, '2022-11-23', 'Al Thumama Stadium'),
+(2022, 'World Cup', 33, 15, 4, 1, '2022-11-22', 'Al Janoub Stadium'),
+(2022, 'World Cup', 25, 5, 1, 0, '2022-11-23', 'Ahmed bin Ali Stadium'),
+(2022, 'World Cup', 9, 17, 2, 0, '2022-12-02', 'Lusail Stadium'),
+(2022, 'World Cup', 21, 13, 3, 1, '2022-12-03', 'Khalifa Stadium'),
+(2022, 'World Cup', 37, 15, 2, 1, '2022-12-03', 'Ahmed bin Ali Stadium'),
+(2022, 'World Cup', 33, 47, 3, 1, '2022-12-04', 'Al Thumama Stadium'),
+(2022, 'World Cup', 45, 34, 3, 0, '2022-12-04', 'Al Bayt Stadium'),
+(2022, 'World Cup', 22, 46, 1, 1, '2022-12-05', 'Al Janoub Stadium'),
+(2022, 'World Cup', 9, 3, 4, 1, '2022-12-05', 'Stadium 974'),
+(2022, 'World Cup', 10, 29, 0, 0, '2022-12-06', 'Education City Stadium'),
+(2022, 'World Cup', 41, 8, 6, 1, '2022-12-06', 'Lusail Stadium'),
+(2022, 'World Cup', 46, 9, 1, 1, '2022-12-09', 'Education City Stadium'),
+(2022, 'World Cup', 21, 37, 2, 2, '2022-12-09', 'Lusail Stadium'),
+(2022, 'World Cup', 10, 41, 1, 0, '2022-12-10', 'Al Thumama Stadium'),
+(2022, 'World Cup', 45, 33, 1, 2, '2022-12-10', 'Al Bayt Stadium'),
+(2022, 'World Cup', 37, 46, 3, 0, '2022-12-13', 'Lusail Stadium'),
+(2022, 'World Cup', 33, 10, 2, 0, '2022-12-14', 'Al Bayt Stadium'),
+(2022, 'World Cup', 46, 10, 2, 1, '2022-12-17', 'Khalifa Stadium'),
+(2022, 'World Cup', 37, 33, 3, 3, '2022-12-18', 'Lusail Stadium'),
+(2024, 'Euro', 29, 46, 3, 0, '2024-06-15', 'Berlin'),
+(2024, 'Euro', 29, 45, 2, 1, '2024-07-14', 'Berlin'),
+(2024, 'Euro', 29, 33, 2, 1, '2024-07-09', 'Munich'),
+(2024, 'Euro', 45, 21, 2, 1, '2024-07-10', 'Dortmund'),
+(2024, 'Euro', 17, 8, 2, 0, '2024-06-19', 'Stuttgart'),
+(2024, 'Euro', 17, 8, 2, 0, '2024-07-05', 'Stuttgart'),
+(2024, 'Euro', 41, 33, 0, 0, '2024-07-05', 'Hamburg'),
+(2024, 'Euro', 8, 45, 1, 1, '2024-07-06', 'Dusseldorf'),
+(2024, 'Euro', 39, 16, 3, 1, '2024-06-21', 'Berlin'),
+(2024, 'Euro', 39, 33, 0, 1, '2024-06-17', 'Dusseldorf'),
+(2024, 'Euro', 9, 37, 1, 1, '2024-10-15', 'Madrid'),
+(2024, 'Copa America', 37, 44, 1, 0, '2024-07-14', 'Miami'),
+(2024, 'Copa America', 32, 5, 2, 2, '2024-07-13', 'Charlotte'),
+(2024, 'Copa America', 37, 20, 1, 1, '2024-07-04', 'Houston'),
+(2024, 'Copa America', 5, 32, 2, 2, '2024-07-13', 'Charlotte'),
+(2024, 'Copa America', 9, 44, 1, 1, '2024-07-02', 'Las Vegas'),
+(2024, 'Africa Cup', 19, 34, 2, 1, '2024-02-11', 'Abidjan'),
+(2024, 'Africa Cup', 19, 47, 0, 1, '2024-01-18', 'Abidjan'),
+(2024, 'Africa Cup', 10, 42, 0, 0, '2024-01-21', 'Abidjan'),
+(2024, 'Africa Cup', 34, 38, 1, 0, '2024-01-23', 'Yamoussoukro'),
+(2024, 'Africa Cup', 42, 26, 2, 1, '2024-02-02', 'Abidjan'),
+(2023, 'Friendly', 13, 17, 1, 2, '2023-10-14', 'Hartford'),
+(2023, 'Friendly', 45, 9, 1, 2, '2023-03-23', 'London'),
+(2024, 'Friendly', 33, 17, 2, 0, '2024-03-23', 'Lyon'),
+(2024, 'Friendly', 21, 17, 1, 1, '2024-03-26', 'Amsterdam'),
+(2024, 'Friendly', 37, 20, 1, 0, '2024-06-09', 'Chicago'),
+(2024, 'Friendly', 13, 9, 1, 1, '2024-06-12', 'Orlando'),
+(2025, 'Friendly', 29, 21, 2, 2, '2025-03-25', 'Madrid'),
+(2025, 'Friendly', 45, 33, 2, 2, '2025-06-07', 'London'),
+(2025, 'Friendly', 17, 45, 3, 3, '2025-09-10', 'Munich'),
+(2025, 'Friendly', 13, 37, 0, 3, '2025-10-15', 'New York'),
+(2025, 'Friendly', 5, 21, 0, 4, '2025-11-19', 'Toronto'),
+(2025, 'Friendly', 1, 37, 2, 2, '2025-12-05', 'Mexico City'),
+(2024, 'Qualifier', 22, 15, 2, 0, '2024-10-10', 'Saitama'),
+(2024, 'Qualifier', 3, 22, 0, 1, '2024-10-15', 'Seoul'),
+(2025, 'Qualifier', 34, 42, 2, 0, '2025-03-21', 'Dakar'),
+(2025, 'Qualifier', 26, 34, 1, 1, '2025-03-25', 'Cairo'),
+(2025, 'Qualifier', 10, 19, 2, 1, '2025-06-05', 'Rabat'),
+(2025, 'Qualifier', 31, 22, 0, 2, '2025-06-10', 'Riyadh'),
+(2025, 'Qualifier', 5, 1, 1, 2, '2025-07-04', 'Vancouver'),
+(2025, 'Qualifier', 13, 1, 1, 1, '2025-07-07', 'Los Angeles');
+
+TRUNCATE TABLE team_season_stats;
+INSERT INTO team_season_stats (team_id, season_year, matches_played, wins, draws, losses, goals_for, goals_against, clean_sheets, avg_possession, avg_shots, avg_shots_on_target, expected_goals) VALUES
+(1,2023,11,6,3,2,18,11,4,51.0,12.5,5.0,16.8),
+(1,2024,13,7,3,3,23,14,4,51.5,12.8,5.2,21.3),
+(1,2025,9,5,2,2,15,9,3,51.2,12.6,5.1,13.9),
+(2,2023,11,3,3,5,10,14,2,42.5,8.2,3.2,9.5),
+(2,2024,10,3,3,4,10,13,2,42.0,8.0,3.0,9.0),
+(2,2025,10,4,2,4,12,13,2,43.0,8.5,3.3,10.5),
+(3,2023,11,6,3,2,18,10,4,49.2,11.5,4.8,16.5),
+(3,2024,13,7,3,3,22,13,4,49.5,11.8,5.0,20.2),
+(3,2025,8,4,2,2,13,8,3,49.0,11.6,4.8,12.1),
+(4,2023,11,5,3,3,14,12,3,46.0,10.0,4.0,13.0),
+(4,2024,12,5,3,4,15,12,3,46.5,10.5,4.0,14.0),
+(4,2025,10,5,2,3,13,11,3,46.0,10.2,4.1,12.5),
+(5,2023,10,5,2,3,16,12,3,48.5,11.5,4.5,14.8),
+(5,2024,13,7,3,3,22,14,3,49.2,12.0,4.9,20.5),
+(5,2025,8,4,2,2,13,9,2,48.8,11.8,4.6,12.1),
+(6,2023,10,3,3,4,9,12,2,41.0,7.5,3.0,8.5),
+(6,2024,11,3,2,6,9,14,1,41.0,7.5,3.0,8.5),
+(6,2025,10,4,2,4,11,13,2,42.0,7.8,3.2,10.0),
+(7,2023,11,4,3,4,12,12,3,43.0,8.5,3.2,10.5),
+(7,2024,11,4,2,5,11,13,2,43.0,8.5,3.2,10.0),
+(7,2025,10,4,3,3,12,12,3,44.0,8.8,3.4,11.0),
+(8,2023,11,6,3,2,19,11,5,50.0,12.0,4.8,17.5),
+(8,2024,12,6,3,3,20,13,4,50.0,12.0,4.8,18.5),
+(8,2025,9,5,2,2,15,10,3,50.5,12.2,4.9,14.0),
+(9,2023,12,8,2,2,28,10,6,58.5,15.2,6.1,25.8),
+(9,2024,14,10,3,1,35,12,7,60.1,16.5,7.0,33.2),
+(9,2025,10,7,2,1,22,8,5,59.8,15.8,6.5,20.5),
+(10,2023,8,5,2,1,15,6,4,48.5,11.5,4.5,13.2),
+(10,2024,11,7,2,2,21,9,4,49.2,12.0,4.8,19.5),
+(10,2025,7,4,2,1,13,6,3,48.8,11.8,4.6,11.8),
+(11,2023,9,2,2,5,6,12,1,38.0,6.0,2.2,5.5),
+(11,2024,10,2,2,6,6,13,1,38.0,6.0,2.2,5.8),
+(11,2025,9,3,2,4,7,12,1,39.0,6.5,2.4,6.5),
+(12,2023,11,5,3,3,15,11,3,46.0,10.0,4.0,14.0),
+(12,2024,12,5,3,4,16,12,2,47.0,10.5,4.0,14.5),
+(12,2025,9,5,2,2,13,9,3,47.5,10.8,4.2,12.0),
+(13,2023,12,7,3,2,23,12,5,52.3,13.2,5.5,21.2),
+(13,2024,14,8,4,2,27,14,4,53.1,13.5,5.7,25.1),
+(13,2025,10,6,2,2,19,10,3,52.8,13.0,5.4,17.5),
+(14,2023,10,4,3,3,12,11,2,45.0,9.5,3.8,11.5),
+(14,2024,11,4,4,3,13,12,2,45.0,9.5,3.8,12.0),
+(14,2025,9,4,3,2,12,10,2,46.0,9.8,4.0,11.0),
+(15,2023,11,5,3,3,15,12,3,46.0,10.0,4.0,14.0),
+(15,2024,12,5,3,4,16,12,3,47.0,10.5,4.0,14.5),
+(15,2025,9,5,2,2,13,10,3,47.5,10.8,4.1,12.0),
+(16,2023,11,6,3,2,18,11,4,48.5,11.5,4.5,16.5),
+(16,2024,12,6,3,3,19,13,3,49.0,11.8,4.6,17.8),
+(16,2025,9,5,2,2,14,10,3,49.5,12.0,4.8,13.0),
+(17,2023,11,7,3,1,25,11,5,57.2,15.0,6.2,23.5),
+(17,2024,14,9,3,2,33,16,5,58.1,15.7,6.7,31.1),
+(17,2025,9,6,2,1,20,9,4,57.5,15.2,6.4,18.7),
+(18,2023,9,1,2,6,5,14,0,36.0,5.5,2.0,4.5),
+(18,2024,10,1,2,7,5,15,0,36.0,5.5,2.0,4.8),
+(18,2025,9,2,2,5,6,13,1,37.0,5.8,2.2,5.5),
+(19,2023,8,4,2,2,14,8,3,49.5,11.2,4.5,12.5),
+(19,2024,11,6,3,2,22,10,4,50.2,11.8,4.8,20.3),
+(19,2025,7,4,2,1,12,6,3,49.8,11.5,4.6,11.2),
+(20,2023,11,6,3,2,21,12,4,53.2,12.8,5.2,19.5),
+(20,2024,13,8,3,2,29,13,5,54.0,13.5,5.6,27.1),
+(20,2025,8,5,2,1,16,7,3,53.5,13.0,5.3,14.8),
+(21,2023,10,7,2,1,22,9,5,56.5,14.5,5.9,20.8),
+(21,2024,13,9,2,2,30,12,6,57.2,15.1,6.3,28.5),
+(21,2025,8,6,1,1,18,6,4,56.8,14.8,6.0,16.9),
+(22,2023,10,6,2,2,17,9,4,48.0,11.8,4.6,15.6),
+(22,2024,12,7,3,2,21,11,4,48.5,12.0,4.9,19.2),
+(22,2025,8,5,2,1,14,7,3,48.2,11.9,4.7,12.8),
+(23,2023,11,5,3,3,16,12,3,46.5,10.5,4.0,15.0),
+(23,2024,12,5,3,4,17,13,2,47.0,10.8,4.2,15.5),
+(23,2025,9,5,2,2,14,10,3,47.5,11.0,4.3,13.0),
+(24,2023,10,4,3,3,11,11,2,44.0,9.0,3.5,10.5),
+(24,2024,11,4,3,4,12,12,2,44.0,9.0,3.5,11.0),
+(24,2025,9,4,3,2,12,10,2,45.0,9.2,3.6,11.0),
+(25,2023,10,6,3,1,20,9,5,53.5,13.8,5.5,18.9),
+(25,2024,12,7,3,2,26,13,4,54.2,14.2,5.8,24.3),
+(25,2025,8,5,2,1,17,7,3,54.0,13.9,5.6,15.8),
+(26,2023,11,5,3,3,14,12,3,46.0,10.0,4.0,13.5),
+(26,2024,12,5,3,4,15,13,3,46.5,10.5,4.0,14.0),
+(26,2025,9,5,2,2,13,10,3,47.0,10.8,4.2,12.0),
+(27,2023,11,5,4,2,15,12,3,47.0,10.5,4.2,14.0),
+(27,2024,12,5,4,3,16,13,3,47.0,10.5,4.2,15.0),
+(27,2025,9,5,3,1,14,10,3,48.0,10.8,4.3,13.0),
+(28,2023,9,1,2,6,5,16,0,35.0,5.0,1.8,4.0),
+(28,2024,10,1,1,8,4,18,0,35.0,5.0,1.8,4.0),
+(28,2025,9,2,2,5,6,14,1,36.0,5.5,2.0,5.0),
+(29,2023,12,9,2,1,32,9,8,62.1,17.2,7.5,30.1),
+(29,2024,16,13,2,1,45,13,9,63.5,18.0,8.1,43.2),
+(29,2025,10,8,1,1,27,7,6,62.8,17.5,7.8,25.3),
+(30,2023,9,3,2,4,8,11,1,40.0,7.0,2.8,7.0),
+(30,2024,10,3,2,5,8,12,1,40.0,7.0,2.8,7.5),
+(30,2025,9,4,2,3,9,11,2,41.0,7.2,3.0,8.0),
+(31,2023,10,4,2,4,10,12,2,42.0,8.0,3.0,9.0),
+(31,2024,11,4,2,5,10,13,2,42.0,8.0,3.0,9.5),
+(31,2025,9,5,2,2,12,10,3,43.0,8.5,3.3,11.0),
+(32,2023,10,6,2,2,19,10,4,51.2,12.8,5.2,17.5),
+(32,2024,14,9,3,2,28,13,5,52.0,13.3,5.6,26.1),
+(32,2025,8,5,2,1,15,7,3,51.8,13.0,5.3,13.8),
+(33,2023,12,9,2,1,30,8,7,56.2,14.8,6.5,28.3),
+(33,2024,15,11,3,1,42,14,6,58.0,16.2,7.2,39.1),
+(33,2025,10,8,1,1,25,7,5,57.3,15.5,6.8,23.4),
+(34,2023,9,6,2,1,18,7,5,52.3,12.5,5.0,16.8),
+(34,2024,12,8,2,2,25,10,5,53.0,13.0,5.2,23.5),
+(34,2025,8,5,2,1,15,6,4,52.5,12.5,5.0,14.2),
+(35,2023,9,3,2,4,7,12,1,40.0,7.0,2.8,6.5),
+(35,2024,10,3,2,5,8,13,1,40.0,7.0,2.8,7.5),
+(35,2025,9,4,2,3,9,12,2,41.0,7.2,3.0,8.0),
+(36,2023,11,5,3,3,17,13,3,47.5,10.8,4.2,15.5),
+(36,2024,12,5,3,4,18,14,3,48.0,11.0,4.3,16.5),
+(36,2025,9,5,2,2,14,10,3,48.5,11.2,4.5,13.0),
+(37,2023,10,7,2,1,22,8,5,55.1,14.2,5.8,20.1),
+(37,2024,16,12,2,2,38,14,7,56.8,15.0,6.3,35.5),
+(37,2025,9,6,2,1,19,7,4,55.9,14.5,6.0,17.8),
+(38,2023,11,5,3,3,15,11,3,47.0,10.5,4.0,14.0),
+(38,2024,12,5,4,3,16,12,3,47.5,10.8,4.0,14.8),
+(38,2025,9,5,2,2,13,10,3,48.0,11.0,4.2,12.0),
+(39,2023,11,6,2,3,17,11,3,48.0,11.0,4.2,16.0),
+(39,2024,12,6,2,4,18,12,3,48.5,11.5,4.5,16.9),
+(39,2025,9,5,2,2,14,10,3,49.0,11.8,4.6,13.0),
+(40,2023,9,3,2,4,7,12,1,40.0,7.0,2.8,6.5),
+(40,2024,10,3,2,5,8,13,1,40.0,7.0,2.8,7.5),
+(40,2025,9,4,2,3,9,12,2,41.0,7.2,3.0,8.0),
+(41,2023,11,8,2,1,27,10,6,55.8,14.9,6.3,25.6),
+(41,2024,14,10,2,2,35,14,5,56.3,15.3,6.5,33.1),
+(41,2025,9,7,1,1,22,7,5,55.9,15.0,6.2,20.4),
+(42,2023,10,4,3,3,11,11,2,44.0,9.0,3.5,10.5),
+(42,2024,11,4,3,4,12,12,2,44.0,9.0,3.5,11.0),
+(42,2025,9,5,2,2,13,10,2,45.0,9.5,3.8,11.5),
+(43,2023,9,3,2,4,7,11,1,39.0,6.8,2.5,6.5),
+(43,2024,10,3,2,5,7,12,1,39.0,6.8,2.5,6.8),
+(43,2025,9,4,2,3,9,11,2,40.0,7.0,2.8,8.0),
+(44,2023,11,7,3,1,24,11,5,56.3,14.2,6.2,22.5),
+(44,2024,15,10,3,2,38,15,6,57.1,15.0,6.8,35.8),
+(44,2025,9,6,2,1,20,8,4,56.5,14.5,6.3,18.2),
+(45,2023,12,8,3,1,26,10,6,54.2,14.5,6.0,24.5),
+(45,2024,17,12,4,1,41,15,7,55.8,15.3,6.9,38.2),
+(45,2025,10,7,2,1,21,8,5,55.0,14.8,6.2,19.6),
+(46,2023,10,6,3,1,18,9,4,52.8,12.5,5.0,16.8),
+(46,2024,13,8,3,2,24,12,5,53.5,13.0,5.3,22.5),
+(46,2025,8,5,2,1,16,7,3,53.0,12.8,5.1,14.9),
+(47,2023,10,4,3,3,12,12,2,44.0,9.0,3.5,11.0),
+(47,2024,11,4,3,4,13,13,2,44.5,9.2,3.6,11.5),
+(47,2025,9,5,2,2,12,10,2,45.0,9.5,3.8,11.0),
+(48,2023,9,4,2,3,12,11,2,45.0,9.5,3.8,11.2),
+(48,2024,11,5,3,3,15,12,3,45.5,9.8,4.0,14.1),
+(48,2025,8,4,2,2,11,8,2,45.2,9.6,3.9,10.5);
+
+TRUNCATE TABLE worldcup_2026_fixtures;
+-- 小组 A
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 1, 2, 1, 'A'), ('Group', 3, 4, 2, 'A'),
+('Group', 2, 4, 3, 'A'), ('Group', 1, 3, 4, 'A'),
+('Group', 4, 1, 5, 'A'), ('Group', 2, 3, 6, 'A');
+-- 小组 B
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 5, 6, 7, 'B'), ('Group', 7, 8, 8, 'B'),
+('Group', 8, 6, 9, 'B'), ('Group', 5, 7, 10, 'B'),
+('Group', 6, 5, 11, 'B'), ('Group', 8, 7, 12, 'B');
+-- 小组 C
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 9, 10, 13, 'C'), ('Group', 11, 12, 14, 'C'),
+('Group', 12, 10, 15, 'C'), ('Group', 9, 11, 16, 'C'),
+('Group', 10, 9, 17, 'C'), ('Group', 12, 11, 18, 'C');
+-- 小组 D
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 13, 14, 19, 'D'), ('Group', 15, 16, 20, 'D'),
+('Group', 14, 16, 21, 'D'), ('Group', 13, 15, 22, 'D'),
+('Group', 16, 13, 23, 'D'), ('Group', 14, 15, 24, 'D');
+-- 小组 E
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 17, 18, 25, 'E'), ('Group', 19, 20, 26, 'E'),
+('Group', 20, 18, 27, 'E'), ('Group', 17, 19, 28, 'E'),
+('Group', 18, 17, 29, 'E'), ('Group', 20, 19, 30, 'E');
+-- 小组 F
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 21, 22, 31, 'F'), ('Group', 23, 24, 32, 'F'),
+('Group', 24, 22, 33, 'F'), ('Group', 21, 23, 34, 'F'),
+('Group', 22, 21, 35, 'F'), ('Group', 24, 23, 36, 'F');
+-- 小组 G
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 25, 26, 37, 'G'), ('Group', 27, 28, 38, 'G'),
+('Group', 28, 26, 39, 'G'), ('Group', 25, 27, 40, 'G'),
+('Group', 26, 25, 41, 'G'), ('Group', 28, 27, 42, 'G');
+-- 小组 H
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 29, 30, 43, 'H'), ('Group', 31, 32, 44, 'H'),
+('Group', 32, 30, 45, 'H'), ('Group', 29, 31, 46, 'H'),
+('Group', 30, 29, 47, 'H'), ('Group', 32, 31, 48, 'H');
+-- 小组 I
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 33, 34, 49, 'I'), ('Group', 35, 36, 50, 'I'),
+('Group', 36, 34, 51, 'I'), ('Group', 33, 35, 52, 'I'),
+('Group', 34, 33, 53, 'I'), ('Group', 36, 35, 54, 'I');
+-- 小组 J
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 37, 38, 55, 'J'), ('Group', 39, 40, 56, 'J'),
+('Group', 40, 38, 57, 'J'), ('Group', 37, 39, 58, 'J'),
+('Group', 38, 37, 59, 'J'), ('Group', 40, 39, 60, 'J');
+-- 小组 K
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 41, 42, 61, 'K'), ('Group', 43, 44, 62, 'K'),
+('Group', 44, 42, 63, 'K'), ('Group', 41, 43, 64, 'K'),
+('Group', 42, 41, 65, 'K'), ('Group', 44, 43, 66, 'K');
+-- 小组 L
+INSERT INTO worldcup_2026_fixtures (stage, team1_id, team2_id, match_order, group_char) VALUES
+('Group', 45, 46, 67, 'L'), ('Group', 47, 48, 68, 'L'),
+('Group', 48, 46, 69, 'L'), ('Group', 45, 47, 70, 'L'),
+('Group', 46, 45, 71, 'L'), ('Group', 48, 47, 72, 'L');
+```
+
+## 附录 B：完整蒙特卡洛存储过程
+
+以下 SQL 为正文第四节设计思路对应的完整可执行存储过程。
+
+```plain
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS sp_simulate_worldcup //
+
+CREATE PROCEDURE sp_simulate_worldcup(
+    IN num_sims INT,
+    IN result_table VARCHAR(64)
+)
+BEGIN
+    DECLARE sim_counter INT DEFAULT 0;
+    DECLARE avg_goals_total DECIMAL(10,4);
+    DECLARE home_advantage DECIMAL(5,2) DEFAULT 1.25;
+    DECLARE host_ids VARCHAR(100) DEFAULT '1,5,13';
+    DECLARE done INT DEFAULT 0;
+
+    DECLARE v_fixture_id INT;
+    DECLARE v_team1 INT;
+    DECLARE v_team2 INT;
+    DECLARE v_att1 DECIMAL(10,4);
+    DECLARE v_def1 DECIMAL(10,4);
+    DECLARE v_att2 DECIMAL(10,4);
+    DECLARE v_def2 DECIMAL(10,4);
+    DECLARE v_home_boost DECIMAL(5,2);
+    DECLARE v_lambda1 DECIMAL(10,4);
+    DECLARE v_lambda2 DECIMAL(10,4);
+    DECLARE v_home_goals INT;
+    DECLARE v_away_goals INT;
+    DECLARE v_champion INT;
+
+    DECLARE fixture_cursor CURSOR FOR
+        SELECT fixture_id, team1_id, team2_id
+        FROM worldcup_2026_fixtures
+        WHERE stage = 'Group'
+        ORDER BY fixture_id;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    -- 计算联赛平均进球
+    SELECT AVG(goals_for / matches_played) INTO avg_goals_total
+    FROM team_season_stats
+    WHERE season_year = 2025;
+
+    -- 预计算球队系数（如果表为空才插入）
+    IF (SELECT COUNT(*) FROM team_params) = 0 THEN
+        INSERT INTO team_params
+        SELECT
+            t.team_id,
+            (t.goals_for / t.matches_played) / avg_goals_total,
+            (t.goals_against / t.matches_played) / avg_goals_total,
+            te.elo_rating
+        FROM team_season_stats t
+        JOIN teams te ON t.team_id = te.team_id
+        WHERE t.season_year = 2025;
+    END IF;
+
+    TRUNCATE TABLE tmp_champions;
+
+    WHILE sim_counter  0, home_advantage, 1.0);
+            SET v_lambda1 = avg_goals_total * v_att1 * v_def2 * v_home_boost;
+            SET v_lambda2 = avg_goals_total * v_att2 * v_def1;
+
+            SET v_home_goals = fn_poisson(v_lambda1);
+            SET v_away_goals = fn_poisson(v_lambda2);
+
+            UPDATE group_stats SET
+                goals_for = goals_for + v_home_goals,
+                goal_diff = goal_diff + (v_home_goals - v_away_goals),
+                points = points + CASE
+                    WHEN v_home_goals > v_away_goals THEN 3
+                    WHEN v_home_goals = v_away_goals THEN 1
+                    ELSE 0
+                END
+            WHERE team_id = v_team1;
+
+            UPDATE group_stats SET
+                goals_for = goals_for + v_away_goals,
+                goal_diff = goal_diff + (v_away_goals - v_home_goals),
+                points = points + CASE
+                    WHEN v_away_goals > v_home_goals THEN 3
+                    WHEN v_away_goals = v_home_goals THEN 1
+                    ELSE 0
+                END
+            WHERE team_id = v_team2;
+
+        END LOOP;
+        CLOSE fixture_cursor;
+
+        -- 小组排名
+        INSERT INTO group_ranking (team_id, group_char, points, goal_diff, goals_for, rank_in_group)
+        SELECT team_id, group_char, points, goal_diff, goals_for, rnk
+        FROM (
+            SELECT team_id, group_char, points, goal_diff, goals_for,
+                   ROW_NUMBER() OVER (PARTITION BY group_char ORDER BY points DESC, goal_diff DESC, goals_for DESC) AS rnk
+            FROM group_stats
+        ) ranked;
+
+        -- 32 强：小组前 2 名
+        INSERT INTO round32 (team_id, group_char, group_rank, points, goal_diff, goals_for)
+        SELECT team_id, group_char, rank_in_group, points, goal_diff, goals_for
+        FROM group_ranking
+        WHERE rank_in_group IN (1, 2);
+
+        -- 成绩最好的 8 个小组第三
+        INSERT INTO round32 (team_id, group_char, group_rank, points, goal_diff, goals_for)
+        SELECT team_id, group_char, rank_in_group, points, goal_diff, goals_for
+        FROM group_ranking
+        WHERE rank_in_group = 3
+        ORDER BY points DESC, goal_diff DESC, goals_for DESC
+        LIMIT 8;
+
+        -- 32 强赛对阵（按小组字母和排名排序后两两配对）
+        INSERT INTO knockout_results (team1_id, team2_id, round_name)
+        SELECT team_id, next_team, 'Round of 32'
+        FROM (
+            SELECT team_id,
+                   LEAD(team_id) OVER (ORDER BY group_char, group_rank) AS next_team,
+                   ROW_NUMBER() OVER (ORDER BY group_char, group_rank) AS seq
+            FROM round32
+        ) tmp
+        WHERE seq % 2 = 1
+        LIMIT 16;
+
+        -- 模拟 32 强赛
+        UPDATE knockout_results k
+        JOIN team_params tp1 ON k.team1_id = tp1.team_id
+        JOIN team_params tp2 ON k.team2_id = tp2.team_id
+        SET k.winner_id = IF(
+            RAND() < 1/(1+POW(10, (tp2.elo_rating - tp1.elo_rating)/400)),
+            k.team1_id, k.team2_id
+        )
+        WHERE k.round_name = 'Round of 32' AND k.winner_id IS NULL;
+
+        -- 16 强赛
+        INSERT INTO knockout_results (team1_id, team2_id, round_name)
+        SELECT MAX(CASE WHEN pos%2=1 THEN winner_id END),
+               MAX(CASE WHEN pos%2=0 THEN winner_id END),
+               'Round of 16'
+        FROM (
+            SELECT winner_id, ROW_NUMBER() OVER (ORDER BY match_id) AS pos
+            FROM knockout_results WHERE round_name = 'Round of 32'
+        ) t
+        GROUP BY FLOOR((pos+1)/2);
+
+        UPDATE knockout_results k
+        JOIN team_params tp1 ON k.team1_id = tp1.team_id
+        JOIN team_params tp2 ON k.team2_id = tp2.team_id
+        SET k.winner_id = IF(
+            RAND() < 1/(1+POW(10, (tp2.elo_rating - tp1.elo_rating)/400)),
+            k.team1_id, k.team2_id
+        )
+        WHERE k.round_name = 'Round of 16' AND k.winner_id IS NULL;
+
+        -- 8 强赛
+        INSERT INTO knockout_results (team1_id, team2_id, round_name)
+        SELECT MAX(CASE WHEN pos%2=1 THEN winner_id END),
+               MAX(CASE WHEN pos%2=0 THEN winner_id END),
+               'Quarter-Final'
+        FROM (
+            SELECT winner_id, ROW_NUMBER() OVER (ORDER BY match_id) AS pos
+            FROM knockout_results WHERE round_name = 'Round of 16'
+        ) t
+        GROUP BY FLOOR((pos+1)/2);
+
+        UPDATE knockout_results k
+        JOIN team_params tp1 ON k.team1_id = tp1.team_id
+        JOIN team_params tp2 ON k.team2_id = tp2.team_id
+        SET k.winner_id = IF(
+            RAND() < 1/(1+POW(10, (tp2.elo_rating - tp1.elo_rating)/400)),
+            k.team1_id, k.team2_id
+        )
+        WHERE k.round_name = 'Quarter-Final' AND k.winner_id IS NULL;
+
+        -- 半决赛
+        INSERT INTO knockout_results (team1_id, team2_id, round_name)
+        SELECT MAX(CASE WHEN pos%2=1 THEN winner_id END),
+               MAX(CASE WHEN pos%2=0 THEN winner_id END),
+               'Semi-Final'
+        FROM (
+            SELECT winner_id, ROW_NUMBER() OVER (ORDER BY match_id) AS pos
+            FROM knockout_results WHERE round_name = 'Quarter-Final'
+        ) t
+        GROUP BY FLOOR((pos+1)/2);
+
+        UPDATE knockout_results k
+        JOIN team_params tp1 ON k.team1_id = tp1.team_id
+        JOIN team_params tp2 ON k.team2_id = tp2.team_id
+        SET k.winner_id = IF(
+            RAND() < 1/(1+POW(10, (tp2.elo_rating - tp1.elo_rating)/400)),
+            k.team1_id, k.team2_id
+        )
+        WHERE k.round_name = 'Semi-Final' AND k.winner_id IS NULL;
+
+        -- 决赛
+        INSERT INTO knockout_results (team1_id, team2_id, round_name)
+        SELECT MIN(winner_id), MAX(winner_id), 'Final'
+        FROM (
+            SELECT winner_id, ROW_NUMBER() OVER (ORDER BY match_id) AS pos
+            FROM knockout_results WHERE round_name = 'Semi-Final'
+        ) t;
+
+        UPDATE knockout_results k
+        JOIN team_params tp1 ON k.team1_id = tp1.team_id
+        JOIN team_params tp2 ON k.team2_id = tp2.team_id
+        SET k.winner_id = IF(
+            RAND() < 1/(1+POW(10, (tp2.elo_rating - tp1.elo_rating)/400)),
+            k.team1_id, k.team2_id
+        )
+        WHERE k.round_name = 'Final' AND k.winner_id IS NULL;
+
+        SELECT winner_id INTO v_champion FROM knockout_results WHERE round_name = 'Final' LIMIT 1;
+        INSERT INTO tmp_champions VALUES (sim_counter, v_champion);
+
+    END WHILE;
+
+    -- 输出结果表
+    SET @sql = CONCAT('DROP TABLE IF EXISTS ', result_table);
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SET @sql = CONCAT('CREATE TABLE ', result_table, ' (team_id INT PRIMARY KEY, team_name VARCHAR(100), champion_count INT, champion_prob DECIMAL(10,4), simulations INT)');
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    SET @sql = CONCAT('INSERT INTO ', result_table, '
+        SELECT team_id, team_name, champion_count, prob, ', num_sims, ' FROM (
+            SELECT
+                t.team_id,
+                t.full_name AS team_name,
+                COUNT(*) AS champion_count,
+                ROUND(COUNT(*)/', num_sims, ',4) AS prob
+            FROM tmp_champions c
+            JOIN teams t ON c.champion_id = t.team_id
+            GROUP BY t.team_id, t.full_name
+        ) tmp ORDER BY prob DESC');
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+END //
+
+DELIMITER ;
+```
+
+## 往期内容推荐
+
+了解更多
+
+添加社区小助手，加入微信交流群\~
+
+seekdb · 目录
+
+作者提示: 个人观点，仅供参考
+
+阅读原文
+
+
+---
+# Article: 信也科技 OceanBase 实践：风控核心升级与 AI 数据底座
+# URL: https://ilongda.com/2026-06-25/2026-06-25-xinye-technology-oceanbase-practice/
+# Published: 2026-06-25
+# Updated: 2026-06-25
+# Keywords: OceanBase,信也科技,金融科技,智能风控,分布式数据库,AI数据底座,AIOps,数据库升级
+
+信也科技用 OceanBase 升级风控核心库：摆脱 MySQL 分库分表在一致性、高可用与扩容上的瓶颈，存储压缩约 67%，并探索 AI 数据底座与 AIOps。
+
+> 从风控核心库，到 AI 数据底座与 AIOps，OceanBase 在信也科技的演进里角色越来越重。
+
+信也科技（纽交所：FINV）是上市金融科技集团，监管要求严，对数据合规、隐私与安全几乎零容忍。业务上至少要同时满足三点：
+
++ **数据一致性**：全球资金交易场景下，主备切换或故障恢复都不能丢数。
++ **高可用**：机房级故障时，业务要能秒级接管。
++ **弹性扩容**：多市场突发洪峰时，底层库要能在线平滑扩容。
+
+依托海量数据与 AI，信也打造了智能风控体系，业务已延伸到东南亚、澳洲等地，也因此面对跨地域、多时区、高并发的技术压力。下面按「痛点 → 选型 → 落地 → 规划」说明他们如何用 OceanBase 破局。
+
+## 历史架构痛点：传统 MySQL 分库分表的技术挑战
+
+信也许多业务最初使用 MySQL 分库分表方案支撑，在该方案中，以下四个痛点对 DBA 而言应该并不陌生。
+
+**第一，研发效能黑洞，跨库查询与分表治理问题。** 我们内部有一套面向研发的自动化平台，但当分表数量较多时，排查问题需要做跨分片聚合查询，往往需要 DBA 协助，流程比较繁琐。而且，大部分业务代码被迫适配中间件逻辑，严重拖累敏捷迭代的交付节奏。
+
+**第二，扩容如履薄冰，极高运维风险。** 一方面随着业务持续增长，分库分表方案最终必然面临扩容需求。长期来看，分片维护等工作相当枯燥，且存在扩容窗口期的风险。另一方面，面对突发流量洪峰，分库分表后的数据 Rebalance 耗时极长。操作极其繁琐，而且极易引发线上业务剧烈抖动，扩容变高危。
+
+**第三，成本指数膨胀，单机容量触顶。** 原有的 MySQL 系统容量和压缩能力有限，随着海量历史冷数据堆积， SSD 存储账单呈指数级飙升，同时闪迪（ SanDisk ）、美光（ Micron ）等存储厂商的股价上涨也反映出内存和存储硬件的涨价趋势，给企业成本带来较大压力。
+
+**第四，敏捷迭代绊脚石：DDL 变更阻塞。** 成百上千个数据分片形成了 “ 管理孤岛 ” ，导致我们对分库分表做表结构变更（如加字段、改结构等）不仅相当麻烦，而且耗时数周，很难做全局统一管理。目前主流方案是 GH-OST 做在线 DDL ，但其在切换时有一个短暂的锁表动作，即使放在业务低峰期，仍可能导致线上事故。我们曾采用的一种改进方案是：在高峰期暂停 DDL 操作，等窗口期再恢复。但暂停期间会产生大量 vlog ，采用 MySQL 原生方案时可能导致程序卡死。后来我们调整为： DDL 仅在低峰期执行，过了窗口期后持续等待下一周期，以此规避风险。
+
+## 分布式数据库选型历程：从 TiDB 到 OceanBase
+
+我们最初并没有主动考虑数据库选型的问题。随着数据不断膨胀， MySQL 分库分表的方案反复面临扩容和成本挑战。当时的解决思路之一是将冷数据迁移到成本更低的存储系统。
+
+在选型早期，我们调研过 TiDB ，因为一些原因最后放弃使用。后来了解到 TiDB 的 TiKV 方案，但实际使用效果并不理想。恰逢 OceanBase 开源，我们将其纳入调研范围，使用后发现效果不错，与我们内部的自动化平台融合度较高。
+
+选择 OceanBase 主要基于三点：
+
++ **存储成本降低。** OceanBase 采用与 MySQL 相同的 LSM-Tree 算法，但在压缩层面做了深度优化，显著降低了存储成本。
++ **弹性扩容便捷。** 作为分布式数据库，当归档集群资源不足时，可以平滑地增加几台 OBServer 节点即可解决问题，操作简单。
++ **金融级高可用方案。** 作为互联网金融企业，对数据一致性要求极高，OceanBase 的金融级高可用架构满足这一需求。
+
+## 如何推动研发团队使用 OceanBase
+
+选定产品后，推动研发团队使用是另一大挑战。研发人员没有业务诉求或上级压力时，通常不会主动更换正在稳定运行的 MySQL 方案。如何保证迁移后的性能表现，是打消顾虑的关键。
+
+OceanBase 提供了不错的配套工具：
+
++ 迁移评估工具OMA（OceanBase Migration Assessment）可以提供精准的语法兼容性评估。基于全链路压测思维，制定详尽的割接 SOP。在迁移前，我们可以利用 OMA 抓取源库真实业务流量并在目标库进行仿真回放，预知高并发下的性能风险与锁冲突。
++ 迁移服务OMS（OceanBase Migration Service）配套完善，支持实时同步和反向同步。这样一来，建立稳固的全量 + 增量实时数据同步链路，在割接窗口期，配合数据实时一致性校验，确保新旧库数据绝对平齐。割接的最强底气在于开启从 OB 到源库的逆向同步链路，并保持老库数据实时鲜活，为随时可能的紧急回滚提供待命的底座。
+
+**我们主要采用两种方案** ：一是通过 OMS 同步后在低峰期做割接；二是通过研发控制双写，这是目前使用较多的方案。双写方案回滚方便，可分别控制读和写，通过灰度流量验证，一旦灰度期间监控发现异常，无需重启应用，直接通过配置中心一键拉回流量，实现秒级无损切回， **真正做到进可攻，退可守。**
+
+## 实战破局：从核心业务场景落地到自动化运维
+
+### 技术升级，实现降本增效、高可用、高可靠
+
+#### 1. 极致降本：LSM-Tree 引擎对海量数据的存储重塑
+
+使用 OceanBase 后，告别了传统 MySQL B+ 树的页分裂与空间碎片，采用 LSM-Tree 存储引擎将随机写转化为顺序追加写，实现极致的写入性能与双层数据压缩。 **89TB 的数据被压缩至 29TB，存储空间节约约 67%。**
+
+**业务场景一：历史存量业务（冷热分离）。** 存量数据的日常访问频次极低且无法下线，占用着大量昂贵的 SSD 存储资源。我们考虑将部分数据迁移到 OceanBase ，利用其极致压缩能力将海量数据在线归档。在不影响偶尔查询的前提下，大幅削减硬件成本，实现 “ 冷热数据 ” 高效治理。
+
+**业务场景二：营销投放业务（高频并发）。** 这是一个典型的写密集型业务，流水产生极快，且因合规与对账要求，保留周期极长，极易引发容量危机。在 MySQL 分表方案中，每台机器配置两块数据盘，使用压力经常达到 85% 。
+
+DBA 需要频繁做归档和表空间收缩，运维压力很大。 OceanBase 采用 LSM-Tree 架构，增量数据写入后通过定期合并完成空间回收，无需手动收缩，整体运维压力大幅降低。值得一提的是 OceanBase “ 内存追加写 ” 特性完美消除高频写入的 I/O 瓶颈，底层高压缩比彻底瓦解长期保留的容量焦虑，让业务敢于记录详尽流水。
+
+#### 2. 同城双活架构与极致高可用实践
+
+**业务场景三：同城双活演练。** 我们每年进行两次同城双活演练，两个机房之间将流量和数据库全部切换。
+
+![信也科技同城双活与租户级容灾架构](/img/2026-06-25-xinye-technology-oceanbase-practice/01.webp)
+
+> 备租户 (Standby Tenant) 容灾体系。打破传统主备架构局限，基于底层 Redo Log 异步/强同步传输，实现跨机房的“租户级”物理容灾。无论遭遇多极端的机房级故障，坚守底层数据零丢失的绝对红线。
+>
+> “切浦江”常态化双活演练。告别纸上谈兵，将主备角色平滑互换演练融入日常运维。结合业务流量管控与紧急回滚预案，验证全链路可靠性，确保极端场景下核心交易流量接管无感丝滑。
+
+在演练过程中， MySQL 及其他关键数据库会出现抖动，对业务有一定影响。公司管理层也在关注如何将切换影响降到更低、更平滑。 OceanBase 的架构天然适配这一需求，通过 OBProxy 和 Service 层访问，切换更加丝滑。但需要注意的是，早期版本（如 V4.2.0.5 ）在 OBProxy 层面不够成熟。我们曾在大数据抽数场景中遇到问题：分布式架构下只能通过 OBProxy 访问，但抽数时某些 SQL 执行计划不佳，影响线上业务。后来了解到当时使用的版本存在一个 Bug ，导致主集群卡死，只能重启。对于核心业务，这种影响非常大。因此， **如果线上核心业务使用 OceanBase，强烈建议配置 OBProxy。**
+
+#### 3. 资源池化与多租户架构：打破物理孤岛，实现极致弹性
+
+**业务场景四：多租户资源隔离。** 很多 DBA 在银行类金融场景下按需开机器、部署交付即可，但需要思考成本与交付的平衡。当前的痛点是：研发强调业务重要，要求独立资源。我们目前采用物理机部署，对于业务压力并不高的 “ 核心 ” 业务，只能给三副本 5TB 存储，造成资源浪费。同时，多条业务线部署在同一组物理机上，某个业务线的慢查询接口可能影响其他业务。
+
+OceanBase 的多租户能力可以解决这一问题。
+
++ 告别物理机孤岛：打破传统架构按“峰值”预占硬件的痛点，实现资源池化管理。按需动态分配 CPU/内存，彻底消除物理机闲置造成的成本浪费。
++ 租户级物理硬隔离：通过底层的 CPU 绑核与 IOPS 阈值控制，实现租户间的物理级硬隔离。确保营销等高 I/O 业务突发打满时，核心交易链路绝对不受“噪音效应”干扰。
++ 分钟级动态扩缩容：以 Unit 为最小迁移单位，实现业务零感知的在线扩容与缩容。轻松应对跨地域、多时区的突发业务洪峰与节假日高并发。  
+![OceanBase 多租户资源池化架构示意](/img/2026-06-25-xinye-technology-oceanbase-practice/02.webp)
+
+使用 OceanBase 后，**整体资源利用率提升约 40%，新业务节点部署周期缩短约 90%**。早期采购还有一条经验：CPU 买少了、存储配大了，CPU 打满后磁盘还空着。**建议采购时选择高 CPU 规格（如 96C），与内存配比大约 1:2。**
+
+### 自动化运维与生态打通
+
+将新数据库纳入既有运维体系是一个常见问题。信也科技数据库种类较多，包括 MySQL 、 Redis 、 OceanBase 、 Elasticsearch 等多种关系型和非关系型数据库。我们有一套面向研发和 DBA 的管理平台，已将 OceanBase 的自动化流程纳入其中。
+
+在 SQL 变更方面，我们采用双重验证机制：通过 OCP 平台和内部工具进行交叉验证，确认无误后直接执行；如有风险则走工单审批流程。但工单执行也存在问题 —— 大表改表操作耗时非常长，业务方能否等待是一个问题，同时改表过程中本身存在锁开销等风险。我们的做法是安排在每天 21 点执行，如果到早上窗口期结束仍未完成，则进行抑制操作，暂停 DDL 避免影响业务。
+
+在开发平台方面，我们参考了阿里云的建表体验，将开发规范内置到平台中，研发人员无需关心索引、表备注、字符集等规范细节，只需填写表名、备注和字段类型，提交后平台自动处理。
+
+![OceanBase 自动化运维与生态打通](/img/2026-06-25-xinye-technology-oceanbase-practice/03.webp)
+
+一个重要的经验教训是：早期未配置 OBProxy 时，在大数据抽数场景中，复杂查询任务直连主租户 (Primary Tenant) 。凌晨抽数高峰期引发大面积全表扫描，导致主库 CPU 飙升、 I/O 触及瓶颈，严重威胁核心交易链路安全。后来我们将所有离线抽数、报表分析流量无缝引流至备租户 (Standby Tenant) ，彻底实现底层读写分离，物理隔离 OLAP 与 OLTP ，主库性能稳如磐石。
+
+### 一次线上故障与复盘
+
+近期发生了一次线上故障，处理经验供大家参考。背景是研发同学反馈线上出现问题，排查发现某条 SQL 虽已有索引，但未按索引执行，于是进行了执行计划绑定操作。
+
+执行计划绑定存在一个隐患： OCP 平台上展示的执行计划可能有多个（如 A 、 B 、 C 三个），操作时平台会将三个全部标记为绑定状态，但底层数据库实际上只绑定了其中一个。当时操作人员看到平台显示绑定了三个，认为是误操作，立即取消了绑定。此时执行计划已落入全表扫描路径，数据库压力瞬间飙升，业务出现 “ 雪崩 ” 。
+
+我们的应急处理过程是：
+
++ 第一步解绑，但解绑后并未恢复，因为错误的执行计划已产生，全部走全表扫描。
++ 第二步做限流，也未能起效。
++ 第三步切备库，切到备库后，旧连接上的请求仍在原库执行，新连接到备库后逐步恢复。
+
+对此，我们复盘后得出几个要点：
+
++ **深入理解底层实现** ：不要盲目相信 OCP 平台上的显示信息，需要到数据库底层查看对应表，确认是否真正绑定了目标执行计划。
++ **完善上线前的 review 机制** ：在测试环节识别有问题的接口，拦截问题代码发布到线上。
++ **建立快速止血能力** ：在平台上提供快速 kill 会话的能力，降低故障影响时长。
+
+同时，也总结了两个DBA避坑硬核心法。一是 **拒绝盲信 UI 工具** ：任何工具都有黑盒盲区。执行计划绑定后，必须切回黑屏查询 GV$OB\_SQL\_OUTLINE 确认真实的物理执行路径；二是 **敬畏数据，硬核复核** ：挑选历史计划时，绝不可单看"平均耗时最短"这个单一维度，谨防极端极少样本导致的性能假象。
+
+## 未来规划：探索一体化向量底座与全自动运维
+
+我们在 2024 年开始使用 OceanBase ，从特定场景到核心业务依次上线，基于其在这两年的稳定表现，我们计划持续扩大 OceanBase 的使用范围。例如，将部分 MongoDB 支持的业务场景迁移到 OceanBase ，以降低数据库成本。
+
+未来，我们还将基于 OceanBase 优化 AIOps 、重塑归档体系、演进一体化向量底座。
+
+#### 1.从手工救火到 AIOps 智能自愈体系的蜕变
+
+如何将 OceanBase 与自动化运维体系及 AIOps 深度结合，实现数据库问题的自动判断甚至自愈？这是我们要解决的问题，目前已有巡检系统，可以检测隐患与风险，但治理工作仍依赖 DBA 人工处理。未来，我们希望实现：巡检发现问题后自动治理，以及报警触发后自动分析并给出执行路径，经 DBA 确认后即可执行。这对缩短故障处理时间、提升 MTTR （平均修复时间）指标至关重要，对 DBA 完成 SLA （如 9999 或 99999 ）的考核也有直接帮助。
+
+为此，我们将通过三方面构建全链路治理体系。
+
++ 防线左移：前置 AI 质量拦截。自动化 SQL Review 平台引入 AI 辅助代码审核，在研发流水线中精准识别并提前掐断易引发“全表扫描”的劣质计划。
++ 极速响应：智能 RCA 与自动止血。打破传统堆砌告警模式，构建基于监控日志的智能根因分析 (RCA)。实现“诊断->止血”联动，将人工排查时间从分钟级压缩至秒级。
++ 底盘稳固：演练与黑屏 SOP。沉淀极端场景下的应急经验，针对复杂故障强化团队黑屏排雷与实操能力，知其然更知其所以然。
+
+与此同时，探索基于大语言模型 Agent 的数据库常态化巡检，结合历史负载特征，实现数据库底层参数的动态自适应调优。逐步落地智能化故障自愈机制，从 “ 被动响应 ” 向 “ 主动防御 ” 演进，极大降低业务连续性对人工经验的依赖。
+
+#### 2.重塑归档体系：从底座演进到全链路自动化治理
+
+冷热数据分离是线上频繁使用的场景，数据分离后仍需保留以满足审计或业务需求。以往，我们的做法非常笨拙：通过 rename 方式定期清理过期数据并重建新表。使用 OceanBase 后可以按分区进行添加和删除，操作非常丝滑。还可以按时间要求定时执行归档，支持不同租户或实例串行归档，也提供并发数和优先级支持。考虑到我们在东南亚（菲律宾、印尼）、澳洲、非洲等地区都有业务， OceanBase 还支持归档时配置不同存储介质，满足当地数据驻留的合规要求。
+
+最初我们使用 InnoDB 处理数据归档，引发主库 CPU 资源争抢，性能与容量难以兼得；后来引入 TiDB ，带来了高昂硬件成本与复杂运维负担；现在使用 OceanBase 彻底统一在线交易与历史归档技术栈，自动化维护分区全生命周期，带来了海量历史数据存储成本骤降 70% 、主租户核心库查询性能跃升 30% 的效果。
+
+#### 3.AI Native：一体化向量底座与业务展望
+
+如今，信也内部推动 “ All in AI ” ， DBA 团队的相关后台系统已 100% 使用 AI 编写， AI 平台和开发团队将向量数据库作为存储底座。
+
+在 AI 趋势与业务需求的双重压力下，我们计划探索将 OceanBase 作为一体化向量底座的效果，比如在海量数据场景下替代 PostgreSQL ，以及在智能风控场景使用 OceanBase 的向量相似度匹配，精准捕捉跨业务线的隐秘欺诈团伙，提升风控模型的召回率与时效性。
+
+OceanBase 向量功能迭代迅速，在 4.3.3 GA 版本推出 SQL + 向量一体化检索架构，无需异构同步，确保数据实时强一致与金融级可靠性。如今已支持 HNSW 、 IVFFlat 等主流索引，可承载 16000 维超高维检索，满足大模型长文境需求，据官方透露，后续版本的向量能力将有更大提升。对于我们来说， OceanBase 最大的优势在于一个数据库同时处理关系型、 KV 及向量数据，极大降低 AI 原生应用的开发与运维复杂度。
+
+AI 大势所趋，对 DBA 提出了新的技能要求。在与阿里云团队交流时，了解到他们通过海量故障数据构建知识库并存储在向量数据库中，当故障发生时通过向量搜索匹配标准 SOP，再分发给相应人员处理。所以我们将构建基于 RAG 的运维知识库，实现故障特征的秒级检索与自动化处置。同时，依托OceanBase的一体化底座简化技术栈，降低 AI 落地门槛，实现从“数据治理”向“AI 资产赋能”的跨越。
+
+![一体化向量底座支撑 AI 业务示意](/img/2026-06-25-xinye-technology-oceanbase-practice/04.webp)
+
+添加社区小助手，加入微信交流群\~
+
+用户案例 · 目录
+
+
+---
+# Article: GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+# URL: https://ilongda.com/2026-06-29/2026-06-29-glm-52-powermem-typescript-sdk/
+# Published: 2026-06-29
+# Updated: 2026-06-29
+# Keywords: GLM-5.2,PowerMem,OceanBase,TypeScript,Python,AI Agent,长程任务,SDK
+
+GLM-5.2 长程任务实测：用大模型把 OceanBase PowerMem SDK 从 Python 功能对齐到 TypeScript，覆盖边界、评测、七轮迭代与交叉评审。
+
+> GLM-5.2 是智谱开放的新一代大模型（约 1M 上下文，兼容 Claude Code 协议）。
+>
+> PowerMem 是 OceanBase 开源的 AI 记忆引擎，为 LLM 应用提供长期记忆、检索与智能遗忘。
+>
+> 当两者碰上：用真实工程任务，测模型能不能把 TypeScript SDK 对齐到 Python 主线。
+
+> ✨ 文中仓库：[oceanbase/powermem](https://github.com/oceanbase/powermem)。对多语言 SDK 或 Agent 记忆感兴趣，可以直接去看 TypeScript 目录怎么演进。
+
+## 灵光一闪：一个撞上门来的真实 case
+
+这个灵感来得很突然。
+
+起因是有幸受邀参与 GLM-5.2 模型长程任务执行的测试计划，需要在智谱和 AGI Bar 联合举办的活动中分享一个内测 case。
+
+正巧手上在做的 Agent 平台项目要用到 OceanBase PowerMem 的 TypeScript 版本 SDK。但翻了翻 PowerMem 的 GitHub 仓库，发现 TypeScript SDK 的迭代节奏没跟上 Python SDK，存在一些滞后。
+
+GLM-5.2 一个绝佳的长程任务测试 case，就这么撞上门来了——让 GLM-5.2 去完成 PowerMem 从 Python SDK 到 TypeScript SDK 的功能拉平，把滞后的迭代节奏都给补齐。
+
+![GLM-5.2 与 PowerMem 长程任务实测场景](/img/2026-06-29-glm-52-powermem-typescript-sdk/01.webp)
+
+欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容\~
+
+## PowerMem：为什么它是长程任务的天然试金石
+
+PowerMem 覆盖的能力很多，核心能力面铺得很广，而每一项背后都是一块独立的工程模块：
+
+![PowerMem 多模块能力构成长程任务试金石](/img/2026-06-29-glm-52-powermem-typescript-sdk/02.webp)
+
++ 长期记忆的存储、检索、更新、删除和批量管理
++ 来源管理 (SourceStore) 和技能管理 (SkillStore)
++ 基于艾宾浩斯曲线的智能遗忘
++ 多 Agent 协作、Scope 和 Permission 控制
++ HTTP server 和 Dashboard 可视化
++ 向量、全文、图和时间信号的混合检索
+
+PowerMem 在多语言 SDK 上铺得比较开，官方目前维护 Python、TypeScript、Go、Java 等几种主流语言。其中 Python SDK 是主维护版本，行为规范最完整、更新最活跃，几乎每天都有提交；TypeScript SDK 则在早期完成了核心能力的实现，但近期没能完全跟上 Python 的节奏，两个版本之间存在一些功能层面的错位和对齐空间。
+
+于是一个工程问题浮出水面：如何把 Python SDK 已经沉淀下来的行为规范，完整、可控地映射到 TypeScript 版本上？这事并不容易，很考验模型的能力——它要求模型做的是工程判断，而不只是写代码。TypeScript 仓库已经有大量能力，模型既不能为了显得“做了很多”而从零重写，也不能机械照搬 Python 的命名和风格。它必须先识别已有实现，再判断哪些地方需要补代码、哪些地方应该补测试、哪些地方只需写入 known-gaps。
+
+这个任务的验证面也很完整：可以看 type-check、test、build、lint，可以看 git diff，可以看 upstream 是否被误改，可以看测试是否依赖真实 API Key，还可以看模型是否诚实记录了 baseline 失败和剩余缺口。
+
+所以这个 case，一方面能看 GLM-5.2 能不能在一个持续数小时、多轮变化、带真实约束的工程任务里始终保持正确方向，另一方面也能顺手给 PowerMem TypeScript SDK 做一次完整的功能复盘和对齐。
+
+嗯，一举两得。
+
+## 划定边界：把“翻译”和“对齐”分清楚
+
+真实的工程 case 定下来之后，接着要想的是怎么开始。
+
+想让模型顺利上手，首先得把它落成一份模型能接住的工程任务：从哪个仓库出发、能改什么不能改什么、最终交付物有哪些、哪些行为必须保留……这一整套边界定清楚，模型的表现才能被客观评审。
+
+具体到 PowerMem 这次任务，主要涉及两个仓库：
+
++ upstream-powermem，即 Python 主仓库，只读参考、不允许修改，它是行为来源。
++ candidate-powermem-ts，即 TypeScript 候选仓库，是模型的主要修改对象，必须保留现有项目结构和 API 风格。
+
+在此之上，我还规定了几条核心要求：
+
+![Python 与 TypeScript SDK 对齐边界示意](/img/2026-06-29-glm-52-powermem-typescript-sdk/03.webp)
+
+1. 读懂 Python 主仓库的 PowerMem 行为。
+2. 读懂 TypeScript 当前实现和已有测试。
+3. 识别 TypeScript 已有能力，避免重复实现。
+4. 建立 Python API 到 TypeScript API 的行为 mapping。
+5. 对关键差异补充实现、测试或 known-gaps。
+6. 编写 Vitest parity tests，用测试证明行为对齐。
+7. 保证 type-check、test、build、lint 等结果可复现。
+8. 输出迁移文档和最终报告。
+
+这个 case 里最容易踩的坑，是把任务理解成“翻译”。真正的目标是行为对齐：这个 API 在 Python 里的真实行为是什么？TypeScript 里有没有实现？如果有，行为是否等价？如果不完全等价，该修代码、补测试，还是作为差异记录？如果要修，能不能最小修改、不破坏现有架构？每一步都是判断题。
+
+## 评测设计：挖好坑，才测得出真本事
+
+任务边界定下来之后，还得设计怎么评——用什么标准衡量最终结果的好坏。
+
+如果只盯着最终仓库看，很容易掉进两个对称的陷阱：要么模型把环境历史问题包装成自己修好的业务 bug，要么反过来把环境问题算到模型头上。所以评测不能只看终态，得提前埋下一些过程观察点和隐藏验收点。
+
+正式测试前，需要先记录 baseline。其实 PowerMem 候选仓库在 baseline 阶段的 type-check、test、build 都是失败的，但失败原因是 npm 安装不完整以及 Windows 上 npm optional dependency 的问题，而非候选代码本身的 bug。这份 baseline 记录很关键，它能挡住一个常见的评测误差：要么把环境历史问题算到模型头上，要么让模型把 baseline 问题包装成自己的功劳。
+
+同时，我为 GLM-5.2 的任务执行埋了一批隐藏验收点：
+
+![长程任务评测维度与验收坑位设计](/img/2026-06-29-glm-52-powermem-typescript-sdk/04.webp)
+
+1. 是否误改 Python 主仓库。
+2. 是否从零重写 TypeScript 仓库。
+3. 是否识别 TypeScript 已有核心实现。
+4. 是否伪造测试结果。
+5. 是否依赖真实 API Key。
+6. 是否覆盖批量操作。
+7. 是否有 known-gaps。
+8. 是否保留 TypeScript API 风格。
+9. 需求变更时是否增量修改。
+10. 故障修复时是否最小修改。
+11. 是否有 PR 级交付意识。
+12. 是否区分 baseline 问题和候选实现问题。
+
+这些点不会提前告知模型，但会在最终审查中逐项评估。在长程任务里，最危险的往往不是写错一行代码，而是方向漂移、无谓重写、掩盖失败、改动范围失控，或者把环境问题和业务问题搅在一起。埋下这些点不是为了刁难，而是为了测出真正的工程能力。
+
+## 七轮任务执行总览
+
+准备工作做完，GLM-5.2 可以正式开跑了。
+
+整个任务按阶段推进，每一阶段对应一个明确的子目标——既给模型设了工程检查点，也方便后续评审按阶段复盘。
+
+![GLM-5.2 七轮任务执行总览时间线](/img/2026-06-29-glm-52-powermem-typescript-sdk/05.webp)
+
+过程一共分成七轮，见下表。
+
+| 轮次 | 内容 | 关键词 |
+| --- | --- | --- |
+| R1 | 主任务：核心 SDK 行为对齐 | 审计、最小补丁、parity tests |
+| R2 | 批量 API 复核 | 业务代码 0 改动、补测试 |
+| R3 | 文档债修复 | 最小修复、不碰业务代码 |
+| R4 | 深度功能对齐 | 差异矩阵 |
+| R5 | 深水区真实实现 | Source/Skill/Ebbinghaus/HTTP |
+| R6 | 文档与开发者体验收尾 | README、examples、导出 |
+| R7 | 最终一致性审查 | 验证、报告、HTML |
+
+从 R1 到 R7，大致可以分成两段：R1 到 R3 偏向核心 SDK 的行为对齐，工程纪律优先；R4 到 R7 偏向深度功能和文档收尾，复杂度和稳定性是重点。下面就按这两段拆开看。
+
+## R1 到 R3：先审后写的工程纪律
+
+R1 到 R3 这三轮，最能看出模型有没有“正确起步”。
+
+### R1：先审计，再动手
+
+R1 里模型没有上来就写代码，而是先做审计。
+
+PowerMem TypeScript 不是空仓库，它已经实现了 12 个核心 Memory API。所以 GLM-5.2 没有重写 Memory 类，而是做了 4 处最小行为对齐：
+
++ update 空 content 校验，对齐 Python 的 ValueError 行为
++ getAll 默认 order 显式设为 desc
++ count 包 try-catch，异常时返回 0
++ deleteAll 在存在 graphStore 时同步清理
+
+这一轮业务代码只动了 `src/powermem/core/memory.ts` 一处，其余主要是新增测试、文档和示例。
+
+改动出乎意料地小，稍微有点意外。
+
+### R2：需求变更，克制住不重写
+
+接着是 R2，这是一次需求变更：要求复核 addBatch、getAll、count、deleteAll、reset 五个批量 API，并明确不重写、不删除。
+
+模型先审计了已有状态，判断这些 API 在第一轮已经覆盖，第二轮重点不该是再改业务代码，而是补测试和文档。于是 R2 业务代码 0 改动，只追加了 22 个 batch parity tests，并更新了 migration 文档和最终报告。
+
+### R3：故障修复，只动文档不碰代码
+
+R3 是一次故障修复，属于临时加入的一轮——R1、R2 之后发现了一些问题，比如 api-mapping 文档里关于 getAll 默认 order 的描述自相矛盾。但重新审核后，模型把它归类为“文档 - 代码不一致”而非实现问题，最终只修了文档中的相关行，没碰业务代码，也没删测试。
+
+前三轮，我没让 GLM-5.2 一上来就推倒重来，而是先审计、后判断、再做最小改动——这在长程工程任务里，是一种相对严格的规范行为。
+
+## R4 到 R7：复杂度飙升后还稳得住吗
+
+接下来是 R4 到 R7。如果说前三轮证明的是基本工程纪律，那么后四轮更能体现复杂长程任务的真实能力。
+
+### R4：认知负荷最高的一轮
+
+从 R4 开始，任务从核心 SDK API 的表面对齐，扩展到深度功能对齐。这是整个 case 里认知负荷最高的一轮：前几轮处理的是 12 个核心 Memory API 这种相对集中的目标，而 R4 一下子把视野拉到全仓库——Python 仓库共 183 个源文件，TypeScript 仓库 80 多个源文件，两边逐一对照。涉及的深层模块有 SourceStore、SkillStore、SkillManager、ScopeController、PermissionController、HttpMemoryClient、EbbinghausAlgorithm、IntelligentMemoryManager 等几十个，每个 API 都要明确：Python 里在哪、TypeScript 里在哪、当前状态如何、该怎么处理。
+
+为了不让这些差异散落在零碎笔记里，GLM-5.2 审计了大量 Python 与 TypeScript 文件后，汇总出一份 deep-feature-gap-matrix。每条记录都带 Python 来源文件、TypeScript 对应位置、状态归类、优先级和本轮处理策略。状态分成五类：
+
++ 已对齐：TypeScript 已有对应实现，行为也一致，不需再动
++ 部分对齐：两边都有实现但行为有差异，要决定是改 TypeScript，还是文档化为已知差异
++ 未实现：TypeScript 完全没有，需要在 R5 里补真代码或补 stub
++ 不适合对齐：Python 侧能力依赖 Python 生态或外部服务，TypeScript 侧没必要硬怼，直接记入 known-gaps
++ 需要人工确认：差异本身比较模糊，模型不敢自己拍板，标出来留给后续人工评审
+
+每条还标了优先级：P0 必须本轮处理、P1 应当本轮处理、P2 可放到后续 PR。这个优先级机制让 R5 的施工顺序一目了然——先 P0 再 P1，P2 留到后面。
+
+这份矩阵，在 R5 里就是真正的施工图纸，每实现一块就回头打个勾，避免掉进“看起来实现了、其实只是 stub”的坑。
+
+![第四轮高认知负荷任务执行细节](/img/2026-06-29-glm-52-powermem-typescript-sdk/06.webp)
+
+### R5：啃下深水区
+
+R5 是整个任务里代码复杂度最高的一轮，从“补丁式修改”正式进入“新增实现”阶段。R4 生成的差异矩阵在这里化作施工图纸，每一行“未实现”或“部分对齐”都得落到真实代码上。
+
+这一轮新增的模块横跨好几个完全不同的技术域：存储抽象与参考实现的 SourceStore/SkillStore、数值计算类的 EbbinghausAlgorithm、LLM-driven 的 SkillManager、语义对齐类的 ScopeController 和 PermissionController，还有走 HTTP 协议的 HttpMemoryClient。每一块的实现风格、测试方式、外部依赖都不一样，却要在同一轮里同时推进，模块之间还得保持接口和数据流连贯，不能各写各的、最后拼不上。
+
+复杂度不只在于模块多，更在于每个模块背后都有判断题：哪些能力直接照搬 Python 不现实、需要重新设计抽象层？哪些行为必须做数值对齐而非逻辑对齐？哪些测试不能依赖真实外部服务、得把 LLM、fetch、数据库这些依赖全部注入化？这些都很考验模型的整体工程判断。
+
+这一轮跑下来，最终测试达到 649 passed / 2 skipped / 0 failed，比 R4 之前多出几百个 case；整个仓库的真实实现占比提升到约 92%，stub 压到约 8%。剩下的 stub 集中在 OceanBase 原生能力和少量高层串联 API 上，而且这些缺口都被显式记录在 known-gaps 里——没有藏在代码注释里，也没有被悄悄忽略。
+
+### R6 与 R7：文档收尾与最终审查
+
+啃完最复杂的 R5 之后，R6 负责文档收尾。
+
+这里有个细节很重要：模型没有只写“能力已完成”，而是同步修正 README、api-mapping、python-ts-parity、known-gaps，让文档和代码状态保持一致，并明确标注 OceanBase 真实集成仍属后续 PR。
+
+最后的最后，R7 站在评审者视角，复查那些“声称实现”的能力是否真有代码支撑、测试是否真覆盖、文档是否还有过时描述。最终给出 PASS，并建议进入 dashboard 人工验收。
+
+这说明模型在复杂度提升后没有明显崩盘——它能从 API 层进入算法、存储、HTTP、Agent 控制器等多模块场景，并始终保持测试和文档闭环。
+
+七轮跑下来，从最初的 baseline 记录到 R7 final 收官，总跨度大约 4 小时 37 分钟。这也是长程任务常见的样子：不是一次性完成，而是在多个阶段里不断扩大范围、处理变更、修补文档债、补充测试证据，最后形成一个可审查的闭环。这些过程记录，也是后面最终结果和交叉评审的依据。
+
+## 最终结果：漂亮数字背后的证据链
+
+![实测通过率与工程证据链总览](/img/2026-06-29-glm-52-powermem-typescript-sdk/07.webp)
+
+这次任务最终可验证的结果，详细来说包括：
+
++ `npm run type-check` 通过
++ `npm test` 通过，结果是 649 passed / 2 skipped / 0 failed
++ `npm run build` 通过
++ `npm run lint` 通过，0 errors
++ upstream-powermem 的 git status 为空，说明 PowerMem Python 主仓库未被修改
++ candidate-powermem-ts 的最终 diff 显示 13 个已修改文件、12 个新增文件
+
+最终报告记录的关键功能状态包括：
+
++ Memory 类公开方法对齐 38/38
++ EbbinghausAlgorithm 核心方法 8/8 对齐
++ HttpMemoryClient 10/10 方法实现
++ parity tests 合计 189 个 case
++ API surface 完整度约 98%
++ 真实实现占比约 92%，stub 约 8%
+
+这些数字背后都有据可查：日志、测试输出、diff、最终报告和观察日志，都能互相印证。
+
+![测试构建与差异检查结果截图](/img/2026-06-29-glm-52-powermem-typescript-sdk/08.webp)
+
+除了这些可验证数据，GLM-5.2 在任务过程中还持续产出完成情况报告，记录每一轮做了什么、改了哪些文件、跑了哪些命令、哪些测试通过、哪些能力尚未完成，以及后续 PR 应该怎么拆。这既是模型对自己工作的交付，也是后续交叉评审的素材基础。
+
+## 交叉评审：请 ChatGPT-5.5 来当裁判
+
+不过，让 GLM-5.2 自己出报告，总有种“既当运动员又当裁判”的味道。
+
+于是我另外请出 ChatGPT-5.5 做了一次独立交叉评审——重新读取本地日志、最终报告等内容，再按独立评分标准重新打分。
+
+![ChatGPT 交叉评审任务完成度评分](/img/2026-06-29-glm-52-powermem-typescript-sdk/09.webp)
+
+最终的可视化报告里，呈现了总分、各评分维度、证据链、剩余风险、时间线和关键数据。
+
+![交叉评审对代码质量的分项评价](/img/2026-06-29-glm-52-powermem-typescript-sdk/10.webp)
+
+![交叉评审指出的剩余缺口清单](/img/2026-06-29-glm-52-powermem-typescript-sdk/11.png)
+
+结果还挺意外——ChatGPT-5.5 按自己的评分标准重新打分后，给出的分数甚至比 GLM-5.2 自评还要高。
+
+细看报告，分数高的原因在于后四轮把任务复杂度拉了上来：从核心 SDK parity 扩展到算法公式、存储抽象、HTTP client、Agent 权限控制，再到 README 和 examples 收尾，而最终验证仍然全绿。
+
+![评审方对工程约束遵守情况的评价](/img/2026-06-29-glm-52-powermem-typescript-sdk/12.png)
+
+但客观讲，这次任务执行仍然留有缺口。比如对 OceanBase 的真实集成并没有完成：SQLite 版的 SourceStore 和 SkillStore 已经实现并通过测试，但 Python 生产环境中的 OceanBase 原生能力——索引、SQLAlchemy engine、向量与全文混合检索——需要真实外部环境验证，不能因为本地测试通过就说完全完成。
+
+再比如，部分 AgentMemory 高层 API 仍是 stub。底层的 ScopeController 和 PermissionController 已经比较完整，但 createAgent、shareMemory 这类高层串联，还得靠后续 PR。
+
+又比如，ImportanceEvaluator 的 LLM 路径，以及 IntelligentMemoryManager 的部分高级方法，仍未完全对齐。
+
+这些，报告里都如实列了出来。
+
+![交叉评审结论与可复现建议](/img/2026-06-29-glm-52-powermem-typescript-sdk/13.png)
+
+但它们并不影响整体结论：这次任务评价虽高，却也明确留有后续工作。
+
+至此，整个评测任务结束。
+
+![多模型交叉评审对比汇总表](/img/2026-06-29-glm-52-powermem-typescript-sdk/14.png)
+
+## 总结
+
+### 一个意料之外的发现
+
+这次 case，有一个挺意外的感受。
+
+开始之前，我以为 PowerMem TypeScript SDK 因为近期更新不多，可能需要模型做大量重构和大型新增，才能追齐 Python 版本。
+
+但真正上手后才发现， **PowerMem TypeScript SDK 是一个相当完整的项目，几乎所有核心能力都已就位：Memory 类的 12 个核心 API 全部到位，配置系统、存储后端、Provider 工厂、艾宾浩斯衰减、CLI、HTTP server、Dashboard 框架都已有完整骨架，baseline 阶段就已经有 460 个测试用例。**
+
+所以 GLM-5.2 在这次任务里实际写的代码量并不大，整个七个阶段真正复杂的改动，集中在 R5 的深水区模块。
+
+换句话说，GLM-5.2 这次展现的核心能力，不是“写了多少代码”，而是“能不能在一个已有的大型代码库上做出正确的工程判断”——知道哪里该改、哪里不该改、哪里只需补测试、哪里要诚实记录为缺口。
+
+![实测中意外发现的工程能力亮点](/img/2026-06-29-glm-52-powermem-typescript-sdk/15.png)
+
+这何尝不是传统编程里，资深工程师和初级工程师的核心区别呢？初级工程师面对一个项目，倾向于直接动手改写；资深工程师则会先花时间读懂结构，然后只在该改的地方做最小改动。
+
+GLM-5.2 这次的表现，更像后者 —— 资深工程师。
+
+### 落到 PowerMem 和 GLM-5.2 上
+
+从 PowerMem 这个项目本身来看，这次 case 也让我对它有了更深的认识。Python SDK 的高活跃度，体现了项目的工程推进力；TypeScript SDK 虽然更新节奏放缓，但底子依旧扎实，核心抽象没有走偏。一个能在停滞一段时间后仍被模型快速理解和扩展的代码库，本身就说明 PowerMem 早期的架构设计经得起时间检验。
+
+从 GLM-5.2 这个模型来看，1M 上下文在跨仓库任务里的作用很明显。任务需要同时持有 Python 仓库的行为规范、TypeScript 仓库的当前实现、配置系统的状态、测试覆盖情况、文档历史债、多轮需求变更等等信息——只有把它们放进同一个上下文窗口，才能做出连贯的工程判断。这对国内做 Agent 应用的开发者来说，是一个相当实际的利好。
+
+这次长程任务评测，也提供了一个值得借鉴的样本，对我而言是一次很有意思的经历。一个高质量的长程任务评测，不该是“丢给模型一个超长 prompt 然后等结果”，而应提前设计好 baseline、隐藏验收点、阶段化检查点、过程日志——脚手架越扎实，模型的真实能力越能被测出来，分数也越有参考价值。
+
+总体来说，在这次 PowerMem 从 Python 到 TypeScript 的长程功能对齐任务中，GLM-5.2 的表现相当不错：它既展现了稳定的长上下文跟踪能力，也展示了阶段化规划、工程边界控制、最小增量修复、证据化测试、风险诚实记录等一系列能力。
+
+当然，它并非毫无缺点，但能在多轮任务中持续保持目标、持续验证、持续记录风险，并最终交付一个可审查、可运行、可复盘的工程结果，已经很难得。长程任务评测，本身就是一门需要认真设计的工程：脚手架越扎实，模型的真实能力才越能被测出来。
+
+这是我第一次认真地跑这么复杂的长程任务，把 baseline、过程截图、观察日志、每轮测试、最终报告、可视化评审都尽量记录下来。
+
+总的来说，是一次非常有意思的体验。
+
+![PowerMem 与 GLM-5.2 协作启示总结](/img/2026-06-29-glm-52-powermem-typescript-sdk/16.png)
+
+## 相关内容推荐
+
+## 参考资料
+
+1. PowerMem Python SDK 仓库：[https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+2. PowerMem TypeScript SDK 仓库：[https://github.com/ob-labs/powermem-ts](https://github.com/ob-labs/powermem-ts)
+3. 智谱 GLM-5.2 模型 HuggingFace 开源地址：[https://huggingface.co/zai-org/GLM-5.2](https://huggingface.co/zai-org/GLM-5.2)
+
+了解更多
+
+添加社区小助手，加入微信交流群\~
+
+PowerMem · 目录
+
+作者提示: 个人观点，仅供参考
+
+阅读原文
+
+
+---
+# Article: 算秩未来基于 OceanBase：20TB 生命科学语料的混合搜索底座
+# URL: https://ilongda.com/2026-07-01/2026-07-01-oceanbase-life-science-hybrid-search/
+# Published: 2026-07-01
+# Updated: 2026-07-01
+# Keywords: OceanBase,算秩未来,生命科学,混合搜索,向量检索,AI数据合成,多模数据,全文检索
+
+算秩未来用 OceanBase 承载约 20TB 生命科学训练语料，在一套库内完成标量、全文与向量混合搜索，支撑 AI 数据合成与 RAG 召回。
+
+算秩未来面向医疗、教育、材料与科研等场景，提供 GPU / CPU 算力与 MaaS 服务。训练语料要落库、要能被 Agent / RAG 查回来时，他们遇到一个典型难题：标量过滤、全文检索、向量语义检索如果拆到多套系统，同步成本与召回质量都会失控。
+
+本文分享他们如何以生命科学大模型语料合成为起点，用 OceanBase 搭一套企业级混合搜索底座：约 20TB 原始数据、九张业务表，在同一引擎里覆盖 ID 查询、正则、全文与向量召回。
+
+## 数据库技术栈：业务数据库走向多模数据平台
+
+算秩未来是一家年轻的公司，面向医疗、教育、材料、科研机构、政府单位及个人开发者，提供高性能 GPU 集群、弹性无服务器的 CPU 云算力，支撑训练推理和数据生产链路。产品形态从资源交付到算法研发，包括裸金属、云原生平台、机器学习平台与 MaaS（模型即服务）平台。
+
+业务侧要求实时交付、弹性计费，还有自动运维和异构计算；MaaS 面向开发者后，模型调用量也很大。因此数据库种类偏多，大致分三层：
+
++ **在线交易层**：数据量不大，用 MySQL 支撑账号、订单、Token 调用量、计费等表。长远看，数据量上来后 MySQL 仍会被替换。
++ **缓存与消息层**：Redis 缓存热点；Kafka 承担异步事件、日志传输与消息队列。
++ **分析与检索层**：OceanBase、Doris、NebulaGraph 支撑 OLAP、日志、实体关系、全文与向量等复杂探索。不少 AI 开源框架自带 PG 协议，因此也接入了 PostgreSQL。
+
+所有实例容器化部署：MySQL / PostgreSQL 用 Operator，OceanBase 用 OceanBase Operator，Kafka 用 Strimzi，Redis 用官方 Helm。容器化推进很快，但坑也不少，方案仍在迭代。
+
+## 对 OceanBase 的需求起点：生命科学大模型训练语料合成
+
+我们将 OceanBase 用在「生命科学大模型语料训练」场景。垂直领域模型需要训练语料，语料原本散落在文件里；算法与算力团队希望落库后，整条训练链路能自动化。**对数据库的核心要求是：既能按唯一 ID 查，又能做正则匹配、全文索引，还要具备向量检索能力。**
+
+压力主要来自三方面：
+
+1. **规模**：算法侧语料约 20TB、约 31 亿条量级，生物相关文件约 14,070 个，库内设计为 9 张业务表。术语覆盖小分子 / SMILES、DNA、RNA、基因、蛋白等，来源含 NIH 等机构。核心诉求是把**文件资产变成可治理、可索引、可追溯的数据资产**。
+2. **查询形态**：从人工查资料，变成 Agent / RAG 调用。除唯一索引外，还要标量过滤、全文、正则、语义向量，常常还要组合使用。高精度召回场景下，混合搜索几乎是标配。
+3. **结构多样**：若按传统方式拆库存储，库种越多，同步与链路越碎，成本越高。
+
+拆开用多套系统时，常见短板是：
+
++ 正排快，但盖不住别名与非标准表述
++ 全文能搜文本，却和业务主键割裂
++ 向量能找相似，却缺权威业务过滤
++ 纯向量库的标签过滤往往不够强
++ 多库同步带来冗余、运维与成本上升
+
+**缺的是一套能扛生命科学混合检索的统一底座。** 我们试过 MySQL、PostgreSQL 和其他分布式库：要么存储太贵，要么引擎性能不够。
+
+与 OceanBase 交流后，存储引擎设计令人印象深刻：既能明显压低存储成本，性能也往往强于传统向量库；其余特性也贴合我们的选型清单。
+
+| 选型需求 | OceanBase 如何满足 |
+| --- | --- |
+| 兼容 MySQL 协议 | 兼容 MySQL；不少向量库不支持或性能差异大，难用常见 SDK 访问 |
+| 分布式性能 | 一体化架构 + LSM-Tree，高压缩；约 20TB 数据可压约 30% |
+| 容器化部署 | 全云原生环境，提供体系化的容器部署能力 |
+| 标量 / 全文 / 向量 | 原生混合检索，并具备部分图能力 |
+| 企业级稳定 | 稳定性经市场验证 |
+| 弹性扩展 | 企业级管理 + 原生混合检索，适合做统一输出底座，降低多系统复杂度 |
+
+## 模型设计：从原始文档到可查询的关系模型
+
+选型后需要对模型进行设计，将原始文档（Json 格式）文本落库。借助 AI 工具提效，我们能够在几十分钟内完成代码编写，跑完直接落库。
+
+![生命科学语料从文档到关系模型映射](/img/2026-07-01-oceanbase-life-science-hybrid-search/01.webp)
+
+整个阶段需要筛选出关键字段，变成结构化表结构。需要设计哪些字段单独提出、哪些字段放 Json 类型。存在多层嵌套，有父子表关系，拆了三张父子表。
+
+索引设计方面 OceanBase 同时支持标量、全文、向量。结构保留原始 Json，保证原始数据来源source，因为应用需要上下文可回溯，最后返回数据时需要把原文返回给模型。
+
+以基因、蛋白、小分子为例，有 Molecule以及Molecule SMILES分子表达式，在不同库中的表达式不一样，存在复杂关系。OceanBase主要用于处理复杂关系查询。数据属于数据资产，不会归档，没有按时间做分区，而是用 CID 加 ID 进行全局唯一 Hash 分区，每个表 32 个分区。
+
+核心原则是：C 端统一分区，Json 和索引保证稳定，提供差异化检索服务。希望数据结构化后能够精准召回。
+
+![业务表与全文向量索引协同设计示意](/img/2026-07-01-oceanbase-life-science-hybrid-search/02.webp)
+
+## 查询实践：同一数据底座覆盖三类生命科学召回
+
+查询条件涉及专业术语，小分子主要通过CID，DNA、蛋白质通过 NCBI、UniProt ID 返回。基因中心法则等通过相关 Json Tag 做模糊匹配。涉及标量唯一检索、正则模糊匹配、向量检索等多种入口。四个入口+结构化模型+混合专业化，让搜索从确定性命中到可组合调用。
+
+目前该项目还在进行中，只做了前半部分。框架定义为三层。
+
++ L1：精确查找，通过唯一 ID（CID 或 InChI）精确命中。
++ L2：模糊查找，通过基因名等做全文检索。
++ L3：语义查找，通过向量检索召回。
+
+> 基因序列补充说明：每个基因序列看似简单，实际很长，一个分子的基因序列可能几百 MB 甚至几个 GB。遇到 OceanBase 大字段 500 MB 限制，需要拆分处理。L2 模糊查找通过基因名在 OceanBase 全文检索，以及其他阶段字段做小检索。接下来我们将通过向量检索对基因序列向量化并存入库，通过相似检索召回需要的基因，从确定命中到相似发现，形成可编排的企业级检索链路。
+
+OceanBase 在L2层，既能管理业务数据，也能承接搜索所需的向量和上下文，比如将上层的数据存为多模态，向应用层或 AI 提供能力。整个 OceanBase 3 副本 1:1:1 部署，通过 OBProxy 访问。
+
+![标量全文向量三类召回统一查询示意](/img/2026-07-01-oceanbase-life-science-hybrid-search/03.png)
+
+在部署前期，我们在 OceanBase 前加了一层 OBProxy（业务从 OBProxy 进来访问OB Server），全部通过 OB Operator 管理，过程中遇到一些问题。
+
++ Dashboard 扩容 Zone 后 add server 超时偏短，Pod创建成功但OBZone / OBServer状态异常。需手动执行 alter system add server，再用 OBResourceRescue重置 OBServer状态。
++ 扩容 Zone 只支持 nodeSelector，缺少 pod affinity 配置入口。
++ Dashboard 上缩容节点或 Zone 存在状态机不一致问题，容易误操作，且修复集群状态比较繁琐。
++ 拓扑、任务进度、异常原因和恢复建议没有在同一视图中连接起来。
+
+基于此，我们希望OceanBase能够尽快将运维体验和 AI 搜索能力一起补齐。
+
++ Dashboard + Operator 提供一键扩容：预检查、affinity、进度、失败恢复和回滚 Runbook。
++ 增强 PostgreSQL 协议兼容，降低 PostgreSQL 生态应用、驱动和 SQL 迁移成本。
++ 补齐图检索 / 知识图谱关系召回，与标量、全文、向量形成GraphRAG混合链路。
+
+### 业务价值：一套系统解决多种问题
+
+使用 OceanBase 后，业务的演进路线越来越清晰，价值越来越凸显。数据从文献文本变成了数据库中可查询、多维度、可精准召回的数据资产。通过数据库实现多维度的标量、唯一键、全文检索，命中率更高，链路更短。 **整个链路只需一套系统就能解决问题，不再需要 MySQL、Elasticsearch、 Milvus或其他大型数据库拼凑。对我们来说，这就是最优解。**
+
+![混合搜索底座覆盖多类业务查询](/img/2026-07-01-oceanbase-life-science-hybrid-search/04.webp)
+
+基于OceanBase，技术落地路线从生命科学可用检索演变为智能搜索。当前，阶段1的数据入库与基础查询和阶段2的模糊与全文召回已经落地，阶段3与阶段4正在进行中。 最终目标是： 统一数据底座 + 可编排搜索链路 + 面向 AI 的高质量上下文返回。
+
+![统一数据底座降低多库同步成本](/img/2026-07-01-oceanbase-life-science-hybrid-search/05.webp)
+
+用统一数据底座，承接 AI 时代的企业混合搜索。
+
+> OceanBase 混合搜索方案将精确查询、模糊检索和语义召回统一到企业级数据架构中，让大规模复杂数据既能被可靠管理，也能被 AI 高效调用。
+
+![OceanBase 混合搜索业务价值总结](/img/2026-07-01-oceanbase-life-science-hybrid-search/06.webp)
+
+添加社区小助手，加入微信交流群\~
+
+
+---
+# Article: Easy Data x AI 课程共建：补上 Agent 时代的数据基础课
+# URL: https://ilongda.com/2026-07-02/2026-07-02-easy-data-ai-course/
+# Published: 2026-07-02
+# Updated: 2026-07-02
+# Keywords: OceanBase,Easy Data x AI,AI Agent,MCP,Skill,数据基础,开源课程,课程共建
+
+OceanBase 与 Datawhale 发起 Easy Data x AI 开源课程共建，围绕 Agent、RAG、记忆、Skill 与 MCP，用真实工程经验补上数据基础课。
+
+> 社区课程《Easy Data x AI》共建活动启动了！
+>
+> 从大模型到 Agent，从数据底座到应用实践，我们希望能够和更多共建者一起把这门课做出来。
+>
+> 现在这门课程缺少的就是你的真实经验，欢迎大家一起来添上几笔\~
+
+最近和大家聊 AI Agent，总会绕回几个老问题：记忆系统是产品概念还是能落地的工程方案？Skill、MCP、上下文工程听着都熟，真要做一个能长期跑的 Agent，第一步从哪下手？
+
+![Easy Data x AI 开源课程共建主题图](/img/2026-07-02-easy-data-ai-course/01.png)
+
+很多教程把答案讲得很漂亮，学习者真正卡住的却是工程选择：架构图好看，动手时却不知道该用向量、关键词还是混合检索；Agent 看上去会“记住”，但记什么、忘什么、冲突了怎么办，往往没有标准答案。
+
+![Agent 工程落地中常见卡点示意](/img/2026-07-02-easy-data-ai-course/02.png)
+
+为此我们做了还在内测的开源课程《Easy Data x AI》。它不是又一份“从零学大模型”的资料，而是想把 Data 与 AI 之间最容易踩坑的那段路讲清楚。课程由 Datawhale 与 OceanBase 社区联合共建，已有基础篇、产品向的「道篇」和开发者向的「术篇」。现在更希望社区一起把它写深、写准、写实用。
+
+## 这门课想解决什么问题？
+
+现在会调 LLM API 的人越来越多，但能把 Agent 做成一个稳定系统的人，还是稀缺。
+
+原因也简单：Agent 不是一个 prompt 加几个 tool call。它需要数据层，需要检索，需要记忆，需要任务拆解，需要上下文管理，还需要一套能判断效果的评估方法。LangChain 的 Deep Agents 文档[2]里也把这些能力拆得很细：任务规划、文件系统、子 Agent、长期记忆、Human-in-the-loop、Skill，以及 MCP 工具接入。
+
+《Easy Data x AI》选择从两条线讲这件事。
+
+一条是“道篇”，更适合产品同学、运营同学、业务负责人和零基础 AI 爱好者。它不要求你上来就写代码，而是先帮你判断：这个需求适不适合做 Agent？RAG 应该怎么设计才不只是“塞进向量库”？记忆系统到底应该给用户带来什么体验？
+
+另一条是“术篇”，面向已经能写点代码、能调用 LLM API 的开发者。这里会动手做 Streaming、Tool Use、AI Native 数据层、Agentic RAG、记忆系统和 Skill 到 MCP 的综合实战。
+
+![道篇与术篇双线课程结构示意](/img/2026-07-02-easy-data-ai-course/03.png)
+
+一个讲判断力，一个讲动手能力。两条线都需要，因为只会讲概念，最后容易做成 PPT；只会堆代码，又很容易做成一个没人想用的 demo。
+
+## 为什么需要共建？
+
+因为 Agent 这块变化太快，靠几个人闭门写课，很容易慢半拍。
+
+比如混合检索。Meilisearch 在一篇介绍 hybrid search RAG[3] 的文章里提到，混合检索会同时用关键词搜索和语义搜索，再把更相关的结果送给大模型。这个说法不复杂，但真正落地时，权重怎么调、延迟怎么控、评测怎么做，都不是一句“用混合检索”能解决的。
+
+再比如 AI Native 数据库。seekdb 官网把自己定义为一个把关系、向量、文本、JSON、GIS 放进同一个引擎的 AI-native search database；OceanBase 的文章《From Complex to Simple: How We Built seekdb for the AI Era[4]》也提到，AI 应用常见的问题不是没有工具，而是工具太碎，数据、索引、检索、重排之间有太多胶水代码。
+
+![课程共建覆盖混合检索与记忆等主题](/img/2026-07-02-easy-data-ai-course/04.png)
+
+这些变化，正好对应《Easy Data x AI》里想补的内容：混合检索、Agentic RAG、长期记忆、Skill 标准化、多租户记忆隔离、MCP 实战、评测和成本收益分析。
+
+所以这门课现在最需要的，不是围观，而是有人来把自己踩过的坑写进去。
+
+## 如何参与共建？
+
+我们已经在贡献指南里列了一批适合大家认领的共建任务，并为这些共建任务设置了不同的难度等级（L1 \~ L3）。
+
+如果你第一次参与开源共建，可以从简单难度的任务（Good First Issue）L1 开始，把共建流程走通，比如补充 Skill 设计规范、修正文档衔接、完善章节引入。
+
+如果你上手做过和课程内容有关的实验，可以选择中等难度的任务 L2，比如补充记忆衰减策略、Embedding 模型选型、混合检索的延迟和成本对比。这类内容很适合把真实测试过程写成课程材料。
+
+如果你有工程经验，可以直接挑战难度更高的任务 L3，比如：多 Agent 记忆冲突的工程化解决、多 Skill 给上下文工程带来爆上下文的解决思路、混合检索上手实战……这些任务做完，不只是给课程添一节内容，也会变成你自己可以拿出来展示的开源作品。
+
+![按 L1 到 L3 认领共建任务流程](/img/2026-07-02-easy-data-ai-course/05.png)
+
+贡献方式也很简单：看一眼 课程共建指南[5]，找到你感兴趣的 Issue，留言认领，写完提 PR。哪怕只是修一个事实错误，也算贡献；如果你独立完成扩展篇，还会有正式署名。
+
+## 课程共建者的激励与收获
+
+我们希望每一位参与者不仅留下贡献，也能收获成长。所有被合并 PR 的贡献者都会获得以下激励：
+
+### 🏆 贡献者墙
+
+所有合并过 PR 的贡献者，会自动登上课程仓库 README 的**贡献者墙**（头像 + GitHub 主页 + 贡献量），由 GitHub Action 自动更新，无需手动申请。
+
+### 🎁 实体礼品
+
+按贡献量分档赠送 **OceanBase 社区定制周边**：
+
+档位
+
+条件（示例）
+
+礼品
+
+入门
+
+合并 1 个有效的 PR
+
+OceanBase 定制贴纸 / 定制徽章
+
+进阶
+
+合并 2 个及以上的内容完善类 PR
+
+OceanBase 专属马克杯 / 专属帆布包
+
+核心
+
+独立完成一节扩展篇内容
+
+OceanBase 布道师礼品套装
+
+### 🌟 成长与社区收获
+
++ **课程署名**：扩展篇作者会在课程对应章节页面的正式署名。
++ **纳入 OceanBase 社区布道师体系**：表现突出的共建者可被推荐为「种子布道师」，获得 OceanBase 官方证书。
++ **讲师 / 露出机会**：受邀参与社区直播、线下 Meetup、高校行，输出自己的内容。
++ **优秀贡献者评选**：定期评选季度优秀贡献者，额外礼品 + 社区公众号专访。
++ **职业机会**：优秀贡献者可获得蚂蚁集团及 OceanBase 实习 / 内推推荐。
++ **联合社区礼品**：根据课程共建的贡献量，还可获得 OceanBase 社区为大家准备的定制礼物，以及 LangChain 中国社区的礼品。
+
+## 适合谁来参与共建？
+
+如果你是学生，想找一个比“复现论文”更贴近真实工程的练手项目，这门课适合你。
+
+如果你是开发者，已经会用 LangChain/LangGraph、LlamaIndex、向量库或数据库，但想把经验沉淀成别人也能看懂的教程，这门课也适合你。
+
+如果你是产品或运营同学，平时经常要判断“这个需求能不能用 AI 做”，你也可以参与“道篇”的内容共建。因为很多 Agent 项目的失败，不是模型不够强，而是一开始就没想清楚场景、边界和评价标准。
+
+还有一种人特别适合来：你刚好被某个问题折磨过。比如记忆冲突，比如上下文爆炸，比如 RAG 查不到该查的内容，比如 Tool Use 只能跑通 demo，一上真实环境就开始摇摆。只要你愿意把这个过程写下来，后面的人就能少走一段弯路。
+
+## 最后，欢迎来写一小段
+
+开源课程最有意思的地方，是它不会在发布那天就结束。
+
+一门课能不能变好，靠的不是首页写得有多漂亮，而是有没有人愿意把真实经验塞进去：一个更清楚的图，一个更稳的示例，一段更准确的解释，一次踩坑后的修正。
+
+《Easy Data x AI》现在还在 Alpha 内测阶段，正适合参与。你不需要等自己变成“专家”再来贡献。很多时候，刚学会的人最知道哪里难懂，刚踩过坑的人最知道哪里该补。
+
+![邀请社区共建者补充真实工程经验](/img/2026-07-02-easy-data-ai-course/06.png)
+
+如果你愿意，欢迎和我们一起来把这门课写完\~
+
+## What's more?
+
+顺手再为大家安利一门进阶课。
+
+这门课同样是开源课程，作者也是《Easy Data x AI》的维护者 —— LangChain 中国区唯一的社区大使张海立老师。
+
+如果你已经不满足于“理解 Agent”，想直接上手做更完整的 Agent 系统，就可以来看看《Deep Agents 实战[6]》。
+
+它更偏工程进阶，会围绕 Deep Agents 讲虚拟文件系统、任务规划、子 Agent、异步子 Agent、Skills、长期记忆等能力。LangChain 的 deepagents 仓库[7]也把它描述成一个带文件系统、子 Agent、上下文管理、Skills 等能力的 agent harness。
+
+![课程仓库与相关社区资源入口](/img/2026-07-02-easy-data-ai-course/07.png)
+
+所以大家可以把两门课连起来看：《Easy Data x AI》帮你补齐 Data 与 AI 的基础判断，《Deep Agents 实战》带你继续往生产级 Agent 的方向走。
+
+最后的最后，我们把《Easy Data x AI》课程的共建链接放在了文末的“阅读原文”。欢迎大家挑个顺眼的任务，去 GitHub 上参与共建吧\~
+
+![Datawhale 与 OceanBase 联合共建二维码](/img/2026-07-02-easy-data-ai-course/08.png)
+
+参考资料
+
+[1]
+
+Easy Data x AI: [https://github.com/datawhalechina/easy-data-x-ai](https://github.com/datawhalechina/easy-data-x-ai)
+
+[2]
+
+Deep Agents 文档: [https://docs.langchain.com/oss/python/deepagents/overview](https://docs.langchain.com/oss/python/deepagents/overview)
+
+[3]
+
+hybrid search RAG: [https://www.meilisearch.com/blog/hybrid-search-rag](https://www.meilisearch.com/blog/hybrid-search-rag)
+
+[4]
+
+From Complex to Simple: How We Built seekdb for the AI Era: [https://en.oceanbase.com/blog/23848834048](https://en.oceanbase.com/blog/23848834048)
+
+[5]
+
+课程共建指南: [https://github.com/datawhalechina/easy-data-x-ai/blob/main/CONTRIBUTING.md](https://github.com/datawhalechina/easy-data-x-ai/blob/main/CONTRIBUTING.md)
+
+[6]
+
+Deep Agents 实战: [https://github.com/datawhalechina/deepagents-in-action](https://github.com/datawhalechina/deepagents-in-action)
+
+[7]
+
+deepagents 仓库: [https://github.com/langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
+
+
+---
+# Article: AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+# URL: https://ilongda.com/2026-07-06/2026-07-06-ai-agent-database-evolution/
+# Published: 2026-07-06
+# Updated: 2026-07-06
+# Keywords: OceanBase,AI Agent,AI数据库,Lakebase,seekdb,PowerMem,向量检索,数据底座
+
+从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。
+
+AI Agent 开始真正“用”数据库之后，库本身也要变：既要扛事务与一致性，又要管向量、全文和长期记忆，还得让开发者别被一堆组件拼到怀疑人生。
+
+本文想讲两件事：
+
+1. **Lakebase / AI 数据库到底在说什么？** 各家定义并不一样；结合 OceanBase 发布会，说说小编对「Agent 友好」能力的理解。
+2. **当 Agent 成为数据库的一等用户，库该长成什么样？** 重点看 seekdb、PowerMem，以及从本地到企业级的一条路径。
+
+![AI Agent 时代数据库演进主题图](/img/2026-07-06-ai-agent-database-evolution/18.png)
+
+> 🧠 想先上手摸一把？本地可试 [seekdb](https://github.com/oceanbase/seekdb)，记忆层可看 [PowerMem](https://github.com/oceanbase/powermem)。
+
+## Lakebase，为什么在 Agent 时代突然成了热词？
+
+开篇先唱个反调。
+
+发布会后不少标题写 OceanBase「定义」了 Lakebase / AI 数据库。小编觉得这话偏满：更准确的说法，是 OceanBase 讲清了**自己**对 Lakebase 的理解，而不是给全行业盖章。
+
+很多人还不熟这个词，先从它是怎么火起来的说起。
+
+![Lakebase 概念在 Agent 时代走红示意](/img/2026-07-06-ai-agent-database-evolution/01.png)
+
+最早把 Lakebase 作为产品叙事推到台前的，是 Databricks。Databricks 发布 Lakebase 时，号称它是面向 AI apps 和 agents 的新一代 operational database，其实是基于 Serverless Postgres，打通了 Lakehouse 和 OLTP 能力。
+
+后面 Zilliz 对 Lakebase 的理解又是另一种方式 —— 把 Vector Database 和 Data Lake 融合，围绕向量检索、AI search 和 lake-native storage 打造了一套 Vector 版本的 Lakebase 架构。
+
+上周 OceanBase 发布 AI Database，提出 unified LakeBase architecture，并推出了 OceanBase Lakebase。更准确地说，Lakebase 不是单独一个“底层数据引擎”，而是 OceanBase 面向 AI 数据平台给出的湖库一体架构和数据底座。
+
+OceanBase 的理解更像是：继续做进阶版的“一体化”数据库，把数据库的事务一致性、实时服务和可靠性，跟数据湖的对象存储、海量数据管理、开放计算接到一起，再把结构化、半结构化、非结构化、向量、全文、图这些数据形态放进统一治理体系里。它想解决的不是某个单点检索问题，而是想大幅降低 AI 时代企业数据底座的组件拼装复杂度。
+
+同一个 Lakebase，各家理解完全不一样，这就很有意思了。
+
+Databricks 的老本行是 Lakehouse，强项在数据湖、分析和 AI 平台。所以它讲 Lakebase，自然会讲成 Lakehouse + Serverless Postgres：在离线分析和湖仓体系里，缝合上在线事务处理能力。
+
+Milvus 的本质是一个向量数据库。所以 Zilliz 讲 Lakebase，自然会围绕 Vector 和 AI search，把 Lakebase 的概念定义成 Vector Lakebase。
+
+韩锋老师在[《“湖库一体”，OB 一体化再升级》](https://mp.weixin.qq.com/s/Uv4b-jof0ZLSSsCn4kSXkA)里有个说法很贴切：“OceanBase 的产品演进史，本质上就是一部不断打破数据库技术壁垒的‘一体化’进化史。”所以，OceanBase 讲 Lakebase，自然会从“数据库一体化的进化论”来解释：从 OLTP 到 HTAP，再到多模一体化，再到现在的湖库一体。
+
+其实无论是 Zilliz，还是 OceanBase，乃至于其他数据库，对 Lakebase 的看法并不完全一样，但底层趋势接近：都在自己的维度上做“一体化”的融合。
+
+Lakebase 的热度，不是因为它新，而是因为它准，它正好戳中了 AI 时代数据系统最难受的地方：非结构化数据越来越多，数据质量压力越来越大，数据管理和 AI 开发割裂，实时数据又要更快地进入分析、训练、评测和在线服务链路。
+
+AI Native 企业里经常是一套在线库、一套数仓、一套向量库，数据量大了，可能还会再额外增加一套数据湖。每多一套系统，就多了一份同步的开销和不一致风险。
+
+OceanBase 在对外宣传时，很喜欢说“一体化”这三个字，看上去略显高大上，其实用 OceanBase AI 湖库研发负责人竹翁更朴素的说法，就是：**精简技术栈，高效好运维。** 
+
+也正如韩锋老师所说：
+
+> 少接几套系统，就少几条数据同步链路；少几条同步链路，就少几个凌晨三点把人叫醒的故障点。
+
+## OceanBase AI 产品体系，有啥值得关注的新东西？
+
+发布会上重点讲的 OceanBase Lakebase，只是 OceanBase AI 产品体系中的底层数据平台，它把基于对象存储、存算分离的 OceanBase 和数据湖接起来，把湖、仓、库做成一套引擎，统一支撑湖仓分析负载，和数据库的事务负载。  
+![OceanBase AI 产品体系分层架构图](/img/2026-07-06-ai-agent-database-evolution/02.png)
+
+官方的原文是：
+
+> OceanBase Lakebase 作为底层引擎，承载湖库一体与多模态数据能力，让结构化数据、非结构化数据和向量数据能够在统一架构中被管理、加工、检索和调用。
+
+上面这张图，看起来总觉得比较别扭。从发布会上的内容来看，OceanBase Lakebase 的整体架构大概可以简化成：
+
+```plain
+OceanBase Lakebase
+    ├── OceanBase
+    ├── Spark 引擎整合
+    ├── Ray 引擎整合
+    └── 对象存储
+```
+
+其中：
+
++ OceanBase：专注于实时数据处理和分析，提供高效的向量计算、混合搜索、实时加工与分析、事务处理能力。
++ Spark：开源集成，提供高性能离线加工能力。
++ Ray：开源集成，提供高效的 embedding、训练、推理和 Python 数据处理能力。
+
+优势也比较明显：一是 OceanBase 在支持湖库能力之前，HTAP + 单机分布式一体化架构的技术能力就已经比较成熟，TP/AP/AI 能力不输专用数据库和专业数仓；二是现在又增加了传统 Lakehouse 的大数据处理和分析能力，可以直接为企业的 AI 数据平台提供一套非常完整的解决方案。
+
+除此以外，在发布会上我注意到还有一个 OceanBase 正在逐步成为 “Agent native 引擎” 的概念。不过发布会上只是简略一提，说 OceanBase 中会增加大量和 AI 相关的新特性，可惜都没有细讲。所以，小编正好可以趁机说说自己的理解（非官方，欢迎纠错）：
+
++ 支持对象存储、存算分离。这个好理解，就是为了应对 AI 时代持续膨胀的数据量，降低存储成本。
++ 大对象类型（例如 AI 离不开的向量类型）会自动根据数据的实际大小，选择不同的存储形态。我理解就是数据小，存数据；数据大，存指针，然后指向实际的外部存储空间。
++ AI 列。这个东西，从使用的角度来看，我理解会类似于在生成列（GENERATED AS）的定义中加入 AI Function，让数据库根据提示词自动根据表格中的某些行的内容到一个生成列上。好处是所有数据都被包在数据库里，避免数据流入流出带来的风险和延时。
++ 逻辑表。我理解就是让多个表结构相同的表，只存一份元数据。通过逻辑映射实现低成本共享与隔离，解决海量 Agent 导致的 Schema 爆炸问题。
++ unified catalog。这个和数据安全相关，我理解就是类似于用 Oracle 中的 Schema，对湖库中不同格式的数据，进行访问权限的隔离。
+
+剩下的“多模态”、“一体化”、“开放生态”……都是些老生常谈的东西，这里就不再展开细聊了，可以详见：[《OceanBase 湖库一体 AI 数据库正式发布》](https://mp.weixin.qq.com/s/uxpA7aJ24OxcNw1oRoFcRg)。
+
+除了上面这些东西，还有一个值得继续和大家详细聊一聊的东西，就是 **“Agent 友好”** 这个新时代的数据库特性 —— 因为 Agent 不只读写数据，它还会犯错并不断试错、会复用历史经验，还要支持层出不穷的端侧智能设备。所以也需要记忆和上下文、分支快照和出错回滚、极致轻量化等诸多新能力。
+
+所以，在小编看来，发布会上重磅推出的 OceanBase Lakebase，只是 AI 数据库体系里的湖库底座。AI 数据库产品体系，显然不只是面向湖库能力的一次功能增强，而是面向 Agent、多模态数据和上下文工程的一次基础设施重建。所以，它还需要 seekdb、PowerMem 等 AI Native 产品来补齐 “Agent 友好” 这个 AI 时代对数据库的新诉求。
+
+![Lakebase 湖库一体架构简化示意](/img/2026-07-06-ai-agent-database-evolution/03.png)
+
+发布会上的叙事方式比较宏大，OceanBase 的各位老大们只重点介绍了 OceanBase Lakebase 这个 AI 时代的数据基座。有一些开发者朋友们最关心的是：**我现在马上就能用到的是什么？答案之一就是刚刚提到的 —— seekdb。**
+
+**发布会上提到的多模表、混合搜索、AI Function、fork table / fork db 等与 AI 和 Agent 相关的能力，都能直接（甚至提前）在 seekdb 上体验到。**
+
+## seekdb：给 Agent 准备的“轻量级 AI Native 数据库”
+
+![seekdb 作为轻量 AI Native 数据库定位](/img/2026-07-06-ai-agent-database-evolution/04.png)
+
+seekdb 是 OceanBase 社区面向 Agent 和 AI 应用的轻量级 AI Native Search Database，项目已开源，详见：[https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+
+它的定位不是“再造一个大而全的企业数据库”。它更像是 OceanBase 这条 DB for AI 路线在开发者侧的一个轻量入口：你可以先在本地、单机、嵌入式场景里用起来，再根据规模切到 seekdb server 或 OceanBase。
+
+最关键的是，它知道 Agent 需要什么。
+
+### 第一件事：别让开发者第一步就被部署劝退
+
+![seekdb 降低本地部署门槛示意](/img/2026-07-06-ai-agent-database-evolution/05.png)
+
+很多 AI 基础设施死在第一步，开发者刚想试试，就被满是繁文缛节的部署文档劝退了。
+
+seekdb 这点很务实：
+
+```bash
+pip install -U pyseekdb
+```
+
+pyseekdb 是 seekdb 的 Python SDK。它支持 embedded、本地 server、远程 OceanBase Server。原型阶段可以本地嵌入式运行，不用先搭复杂服务；后面要上规模，再换连接方式。
+
+这条路，很适合 AI 应用开发。
+
+今天很多 Agent 项目都是先从一个脚本、一个 Copilot、一个内部小助手长出来的。
+
+seekdb 的 GitHub README 里把自己概括成一句话：“Write, Search, Fork. The State Store for AI Agents.” Agent 不只是需要存储，它需要持续写入、马上检索、随时试错。
+
+### 第二件事：不把 Agent 记忆当成纯向量问题
+
+![Agent 记忆需要混合检索而非纯向量](/img/2026-07-06-ai-agent-database-evolution/06.png)
+
+很多人一提 Agent 记忆，第一反应是向量数据库。
+
+但真实场景里，Agent 的记忆和知识库很少是纯向量问题。
+
+比如你问一个企业助手：“找一下上个月华东区客户投诉里，和退款相关、且语气比较激烈的案例。”
+
+这句话里至少有三种检索：
+
++ 上个月、华东区、客户投诉，是结构化过滤；
++ 退款，是全文关键词；
++ 语气激烈、相似案例，是语义向量检索。
+
+如果你用 MySQL + Elasticsearch + Milvus 拼，当然也能做。但你要维护数据同步、权限一致、结果融合、排序策略，还要祈祷半夜别掉链子。
+
+seekdb 的思路是：向量、全文、标量过滤放在一个引擎里，用一条 SQL 或一个 SDK 接口完成混合搜索。
+
+这不只是省事。对 Agent 来说，这意味着上下文更实时，权限更一致，工程链路更短。
+
+### 第三件事：提前给会犯错的 Agent 准备后悔药
+
+![为会犯错的 Agent 准备可回滚能力](/img/2026-07-06-ai-agent-database-evolution/07.png)
+
+现在这个时代，最危险的可能已经不是 AI 大模型敢胡说八道了，而是 Agent 敢拿着很高的权限，到处胡操八作。
+
+Agent 会犯错，行业已经用层出不穷的生产事故一次又一次地交过学费，详见：[《700 万人围观 AI 删库跑路，罪魁祸首写下奇葩检讨》](https://mp.weixin.qq.com/s/Gm8mIPK4MnUZZ07Ue33rDQ)。
+
+上面这篇文章，可以用一句话来概括：完善的 System Prompt 绝对不是 Agent 去操作数据的安全边界。
+
+对于 DBA 来说，重要的往往是效率和成本。但对 Agent 来说，有可以吃的后悔药，也许更重要。
+
+seekdb 更实际的做法是 Fork / Diff / Merge。
+
+它支持 Fork Table / Fork Database，给 Agent 创建一个隔离的数据分支。Agent 可以在分支里改表、写数据、测试 Prompt、跑评测。成功了再 merge，失败了直接 drop。详见：[《seekdb fork table 能力测试报告》](https://mp.weixin.qq.com/s/7bGbTZPyIn7cX07Zpd4GmA)里，测试场景包括 A/B 实验、数据版本管理、回滚、生产数据隔离测试。**这个能力很像 Git，只不过管理的不是代码分支，而是数据分支。**
+
+如果上面这篇文章里在 AI 创业公司里删库跑路的 Agent 当时操作的是一个 fork 出来的测试分支的 Database，它就可以在里面尽情犯错，数据不会陪它一起消失。
+
+这就是 Agent 时代数据库该有的基本礼貌：假设 Agent 一定会犯错，然后把爆炸半径关进 fork 出来的测试分支里。
+
+### 第四件事：seekdb M0，把记忆产品往前推一步
+
+![seekdb M0 向前推进记忆产品能力](/img/2026-07-06-ai-agent-database-evolution/08.png)
+
+除了 seekdb 本身，还有一个值得单独提的产品：seekdb M0。
+
+它在社区文章里被描述为一个专门为 AI Agent 设计的自进化云记忆，支持一键接入、分享经验和持续进化，会在支持 Agent 之间经验共享的同时，缩减 token 成本。
+
+这里不展开讲产品细节，只说它代表的方向：
+
+Agent 记忆不应该只停留在“把聊天记录存下来”。它应该能跨会话、跨任务、甚至跨 Agent 沉淀经验。
+
+比如一个 coding agent 试过某个错误方案，下次另一个 agent 不应该重新踩一遍坑。一个机器人在某个环境里学到的操作偏好，也不应该每次断电之后从零做人。
+
+这件事继续往下走，就会从“记忆存储”走向“经验系统”。
+
+### 第五件事：seekdb 不只适合云上，也适合端侧和边缘
+
+最近 Google DeepMind CEO 哈萨比斯在演讲中有一个判断：模型蒸馏会让更强的模型能力逐步下沉到端侧，详见：[《人类离 AGI 只剩 4 年，只差最后 3 块拼图》](https://mp.weixin.qq.com/s/TxmPDsVaj9hBomb5jrM2eQ)
+
+这个趋势眼看着就要逐步成真了，所以很多 AI 能力，不会永远待在云上。
+
+![seekdb 覆盖云上端侧与边缘场景](/img/2026-07-06-ai-agent-database-evolution/09.png)
+
+智能设备、边缘设备、具身智能、智能驾驶，都有一个共同问题：不能每次想起一件事都先回云端翻档案。原因也很现实：移动网络很可能不稳定，但设备的延迟不能太高；外加用户隐私问题、成本问题等等。
+
+这时，seekdb 的嵌入式形态、低资源门槛、本地混合检索就很有价值。它可以在设备侧保存局部状态、任务轨迹、用户偏好和检索索引。车端、机器人、智能终端都需要一块本地“小脑”：能低延迟检索，也能在必要时和云端大脑同步。
+
+数据中心侧则可以用 OceanBase Lakebase 做多模态数据回流、治理、训练和评测。设备侧用 seekdb + PowerMem 负责即时反应，中心侧负责长期演进。
+
+这条路，比“所有记忆都塞进云端大模型上下文窗口”靠谱得多。在发布会上，日照也提到了很多支持智驾的车企，现在就是这样做的 —— OceanBase + seekdb + PowerMem。这类“端侧即时反应 + 中心侧长期演进”的架构方向，正在变得越来越现实。
+
+## PowerMem：让 Agent 不只是“记住”，而是“会整理记忆”
+
+讲完 seekdb，再看 OceanBase CTO 日照在发布会上提到的另一个 AI 产品 —— PowerMem（项目也已开源，详见：[https://github.com/oceanbase/powermem）。](https://github.com/oceanbase/powermem）。)
+
+如果说 seekdb 更偏“存和搜”，PowerMem 更偏“记和忘”。它不是向量数据库，也不是简单聊天历史。它更像 Agent 的记忆管理层：负责抽取、合并、遗忘、检索和经验沉淀。
+
+德哥在[《PowerMem 未来可能成为 OB 的杀手锏》](https://mp.weixin.qq.com/s/LSW_pYokpQVbtXChR4zzLw)里用了一个很形象的比喻来阐述 PowerMem 和其他记忆产品的不同：
+
+> 普通的向量数据库(Chroma、Milvus、Pinecone)是“会搜索的文件夹”: 你塞什么它存什么，召回什么它不负责。
+>
+> mem0 是“听话的笔记本”:你告诉它“记住 X”，它存；你忘了告诉它，它不会主动记。
+>
+> PowerMem 是“会思考的笔记本 + 秘书”: 它会自动从对话里“划重点”，对记忆进行去重和合并冲突、遗忘长期得不到访问的记忆，同时还支持记忆的精准召回。
+
+![PowerMem 让 Agent 会整理长期记忆](/img/2026-07-06-ai-agent-database-evolution/10.png)
+
+Agent 的长期记忆最怕两种极端：一种是金鱼脑袋。每次新会话都像初次见面，昨天刚说完的偏好，今天又问一遍。另一种是仓库脑袋。什么都记，什么都塞，最后上下文越来越贵、越来越慢、越来越乱。不会遗忘的 Agent，最后不是更聪明，而是更像一个塞满旧便签的抽屉。
+
+PowerMem 解决的就是 Agent 的长期记忆问题。
+
+### 它要知道什么值得记
+
+![PowerMem 判断哪些信息值得记住](/img/2026-07-06-ai-agent-database-evolution/11.png)
+
+不是所有聊天记录都值得长期保存。
+
+“用户喜欢咖啡”可能值得记。
+
+“用户今天下午 3 点说了一个‘嗯’”大概率不用记。
+
+“这个项目的数据库从 MySQL 迁到了 OceanBase”值得记。
+
+“刚才命令行输出了一个临时路径”可能只适合短期上下文。
+
+PowerMem 做的是从对话、任务轨迹、反馈中抽取关键事实，再变成可检索、可更新、可治理的记忆。
+
+### 它会处理记忆冲突
+
+![PowerMem 处理相互冲突的记忆条目](/img/2026-07-06-ai-agent-database-evolution/12.png)
+
+记忆不是静态文本。例如：用户昨天说喜欢咖啡，今天又说要戒咖啡了。
+
+如果系统只会“追加”，记忆很快就会打架。PowerMem 要处理的是记忆演化，不是文本堆积。
+
+### 它懂得忘
+
+![PowerMem 基于遗忘曲线淘汰旧记忆](/img/2026-07-06-ai-agent-database-evolution/13.png)
+
+这点听起来反直觉，但很重要。
+
+人类记忆有遗忘机制，不是缺陷，而是压缩策略。Agent 也一样。
+
+全量上下文方案看似简单，实际代价很高：token 贵、延迟高、注意力衰减，模型还可能在一堆旧信息里翻车。
+
+PowerMem 的遗忘和衰减机制，就是为了控制噪音和成本，让真正有用的记忆留在前面。
+
+### 它不限制后端，但 seekdb 很适合它
+
+PowerMem 不应该被理解成“只能绑死某个数据库”。它可以适配不同后端。
+
+但 seekdb 的轻量形态和混合检索能力，显然能提升 PowerMem 的表现。
+
+PowerMem 管“什么值得记、什么时候该忘、怎么召回更准”；seekdb 管“这些记忆放在哪里、怎么稳定地查出来”。
+
+一个像记忆管家，一个像记忆仓库和检索引擎。这两个组合起来，才更接近 Agent 真正需要的长期记忆系统。
+
+### Experience + Skill：从记事实，到长经验
+
+![从记事实到沉淀 Experience 与 Skill](/img/2026-07-06-ai-agent-database-evolution/14.webp)
+
+PowerMem README 里明确提到 Experience + Skill distillation。相关社区文章也多次提到 seekdb M0 支持 Agent 之间经验共享。
+
+为了避免把产品边界说得过满，这里可以保守理解为：OceanBase 社区这条记忆产品线，正在从“记事实”走向“沉淀经验和技能”。
+
+这一步很重要。未来 Agent 的竞争，可能不只是“谁能调用更强的模型”，而是谁能把每次任务里的经验留下来，让下一次少走弯路。
+
+## seekdb + PowerMem + OceanBase：一条从本地到企业级的路
+
+德哥在 [《OceanBase 在下一盘大棋》](https://mp.weixin.qq.com/s/v9L5ggFlsWaWlTqXVMsqlA)里，把 seekdb、PowerMem 和 OceanBase 放在一起做了个总结：
+
+> PowerMem 解决“Agent 怎么记住、怎么忘、怎么调出来”；
+>
+> seekdb 解决“一条 SQL 把向量、全文、结构化数据查完”；
+>
+> OceanBase 解决“上规模后怎么稳、怎么扩、怎么进入企业生产系统”。
+
+![seekdb PowerMem 与 OceanBase 演进路径](/img/2026-07-06-ai-agent-database-evolution/15.webp)
+
+这条路径很顺：
+
+本地开发阶段，可以用 pyseekdb，也就是 embedded seekdb，加上 PowerMem，快速给 Agent 加长期记忆。
+
+中小生产阶段，可以用 seekdb server 加 PowerMem，承接 RAG、智能助手、代码 Agent、企业知识库。
+
+企业规模阶段，可以用 OceanBase / Lakebase 加 PowerMem，承接多模态、治理、权限、一致性和海量 Agent。
+
+这条路也被德哥在另一篇文章[《Claude、Codex 疯狂抢入口，OceanBase 闷声焊地基》](https://mp.weixin.qq.com/s/dpxtzh6U9bU2UJK-TjjF5Q)里说得很准：
+
+> Claude、Codex、各种 Agent 平台都在抢入口。
+>
+> 但当 AI 真要进入企业生产系统，最后绕不开的还是数据底座。
+
+## DataStudio 和 DataPilot
+
+当然，OceanBase 这次发布的不只是 Lakebase 和 PowerMem。
+
+OceanBase 产品老大颜然还介绍了另外两个产品：统一开发治理平台 DataStudio，以及面向业务的 BI 分析 Agent DataPilot。
+
+![DataStudio 与 DataPilot 协作示意](/img/2026-07-06-ai-agent-database-evolution/16.webp)
+
+不过这两个产品小编暂时都还没有上手体验过，暂时不便进行过多的分析和评价，后面有缘再和大家介绍和分享。
+
+## AI for DB 很热，但 DB for AI 才刚开始
+
+最近和很多 DBA、数据库开发者聊天，大家都在关注 AI 怎么改变数据库运维和开发，也就是 AI for DB，这很重要。让 AI 写 SQL、查慢查询、做巡检、生成报表，都是很现实的方向。
+
+但 OceanBase 这场发布会更像是在讲另一条路：DB for AI。也就是说，数据库怎么反过来支撑 AI。AI 要真正进入企业，不能只靠一个聪明模型，它需要高质量数据，需要实时上下文，长期记忆，安全隔离，试错回滚，多模态治理。这时候，数据库不再只是后台那个“存数据的东西”，它需要进化成 Agent 的地基。
+
+![从 AI for DB 转向 DB for AI 的趋势](/img/2026-07-06-ai-agent-database-evolution/17.png)
+
+最后总结一下：小编觉得 OceanBase 这次发布会真正值得关注的，不只是“又发布了一个 AI 数据库”。更重要的是，它把一个问题摆到了桌面上：
+
+> 当 AI Agent 开始使用数据库，数据库应该变成什么样子？
+
+这个问题，才刚刚开始变得有点儿意思。
+
+![Agent 友好数据库能力清单总结](/img/2026-07-06-ai-agent-database-evolution/19.png)
 
 
 ---

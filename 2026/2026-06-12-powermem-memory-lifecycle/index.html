@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完">
+<meta property="og:url" content="https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/06.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/07.png">
+<meta property="article:published_time" content="2026-06-11T23:44:48.000Z">
+<meta property="article:modified_time" content="2026-06-11T23:44:48.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="向量检索">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="智能记忆">
+<meta property="article:tag" content="遗忘机制">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/","path":"2026/2026-06-12-powermem-memory-lifecycle/","title":"PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E9%87%8D%E8%A6%81%E6%80%A7%E8%AF%84%E4%BC%B0%EF%BC%9A%E8%BF%99%E6%9D%A1%E4%BF%A1%E6%81%AF%E5%80%BC%E5%BE%97%E8%AE%B0%E4%BD%8F%E5%90%97%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">一、重要性评估：这条信息值得记住吗？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%85%AD%E7%BB%B4%E5%BA%A6%E8%AF%84%E4%BC%B0%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 六维度评估模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%8F%8C%E8%B7%AF%E5%BE%84%E8%AF%84%E4%BC%B0%EF%BC%9ALLM-%E4%B8%8E%E8%A7%84%E5%88%99%E5%BC%95%E6%93%8E"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 双路径评估：LLM 与规则引擎</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%88%86%E7%B1%BB%E4%B8%8E%E5%8F%82%E6%95%B0%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">2.</span> <span class="nav-text">二、分类与参数初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%B8%89%E5%B1%82%E8%AE%B0%E5%BF%86%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 三层记忆模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E9%81%97%E5%BF%98%E5%8F%82%E6%95%B0%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 遗忘参数初始化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%A1%B0%E5%87%8F%E8%AE%A1%E7%AE%97"><span class="nav-number">3.</span> <span class="nav-text">三、衰减计算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-PowerMem-%E7%9A%84%E8%A1%B0%E5%87%8F%E5%85%AC%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 PowerMem 的衰减公式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%BD%A9%E8%9B%8B%EF%BC%8C%E4%B8%80%E4%B8%AA%E5%85%B3%E9%94%AE%E7%9A%84%E5%B7%A5%E7%A8%8B%E5%8F%96%E8%88%8D"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 彩蛋，一个关键的工程取舍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%A1%B0%E5%87%8F%E6%97%B6%E9%97%B4%E8%A1%A8"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 衰减时间表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E8%AE%BF%E9%97%AE%E8%A7%A6%E5%8F%91"><span class="nav-number">4.</span> <span class="nav-text">四、访问触发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%B0%86%E9%81%97%E5%BF%98%E5%86%B3%E7%AD%96%E5%BB%B6%E8%BF%9F%E5%88%B0%E8%AE%BF%E9%97%AE%E6%97%B6"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 将遗忘决策延迟到访问时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%9B%9B%E9%81%93%E5%85%B3%E5%8D%A1"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 四道关卡</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%90%9C%E7%B4%A2%E5%8A%A0%E6%9D%83"><span class="nav-number">5.</span> <span class="nav-text">五、搜索加权</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%B9%B2%E6%89%B0%E7%90%86%E8%AE%BA%E5%9C%A8%E6%90%9C%E7%B4%A2%E4%B8%AD%E7%9A%84%E4%BD%93%E7%8E%B0"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 干扰理论在搜索中的体现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%8E%92%E5%BA%8F%E5%85%AC%E5%BC%8F"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 排序公式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%85%A8%E5%B1%80%E4%BC%98%E5%8C%96"><span class="nav-number">6.</span> <span class="nav-text">六、全局优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%85%A8%E5%B1%80%E4%BC%98%E5%8C%96"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 为什么需要全局优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E4%B8%89%E7%A7%8D%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 三种优化策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-08-powermem-forgetting-design/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-08</time>
+        <br>
+      从神经元到代码工程：PowerMem 记忆系统的遗忘设计
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-06-ai-agent-database-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-06</time>
+        <br>
+      AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-29</time>
+        <br>
+      GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-operation-guide/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-22-oceanbase-community-skill-universe/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-22</time>
+        <br>
+      OceanBase 社区开启 Skill 宇宙！
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完 | Longda's Interesting World">
+      <meta itemprop="description" content="用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-06-12 07:44:48" itemprop="dateCreated datePublished" datetime="2026-06-12T07:44:48+08:00">2026-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">萧峯</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>7.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>26 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完","description":"用一条消息跟踪 PowerMem：重要性评估、分层存储、衰减复习到淘汰，看清 AI Agent 长期记忆工程如何实现智能遗忘。","image":"https://ilongda.com/img/2026-06-12-powermem-memory-lifecycle/01.png","wordCount":7357,"datePublished":"2026-06-11T23:44:48.000Z","dateModified":"2026-06-11T23:44:48.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/"},"url":"https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/","inLanguage":"zh-CN","keywords":["OceanBase","AI Agent","向量检索","PowerMem","遗忘机制","智能记忆","工程实践"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完","item":"https://ilongda.com/2026/2026-06-12-powermem-memory-lifecycle/"}]}</script>
+<blockquote>
+<p>时间让记忆蒙尘，访问是唯一的擦拭。尘太厚、无人问，便是遗忘。</p>
+</blockquote>
+<blockquote>
+<p>💡 想亲手试试 Agent 记忆层？欢迎到 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">PowerMem</a> 逛逛——开箱就能给 Agent 加上会整理、会遗忘的长期记忆。</p>
+</blockquote>
+<p>前一篇 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.cnblogs.com/knqiufan/p/20130795">记忆系统的遗忘设计，从神经元到代码工程</a> 从认知科学讲了遗忘：突触可塑性、艾宾浩斯曲线、间隔重复。那是“为什么要忘”。</p>
+<p>这篇换视角：以一条消息为线索，跟着它在 PowerMem（OceanBase 开源的 AI 记忆引擎）里走完从写入到淘汰的全程，看遗忘机制在工程里怎么落地。</p>
+<p>一句话概括：消息一旦写入就开始衰减；真正决定它去留的，是之后有没有被再次访问。</p>
+<span id="more"></span>
+
+<h2 id="一、重要性评估：这条信息值得记住吗？"><a href="#一、重要性评估：这条信息值得记住吗？" class="headerlink" title="一、重要性评估：这条信息值得记住吗？"></a>一、重要性评估：这条信息值得记住吗？</h2><p>先说一个场景。假设发了这么一条消息：</p>
+<blockquote>
+<p>下周五下午三点和产品团队在 3 号会议室评审 Q2 需求文档。</p>
+</blockquote>
+<p>当这条消息进入记忆系统后，第一个问题不是问「怎么记住」，而是要先判断「值不值得记住」。如果所有信息都以相同的权重被存储和检索，随着数据量增长，系统会面临两个问题：检索信噪比持续下降，存储成本不可控。</p>
+<p>香农信息论也解释了这件事：高概率事件的信息量趋近于零，不值得长期存储；低概率但关键事件的信息量极大，必须持久化保留。</p>
+<p><strong>重要性评估就是干这件事的，它是信息过滤器。</strong> 它会为每条信息打一个分数，这个分数决定后续的衰减速度、复习频率和淘汰优先级。</p>
+<p>那么重要性如何评估？</p>
+<h3 id="1-1-六维度评估模型"><a href="#1-1-六维度评估模型" class="headerlink" title="1.1 六维度评估模型"></a>1.1 六维度评估模型</h3><p>在 PowerMem 中评估一条信息的重要性比想象中复杂。它使用了一个<strong>六维评估模型</strong>，即从六个维度进行综合评估、加权汇总：</p>
+<p>| 维度                         | 权重 | 评估什么                       |</p>
+<p>| —————————- | —- | —————————— |</p>
+<p>| relevance（关联度）          | 0.30 | 信息与用户当前上下文的关联程度 |</p>
+<p>| novelty（新颖度）            | 0.20 | 信息的新鲜程度，是否为首次出现 |</p>
+<p>| emotional_impact（情感强度） | 0.15 | 信息是否包含强烈的情感色彩     |</p>
+<p>| actionable（可操作性）       | 0.15 | 信息是否需要用户采取行动       |</p>
+<p>| factual（事实性）            | 0.10 | 信息的客观事实程度             |</p>
+<p>| personal（个人相关性）       | 0.10 | 信息与用户个人的关联程度       |</p>
+<p>拿前面举例的会议消息来说。它与「Q2 的工作」高度相关（relevance ≈ 0.8），包含明确的时间地点（factual ≈ 0.8），用户必须参加不能错过（actionable ≈ 0.9），但情感上中性（emotional_impact ≈ 0.2），那么从使用六维评估模型加权计算出的<strong>重要性分数</strong>大致如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">0.3×0.8 + 0.2×0.5 + 0.15×0.2 + 0.15×0.9 + 0.1×0.8 + 0.1×0.6 ≈ 0.72</span><br></pre></td></tr></table></figure>
+
+<p>即最终得出的重要性评估分数为 0.72。</p>
+<p>六维评估模型是重要性评估的重要理论基础。</p>
+<h3 id="1-2-双路径评估：LLM-与规则引擎"><a href="#1-2-双路径评估：LLM-与规则引擎" class="headerlink" title="1.2 双路径评估：LLM 与规则引擎"></a>1.2 双路径评估：LLM 与规则引擎</h3><p>PowerMem 设计了两条重要性评估执行路径，确保系统在任何情况下都能给出评分。第一条路径就是基于六维评估模型得出的评分，第二路径则是在第一条路径不可用时进行优雅降级的规则引擎计算方案。</p>
+<p><strong>路径一：LLM 深度评估（优先）</strong></p>
+<p>当 LLM 可用时会直接走这一条评估路径。系统要求 LLM 根据六维度评估模型从六个维度分别分析，返回结构化 JSON。得到的结果示例如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;importance_score&quot;</span><span class="punctuation">:</span> <span class="number">0.72</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;reasoning&quot;</span><span class="punctuation">:</span> <span class="string">&quot;会议安排对用户具有明确的时间约束和行动要求&quot;</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;criteria_scores&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;relevance&quot;</span><span class="punctuation">:</span> <span class="number">0.8</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;novelty&quot;</span><span class="punctuation">:</span> <span class="number">0.5</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;emotional_impact&quot;</span><span class="punctuation">:</span> <span class="number">0.2</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;actionable&quot;</span><span class="punctuation">:</span> <span class="number">0.9</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;factual&quot;</span><span class="punctuation">:</span> <span class="number">0.8</span><span class="punctuation">,</span></span><br><span class="line"></span><br><span class="line">        <span class="attr">&quot;personal&quot;</span><span class="punctuation">:</span> <span class="number">0.6</span></span><br><span class="line"></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>PowerMem 从这个 LLM 回复的结构化 JSON 中提取 <code>importance_score</code> 字段作为重要性评分。</p>
+<p>但实际上因为 LLM 的回答会有一定的不可预知性，所以为了确保即使 LLM 返回格式不规范系统也不会崩溃，可以拿到对应的评分数据，PowerMem 使用了一种<strong>三级回退</strong>的方式来进行解析：首先尝试解析 JSON 拿到最准确的数据，若解析失败则用正则表达式匹配评分数字，若再失败，即返回保底的默认值 0.5。</p>
+<blockquote>
+<p>值得注意的是，LLM 返回的结构化 JSON 中的六维数据实际上并未直接参与最后的权重的计算，在这里让 LLM 返回六维数据只是为了通过 Chain-of-Thought 的结构化分解来辅助 LLM 推理，让最终答案更可靠稳定。</p>
+</blockquote>
+<p><strong>路径二：规则引擎（兜底）</strong></p>
+<p>当 LLM 不可用时，路径一则失效，规则引擎会接管重要性分数的计算。虽然精度会有所下降，但能保证系统能正常运行。</p>
+<p>规则引擎基于一组可量化的信号来累加分数的：</p>
+<ul>
+<li>内容长度 &gt; 100 字符：+0.1；&gt; 50 字符：+0.05</li>
+<li>命中关键词：每个 +0.1</li>
+<li>包含 <code>?</code> 或 <code>!</code>：各 +0.05</li>
+<li>元数据标记了优先级（high&#x2F;medium）：+0.2&#x2F;+0.1</li>
+<li>最终分数上限为 1.0</li>
+</ul>
+<p>规则引擎评分精度不如 LLM 评分，但确保了系统在 LLM 不可用时仍能正常运行，这种**优雅降级（graceful degradation）**设计是生产级系统的重要特征。即不会因为一个外部服务的故障，就导致整个记忆系统停摆。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/01.png" alt="PowerMem 双路径重要性评估流程" decoding="async"></p>
+<hr>
+<h2 id="二、分类与参数初始化"><a href="#二、分类与参数初始化" class="headerlink" title="二、分类与参数初始化"></a>二、分类与参数初始化</h2><h3 id="2-1-三层记忆模型"><a href="#2-1-三层记忆模型" class="headerlink" title="2.1 三层记忆模型"></a>2.1 三层记忆模型</h3><p>重要性分数确定了之后，下一步就要给信息分类，来决定这条信息属于哪一层的记忆。</p>
+<p>不知道大家还是否记得前一篇聊过的大脑的记忆分层机制。即信息先进入容量有限的海马体（短期存储），经过记忆巩固后转移至新皮层（长期存储），只有那些被反复激活的、与已有知识建立了丰富关联的、或伴随强烈情绪体验的信息，才能获得优先转移权。</p>
+<p>PowerMem 把这个过程翻译为三层模型：</p>
+<p>| 层级                       | 生物学类比 | 倍率 | 典型存活时间 |</p>
+<p>| ————————– | ———- | —- | ———— |</p>
+<p>| <strong>working</strong>（工作记忆）    | 前额叶皮层 | ×0.5 | 数小时~1 天  |</p>
+<p>| <strong>short_term</strong>（短期记忆） | 海马体     | ×1.5 | 数天~数周    |</p>
+<p>| <strong>long_term</strong>（长期记忆）  | 新皮层     | ×2.0 | 数周~数月    |</p>
+<p>而分类的逻辑又以重要性分数为依据：<code>≥ 0.8</code> 进入 long_term，<code>≥ 0.6</code> 进入 short_term，其余归入 working。<strong>不同层级的衰减速率不同，层级越高衰减越慢，信息活得越久：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">if</span> score &gt;= self._algo.long_term_threshold:   <span class="comment"># 0.8</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;long_term&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> score &gt;= self._algo.short_term_threshold:  <span class="comment"># 0.6</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;short_term&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="string">&quot;working&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>前面算出来的会议信息重要性评分为 importance &#x3D; 0.72，命中了 <code>≥ 0.6</code> 但不到 <code>0.8</code>。所以落入 <strong>short_term（短期记忆）</strong>。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/02.png" alt="PowerMem 工作记忆与长期记忆分层模型" loading="lazy" decoding="async"></p>
+<h3 id="2-2-遗忘参数初始化"><a href="#2-2-遗忘参数初始化" class="headerlink" title="2.2 遗忘参数初始化"></a>2.2 遗忘参数初始化</h3><p>分类分完了，但是分类只回答了「这条信息该待在哪一层」，更具体的问题是：<strong>应该忘多快？为了巩固记忆什么时候要再复习一遍？</strong></p>
+<p>PowerMem 在分类完成后会为每条记忆生成一整套<strong>可随生命周期演进的数值档案</strong>。即系统会为这条记忆建立一份元数据卡片用来记录这条信息记忆的强度、衰减参数、复习计划和管理状态等。</p>
+<p>元数据卡片在结构上分成两块：</p>
+<p>| 字段                         | 职责                                                         |</p>
+<p>| —————————- | ———————————————————— |</p>
+<p>| <code>metadata.intelligence</code>      | <strong>一些数值指标</strong>：重要性、层级、保留率、衰减率、复习时刻表、访问&#x2F;复习计数等 |</p>
+<p>| <code>metadata.memory_management</code> | <strong>记忆生命周期开关</strong>：是否待晋升、待遗忘、待归档、是否仍活跃 |</p>
+<p>依旧以会议信息为例（importance &#x3D; 0.72，short_term），逐一说明核心参数的设计意图和计算方式。</p>
+<h4 id="2-2-1-初始保留率"><a href="#2-2-1-初始保留率" class="headerlink" title="2.2.1 初始保留率"></a>2.2.1 初始保留率</h4><p>初始保留率决定了一条信息在形成瞬间的牢固程度，越重要的信息在写入时就应该被赋予越高的初始保留率，低重要性内容在认知层面本就应更脆弱，更容易在竞争中让出存储与检索带宽。</p>
+<p>在 PowerMem 中的初始保留率就是重要性分数乘以一个默认为 1.0 的全局配置参数：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">initial_retention = self.initial_retention * importance_score</span><br><span class="line"></span><br><span class="line"><span class="comment"># 会议示例：1.0 × 0.72 = 0.72</span></span><br></pre></td></tr></table></figure>
+
+<p>得到的初始保留率实际上会写入两个字段：</p>
+<ul>
+<li><code>initial_retention</code> 字段，用于记录创建时的快照（当初记得有多牢）</li>
+<li><code>current_retention</code> 字段，用于跟踪当前的有效保留水平</li>
+</ul>
+<p>创建时两者数值相同，之后 <code>current_retention</code> 会随衰减和复习而变化。</p>
+<h4 id="2-2-2-关于遗忘速度"><a href="#2-2-2-关于遗忘速度" class="headerlink" title="2.2.2 关于遗忘速度"></a>2.2.2 关于遗忘速度</h4><p>working &#x2F; short_term &#x2F; long_term 对应到认知学科中的工作记忆、海马体、新皮层，即越接近长期存储层，单位时间内的遗忘应该越慢。所以不同的记忆层级需要有各自不同的衰减系数。</p>
+<p>在 PowerMem 中不同记忆层级的衰减系数为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;working&quot;</span>:    <span class="number">0.5</span>,  <span class="comment"># 强度参数 S 最小，忘得最快</span></span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;short_term&quot;</span>: <span class="number">1.5</span>,</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;long_term&quot;</span>:  <span class="number">2.0</span>,  <span class="comment"># 强度参数 S 最大，忘得最慢</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么针对开头的会议信息，这条信息落在了 short_term，故系数为 1.5，当前这条消息的衰减率为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">0.1（全局基础衰减率） × 1.5（short_term 衰减系数） = 0.15</span><br></pre></td></tr></table></figure>
+
+<p>若记忆分类在 working，那么衰减率为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">0.1（全局基础衰减率） × 0.5（working 衰减系数） = 0.05</span><br></pre></td></tr></table></figure>
+
+<p>若记忆分类在 long_term，那么衰减率为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">0.1（全局基础衰减率） × 2（long_term 衰减系数） = 0.2</span><br></pre></td></tr></table></figure>
+
+<p>可以看到 <strong>不同的记忆分类衰减率不同，参数越大遗忘越慢</strong>。</p>
+<h4 id="2-2-3-如何做复习调度"><a href="#2-2-3-如何做复习调度" class="headerlink" title="2.2.3 如何做复习调度"></a>2.2.3 如何做复习调度</h4><p>在认知学原理中有提到，间隔重复的核心原则是复习先密后疏，要在快要忘记但还能拯救的时间窗内进行复习，不能太早（等于白看一遍），也不能太晚（已经彻底忘了）。</p>
+<p>所以 PowerMem <strong>在记忆创建时就排好复习时间点，而不是等到需要时才临时决定。</strong></p>
+<p>PowerMem 通过两步生成这张复习时刻表：</p>
+<p><strong>第一步：给定基准间隔。</strong></p>
+<p>系统预设五个基准间隔（小时）：<code>[1, 6, 24, 72, 168]</code>，分别对应约 1 小时、6 小时、1 天、3 天、7 天。五个间隔是全局配置，所有记忆共享同一组基准值。</p>
+<p><strong>第二步：按重要性压缩间隔。</strong></p>
+<p>基准间隔对所有记忆一视同仁，但不同重要性不同分类的记忆不该用同一个节奏复习，一条密码信息应该比一句闲聊被更频繁地唤醒。所以 PowerMem 用了一个公式，根据重要性分数对<strong>每个基准间隔</strong>做压缩：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">adjusted_interval = interval * (<span class="number">1</span> - importance_score * adjustment_factor)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>interval</code> 是基准间隔的数据（如 1h、6h、24h）</li>
+<li><code>importance_score</code> 是前面算出来的会议信息的重要性参数 0.72</li>
+<li><code>adjustment_factor</code> 是压缩系数（默认 0.3），控制压缩的力度</li>
+<li>乘积 <code>importance_score × adjustment_factor</code> 决定了最多能压缩多少</li>
+<li>最终结果 <code>adjusted_interval</code> 是压缩后的实际间隔，下限 0.5 小时</li>
+</ul>
+<p>这么解释公式还是太抽象，还是用会议信息（importance &#x3D; 0.72）来拆一遍。</p>
+<p>这时压缩乘子（即对应公式中的 <code>(1 - importance_score * adjustment_factor)</code> 部分）是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 - 0.72 × 0.3 = 0.784</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，每个基准间隔都会变成原来的 78.4%。通过计算得出的五个时间点如下：</p>
+<p>| 次序    | 基准间隔 | 调整后间隔            | 建议复习时刻（示意） |</p>
+<p>| ——- | ——– | ——————— | ——————– |</p>
+<p>| 第 1 次 | 1h       | ≈ 0.78h（约 47 分钟） | T₀ + 47min           |</p>
+<p>| 第 2 次 | 6h       | ≈ 4.7h                | T₀ + 4.7h            |</p>
+<p>| 第 3 次 | 24h      | ≈ 18.8h               | T₀ + 18.8h           |</p>
+<p>| 第 4 次 | 72h      | ≈ 56.4h（约 2.4 天）  | T₀ + 2.4d            |</p>
+<p>| 第 5 次 | 168h     | ≈ 131.7h（约 5.5 天） | T₀ + 5.5d            |</p>
+<p>换个角度再看，如果一条信息没有那么重要，假设 importance &#x3D; 0.3，压缩乘子则变成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 - 0.3 × 0.3 = 0.91</span><br></pre></td></tr></table></figure>
+
+<p>即每个基准间隔都会变成原来的 91%，这条信息的五个复习时间点会更靠后：</p>
+<p>| 次序    | 基准间隔 | 调整后间隔             | 建议复习时刻（示意） |</p>
+<p>| ——- | ——– | ———————- | ——————– |</p>
+<p>| 第 1 次 | 1h       | ≈ 0.91h（约 55 分钟）  | T₀ + 55min           |</p>
+<p>| 第 2 次 | 6h       | ≈ 5.46h                | T₀ + 5.46h           |</p>
+<p>| 第 3 次 | 24h      | ≈ 21.84h               | T₀ + 21.84h          |</p>
+<p>| 第 4 次 | 72h      | ≈ 65.52h（约 2.7 天）  | T₀ + 2.7d            |</p>
+<p>| 第 5 次 | 168h     | ≈ 152.88h（约 6.4 天） | T₀ + 6.4d            |</p>
+<p>效果很明显。importance &#x3D; 0.72 的会议信息，五轮复习的间隔时间点都被明显提前；importance &#x3D; 0.3 的不那么重要的信息，复习间隔只被轻微压缩。复习次数越往后，复习时间的差距越大。</p>
+<p><strong>重要性越高，系统越早把它拉回复习窗口，记忆被重新巩固的机会也就越多。</strong></p>
+<p>当算完五个时间点后 PowerMem 会把它们存入完整的复习时刻表，同时会初始化几个字段，配合复习时刻表工作：</p>
+<p>| 字段                   | 含义                                                         |</p>
+<p>| ———————- | ———————————————————— |</p>
+<p>| <code>next_review</code>          | 时刻表中的第一个时间点，即<strong>下一次建议复习</strong>的时间。系统通过这个字段知道最近一次复习该在什么时候 |</p>
+<p>| <code>last_reviewed</code>        | 最近一次复习的时间戳。刚创建时等于创建时刻，之后每完成一次复习就更新 |</p>
+<p>| <code>review_count</code>         | 已经完成了几轮复习。创建时为 0，每完成一轮加 1               |</p>
+<p>| <code>reinforcement_factor</code> | 复习成功后保留率的提升幅度（默认 0.3）。决定每次温故能补回多少遗忘 |</p>
+<p>这几个字段和时刻表一起，构成了一套完整的复习追踪机制：</p>
+<ul>
+<li><code>next_review</code> 告诉系统什么时候该复习</li>
+<li><code>review_count</code> 和 <code>last_reviewed</code> 记录已经复习了多少次</li>
+<li><code>reinforcement_factor</code> 决定复习一次能恢复多少</li>
+</ul>
+<p>当到达 <code>next_review</code> 并完成一次复习时，<code>review_count</code> 递增、<code>last_reviewed</code> 更新、<code>current_retention</code> 按 <code>reinforcement_factor</code> 提升，<code>next_review</code> 推进到下一个时间点。</p>
+<p>至此形成<strong>提取再巩固</strong>的工程闭环。</p>
+<h4 id="2-2-4-生命周期状态机"><a href="#2-2-4-生命周期状态机" class="headerlink" title="2.2.4 生命周期状态机"></a>2.2.4 生命周期状态机</h4><p>除了保留率、衰减率、复习时刻这些连续的数值，记忆在系统中还有一些生命周期状态需要管理：</p>
+<ul>
+<li>这条记忆是否该晋升到更高的层级？</li>
+<li>是否该被淘汰？</li>
+<li>是否该从活跃检索池中移除？</li>
+</ul>
+<p>在 PowerMem 中也都有对应的标志位，创建时初始化为全新、活跃、尚未触发任何处置：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;should_promote&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span>  <span class="comment">// 是否应该晋升到更高的层级</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;should_forget&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span>   <span class="comment">// 是否应该被淘汰</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;should_archive&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span>  <span class="comment">// 是否应该从活跃检索池转入归档</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">&quot;is_active&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span>         <span class="comment">// 是否仍处于活跃状态</span></span><br><span class="line"></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>should_promote</code>：这条记忆是否应该晋升到更高的层级（如 working → short_term）。如果一条 working 记忆被反复访问，说明它对用户很有价值，应该晋升到 short_term 甚至 long_term，获得更慢的衰减速度。</li>
+<li><code>should_forget</code>：这条记忆是否应该被淘汰。当衰减因子跌破阈值（0.3）或者一条记忆在 7 天内从未被任何人访问过，系统就会标记它为待遗忘。</li>
+<li><code>should_archive</code>：这条记忆是否应该从活跃检索池转入归档。<strong>归档不同于遗忘，归档的记忆不会被物理删除，只是不再参与日常检索。</strong></li>
+<li><code>is_active</code>：这条记忆是否仍处于活跃状态，参与正常的检索和服务。</li>
+</ul>
+<p>除此之外，PowerMem 还会初始化一个 <code>access_count</code> 计数器，记录这条记忆被访问了多少次，这个计数器和标志位们配合工作（比如 <code>should_promote</code> 的判断条件之一就是被访问超过 3 次）。</p>
+<h4 id="2-2-5-落库：完整的元数据档案"><a href="#2-2-5-落库：完整的元数据档案" class="headerlink" title="2.2.5 落库：完整的元数据档案"></a>2.2.5 落库：完整的元数据档案</h4><p>所有参数都计算完毕后，系统将它们打包成一个结构化的字典返回。在新增记忆时，合并进记忆的 <code>metadata</code> 元数据中，与正文内容一并写入存储后端。</p>
+<p>至此参数建档完成。<strong>计时器从这一刻开始滴答作响。</strong></p>
+<hr>
+<h2 id="三、衰减计算"><a href="#三、衰减计算" class="headerlink" title="三、衰减计算"></a>三、衰减计算</h2><p>时间开始走，记忆系统中的遗忘机制也开始运作，保留率开始随着时间的流逝慢慢往下掉。</p>
+<p>先回顾一下艾宾浩斯遗忘曲线的数学形式：<code>R(t) = e^(-λt)</code>，它时指数衰减的。</p>
+<h3 id="3-1-PowerMem-的衰减公式"><a href="#3-1-PowerMem-的衰减公式" class="headerlink" title="3.1 PowerMem 的衰减公式"></a>3.1 PowerMem 的衰减公式</h3><p>PowerMem 把理论公式翻译为代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">rate = self.decay_rate <span class="keyword">if</span> decay_rate <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">else</span> decay_rate</span><br><span class="line"></span><br><span class="line">decay_factor = math.exp(-hours_elapsed / (<span class="number">24</span> * rate))</span><br></pre></td></tr></table></figure>
+
+<p>要看懂这条会议信息<strong>衰减的有多快</strong>，关键是要看懂分母 <code>24 × rate</code> 这个数。<code>24 × rate</code>** 是这条记忆的特征衰减时间，单位是小时。**</p>
+<p>把这个数记作 <strong>S</strong>（Strength），即 <code>S = 24 × rate</code>。S 越大，分母越大，指数衰减就越慢，记忆活得就越久。代入公式会变为更清爽的形式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">decay_factor = e^(-t / S)</span><br></pre></td></tr></table></figure>
+
+<p>这个公式有一个很漂亮的性质：<strong>当时间 <strong><code>t</code></strong> 走过一个 S，保留率必然衰减到 <strong><code>e^(-1) ≈ 37%</code></strong>。</strong> 也就是说，无论 S 是几个小时，只要时间走完一个 S 剩下的记忆都是原来的 37%。这是指数衰减的固有特征。</p>
+<p>所以只要知道 S 是多少小时，就大致知道这条记忆遗忘的节奏。</p>
+<p>还是拿这条会议信息举例，它落在 short_term，rate &#x3D; 0.15，那么：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">S = 24 × 0.15 = 3.6（小时）</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，这条会议信息每过 <strong>3.6 小时</strong>，保留率就会衰减到上一刻的 37% 左右。</p>
+<blockquote>
+<p>最后还有一处工程细节，PowerMem 中存在一条回退机制：调用方首先会按记忆类型算出类型专属的衰减率并传入，但如果调用方没有传，就使用全局默认的衰减率进行计算。这种机制保证了即使旧版本的元数据中缺少类型信息，衰减计算也不会出错。</p>
+</blockquote>
+<h3 id="3-2-彩蛋，一个关键的工程取舍"><a href="#3-2-彩蛋，一个关键的工程取舍" class="headerlink" title="3.2 彩蛋，一个关键的工程取舍"></a>3.2 彩蛋，一个关键的工程取舍</h3><p>PowerMem 用的衰减公式和经典艾宾浩斯论文里的公式其实是等价的，只是写法不同。经典论文写的是 <code>R(t) = e^(-λt)</code>，那个 λ 叫做衰减常数，和 PowerMem 的 S 互为倒数：<code>λ = 1 / S</code>。</p>
+<p>之所以提这件事，是因为如果把 PowerMem 的默认参数和经典艾宾浩斯实验的参数放在一起对比，就能发现一个有意思的细节：从经典的艾宾浩斯实验数据反推出 λ ≈ 0.821。但 PowerMem 默认配置对应的 λ ≈ 0.417，大约只有文档推导值的一半：</p>
+<p>| 参数来源             | λ 值   | 1 小时后保留率 | 设计意图                           |</p>
+<p>| ——————– | —— | ————– | ———————————- |</p>
+<p>| 经典艾宾浩斯实验数据 | ~0.821 | ~44%           | 无意义音节（ZOF、WUX），纯记忆实验 |</p>
+<p>| PowerMem 默认配置    | ~0.417 | ~66%           | 语义信息，天然遗忘更慢             |</p>
+<p>这个差异不是 bug，而是一个工程决策。</p>
+<p>理论上艾宾浩斯使用的是无意义音节，人类对这类孤立符号的遗忘速度最快，但 PowerMem 存储的是具有语义关联的实际信息，对语义信息的遗忘自然会比孤立音节更慢，所以 PowerMem 使用了更温和的衰减速率来匹配这一现实。</p>
+<p>通过衰减参数（可在 <code>.env</code> 中配置 <code>INTELLIGENT_MEMORY_DECAY_RATE</code>）也可以精细控制遗忘的激进程度：</p>
+<p>| decay_rate  | S &#x3D; 24 × rate | λ &#x3D; 1&#x2F;S | 1 小时后保留率 | 风格     |</p>
+<p>| ———– | ————- | ——- | ————– | ——– |</p>
+<p>| 0.05        | 1.2           | ~0.833  | ~43%           | 激进遗忘 |</p>
+<p>| 0.1（默认） | 2.4           | ~0.417  | ~66%           | 平衡     |</p>
+<p>| 0.2         | 4.8           | ~0.208  | ~81%           | 温和遗忘 |</p>
+<p>衰减参数越小，遗忘越激进。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/03.png" alt="记忆衰减计算中的工程取舍示意" loading="lazy" decoding="async"></p>
+<h3 id="3-3-衰减时间表"><a href="#3-3-衰减时间表" class="headerlink" title="3.3 衰减时间表"></a>3.3 衰减时间表</h3><p>好，现在把上面的一切串起来，就会得到这条会议信息完整的衰减过程：</p>
+<p>| 时间       | 距创建时长 | 衰减因子 | 状态                    |</p>
+<p>| ———- | ———- | ——– | ———————– |</p>
+<p>| 刚创建     | 0h         | 1.000    | 新鲜                    |</p>
+<p>| 1 小时后   | 1h         | ≈ 0.757  | 轻度衰减                |</p>
+<p>| 4.3 小时后 | 4.3h       | ≈ 0.300  | <strong>跌破遗忘阈值（0.3）</strong> |</p>
+<p>| 6 小时后   | 6h         | ≈ 0.189  | 深度衰减                |</p>
+<p>| 24 小时后  | 24h        | ≈ 0.0013 | 几乎归零                |</p>
+<p>可以看到一条 short_term 记忆在约 4.3 小时后衰减因子就会跌破 0.3 的遗忘阈值，但这并不意味着它会被立即删除，遗忘决策的执行时机，取决于记忆何时被访问。</p>
+<hr>
+<h2 id="四、访问触发"><a href="#四、访问触发" class="headerlink" title="四、访问触发"></a>四、访问触发</h2><h3 id="4-1-将遗忘决策延迟到访问时"><a href="#4-1-将遗忘决策延迟到访问时" class="headerlink" title="4.1 将遗忘决策延迟到访问时"></a>4.1 将遗忘决策延迟到访问时</h3><p>衰减一直在后台进行，但遗忘的决策只在实际访问记忆时才被执行。</p>
+<p>这里有个认知学背景：当一个已巩固的记忆被主动提取时它会暂时回到可塑状态，然后需要重新巩固。这个提取到再巩固的循环会加强对应的神经连接。</p>
+<p>在工程层面，这意味着记忆的命运不应该由时间单向决定，而应该在每次被访问时重新评估。</p>
+<p><strong>访问是记忆系统最重要的反馈信号。</strong> 一条信息被频繁访问说明它对用户有价值，应该被保留甚至晋升。一条信息长期无人问津，即使最初很重要也应该被遗忘。这种懒惰求值的设计降低了系统的计算负担，不需要后台定时任务批量扫描所有记忆。</p>
+<h3 id="4-2-四道关卡"><a href="#4-2-四道关卡" class="headerlink" title="4.2 四道关卡"></a>4.2 四道关卡</h3><p>当用户通过 <code>Memory.get()</code> 或 <code>Memory.search()</code> 访问记忆时，会依次执行四道检查。</p>
+<p><strong>第一关：遗忘检查</strong></p>
+<p>两个触发遗忘的条件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 衰减因子跌破阈值</span></span><br><span class="line"></span><br><span class="line">rate = self._resolve_decay_rate(memory)</span><br><span class="line"></span><br><span class="line">decay_factor = self.calculate_decay(created_at, decay_rate=rate)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> decay_factor &lt; self.working_threshold:  <span class="comment"># 0.3</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 静默遗忘，从未被使用且已过 7 天</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> access_count == <span class="number">0</span> <span class="keyword">and</span> time_elapsed &gt; timedelta(days=<span class="number">7</span>):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>两个条件满足其一即触发遗忘。第一条，衰减到了阈值以下，该淘汰了。第二条也容易理解，<strong>从未被使用过本身就是最强的遗忘信号。</strong></p>
+<p>满足了遗忘触发条件，调用方负责执行删除。</p>
+<p><strong>第二关：晋升检查</strong></p>
+<p>三个条件，满足其一即晋升：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 高频访问（被访问 3 次以上）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> access_count &gt;= <span class="number">3</span>:</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 通过时间检验（存活超过 24 小时）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> time_elapsed &gt; timedelta(hours=<span class="number">24</span>):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 本质上很重要（重要性分数大于0.6）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> importance &gt;= self.short_term_threshold:  <span class="comment"># 0.6</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>晋升的效果：<code>working → short_term</code> 或 <code>short_term → long_term</code>。衰减速率倍率从高降到低，信息获得更长的寿命。</p>
+<p>在会议信息这个例子中，importance&#x3D;0.72 ≥ 0.6，<strong>第一次访问时就直接满足晋升条件</strong>。如果它此时还是 short_term，将升级为 long_term。一条信息通过晋升机制，实现了从临时便签到长期知识的演变。</p>
+<p>这是人脑记忆巩固过程的工程对应。</p>
+<p><strong>第三关：归档检查</strong></p>
+<p>两个条件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 自然老化（超过 30 天）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> time_elapsed &gt; timedelta(days=<span class="number">30</span>):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 本质上不重要（重要性分数小于0.3）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> importance &lt; self.working_threshold:  <span class="comment"># 0.3</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>归档不同于遗忘。被归档的记忆不会被物理删除，但从活跃检索池中移除，进入存档状态。用户仍可通过专门的归档检索接口访问。</p>
+<p><strong>第四关：周期重处理</strong></p>
+<p>每当访问次数是 5 的倍数（第 5 次、第 10 次……），或记忆类型发生变更，系统重新计算全部 Ebbinghaus 元数据。这确保记忆的参数始终与其访问模式保持一致。随着访问累积，衰减率和复习调度逐步趋于稳定，这正是间隔重复效应在工程层面的体现。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/04.png" alt="记忆淘汰前的四道安全关卡" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="五、搜索加权"><a href="#五、搜索加权" class="headerlink" title="五、搜索加权"></a>五、搜索加权</h2><h3 id="5-1-干扰理论在搜索中的体现"><a href="#5-1-干扰理论在搜索中的体现" class="headerlink" title="5.1 干扰理论在搜索中的体现"></a>5.1 干扰理论在搜索中的体现</h3><blockquote>
+<p>记忆的困难不在于存不进去，而在于取不出来。随着存储信息增多，记忆之间的交叉干扰呈指数级增长。</p>
+</blockquote>
+<p>当用户搜索「Q2 评审」时，如果系统只按语义相似度排序，可能出现这种情况：一条 3 个月前的会议纪要语义完美匹配，排在最前面。而昨天刚更新的评审时间变更信息排在后面。<strong>语义匹配度最高 ≠ 用户最需要。</strong></p>
+<p>PowerMem 通过为搜索结果引入时间维度来解决这个问题。</p>
+<h3 id="5-2-排序公式"><a href="#5-2-排序公式" class="headerlink" title="5.2 排序公式"></a>5.2 排序公式</h3><p>先上公式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">final_score = relevance_score × decay_factor</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>relevance_score</code> 是关键词匹配度</li>
+<li><code>decay_factor</code> 是前面提到的衰减因子</li>
+</ul>
+<p>这个公式做了一次<strong>交叉排序</strong>。高语义匹配但时间久远的记忆，可能被中等匹配度但非常新鲜的记忆超越：</p>
+<p>| 记忆                         | 语义匹配度 | 衰减因子 | final_score | 排名 |</p>
+<p>| —————————- | ———- | ——– | ———– | —- |</p>
+<p>| 1 分钟前的闲聊，中等匹配     | 0.45       | 0.99     | <strong>0.45</strong>    | 1    |</p>
+<p>| 3 小时前的会议记录，高度匹配 | 0.92       | 0.29     | <strong>0.27</strong>    | 2    |</p>
+<p>| 10 天前的会议记录，完美匹配  | 0.98       | ~0.00    | ~0.00       | 末尾 |</p>
+<p>大白话讲，新鲜度在搜索排序中有一票否决权。再怎么匹配，衰减到接近零的老记忆也会被沉到底部。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/05.png" alt="PowerMem 检索结果排序加权公式" loading="lazy" decoding="async"></p>
+<p>此外，搜索本身也是记忆访问。<strong>在进行搜索时，会对每条搜索结果依次调用 <strong><code>Memory.get</code></strong>，实现批量生命周期管理。</strong></p>
+<hr>
+<h2 id="六、全局优化"><a href="#六、全局优化" class="headerlink" title="六、全局优化"></a>六、全局优化</h2><h3 id="6-1-为什么需要全局优化"><a href="#6-1-为什么需要全局优化" class="headerlink" title="6.1 为什么需要全局优化"></a>6.1 为什么需要全局优化</h3><p>前面讲的都是针对单条记忆的实时管理。但记忆系统还需要周期性的全局治理。随着信息不断积累，重复、冗余、碎片化等问题都会逐渐显现。</p>
+<p>这类似于大脑在睡眠阶段进行的记忆整理。海马体将记忆重放并转移至新皮层，同时去除重复信息、合并相似记忆、强化重要连接。</p>
+<p>PowerMem 提供三种互补的优化策略。</p>
+<h3 id="6-2-三种优化策略"><a href="#6-2-三种优化策略" class="headerlink" title="6.2 三种优化策略"></a>6.2 三种优化策略</h3><p><strong>（1）精确去重</strong></p>
+<p>基于内容哈希的精确匹配。系统维护一个 <code>hash → [memories]</code> 的映射，保留每组中最早创建的记录，删除其余。一次最多处理 10,000 条记录。</p>
+<p>完全相同的两条信息只留一条。这是最基础的清理。</p>
+<p><strong>（2）语义去重</strong></p>
+<p>基于 embedding 余弦相似度，识别语义高度近似但措辞不同的记忆。使用 O(N×M) 逐对比较，默认阈值 0.95。相似度超过阈值的较新记忆被删除，保留最早的那条。</p>
+<p>比如「Q2 评审改到下周三了」和「Q2 review 推迟到下周三」语义相同但文字不同，语义去重能识别出来。</p>
+<p><strong>（3）记忆压缩</strong></p>
+<p>对多条语义相似但不严格重复的记忆，使用 LLM 将其总结为一条精炼的合成记忆。流程分两步：</p>
+<ol>
+<li><strong>贪心聚类</strong>：将相似度超过阈值（默认 0.85）的记忆归为一组</li>
+<li><strong>LLM 摘要</strong>：使用提示模板让 LLM 生成精炼摘要，用一条合成记忆替换整个聚类</li>
+</ol>
+<p>这三个机制与遗忘衰减协同，构成从**微观（逐条衰减）到宏观（批量压缩）**的完整记忆质量管理体系。</p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/06.png" alt="记忆全局优化的三种精简策略" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>信息量不小。回顾这条会议信息在 PowerMem 中走过的路：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&quot;下周五下午三点评审 Q2 需求文档&quot; 进入系统</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">重要性评估 → &quot;这条信息有多重要？&quot; → 0.72</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">分类 → &quot;分到哪一层？&quot; → 短期记忆</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">参数初始化 → &quot;配一个衰减计时器&quot; → 衰减率和复习间隔已排好</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">时间流逝 → 衰减进行中，保留率持续下降</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">被访问 → &quot;还活着吗？需要升级吗？&quot; → 检查通过，晋升为长期记忆</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">被搜索 → &quot;排在第几位？&quot; → 时间新鲜度 × 语义匹配度</span><br><span class="line"></span><br><span class="line">  ↓</span><br><span class="line"></span><br><span class="line">全局优化 → &quot;有重复吗？能压缩吗？&quot; → 去重与合并</span><br></pre></td></tr></table></figure>
+
+<p>核心思路贯穿始终：<strong>用有限资源保留最有价值的信息，同时保持检索的高信噪比。</strong></p>
+<p>六个节点各司其职：</p>
+<ul>
+<li><strong>重要性评估</strong>解决记住什么</li>
+<li><strong>分类</strong>解决记住多久</li>
+<li><strong>衰减</strong>解决何时淘汰</li>
+<li><strong>访问触发</strong>解决动态调整</li>
+<li><strong>搜索加权</strong>解决怎么找到</li>
+<li><strong>全局优化</strong>解决怎么精简</li>
+</ul>
+<p>我觉得 PowerMem 这套设计最有意思的地方在于，它没有把遗忘当作一个”<strong>要不要删</strong>”的二元问题来处理，从写入的那一刻起衰减就在发生。但衰减不等于删除，它只是一个持续变化的权重，真正决定一条记忆命运的，是它有没有被再次访问，这跟人脑的工作方式很一致。</p>
+<p><strong>遗忘不是记忆系统的事后补救，而是贯穿整个生命周期的核心设计维度。</strong></p>
+<p><img src="/img/2026-06-12-powermem-memory-lifecycle/07.png" alt="PowerMem 记忆完整生命周期总览" loading="lazy" decoding="async"></p>
+<hr>
+<p><strong>参考资料：</strong></p>
+<ol>
+<li>PowerMem GitHub Repository — <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">https://github.com/oceanbase/powermem</a></li>
+<li>PowerMem Docs — <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem/blob/main/docs/guides/0008-ebbinghaus_forgetting_curve.md">Ebbinghaus Forgetting Curve Guide</a></li>
+</ol>
+<hr>
+<p><em>本文基于 PowerMem v1.1.1 源码分析撰写，所有代码引用均来自实际项目。</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/%E9%81%97%E5%BF%98%E6%9C%BA%E5%88%B6/" rel="tag"># 遗忘机制</a>
+              <a href="/tags/%E6%99%BA%E8%83%BD%E8%AE%B0%E5%BF%86/" rel="tag"># 智能记忆</a>
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" rel="tag"># 工程实践</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-12-powermem-operation-guide/" rel="prev" title="PowerMem 操作手册：从 Linux 部署到 Claude Code &#x2F; OpenClaw 接入">
+                  <i class="fa fa-angle-left"></i> PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-06-15-oceanbase-backup-cleanup/" rel="next" title="OceanBase 备份空间清不掉？物理备份自动清理原理详解">
+                  OceanBase 备份空间清不掉？物理备份自动清理原理详解 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -204,7 +204,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">258</span>
+          <span class="site-state-item-count">268</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">399</span>
+        <span class="site-state-item-count">426</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -402,7 +402,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 单机分布式一体化数据库的架构设计与优化","description":"OceanBase 产品总经理、首席架构师杨志丰从技术角度解读单机分布式一体化架构：回顾 OceanBase 三次架构升级历程，剖析动态日志流如何消除分布式 overhead，实现单机与分布式形态的灵活切换，支撑业务全生命周期发展。","image":"https://ilongda.com/img/7-8-standalone-distributed-integrated-database/01.png","wordCount":5533,"datePublished":"2025-07-08T12:36:06.000Z","dateModified":"2025-07-08T13:09:13.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-08-standalone-distributed-integrated-database/"},"url":"https://ilongda.com/2025/2025-07-08-standalone-distributed-integrated-database/","inLanguage":"zh-CN","keywords":["分布式数据库","OceanBase","LSM-Tree","单机分布式一体化","数据库架构","动态日志流","Paxos","TPC-C"],"articleSection":["技术详解"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase 单机分布式一体化数据库的架构设计与优化","description":"OceanBase 产品总经理、首席架构师杨志丰从技术角度解读单机分布式一体化架构：回顾 OceanBase 三次架构升级历程，剖析动态日志流如何消除分布式 overhead，实现单机与分布式形态的灵活切换，支撑业务全生命周期发展。","image":"https://ilongda.com/img/7-8-standalone-distributed-integrated-database/01.png","wordCount":5533,"datePublished":"2025-07-08T12:36:06.000Z","dateModified":"2025-07-08T13:09:13.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-07-08-standalone-distributed-integrated-database/"},"url":"https://ilongda.com/2025/2025-07-08-standalone-distributed-integrated-database/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","LSM-Tree","单机分布式一体化","数据库架构","动态日志流","Paxos","TPC-C"],"articleSection":["技术详解"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"OceanBase 单机分布式一体化数据库的架构设计与优化","item":"https://ilongda.com/2025/2025-07-08-standalone-distributed-integrated-database/"}]}</script>
 <p>本文摘自《OceanBase社区版在泛互场景的应用案例研究》电子书。</p>
 <h2 id="综述"><a href="#综述" class="headerlink" title="综述"></a>综述</h2><p>在 OceanBase 十余年的技术演进中，共经历了三次大的架构升级：第一次架构升级是 OceanBase 0.1<del>0.5 版本（2010 年</del>2015 年），当时的 OceanBase 通过单写多读架构实现了准分布式，包含 UpdateServer、ChunkServer、MergeServer 等多种不同的角色；第二次架构升级是 OceanBase 1.0<del>3.0 版本（2016 年</del>2022 年），OceanBase 成为一个对等的全分布式架构，所有节点可读可写，逐步支持了完整的 SQL 功能；第三次架构升级是 OceanBase 4.0 版本，于2022年8月正式被提出，是业内首个单机分布式一体化数据库。</p>
@@ -491,8 +491,8 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
               <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
               <a href="/tags/LSM-Tree/" rel="tag"># LSM-Tree</a>
               <a href="/tags/%E5%8D%95%E6%9C%BA%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%80%E4%BD%93%E5%8C%96/" rel="tag"># 单机分布式一体化</a>
               <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" rel="tag"># 数据库架构</a>
@@ -553,14 +553,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">647k</span>
+    <span title="站点总字数">694k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">39:15</span>
+    <span title="站点阅读时长">42:04</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解">
+<meta property="og:url" content="https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/18.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/01.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/02.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/03.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/04.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/05.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/06.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/07.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/08.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/09.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/10.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/11.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/12.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/13.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/14.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/15.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/16.webp">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/17.png">
+<meta property="og:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/19.png">
+<meta property="article:published_time" content="2026-07-06T02:01:03.000Z">
+<meta property="article:modified_time" content="2026-07-06T02:01:03.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="AI 数据库">
+<meta property="article:tag" content="Lakebase">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="数据底座">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/18.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/","path":"2026/2026-07-06-ai-agent-database-evolution/","title":"AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Lakebase%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E5%9C%A8-Agent-%E6%97%B6%E4%BB%A3%E7%AA%81%E7%84%B6%E6%88%90%E4%BA%86%E7%83%AD%E8%AF%8D%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">Lakebase，为什么在 Agent 时代突然成了热词？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OceanBase-AI-%E4%BA%A7%E5%93%81%E4%BD%93%E7%B3%BB%EF%BC%8C%E6%9C%89%E5%95%A5%E5%80%BC%E5%BE%97%E5%85%B3%E6%B3%A8%E7%9A%84%E6%96%B0%E4%B8%9C%E8%A5%BF%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">OceanBase AI 产品体系，有啥值得关注的新东西？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb%EF%BC%9A%E7%BB%99-Agent-%E5%87%86%E5%A4%87%E7%9A%84%E2%80%9C%E8%BD%BB%E9%87%8F%E7%BA%A7-AI-Native-%E6%95%B0%E6%8D%AE%E5%BA%93%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">seekdb：给 Agent 准备的“轻量级 AI Native 数据库”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E4%BB%B6%E4%BA%8B%EF%BC%9A%E5%88%AB%E8%AE%A9%E5%BC%80%E5%8F%91%E8%80%85%E7%AC%AC%E4%B8%80%E6%AD%A5%E5%B0%B1%E8%A2%AB%E9%83%A8%E7%BD%B2%E5%8A%9D%E9%80%80"><span class="nav-number">3.1.</span> <span class="nav-text">第一件事：别让开发者第一步就被部署劝退</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E4%BB%B6%E4%BA%8B%EF%BC%9A%E4%B8%8D%E6%8A%8A-Agent-%E8%AE%B0%E5%BF%86%E5%BD%93%E6%88%90%E7%BA%AF%E5%90%91%E9%87%8F%E9%97%AE%E9%A2%98"><span class="nav-number">3.2.</span> <span class="nav-text">第二件事：不把 Agent 记忆当成纯向量问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E4%BB%B6%E4%BA%8B%EF%BC%9A%E6%8F%90%E5%89%8D%E7%BB%99%E4%BC%9A%E7%8A%AF%E9%94%99%E7%9A%84-Agent-%E5%87%86%E5%A4%87%E5%90%8E%E6%82%94%E8%8D%AF"><span class="nav-number">3.3.</span> <span class="nav-text">第三件事：提前给会犯错的 Agent 准备后悔药</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E4%BB%B6%E4%BA%8B%EF%BC%9Aseekdb-M0%EF%BC%8C%E6%8A%8A%E8%AE%B0%E5%BF%86%E4%BA%A7%E5%93%81%E5%BE%80%E5%89%8D%E6%8E%A8%E4%B8%80%E6%AD%A5"><span class="nav-number">3.4.</span> <span class="nav-text">第四件事：seekdb M0，把记忆产品往前推一步</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E4%BB%B6%E4%BA%8B%EF%BC%9Aseekdb-%E4%B8%8D%E5%8F%AA%E9%80%82%E5%90%88%E4%BA%91%E4%B8%8A%EF%BC%8C%E4%B9%9F%E9%80%82%E5%90%88%E7%AB%AF%E4%BE%A7%E5%92%8C%E8%BE%B9%E7%BC%98"><span class="nav-number">3.5.</span> <span class="nav-text">第五件事：seekdb 不只适合云上，也适合端侧和边缘</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerMem%EF%BC%9A%E8%AE%A9-Agent-%E4%B8%8D%E5%8F%AA%E6%98%AF%E2%80%9C%E8%AE%B0%E4%BD%8F%E2%80%9D%EF%BC%8C%E8%80%8C%E6%98%AF%E2%80%9C%E4%BC%9A%E6%95%B4%E7%90%86%E8%AE%B0%E5%BF%86%E2%80%9D"><span class="nav-number">4.</span> <span class="nav-text">PowerMem：让 Agent 不只是“记住”，而是“会整理记忆”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%83%E8%A6%81%E7%9F%A5%E9%81%93%E4%BB%80%E4%B9%88%E5%80%BC%E5%BE%97%E8%AE%B0"><span class="nav-number">4.1.</span> <span class="nav-text">它要知道什么值得记</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%83%E4%BC%9A%E5%A4%84%E7%90%86%E8%AE%B0%E5%BF%86%E5%86%B2%E7%AA%81"><span class="nav-number">4.2.</span> <span class="nav-text">它会处理记忆冲突</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%83%E6%87%82%E5%BE%97%E5%BF%98"><span class="nav-number">4.3.</span> <span class="nav-text">它懂得忘</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%83%E4%B8%8D%E9%99%90%E5%88%B6%E5%90%8E%E7%AB%AF%EF%BC%8C%E4%BD%86-seekdb-%E5%BE%88%E9%80%82%E5%90%88%E5%AE%83"><span class="nav-number">4.4.</span> <span class="nav-text">它不限制后端，但 seekdb 很适合它</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Experience-Skill%EF%BC%9A%E4%BB%8E%E8%AE%B0%E4%BA%8B%E5%AE%9E%EF%BC%8C%E5%88%B0%E9%95%BF%E7%BB%8F%E9%AA%8C"><span class="nav-number">4.5.</span> <span class="nav-text">Experience + Skill：从记事实，到长经验</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb-PowerMem-OceanBase%EF%BC%9A%E4%B8%80%E6%9D%A1%E4%BB%8E%E6%9C%AC%E5%9C%B0%E5%88%B0%E4%BC%81%E4%B8%9A%E7%BA%A7%E7%9A%84%E8%B7%AF"><span class="nav-number">5.</span> <span class="nav-text">seekdb + PowerMem + OceanBase：一条从本地到企业级的路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DataStudio-%E5%92%8C-DataPilot"><span class="nav-number">6.</span> <span class="nav-text">DataStudio 和 DataPilot</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-for-DB-%E5%BE%88%E7%83%AD%EF%BC%8C%E4%BD%86-DB-for-AI-%E6%89%8D%E5%88%9A%E5%BC%80%E5%A7%8B"><span class="nav-number">7.</span> <span class="nav-text">AI for DB 很热，但 DB for AI 才刚开始</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-operation-guide/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-memory-lifecycle/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 记忆生命周期：一条信息从写入到淘汰怎么走完
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-08-powermem-forgetting-design/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-08</time>
+        <br>
+      从神经元到代码工程：PowerMem 记忆系统的遗忘设计
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-29</time>
+        <br>
+      GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-10</time>
+        <br>
+      OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解 | Longda's Interesting World">
+      <meta itemprop="description" content="从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-07-06 10:01:03" itemprop="dateCreated datePublished" datetime="2026-07-06T10:01:03+08:00">2026-07-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>21 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解","description":"从 Lakebase 与 AI 数据库谈起：Agent 需要怎样的数据底座？梳理 OceanBase Lakebase、seekdb、PowerMem 等 Agent 友好能力与演进方向。","image":"https://ilongda.com/img/2026-07-06-ai-agent-database-evolution/18.png","wordCount":5510,"datePublished":"2026-07-06T02:01:03.000Z","dateModified":"2026-07-06T02:01:03.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/"},"url":"https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/","inLanguage":"zh-CN","keywords":["OceanBase","AI Agent","seekdb","PowerMem","数据底座","AI 数据库","Lakebase"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解","item":"https://ilongda.com/2026/2026-07-06-ai-agent-database-evolution/"}]}</script>
+<p>AI Agent 开始真正“用”数据库之后，库本身也要变：既要扛事务与一致性，又要管向量、全文和长期记忆，还得让开发者别被一堆组件拼到怀疑人生。</p>
+<p>本文想讲两件事：</p>
+<ol>
+<li><strong>Lakebase &#x2F; AI 数据库到底在说什么？</strong> 各家定义并不一样；结合 OceanBase 发布会，说说小编对「Agent 友好」能力的理解。</li>
+<li><strong>当 Agent 成为数据库的一等用户，库该长成什么样？</strong> 重点看 seekdb、PowerMem，以及从本地到企业级的一条路径。</li>
+</ol>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/18.png" alt="AI Agent 时代数据库演进主题图" decoding="async"></p>
+<blockquote>
+<p>🧠 想先上手摸一把？本地可试 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">seekdb</a>，记忆层可看 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">PowerMem</a>。</p>
+</blockquote>
+<h2 id="Lakebase，为什么在-Agent-时代突然成了热词？"><a href="#Lakebase，为什么在-Agent-时代突然成了热词？" class="headerlink" title="Lakebase，为什么在 Agent 时代突然成了热词？"></a>Lakebase，为什么在 Agent 时代突然成了热词？</h2><p>开篇先唱个反调。</p>
+<p>发布会后不少标题写 OceanBase「定义」了 Lakebase &#x2F; AI 数据库。小编觉得这话偏满：更准确的说法，是 OceanBase 讲清了<strong>自己</strong>对 Lakebase 的理解，而不是给全行业盖章。</p>
+<p>很多人还不熟这个词，先从它是怎么火起来的说起。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/01.png" alt="Lakebase 概念在 Agent 时代走红示意" loading="lazy" decoding="async"></p>
+<span id="more"></span>
+
+<p>最早把 Lakebase 作为产品叙事推到台前的，是 Databricks。Databricks 发布 Lakebase 时，号称它是面向 AI apps 和 agents 的新一代 operational database，其实是基于 Serverless Postgres，打通了 Lakehouse 和 OLTP 能力。</p>
+<p>后面 Zilliz 对 Lakebase 的理解又是另一种方式 —— 把 Vector Database 和 Data Lake 融合，围绕向量检索、AI search 和 lake-native storage 打造了一套 Vector 版本的 Lakebase 架构。</p>
+<p>上周 OceanBase 发布 AI Database，提出 unified LakeBase architecture，并推出了 OceanBase Lakebase。更准确地说，Lakebase 不是单独一个“底层数据引擎”，而是 OceanBase 面向 AI 数据平台给出的湖库一体架构和数据底座。</p>
+<p>OceanBase 的理解更像是：继续做进阶版的“一体化”数据库，把数据库的事务一致性、实时服务和可靠性，跟数据湖的对象存储、海量数据管理、开放计算接到一起，再把结构化、半结构化、非结构化、向量、全文、图这些数据形态放进统一治理体系里。它想解决的不是某个单点检索问题，而是想大幅降低 AI 时代企业数据底座的组件拼装复杂度。</p>
+<p>同一个 Lakebase，各家理解完全不一样，这就很有意思了。</p>
+<p>Databricks 的老本行是 Lakehouse，强项在数据湖、分析和 AI 平台。所以它讲 Lakebase，自然会讲成 Lakehouse + Serverless Postgres：在离线分析和湖仓体系里，缝合上在线事务处理能力。</p>
+<p>Milvus 的本质是一个向量数据库。所以 Zilliz 讲 Lakebase，自然会围绕 Vector 和 AI search，把 Lakebase 的概念定义成 Vector Lakebase。</p>
+<p>韩锋老师在<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/Uv4b-jof0ZLSSsCn4kSXkA">《“湖库一体”，OB 一体化再升级》</a>里有个说法很贴切：“OceanBase 的产品演进史，本质上就是一部不断打破数据库技术壁垒的‘一体化’进化史。”所以，OceanBase 讲 Lakebase，自然会从“数据库一体化的进化论”来解释：从 OLTP 到 HTAP，再到多模一体化，再到现在的湖库一体。</p>
+<p>其实无论是 Zilliz，还是 OceanBase，乃至于其他数据库，对 Lakebase 的看法并不完全一样，但底层趋势接近：都在自己的维度上做“一体化”的融合。</p>
+<p>Lakebase 的热度，不是因为它新，而是因为它准，它正好戳中了 AI 时代数据系统最难受的地方：非结构化数据越来越多，数据质量压力越来越大，数据管理和 AI 开发割裂，实时数据又要更快地进入分析、训练、评测和在线服务链路。</p>
+<p>AI Native 企业里经常是一套在线库、一套数仓、一套向量库，数据量大了，可能还会再额外增加一套数据湖。每多一套系统，就多了一份同步的开销和不一致风险。</p>
+<p>OceanBase 在对外宣传时，很喜欢说“一体化”这三个字，看上去略显高大上，其实用 OceanBase AI 湖库研发负责人竹翁更朴素的说法，就是：<strong>精简技术栈，高效好运维。</strong> </p>
+<p>也正如韩锋老师所说：</p>
+<blockquote>
+<p>少接几套系统，就少几条数据同步链路；少几条同步链路，就少几个凌晨三点把人叫醒的故障点。</p>
+</blockquote>
+<h2 id="OceanBase-AI-产品体系，有啥值得关注的新东西？"><a href="#OceanBase-AI-产品体系，有啥值得关注的新东西？" class="headerlink" title="OceanBase AI 产品体系，有啥值得关注的新东西？"></a>OceanBase AI 产品体系，有啥值得关注的新东西？</h2><p>发布会上重点讲的 OceanBase Lakebase，只是 OceanBase AI 产品体系中的底层数据平台，它把基于对象存储、存算分离的 OceanBase 和数据湖接起来，把湖、仓、库做成一套引擎，统一支撑湖仓分析负载，和数据库的事务负载。<br><img src="/img/2026-07-06-ai-agent-database-evolution/02.png" alt="OceanBase AI 产品体系分层架构图" loading="lazy" decoding="async"></p>
+<p>官方的原文是：</p>
+<blockquote>
+<p>OceanBase Lakebase 作为底层引擎，承载湖库一体与多模态数据能力，让结构化数据、非结构化数据和向量数据能够在统一架构中被管理、加工、检索和调用。</p>
+</blockquote>
+<p>上面这张图，看起来总觉得比较别扭。从发布会上的内容来看，OceanBase Lakebase 的整体架构大概可以简化成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">OceanBase Lakebase</span><br><span class="line">    ├── OceanBase</span><br><span class="line">    ├── Spark 引擎整合</span><br><span class="line">    ├── Ray 引擎整合</span><br><span class="line">    └── 对象存储</span><br></pre></td></tr></table></figure>
+
+<p>其中：</p>
+<ul>
+<li>OceanBase：专注于实时数据处理和分析，提供高效的向量计算、混合搜索、实时加工与分析、事务处理能力。</li>
+<li>Spark：开源集成，提供高性能离线加工能力。</li>
+<li>Ray：开源集成，提供高效的 embedding、训练、推理和 Python 数据处理能力。</li>
+</ul>
+<p>优势也比较明显：一是 OceanBase 在支持湖库能力之前，HTAP + 单机分布式一体化架构的技术能力就已经比较成熟，TP&#x2F;AP&#x2F;AI 能力不输专用数据库和专业数仓；二是现在又增加了传统 Lakehouse 的大数据处理和分析能力，可以直接为企业的 AI 数据平台提供一套非常完整的解决方案。</p>
+<p>除此以外，在发布会上我注意到还有一个 OceanBase 正在逐步成为 “Agent native 引擎” 的概念。不过发布会上只是简略一提，说 OceanBase 中会增加大量和 AI 相关的新特性，可惜都没有细讲。所以，小编正好可以趁机说说自己的理解（非官方，欢迎纠错）：</p>
+<ul>
+<li>支持对象存储、存算分离。这个好理解，就是为了应对 AI 时代持续膨胀的数据量，降低存储成本。</li>
+<li>大对象类型（例如 AI 离不开的向量类型）会自动根据数据的实际大小，选择不同的存储形态。我理解就是数据小，存数据；数据大，存指针，然后指向实际的外部存储空间。</li>
+<li>AI 列。这个东西，从使用的角度来看，我理解会类似于在生成列（GENERATED AS）的定义中加入 AI Function，让数据库根据提示词自动根据表格中的某些行的内容到一个生成列上。好处是所有数据都被包在数据库里，避免数据流入流出带来的风险和延时。</li>
+<li>逻辑表。我理解就是让多个表结构相同的表，只存一份元数据。通过逻辑映射实现低成本共享与隔离，解决海量 Agent 导致的 Schema 爆炸问题。</li>
+<li>unified catalog。这个和数据安全相关，我理解就是类似于用 Oracle 中的 Schema，对湖库中不同格式的数据，进行访问权限的隔离。</li>
+</ul>
+<p>剩下的“多模态”、“一体化”、“开放生态”……都是些老生常谈的东西，这里就不再展开细聊了，可以详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/uxpA7aJ24OxcNw1oRoFcRg">《OceanBase 湖库一体 AI 数据库正式发布》</a>。</p>
+<p>除了上面这些东西，还有一个值得继续和大家详细聊一聊的东西，就是 <strong>“Agent 友好”</strong> 这个新时代的数据库特性 —— 因为 Agent 不只读写数据，它还会犯错并不断试错、会复用历史经验，还要支持层出不穷的端侧智能设备。所以也需要记忆和上下文、分支快照和出错回滚、极致轻量化等诸多新能力。</p>
+<p>所以，在小编看来，发布会上重磅推出的 OceanBase Lakebase，只是 AI 数据库体系里的湖库底座。AI 数据库产品体系，显然不只是面向湖库能力的一次功能增强，而是面向 Agent、多模态数据和上下文工程的一次基础设施重建。所以，它还需要 seekdb、PowerMem 等 AI Native 产品来补齐 “Agent 友好” 这个 AI 时代对数据库的新诉求。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/03.png" alt="Lakebase 湖库一体架构简化示意" loading="lazy" decoding="async"></p>
+<p>发布会上的叙事方式比较宏大，OceanBase 的各位老大们只重点介绍了 OceanBase Lakebase 这个 AI 时代的数据基座。有一些开发者朋友们最关心的是：<strong>我现在马上就能用到的是什么？答案之一就是刚刚提到的 —— seekdb。</strong></p>
+<p><strong>发布会上提到的多模表、混合搜索、AI Function、fork table &#x2F; fork db 等与 AI 和 Agent 相关的能力，都能直接（甚至提前）在 seekdb 上体验到。</strong></p>
+<h2 id="seekdb：给-Agent-准备的“轻量级-AI-Native-数据库”"><a href="#seekdb：给-Agent-准备的“轻量级-AI-Native-数据库”" class="headerlink" title="seekdb：给 Agent 准备的“轻量级 AI Native 数据库”"></a>seekdb：给 Agent 准备的“轻量级 AI Native 数据库”</h2><p><img src="/img/2026-07-06-ai-agent-database-evolution/04.png" alt="seekdb 作为轻量 AI Native 数据库定位" loading="lazy" decoding="async"></p>
+<p>seekdb 是 OceanBase 社区面向 Agent 和 AI 应用的轻量级 AI Native Search Database，项目已开源，详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">https://github.com/oceanbase/seekdb</a></p>
+<p>它的定位不是“再造一个大而全的企业数据库”。它更像是 OceanBase 这条 DB for AI 路线在开发者侧的一个轻量入口：你可以先在本地、单机、嵌入式场景里用起来，再根据规模切到 seekdb server 或 OceanBase。</p>
+<p>最关键的是，它知道 Agent 需要什么。</p>
+<h3 id="第一件事：别让开发者第一步就被部署劝退"><a href="#第一件事：别让开发者第一步就被部署劝退" class="headerlink" title="第一件事：别让开发者第一步就被部署劝退"></a>第一件事：别让开发者第一步就被部署劝退</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/05.png" alt="seekdb 降低本地部署门槛示意" loading="lazy" decoding="async"></p>
+<p>很多 AI 基础设施死在第一步，开发者刚想试试，就被满是繁文缛节的部署文档劝退了。</p>
+<p>seekdb 这点很务实：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U pyseekdb</span><br></pre></td></tr></table></figure>
+
+<p>pyseekdb 是 seekdb 的 Python SDK。它支持 embedded、本地 server、远程 OceanBase Server。原型阶段可以本地嵌入式运行，不用先搭复杂服务；后面要上规模，再换连接方式。</p>
+<p>这条路，很适合 AI 应用开发。</p>
+<p>今天很多 Agent 项目都是先从一个脚本、一个 Copilot、一个内部小助手长出来的。</p>
+<p>seekdb 的 GitHub README 里把自己概括成一句话：“Write, Search, Fork. The State Store for AI Agents.” Agent 不只是需要存储，它需要持续写入、马上检索、随时试错。</p>
+<h3 id="第二件事：不把-Agent-记忆当成纯向量问题"><a href="#第二件事：不把-Agent-记忆当成纯向量问题" class="headerlink" title="第二件事：不把 Agent 记忆当成纯向量问题"></a>第二件事：不把 Agent 记忆当成纯向量问题</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/06.png" alt="Agent 记忆需要混合检索而非纯向量" loading="lazy" decoding="async"></p>
+<p>很多人一提 Agent 记忆，第一反应是向量数据库。</p>
+<p>但真实场景里，Agent 的记忆和知识库很少是纯向量问题。</p>
+<p>比如你问一个企业助手：“找一下上个月华东区客户投诉里，和退款相关、且语气比较激烈的案例。”</p>
+<p>这句话里至少有三种检索：</p>
+<ul>
+<li>上个月、华东区、客户投诉，是结构化过滤；</li>
+<li>退款，是全文关键词；</li>
+<li>语气激烈、相似案例，是语义向量检索。</li>
+</ul>
+<p>如果你用 MySQL + Elasticsearch + Milvus 拼，当然也能做。但你要维护数据同步、权限一致、结果融合、排序策略，还要祈祷半夜别掉链子。</p>
+<p>seekdb 的思路是：向量、全文、标量过滤放在一个引擎里，用一条 SQL 或一个 SDK 接口完成混合搜索。</p>
+<p>这不只是省事。对 Agent 来说，这意味着上下文更实时，权限更一致，工程链路更短。</p>
+<h3 id="第三件事：提前给会犯错的-Agent-准备后悔药"><a href="#第三件事：提前给会犯错的-Agent-准备后悔药" class="headerlink" title="第三件事：提前给会犯错的 Agent 准备后悔药"></a>第三件事：提前给会犯错的 Agent 准备后悔药</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/07.png" alt="为会犯错的 Agent 准备可回滚能力" loading="lazy" decoding="async"></p>
+<p>现在这个时代，最危险的可能已经不是 AI 大模型敢胡说八道了，而是 Agent 敢拿着很高的权限，到处胡操八作。</p>
+<p>Agent 会犯错，行业已经用层出不穷的生产事故一次又一次地交过学费，详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/Gm8mIPK4MnUZZ07Ue33rDQ">《700 万人围观 AI 删库跑路，罪魁祸首写下奇葩检讨》</a>。</p>
+<p>上面这篇文章，可以用一句话来概括：完善的 System Prompt 绝对不是 Agent 去操作数据的安全边界。</p>
+<p>对于 DBA 来说，重要的往往是效率和成本。但对 Agent 来说，有可以吃的后悔药，也许更重要。</p>
+<p>seekdb 更实际的做法是 Fork &#x2F; Diff &#x2F; Merge。</p>
+<p>它支持 Fork Table &#x2F; Fork Database，给 Agent 创建一个隔离的数据分支。Agent 可以在分支里改表、写数据、测试 Prompt、跑评测。成功了再 merge，失败了直接 drop。详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/7bGbTZPyIn7cX07Zpd4GmA">《seekdb fork table 能力测试报告》</a>里，测试场景包括 A&#x2F;B 实验、数据版本管理、回滚、生产数据隔离测试。<strong>这个能力很像 Git，只不过管理的不是代码分支，而是数据分支。</strong></p>
+<p>如果上面这篇文章里在 AI 创业公司里删库跑路的 Agent 当时操作的是一个 fork 出来的测试分支的 Database，它就可以在里面尽情犯错，数据不会陪它一起消失。</p>
+<p>这就是 Agent 时代数据库该有的基本礼貌：假设 Agent 一定会犯错，然后把爆炸半径关进 fork 出来的测试分支里。</p>
+<h3 id="第四件事：seekdb-M0，把记忆产品往前推一步"><a href="#第四件事：seekdb-M0，把记忆产品往前推一步" class="headerlink" title="第四件事：seekdb M0，把记忆产品往前推一步"></a>第四件事：seekdb M0，把记忆产品往前推一步</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/08.png" alt="seekdb M0 向前推进记忆产品能力" loading="lazy" decoding="async"></p>
+<p>除了 seekdb 本身，还有一个值得单独提的产品：seekdb M0。</p>
+<p>它在社区文章里被描述为一个专门为 AI Agent 设计的自进化云记忆，支持一键接入、分享经验和持续进化，会在支持 Agent 之间经验共享的同时，缩减 token 成本。</p>
+<p>这里不展开讲产品细节，只说它代表的方向：</p>
+<p>Agent 记忆不应该只停留在“把聊天记录存下来”。它应该能跨会话、跨任务、甚至跨 Agent 沉淀经验。</p>
+<p>比如一个 coding agent 试过某个错误方案，下次另一个 agent 不应该重新踩一遍坑。一个机器人在某个环境里学到的操作偏好，也不应该每次断电之后从零做人。</p>
+<p>这件事继续往下走，就会从“记忆存储”走向“经验系统”。</p>
+<h3 id="第五件事：seekdb-不只适合云上，也适合端侧和边缘"><a href="#第五件事：seekdb-不只适合云上，也适合端侧和边缘" class="headerlink" title="第五件事：seekdb 不只适合云上，也适合端侧和边缘"></a>第五件事：seekdb 不只适合云上，也适合端侧和边缘</h3><p>最近 Google DeepMind CEO 哈萨比斯在演讲中有一个判断：模型蒸馏会让更强的模型能力逐步下沉到端侧，详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/TxmPDsVaj9hBomb5jrM2eQ">《人类离 AGI 只剩 4 年，只差最后 3 块拼图》</a></p>
+<p>这个趋势眼看着就要逐步成真了，所以很多 AI 能力，不会永远待在云上。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/09.png" alt="seekdb 覆盖云上端侧与边缘场景" loading="lazy" decoding="async"></p>
+<p>智能设备、边缘设备、具身智能、智能驾驶，都有一个共同问题：不能每次想起一件事都先回云端翻档案。原因也很现实：移动网络很可能不稳定，但设备的延迟不能太高；外加用户隐私问题、成本问题等等。</p>
+<p>这时，seekdb 的嵌入式形态、低资源门槛、本地混合检索就很有价值。它可以在设备侧保存局部状态、任务轨迹、用户偏好和检索索引。车端、机器人、智能终端都需要一块本地“小脑”：能低延迟检索，也能在必要时和云端大脑同步。</p>
+<p>数据中心侧则可以用 OceanBase Lakebase 做多模态数据回流、治理、训练和评测。设备侧用 seekdb + PowerMem 负责即时反应，中心侧负责长期演进。</p>
+<p>这条路，比“所有记忆都塞进云端大模型上下文窗口”靠谱得多。在发布会上，日照也提到了很多支持智驾的车企，现在就是这样做的 —— OceanBase + seekdb + PowerMem。这类“端侧即时反应 + 中心侧长期演进”的架构方向，正在变得越来越现实。</p>
+<h2 id="PowerMem：让-Agent-不只是“记住”，而是“会整理记忆”"><a href="#PowerMem：让-Agent-不只是“记住”，而是“会整理记忆”" class="headerlink" title="PowerMem：让 Agent 不只是“记住”，而是“会整理记忆”"></a>PowerMem：让 Agent 不只是“记住”，而是“会整理记忆”</h2><p>讲完 seekdb，再看 OceanBase CTO 日照在发布会上提到的另一个 AI 产品 —— PowerMem（项目也已开源，详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem%EF%BC%89%E3%80%82">https://github.com/oceanbase/powermem）。</a></p>
+<p>如果说 seekdb 更偏“存和搜”，PowerMem 更偏“记和忘”。它不是向量数据库，也不是简单聊天历史。它更像 Agent 的记忆管理层：负责抽取、合并、遗忘、检索和经验沉淀。</p>
+<p>德哥在<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/LSW_pYokpQVbtXChR4zzLw">《PowerMem 未来可能成为 OB 的杀手锏》</a>里用了一个很形象的比喻来阐述 PowerMem 和其他记忆产品的不同：</p>
+<blockquote>
+<p>普通的向量数据库(Chroma、Milvus、Pinecone)是“会搜索的文件夹”: 你塞什么它存什么，召回什么它不负责。</p>
+<p>mem0 是“听话的笔记本”:你告诉它“记住 X”，它存；你忘了告诉它，它不会主动记。</p>
+<p>PowerMem 是“会思考的笔记本 + 秘书”: 它会自动从对话里“划重点”，对记忆进行去重和合并冲突、遗忘长期得不到访问的记忆，同时还支持记忆的精准召回。</p>
+</blockquote>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/10.png" alt="PowerMem 让 Agent 会整理长期记忆" loading="lazy" decoding="async"></p>
+<p>Agent 的长期记忆最怕两种极端：一种是金鱼脑袋。每次新会话都像初次见面，昨天刚说完的偏好，今天又问一遍。另一种是仓库脑袋。什么都记，什么都塞，最后上下文越来越贵、越来越慢、越来越乱。不会遗忘的 Agent，最后不是更聪明，而是更像一个塞满旧便签的抽屉。</p>
+<p>PowerMem 解决的就是 Agent 的长期记忆问题。</p>
+<h3 id="它要知道什么值得记"><a href="#它要知道什么值得记" class="headerlink" title="它要知道什么值得记"></a>它要知道什么值得记</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/11.png" alt="PowerMem 判断哪些信息值得记住" loading="lazy" decoding="async"></p>
+<p>不是所有聊天记录都值得长期保存。</p>
+<p>“用户喜欢咖啡”可能值得记。</p>
+<p>“用户今天下午 3 点说了一个‘嗯’”大概率不用记。</p>
+<p>“这个项目的数据库从 MySQL 迁到了 OceanBase”值得记。</p>
+<p>“刚才命令行输出了一个临时路径”可能只适合短期上下文。</p>
+<p>PowerMem 做的是从对话、任务轨迹、反馈中抽取关键事实，再变成可检索、可更新、可治理的记忆。</p>
+<h3 id="它会处理记忆冲突"><a href="#它会处理记忆冲突" class="headerlink" title="它会处理记忆冲突"></a>它会处理记忆冲突</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/12.png" alt="PowerMem 处理相互冲突的记忆条目" loading="lazy" decoding="async"></p>
+<p>记忆不是静态文本。例如：用户昨天说喜欢咖啡，今天又说要戒咖啡了。</p>
+<p>如果系统只会“追加”，记忆很快就会打架。PowerMem 要处理的是记忆演化，不是文本堆积。</p>
+<h3 id="它懂得忘"><a href="#它懂得忘" class="headerlink" title="它懂得忘"></a>它懂得忘</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/13.png" alt="PowerMem 基于遗忘曲线淘汰旧记忆" loading="lazy" decoding="async"></p>
+<p>这点听起来反直觉，但很重要。</p>
+<p>人类记忆有遗忘机制，不是缺陷，而是压缩策略。Agent 也一样。</p>
+<p>全量上下文方案看似简单，实际代价很高：token 贵、延迟高、注意力衰减，模型还可能在一堆旧信息里翻车。</p>
+<p>PowerMem 的遗忘和衰减机制，就是为了控制噪音和成本，让真正有用的记忆留在前面。</p>
+<h3 id="它不限制后端，但-seekdb-很适合它"><a href="#它不限制后端，但-seekdb-很适合它" class="headerlink" title="它不限制后端，但 seekdb 很适合它"></a>它不限制后端，但 seekdb 很适合它</h3><p>PowerMem 不应该被理解成“只能绑死某个数据库”。它可以适配不同后端。</p>
+<p>但 seekdb 的轻量形态和混合检索能力，显然能提升 PowerMem 的表现。</p>
+<p>PowerMem 管“什么值得记、什么时候该忘、怎么召回更准”；seekdb 管“这些记忆放在哪里、怎么稳定地查出来”。</p>
+<p>一个像记忆管家，一个像记忆仓库和检索引擎。这两个组合起来，才更接近 Agent 真正需要的长期记忆系统。</p>
+<h3 id="Experience-Skill：从记事实，到长经验"><a href="#Experience-Skill：从记事实，到长经验" class="headerlink" title="Experience + Skill：从记事实，到长经验"></a>Experience + Skill：从记事实，到长经验</h3><p><img src="/img/2026-07-06-ai-agent-database-evolution/14.webp" alt="从记事实到沉淀 Experience 与 Skill" loading="lazy" decoding="async"></p>
+<p>PowerMem README 里明确提到 Experience + Skill distillation。相关社区文章也多次提到 seekdb M0 支持 Agent 之间经验共享。</p>
+<p>为了避免把产品边界说得过满，这里可以保守理解为：OceanBase 社区这条记忆产品线，正在从“记事实”走向“沉淀经验和技能”。</p>
+<p>这一步很重要。未来 Agent 的竞争，可能不只是“谁能调用更强的模型”，而是谁能把每次任务里的经验留下来，让下一次少走弯路。</p>
+<h2 id="seekdb-PowerMem-OceanBase：一条从本地到企业级的路"><a href="#seekdb-PowerMem-OceanBase：一条从本地到企业级的路" class="headerlink" title="seekdb + PowerMem + OceanBase：一条从本地到企业级的路"></a>seekdb + PowerMem + OceanBase：一条从本地到企业级的路</h2><p>德哥在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/v9L5ggFlsWaWlTqXVMsqlA">《OceanBase 在下一盘大棋》</a>里，把 seekdb、PowerMem 和 OceanBase 放在一起做了个总结：</p>
+<blockquote>
+<p>PowerMem 解决“Agent 怎么记住、怎么忘、怎么调出来”；</p>
+<p>seekdb 解决“一条 SQL 把向量、全文、结构化数据查完”；</p>
+<p>OceanBase 解决“上规模后怎么稳、怎么扩、怎么进入企业生产系统”。</p>
+</blockquote>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/15.webp" alt="seekdb PowerMem 与 OceanBase 演进路径" loading="lazy" decoding="async"></p>
+<p>这条路径很顺：</p>
+<p>本地开发阶段，可以用 pyseekdb，也就是 embedded seekdb，加上 PowerMem，快速给 Agent 加长期记忆。</p>
+<p>中小生产阶段，可以用 seekdb server 加 PowerMem，承接 RAG、智能助手、代码 Agent、企业知识库。</p>
+<p>企业规模阶段，可以用 OceanBase &#x2F; Lakebase 加 PowerMem，承接多模态、治理、权限、一致性和海量 Agent。</p>
+<p>这条路也被德哥在另一篇文章<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/dpxtzh6U9bU2UJK-TjjF5Q">《Claude、Codex 疯狂抢入口，OceanBase 闷声焊地基》</a>里说得很准：</p>
+<blockquote>
+<p>Claude、Codex、各种 Agent 平台都在抢入口。</p>
+<p>但当 AI 真要进入企业生产系统，最后绕不开的还是数据底座。</p>
+</blockquote>
+<h2 id="DataStudio-和-DataPilot"><a href="#DataStudio-和-DataPilot" class="headerlink" title="DataStudio 和 DataPilot"></a>DataStudio 和 DataPilot</h2><p>当然，OceanBase 这次发布的不只是 Lakebase 和 PowerMem。</p>
+<p>OceanBase 产品老大颜然还介绍了另外两个产品：统一开发治理平台 DataStudio，以及面向业务的 BI 分析 Agent DataPilot。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/16.webp" alt="DataStudio 与 DataPilot 协作示意" loading="lazy" decoding="async"></p>
+<p>不过这两个产品小编暂时都还没有上手体验过，暂时不便进行过多的分析和评价，后面有缘再和大家介绍和分享。</p>
+<h2 id="AI-for-DB-很热，但-DB-for-AI-才刚开始"><a href="#AI-for-DB-很热，但-DB-for-AI-才刚开始" class="headerlink" title="AI for DB 很热，但 DB for AI 才刚开始"></a>AI for DB 很热，但 DB for AI 才刚开始</h2><p>最近和很多 DBA、数据库开发者聊天，大家都在关注 AI 怎么改变数据库运维和开发，也就是 AI for DB，这很重要。让 AI 写 SQL、查慢查询、做巡检、生成报表，都是很现实的方向。</p>
+<p>但 OceanBase 这场发布会更像是在讲另一条路：DB for AI。也就是说，数据库怎么反过来支撑 AI。AI 要真正进入企业，不能只靠一个聪明模型，它需要高质量数据，需要实时上下文，长期记忆，安全隔离，试错回滚，多模态治理。这时候，数据库不再只是后台那个“存数据的东西”，它需要进化成 Agent 的地基。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/17.png" alt="从 AI for DB 转向 DB for AI 的趋势" loading="lazy" decoding="async"></p>
+<p>最后总结一下：小编觉得 OceanBase 这次发布会真正值得关注的，不只是“又发布了一个 AI 数据库”。更重要的是，它把一个问题摆到了桌面上：</p>
+<blockquote>
+<p>当 AI Agent 开始使用数据库，数据库应该变成什么样子？</p>
+</blockquote>
+<p>这个问题，才刚刚开始变得有点儿意思。</p>
+<p><img src="/img/2026-07-06-ai-agent-database-evolution/19.png" alt="Agent 友好数据库能力清单总结" loading="lazy" decoding="async"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7/" rel="tag"># 数据底座</a>
+              <a href="/tags/AI-%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI 数据库</a>
+              <a href="/tags/Lakebase/" rel="tag"># Lakebase</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-02-easy-data-ai-course/" rel="prev" title="Easy Data x AI 课程共建：补上 Agent 时代的数据基础课">
+                  <i class="fa fa-angle-left"></i> Easy Data x AI 课程共建：补上 Agent 时代的数据基础课
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">694k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">42:04</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>
