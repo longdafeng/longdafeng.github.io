@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判">
+<meta property="og:url" content="https://ilongda.com/2026/2026-07-27-graph-engineering-agent/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/01.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/02.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/03.gif">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/04.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/05.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/06.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/07.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/08.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/09.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/10.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/11.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/12.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/13.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/14.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/15.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/16.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/17.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/18.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/19.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/20.gif">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/21.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/22.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/23.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/24.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/25.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/26.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/27.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/28.png">
+<meta property="og:image" content="https://ilongda.com/img/graph-engineering-agent/29.png">
+<meta property="article:published_time" content="2026-07-26T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-08-12T22:03:56.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="Graph Engineering">
+<meta property="article:tag" content="Harness">
+<meta property="article:tag" content="LangGraph">
+<meta property="article:tag" content="Loop Engineering">
+<meta property="article:tag" content="多智能体">
+<meta property="article:tag" content="有限状态机">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/graph-engineering-agent/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-07-27-graph-engineering-agent/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-07-27-graph-engineering-agent/","path":"2026/2026-07-27-graph-engineering-agent/","title":"聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-07-27-graph-engineering-agent/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Graph-Engineering-%E6%98%AF%E6%80%8E%E4%B9%88%E8%A2%AB%E8%81%8A%E8%B5%B7%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">Graph Engineering 是怎么被聊起来的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E7%AF%87%E5%85%88%E8%81%8A%E4%B8%A4%E5%8F%A5-Loop-Engineering"><span class="nav-number">2.</span> <span class="nav-text">开篇先聊两句 Loop Engineering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-%E7%A4%BE%E5%8C%BA%E6%AD%A3%E5%9C%A8%E8%AE%A8%E8%AE%BA%E7%9A%84-Graph-Engineering-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">AI 社区正在讨论的 Graph Engineering 是什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E8%AF%B4%E6%88%91%E8%87%AA%E5%B7%B1%E7%9A%84%E7%90%86%E8%A7%A3"><span class="nav-number">3.1.</span> <span class="nav-text">先说说我自己的理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E6%B5%81%E8%A7%82%E7%82%B9%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84%EF%BC%9F"><span class="nav-number">3.2.</span> <span class="nav-text">主流观点是怎样的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E8%BF%87%E6%9C%89%E4%BA%9B%E9%97%AE%E9%A2%98%E4%BE%9D%E7%84%B6%E6%B2%A1%E6%9C%89%E7%BB%93%E8%AE%BA"><span class="nav-number">3.3.</span> <span class="nav-text">不过有些问题依然没有结论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E7%90%86%E8%A7%A3-Graph-Engineering%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">如何理解 Graph Engineering？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%98%E6%98%AF%E8%A6%81%E5%85%88%E8%81%8A-Loop%EF%BC%9A%E6%89%A7%E8%A1%8C%E8%80%85%E6%80%8E%E4%B9%88%E6%A0%B9%E6%8D%AE%E5%8F%8D%E9%A6%88%E6%9D%A5%E8%BF%90%E8%A1%8C"><span class="nav-number">4.1.</span> <span class="nav-text">还是要先聊 Loop：执行者怎么根据反馈来运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E3%80%81%E6%A3%80%E6%9F%A5%E3%80%81%E5%AE%9A%E6%96%B9%E5%90%91%EF%BC%8C%E4%B8%8D%E8%83%BD%E9%83%BD%E5%A1%9E%E8%BF%9B%E4%B8%80%E4%B8%AA-Loop"><span class="nav-number">4.2.</span> <span class="nav-text">执行、检查、定方向，不能都塞进一个 Loop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E4%B8%AA-Loop-%E5%A6%82%E4%BD%95%E9%85%8D%E5%90%88%EF%BC%9A%E4%BA%A4%E6%8E%A5%E6%B8%85%E6%A5%9A%E3%80%81%E6%A3%80%E6%9F%A5%E6%9C%89%E6%95%88%E3%80%81%E5%BF%85%E8%A6%81%E6%97%B6%E5%81%9C%E6%89%8B"><span class="nav-number">4.3.</span> <span class="nav-text">多个 Loop 如何配合：交接清楚、检查有效、必要时停手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Graph-%E5%8F%AF%E4%BB%A5%E6%80%8E%E6%A0%B7%E5%8F%98%E5%8C%96%EF%BC%9A%E5%A4%96%E5%B1%82%E5%85%88%E5%AE%9A%E8%BE%B9%E7%95%8C%EF%BC%8C%E5%86%85%E9%83%A8%E6%8C%89%E9%9C%80%E8%B0%83%E6%95%B4"><span class="nav-number">4.4.</span> <span class="nav-text">Graph 可以怎样变化：外层先定边界，内部按需调整</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8D%A2%E6%88%90%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84%E7%9C%8B%EF%BC%8C%E5%8F%AF%E4%BB%A5%E5%80%9F%E7%8A%B6%E6%80%81%E6%9C%BA%E5%B8%AE%E5%8A%A9%E7%90%86%E8%A7%A3"><span class="nav-number">4.5.</span> <span class="nav-text">换成程序结构看，可以借状态机帮助理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E5%80%BC%E5%BE%97%E7%94%A8-Graph%EF%BC%9A%E5%85%88%E7%9C%8B%E4%BB%BB%E5%8A%A1%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E9%9C%80%E8%A6%81"><span class="nav-number">4.6.</span> <span class="nav-text">什么时候值得用 Graph：先看任务是否真的需要</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93%EF%BC%9ALoop-%E6%B2%A1%E6%AD%BB"><span class="nav-number">5.</span> <span class="nav-text">小结：Loop 没死</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">7.</span> <span class="nav-text">延伸阅读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">8.</span> <span class="nav-text">相关内容推荐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%91%E6%9C%9F%E7%A4%BE%E5%8C%BA%E6%B4%BB%E5%8A%A8%E6%8E%A8%E8%8D%90"><span class="nav-number">9.</span> <span class="nav-text">近期社区活动推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">461</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-08-03-multi-agent-memory-isolation-game/" rel="bookmark">
+        <time class="popular-posts-time">2026-08-03</time>
+        <br>
+      从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-26-langchain-harness-allinone-data-base/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-26</time>
+        <br>
+      LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-22-oceanbase-community-skill-universe/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-22</time>
+        <br>
+      OceanBase 社区开启 Skill 宇宙！
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-08-openclaw-token-cost-saving/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-08</time>
+        <br>
+      你的Token消耗为啥这么高？OpenClaw省钱玩法
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-27-workflow-skill-best-practices/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-27</time>
+        <br>
+      工作流 Skill 怎么写？从 7 个顶级项目中提炼的模式与最佳实践
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-07-27-graph-engineering-agent/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判 | Longda's Interesting World">
+      <meta itemprop="description" content="Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-07-27 07:30:00" itemprop="dateCreated datePublished" datetime="2026-07-27T07:30:00+08:00">2026-07-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">沐飏</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.6k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>17 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判","description":"Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。","image":"https://ilongda.com/img/graph-engineering-agent/01.png","wordCount":4221,"datePublished":"2026-07-26T23:30:00.000Z","dateModified":"2026-08-12T22:03:56.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-07-27-graph-engineering-agent/"},"url":"https://ilongda.com/2026/2026-07-27-graph-engineering-agent/","inLanguage":"zh-CN","keywords":["AI Agent","Harness","Graph Engineering","Loop Engineering","多智能体","LangGraph","有限状态机"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判","item":"https://ilongda.com/2026/2026-07-27-graph-engineering-agent/"}]}</script>
+<blockquote>
+<p>如果生产结果、检查结果和判断方向都由同一个 Loop 完成，它很容易同时成为运动员、裁判和记分员。</p>
+<p>Graph Engineering 要设计的，就是多个 Loop 之间，如何分工、交接、纠偏和停手。</p>
+</blockquote>
+<p>最近几天，突然到处都在聊 <strong>Graph Engineering</strong>。有人把它说成多 Agent 工作流，有人强调运行时生成任务，也有人讨论“让 Loop 检查 Loop”。</p>
+<p>这个词虽然暂时还没有公认的定义，但有一点可以先确定：<strong>Loop 没有被 Graph 取代</strong>。当一个 Loop 装不下执行、检查和方向判断时，工程问题才会从 Loop 内部移到多个 Loop 之间。</p>
+<p><img src="/img/graph-engineering-agent/01.png" alt="Graph 组织多个 Loop 的工程关系" decoding="async"></p>
+<span id="more"></span>
+
+<h2 id="Graph-Engineering-是怎么被聊起来的？"><a href="#Graph-Engineering-是怎么被聊起来的？" class="headerlink" title="Graph Engineering 是怎么被聊起来的？"></a>Graph Engineering 是怎么被聊起来的？</h2><p>起点是一句很短的话。7 月 18 日，OpenClaw 作者 Peter Steinberger 问：“我们还在谈 Loop，还是已经转向 Graph 了？”</p>
+<p><img src="/img/graph-engineering-agent/02.jpeg" alt="Peter 推文追问是否转向 Graph" loading="lazy" decoding="async"></p>
+<p>这条只有九个英文单词的推文[1]，已经获得了近 300 万次浏览。</p>
+<p>几个小时后，Hamel Husain 搞了个标题党：《Loop Engineering Is Dead. Enter Graph Engineering.》[2]。内容只有一张动图。</p>
+<p><img src="/img/graph-engineering-agent/03.gif" alt="Husain 标题党动图宣称 Loop 已死" loading="lazy" decoding="async"></p>
+<p>他后来在回复里直接说：“Nobody knows what it is.”[3]</p>
+<p>一个还没有公认定义的词，先拥有了流量、阵营、架构图和教程。看来 AI Coding 圈现在和娱乐圈也大差不差……</p>
+<h2 id="开篇先聊两句-Loop-Engineering"><a href="#开篇先聊两句-Loop-Engineering" class="headerlink" title="开篇先聊两句 Loop Engineering"></a>开篇先聊两句 Loop Engineering</h2><p>为什么之前不单独在公众号上写篇文章去聊 Loop Engineering？</p>
+<p>首先，因为在 Loop Engineering 这个概念突然爆火之前，我们已经聊过 Harness 了（详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">《深度“解剖”AI Agent Harness》</a>）。</p>
+<p>在上面这篇文章里，LangChain 讲得也很直接：Agent &#x3D; 模型 + Harness，“既然模型不是你造的，那你做的就都是 Harness”。</p>
+<p><img src="/img/graph-engineering-agent/04.png" alt="Agent 等于模型加 Harness 示意" loading="lazy" decoding="async"></p>
+<p>因此，Harness 工程就已经包含了：</p>
+<ul>
+<li><strong>提示词工程（Prompt Engineering）</strong>：单参数函数。研究的是如何写一个高质量的提示词，让模型输出更好的结果。</li>
+<li><strong>上下文工程（Context Engineering）</strong>：多参数函数。研究的是给模型看到哪些上下文信息，让模型输出更好的结果。</li>
+<li><strong>循环工程（Loop Engineering）</strong>：带状态反馈的循环程序。研究的是如何让模型能够自动地长时间持续运行，且更好地完成任务。</li>
+<li>……（还有很多其他的组件，这里不再一一列举了）</li>
+</ul>
+<p>其次，<strong>Loop 一直都是 Agent 的基础，根本不是新鲜的概念</strong>。AI Agent 的运行模式是：感知 → 推理 → 行动 → 观察 → 继续推理（也就是 ReAct 模式，Reasoning + Acting）。换言之，Agent 和 ChatBot 最大的区别，就是 Agent 是一个具有循环（Loop）能力的系统，它的运行模式就是一个循环迭代的过程，而非传统 AI 对话的单次响应模式。</p>
+<p>如果非要掰扯一下 Loop Engineering 和 ReAct 有什么不同，那我的理解是：Loop Engineering 无非是在 ReAct 的外面再多套一层 Loop，也就是父循环套子循环，减少人工干预，让 Agent 自己感知环境变化，持续执行，直到完成目标。其实，不去严格区分 Loop Engineering 和 ReAct，问题也不大。</p>
+<p>前一阵儿大家讨论的更多的，还是说不同的 Loop 形式分别适合怎样的场景，例如：回合制（turn-based）、目标制（goal-based）、定时制（time-based）、主动制（proactive）。不过这些不是这篇文章的重点，也不再继续深入去聊，只推荐一篇 Akshay Pachaar 的文章：《The four types of agent loops》[4]。</p>
+<h2 id="AI-社区正在讨论的-Graph-Engineering-是什么？"><a href="#AI-社区正在讨论的-Graph-Engineering-是什么？" class="headerlink" title="AI 社区正在讨论的 Graph Engineering 是什么？"></a>AI 社区正在讨论的 Graph Engineering 是什么？</h2><h3 id="先说说我自己的理解"><a href="#先说说我自己的理解" class="headerlink" title="先说说我自己的理解"></a>先说说我自己的理解</h3><p>按照上面的规律，如果把 Loop Engineering 类比成：带状态反馈的循环程序。那我会把 Graph Engineering 理解成：多个程序节点组成的分布式程序。</p>
+<p>实际场景中可能需要多个 Agent 并行在跑，而且互相之间有所依赖，并非 while 循环的结构这么简单，对应计算机里面的概念就是图，Graph。</p>
+<p><img src="/img/graph-engineering-agent/05.png" alt="多 Agent 依赖构成有向图结构" loading="lazy" decoding="async"></p>
+<p>这个 Graph 是个有向图（Directed Graph），某个 Agent 跑完可能结果就要给到另一个 Agent 继续处理，因此需要有向。</p>
+<blockquote>
+<p>注意：这不是 DAG（有向无环图），因为实际场景可能是有环的，某个节点处理完了可能会回到原来某个过去的节点继续。</p>
+<p>其实，这更像是 FSM（有限状态机），它也是一种图，让模型在一个图中的各种状态间切换，持续执行，直到到达目标。</p>
+</blockquote>
+<p>最近工作中有个大任务，思来想去其实就是构建一个 FSM，前面的 Agent 处理完成给到后面的 Agent，但是后面处理完发现有问题可能又回到前面的 Agent。</p>
+<p><img src="/img/graph-engineering-agent/06.png" alt="任务在 Agent 间回退的状态机" loading="lazy" decoding="async"></p>
+<p>所以，Graph Engineering 和 Loop Engineering 一样，也不算是全新概念，只是目前大家的工程化阶段纷纷走到这里了，需要用图来描述和解决真实场景里面的问题。</p>
+<p><img src="/img/graph-engineering-agent/07.png" alt="Graph Engineering 并非全新概念" loading="lazy" decoding="async"></p>
+<h3 id="主流观点是怎样的？"><a href="#主流观点是怎样的？" class="headerlink" title="主流观点是怎样的？"></a>主流观点是怎样的？</h3><p>如果把高互动讨论放在一起看，大致有这些共识：</p>
+<ul>
+<li><strong>Loop 仍然存在。</strong> 一个 Agent 依然需要根据结果继续行动、验证和修正。这始终都是 Agent 的基础。</li>
+<li><strong>Graph 组织多个执行单元。</strong> 它描述谁先做、谁能并行、检查失败后退回哪里，以及什么时候需要人介入。</li>
+<li><strong>节点不一定都是 Agent。</strong> 它也可以是工具、确定性程序、验证器或人；每个 Agent 节点内部仍可能运行自己的 Loop。</li>
+<li><strong>检查关口和失败路径比方框数量更重要。</strong> 如果所有箭头都只指向“继续”，那只是一条画得更复杂的流水线。</li>
+</ul>
+<p><img src="/img/graph-engineering-agent/08.jpeg" alt="检查关口比节点数量更重要" loading="lazy" decoding="async"></p>
+<p>LangGraph、AutoGen 以及传统工作流系统早就在处理节点、状态、分支和重试。这轮讨论的变化来自 Agent 节点越来越自主，也越来越不确定：它可能临时改变计划、调用工具修改真实环境，甚至在运行过程中继续拆任务。</p>
+<p><img src="/img/graph-engineering-agent/09.jpeg" alt="Agent 节点会改计划并改环境" loading="lazy" decoding="async"></p>
+<h3 id="不过有些问题依然没有结论"><a href="#不过有些问题依然没有结论" class="headerlink" title="不过有些问题依然没有结论"></a>不过有些问题依然没有结论</h3><p>社区目前围绕几组问题继续分化：</p>
+<table>
+<thead>
+<tr>
+<th>讨论焦点</th>
+<th>相对清楚的部分</th>
+<th>仍然没有结论的部分</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Graph 和 Loop 是什么关系</td>
+<td>多数解释里，Graph 包含多个仍在运行的 Loop</td>
+<td>什么规模才值得从 Loop 叫到 Graph</td>
+</tr>
+<tr>
+<td>Graph 是否提前画好</td>
+<td>稳定步骤、权限和检查点通常需要预先约束</td>
+<td>具体任务、分支乃至角色可以动态到什么程度</td>
+</tr>
+<tr>
+<td>多个 Agent 怎样协作</td>
+<td>分工、并行和交接是主流重点</td>
+<td>只是接力，还是要让一个 Loop 校准另一个 Loop</td>
+</tr>
+<tr>
+<td>Work Graph 是什么</td>
+<td>可以用来描述一次运行中临时形成的任务和依赖</td>
+<td>它还不是统一术语，更不是确定结论</td>
+</tr>
+<tr>
+<td>Agent 是否越多越好</td>
+<td>适合并行探索的任务可能受益</td>
+<td>顺序任务里，协调成本可能超过收益</td>
+</tr>
+</tbody></table>
+<p>其中最值得继续追问的是第三行。</p>
+<p>如果 Graph 只是“研究 Agent 做完交给写作 Agent”，它很像传统 Workflow 换成了更聪明的节点。但讨论里已经出现另一条路线：一个 Agent 实现，一个独立 Agent 评审，另一个主动寻找反例，还有一个重新检查最初的目标是否已经偏了。它们不只是接力，还会相互检查、挑战，必要时阻断彼此。“You need loops watching loops”[5] 说的正是这一层。</p>
+<p>多个 Loop 的编排已经有大量框架和实践，让一个 Loop 检查、校准甚至叫停另一个 Loop，还没有统一做法。后者决定了 Graph 最后只是一张协作图，还是一套能够纠偏的系统。</p>
+<h2 id="如何理解-Graph-Engineering？"><a href="#如何理解-Graph-Engineering？" class="headerlink" title="如何理解 Graph Engineering？"></a>如何理解 Graph Engineering？</h2><h3 id="还是要先聊-Loop：执行者怎么根据反馈来运行"><a href="#还是要先聊-Loop：执行者怎么根据反馈来运行" class="headerlink" title="还是要先聊 Loop：执行者怎么根据反馈来运行"></a>还是要先聊 Loop：执行者怎么根据反馈来运行</h3><p>Loop 不只是代码里的 <code>while</code>。一个执行者看到结果后，会决定下一步、采取行动、验证，再带着新信息继续调整，这就是 Loop。</p>
+<p><img src="/img/graph-engineering-agent/10.jpeg" alt="执行者按反馈决定下一步行动" loading="lazy" decoding="async"></p>
+<p>它解决的是一个很具体的问题：<strong>一个执行者怎样持续把事情往前推。</strong> 目标、上下文、工具、验证方法、退出条件和人工确认，都是这个循环的一部分。</p>
+<p><img src="/img/graph-engineering-agent/11.jpeg" alt="单 Loop 不宜同时生产与裁决" loading="lazy" decoding="async"></p>
+<p>单个 Loop 简单、灵活、反应快。<strong>问题也来自这里：如果生产结果、检查结果和判断方向都由同一个 Loop 完成，它很容易同时成为运动员、裁判和记分员。</strong></p>
+<h3 id="执行、检查、定方向，不能都塞进一个-Loop"><a href="#执行、检查、定方向，不能都塞进一个-Loop" class="headerlink" title="执行、检查、定方向，不能都塞进一个 Loop"></a>执行、检查、定方向，不能都塞进一个 Loop</h3><p>当一个 Loop 已经装不下所有责任时，就需要拆开：有人负责把事做出来，有人独立检查，还有人隔一段时间重新判断方向。</p>
+<p><img src="/img/graph-engineering-agent/12.jpeg" alt="做事检查方向三类循环拆开" loading="lazy" decoding="async"></p>
+<ul>
+<li><strong>做事循环</strong> 关心怎么把眼前工作往前推，例如搜索、写代码、生成内容和修复问题。</li>
+<li><strong>检查循环</strong> 不继续替前者做事，而是用测试、约束和反例判断有没有做对。</li>
+<li><strong>方向循环</strong> 看得更慢、更远：相同问题为什么反复出现？成本是否值得？用户是否真的接受？最初的目标是否还合理？</li>
+</ul>
+<p><img src="/img/graph-engineering-agent/13.jpeg" alt="三种循环对应前进纠错定向" loading="lazy" decoding="async"></p>
+<p>这三种循环不一定对应三个 Agent，也不必每一步都同时运行。它们强调的是三种责任：<strong>前进、纠错、重新定向。</strong></p>
+<p>这里可以把 Loop 看成能够根据反馈继续调整的工作单元，把 Graph 看成这些工作单元之间的分工、交接、检查和控制关系。</p>
+<h3 id="多个-Loop-如何配合：交接清楚、检查有效、必要时停手"><a href="#多个-Loop-如何配合：交接清楚、检查有效、必要时停手" class="headerlink" title="多个 Loop 如何配合：交接清楚、检查有效、必要时停手"></a>多个 Loop 如何配合：交接清楚、检查有效、必要时停手</h3><p>如果把一个 Loop 看成一个会自己找路的执行者，Graph 关心的就不是“工位怎么排”，而是谁把什么交给谁，谁来验收，发现不对能不能退回，方向错了又由谁喊停。</p>
+<p><img src="/img/graph-engineering-agent/14.jpeg" alt="Graph 关心交接验收与喊停" loading="lazy" decoding="async"></p>
+<table>
+<thead>
+<tr>
+<th>三层关系</th>
+<th>要说清楚什么</th>
+<th>没说清楚会怎样</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>工作怎样流动</strong></td>
+<td>谁负责什么；上游要交付哪些成果、证据、当前状态和未决问题</td>
+<td>箭头退化成一句“我做完了”，下游只能重新猜一遍</td>
+</tr>
+<tr>
+<td><strong>结果怎样被校准</strong></td>
+<td>谁独立检查；检查失败后是重试、退回、换路还是换人</td>
+<td>评审只能提意见，却不能改变结果</td>
+</tr>
+<tr>
+<td><strong>系统怎样停下或改方向</strong></td>
+<td>谁能阻断继续执行；谁能根据长期结果调整目标和规则</td>
+<td>所有节点都只会向前，一起走偏也停不下来</td>
+</tr>
+</tbody></table>
+<p>设计失败路径时，还要把退回给谁、允许重试几次、什么时候升级给人、已经消耗多少预算写清楚。节点一旦能调用工具或修改真实环境，权限也要跟着角色和阶段收紧，不能让“负责检查”的节点顺手改掉自己正在检查的结果。</p>
+<p>例如，实现 Loop 交出代码和测试证据；检查 Loop 不看它如何解释自己，而是直接运行测试、核对约束、寻找反例。检查失败后，工作真的被退回；如果发现最初目标就有问题，则交给方向 Loop 或人重新判断。只有检查能够改变后续路径，它才不是普通的下一步。</p>
+<p>传统工作流主要决定下一步运行哪个步骤；Graph Engineering 面对的节点可能会自己找路、改计划、调用工具甚至修改真实环境，因此还必须决定谁有权作判断、交接什么证据、谁能否决，以及什么时候回到人。</p>
+<h3 id="Graph-可以怎样变化：外层先定边界，内部按需调整"><a href="#Graph-可以怎样变化：外层先定边界，内部按需调整" class="headerlink" title="Graph 可以怎样变化：外层先定边界，内部按需调整"></a>Graph 可以怎样变化：外层先定边界，内部按需调整</h3><p>社区里既有提前画好的固定路线，也有 Agent 在运行时临时拆出的任务图，还有根据任务难度增删角色的设想。现实里更可能这样：<strong>权限、验收和几个必须停下来的位置先定好；至于这次到底拆出几个任务、走哪条支路，可以边做边调。</strong></p>
+<p><img src="/img/graph-engineering-agent/15.jpeg" alt="权限验收先定任务拆法可变" loading="lazy" decoding="async"></p>
+<p><em>权限、验收、预算和人工闸口构成相对稳定的外层；本次任务怎样拆、是否并行、何时增加检查，可以在边界内按需调整。</em></p>
+<p>有些人把运行中临时形成的任务和依赖叫作 <strong>Work Graph</strong>。这个词可以帮助理解，但目前不是统一术语，更不是已经得到验证的结论；Asana 也早已把 Work Graph® 用于另一套工作数据模型。</p>
+<h3 id="换成程序结构看，可以借状态机帮助理解"><a href="#换成程序结构看，可以借状态机帮助理解" class="headerlink" title="换成程序结构看，可以借状态机帮助理解"></a>换成程序结构看，可以借状态机帮助理解</h3><p>换个程序员更熟悉的角度，这几个概念可以串成一条线：Prompt Engineering 像只接收提示词的单参数函数，Context Engineering 像拿到多组上下文参数的函数，Harness Engineering 再把工具、权限和运行环境接进来；Loop Engineering 让程序读取状态和反馈，持续调整。</p>
+<p>到了 Graph Engineering，多个带状态的执行节点被连成一张图，任务可以分支、汇合、回退，也可以在必要时停下来。</p>
+<p>如果检查失败后会退回、重新规划，或者再次进入已经跑过的节点，路径里就可能出现环。此时可以借有限状态机（FSM）来理解：系统根据结果在不同状态之间切换，直到满足退出条件。</p>
+<p><img src="/img/graph-engineering-agent/16.jpeg" alt="检查失败回退可用状态机类比" loading="lazy" decoding="async"></p>
+<p>这只是理解程序控制关系的一种类比，不能拿来给 Graph Engineering 下技术定义。图论和状态机都不是新东西，变化来自 Agent 节点本身：它们开始自己拆任务、改计划、调用工具，还会修改真实环境。过去用在工作流和分布式系统里的控制方法，现在得重新拿出来处理这些更自主、也更不确定的节点。</p>
+<h3 id="什么时候值得用-Graph：先看任务是否真的需要"><a href="#什么时候值得用-Graph：先看任务是否真的需要" class="headerlink" title="什么时候值得用 Graph：先看任务是否真的需要"></a>什么时候值得用 Graph：先看任务是否真的需要</h3><p>Graph 也不是 Agent 越多越好。它更适合这样的任务：可以拆成相对独立的部分，不同部分需要不同信息、工具或权限，中间结果能够单独检查，失败后也希望只重做局部。</p>
+<p>如果任务很小、每一步严格依赖上一步，所有 Agent 又频繁修改同一份内容，一个清楚的 Loop 往往更好。Anthropic 的多 Agent Research 系统[6] 适合广泛搜索和并行探索，但其官方工程文章也指出，多 Agent 系统的 token 使用量约为普通聊天的 15 倍；Google Research、Google DeepMind 与 MIT 的实验[7] 则发现，多 Agent 在可并行任务上可能提升，在严格顺序任务上反而可能下降。</p>
+<p><img src="/img/graph-engineering-agent/17.jpeg" alt="多 Agent 未必优于单个 Loop" loading="lazy" decoding="async"></p>
+<p>再看到一张 Graph，可以先问三个问题：</p>
+<ol>
+<li><strong>它比一个 Loop 多解决了什么关系？</strong></li>
+<li><strong>检查结果能不能真的退回、换路或叫停？</strong></li>
+<li><strong>增加的协调成本，是否小于它带来的独立判断和局部恢复能力？</strong></li>
+</ol>
+<p><em>从一个清楚的 Loop 开始。只有任务能够拆开、中间结果能够单独验收，而且确实需要不同信息、工具或权限时，Graph 才更可能带来净收益。</em></p>
+<h2 id="小结：Loop-没死"><a href="#小结：Loop-没死" class="headerlink" title="小结：Loop 没死"></a>小结：Loop 没死</h2><p>Graph Engineering 还没有公认定义，也不必急着给它划边界。</p>
+<p>Loop 继续负责让局部工作前进；当执行、检查和方向判断需要拆开时，Graph 才开始变的有意义。</p>
+<p><img src="/img/graph-engineering-agent/18.jpeg" alt="小结强调 Loop 并未被取代" loading="lazy" decoding="async"></p>
+<p>真正需要设计的是关系能否生效：交接是否带着成果和证据，检查能否改变后续路径，方向错误时谁来重新判断。</p>
+<p>做不到这些，Graph 只是一张更复杂、更昂贵的流程图；做得到，工程问题就从“一个 Agent 怎样反复做事”变成了“多个 Loop 怎样协作，又怎样避免一起走偏”。</p>
+<p><img src="/img/graph-engineering-agent/19.png" alt="检查必须能改变后续执行路径" loading="lazy" decoding="async"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
+<li>推文: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/steipete/status/2078277297791189132">https://x.com/steipete/status/2078277297791189132</a></li>
+<li>《Loop Engineering Is Dead. Enter Graph Engineering.》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/HamelHusain/status/2078346425621237935">https://x.com/HamelHusain/status/2078346425621237935</a></li>
+<li>“Nobody knows what it is.”: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/HamelHusain/status/2079224401267224677">https://x.com/HamelHusain/status/2079224401267224677</a></li>
+<li>《The four types of agent loops》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/akshay_pachaar/status/2076748259377516782">https://x.com/akshay_pachaar&#x2F;status&#x2F;2076748259377516782</a></li>
+<li>“You need loops watching loops”: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/VaibhavSisinty/status/2078646016568606961">https://x.com/VaibhavSisinty/status/2078646016568606961</a></li>
+<li>Anthropic 的多 Agent Research 系统: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.anthropic.com/engineering/multi-agent-research-system">https://www.anthropic.com/engineering/multi-agent-research-system</a></li>
+<li>Google Research、Google DeepMind 与 MIT 的实验: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/">https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/</a></li>
+</ol>
+<h2 id="延伸阅读"><a href="#延伸阅读" class="headerlink" title="延伸阅读"></a>延伸阅读</h2><ul>
+<li>《Peter Steinberger：Are we still talking loops or did we shift to graphs yet?》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/steipete/status/2078277297791189132">https://x.com/steipete/status/2078277297791189132</a></li>
+<li>《社区长帖：A graph is a map of loops + checkpoints》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/shannholmberg/status/2079096565344739643">https://x.com/shannholmberg/status/2079096565344739643</a></li>
+<li>《社区长帖：You need loops watching loops》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/VaibhavSisinty/status/2078646016568606961">https://x.com/VaibhavSisinty/status/2078646016568606961</a></li>
+<li>《Rahul：Prompt &#x2F; Context &#x2F; Harness &#x2F; Loop &#x2F; Graph Engineering》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/sairahul1/status/2078781824160166070">https://x.com/sairahul1/status/2078781824160166070</a></li>
+<li>《ZeroZ_JQ：从 Prompt、Context、Harness、Loop 到 Graph 的程序结构类比》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/ZeroZ_JQ/status/2079512381294879005">https://x.com/ZeroZ_JQ&#x2F;status&#x2F;2079512381294879005</a></li>
+<li>《IntuitMachine：关于 Loop Engineering 与 Graph Engineering 的讨论》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/IntuitMachine/status/2078419526354378975">https://x.com/IntuitMachine/status/2078419526354378975</a></li>
+<li>《LangGraph：Graph API》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.langchain.com/oss/python/langgraph/graph-api">https://docs.langchain.com/oss/python/langgraph/graph-api</a></li>
+<li>《Microsoft AutoGen：GraphFlow》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/graph-flow.html">https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/graph-flow.html</a></li>
+<li>《Anthropic：How we built our multi-agent research system》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.anthropic.com/engineering/multi-agent-research-system">https://www.anthropic.com/engineering/multi-agent-research-system</a></li>
+<li>《Google Research：Towards a Science of Scaling Agent Systems》：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/">https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/</a></li>
+</ul>
+<p><img src="/img/graph-engineering-agent/20.gif" alt="关注 OceanBase 社区公众号老纪的技术唠嗑局" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/21.png" alt="延伸阅读封面配图" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/22.png" alt="延伸阅读与推荐内容分隔条" loading="lazy" decoding="async"></p>
+<h2 id="相关内容推荐"><a href="#相关内容推荐" class="headerlink" title="相关内容推荐"></a>相关内容推荐</h2><p><img src="/img/graph-engineering-agent/23.png" alt="相关内容推荐文章卡片一" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/24.png" alt="相关内容推荐文章卡片二" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/25.png" alt="相关内容推荐文章卡片三" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/26.png" alt="相关内容推荐文章卡片四" loading="lazy" decoding="async"></p>
+<p><img src="/img/graph-engineering-agent/27.png" alt="相关内容与活动推荐分隔条" loading="lazy" decoding="async"></p>
+<h2 id="近期社区活动推荐"><a href="#近期社区活动推荐" class="headerlink" title="近期社区活动推荐"></a>近期社区活动推荐</h2><p><img src="/img/graph-engineering-agent/28.png" alt="近期社区活动推荐海报" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/graph-engineering-agent/29.png" alt="添加社区小助手微信交流群二维码" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/Harness/" rel="tag"># Harness</a>
+              <a href="/tags/Graph-Engineering/" rel="tag"># Graph Engineering</a>
+              <a href="/tags/Loop-Engineering/" rel="tag"># Loop Engineering</a>
+              <a href="/tags/%E5%A4%9A%E6%99%BA%E8%83%BD%E4%BD%93/" rel="tag"># 多智能体</a>
+              <a href="/tags/LangGraph/" rel="tag"># LangGraph</a>
+              <a href="/tags/%E6%9C%89%E9%99%90%E7%8A%B6%E6%80%81%E6%9C%BA/" rel="tag"># 有限状态机</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-23-why-we-build-lakebase/" rel="prev" title="我们为什么要做 Lakebase？">
+                  <i class="fa fa-angle-left"></i> 我们为什么要做 Lakebase？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-28-waic-not-omnipotent-agent/" rel="next" title="逛完 WAIC，我不再迷信“全能 Agent”了">
+                  逛完 WAIC，我不再迷信“全能 Agent”了 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">747k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">45:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -201,7 +201,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -212,7 +212,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -422,14 +422,14 @@
 <p>第三步是语言模型处理，也就是 LLM 阶段。这一步是整个流程的大脑，负责理解用户的意图，并决定如何响应。在这个阶段，系统会自主决策是否需要调用外部工具。比如用户问了一个需要实时信息的问题，系统可能会决定去网上搜索。如果用户的问题涉及到知识库中的信息，系统会调用 seekdb 进行数据库查询。EchoKit 还支持 MCP（Model Context Protocol）工具调用，这是一个标准化的工具调用协议，可以让 AI 助手调用各种外部工具和服务。</p>
 <p>最后一步是语音合成，也就是 TTS（Text-to-Speech）。系统把生成的文本转换成语音输出给用户。这里同样支持多种 TTS 引擎，你可以选择低延迟的开源 TTS 模型。演讲中提到千问最近发布了一个延迟比较低的 TTS 模型，这种新的模型都可以集成进来。更有意思的是，EchoKit 还支持语音克隆功能，这个后面会详细讲到。</p>
 <p>整个架构的设计理念就是模块化和可替换。每一个环节都可以根据你的需求进行调整和优化，这种灵活性是这个框架的核心价值所在。</p>
-<p><img src="/img/echokit-seekdb-voice-ai/01.webp" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架" decoding="async"></p>
+<p><img src="/img/echokit-seekdb-voice-ai/01.webp" decoding="async" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架"></p>
 <h2 id="OceanBase-seekdb-在其中扮演的角色"><a href="#OceanBase-seekdb-在其中扮演的角色" class="headerlink" title="OceanBase seekdb 在其中扮演的角色"></a>OceanBase seekdb 在其中扮演的角色</h2><p>在 EchoKit 的架构中，OceanBase seekdb 被选作知识库解决方案，这个选择是有充分理由的。</p>
 <p><strong>首先是延迟问题</strong>。对于语音交互来说，响应速度是用户体验的关键。如果你问一个问题，系统要等好几秒才能回答，这个体验就很糟糕。seekdb 的查询响应速度非常快，这对于实时语音交互来说至关重要。当用户提出一个需要查询知识库的问题时，系统可以快速从 seekdb 中检索到相关信息，然后生成回答，整个过程不会有明显的延迟。</p>
 <p><strong>其次是搜索能力的多样性</strong>。seekdb 支持多种搜索模式，包括关键词搜索、精确搜索、语义搜索，以及这些模式的混合搜索。这种能力在实际应用中非常有用。比如用户问“最近 AI 领域有哪些技术突破”，这个问题就需要多种搜索能力的配合。系统需要理解“技术突破”的语义含义，这是语义搜索；需要精确匹配“AI”这个关键词，这是关键词搜索；还需要按照“最近”这个时间范围进行过滤，这是元数据的精确过滤。seekdb 可以把这些搜索方式结合起来，返回最相关、最准确的结果。</p>
 <p><strong>第三个优势是内置的 Embedding 功能</strong>。seekdb 具有内置的 embedding 功能，这意味着你不需要单独部署一个 embedding 服务，整个向量化处理流程都被简化了。这对于降低系统复杂度、减少部署难度来说是很有帮助的。</p>
 <p><strong>最后是语义混搜排序能力</strong>。seekdb 可以同时进行语义匹配、关键词匹配和元数据精确过滤，然后对结果进行综合排序。这种能力特别适合复杂的知识检索场景。在实际应用中，用户的问题往往不是单一维度的，需要系统能够理解问题的多个方面，然后从知识库中找出最匹配的信息。</p>
 <p>seekdb 还可以作为 MCP Server 被调用。这意味着它不仅仅是一个被动的数据库，而是可以作为一个工具被 AI 助手主动调用。这种设计让整个系统的架构更加灵活。</p>
-<p><img src="/img/echokit-seekdb-voice-ai/02.webp" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架" loading="lazy" decoding="async"></p>
+<p><img src="/img/echokit-seekdb-voice-ai/02.webp" loading="lazy" decoding="async" alt="EchoKit x OceanBase seekdb：开源的本地化语音 AI 框架"></p>
 <h2 id="实际应用场景"><a href="#实际应用场景" class="headerlink" title="实际应用场景"></a>实际应用场景</h2><p>为了更好地理解 EchoKit 和 OceanBase seekdb 的结合能带来什么，我们可以看几个具体的应用场景。</p>
 <p>第一个是金融场景下的营收监控。假设你是一个公司的管理者，你想通过语音快速了解公司的财务状况。你可以直接对着语音助手说：“看一下我们 Q4 这个季度的营收，如果低于目标就给我一个警示。”</p>
 <p>系统的处理流程是这样的：首先，你的语音输入被 ASR 转换成文字。然后，LLM 理解了你的意图，知道你要查询 Q4 的营收数据，并且需要跟目标进行对比。接着，系统决定调用营收 API 来获取实际的营收数据。同时，系统会从 seekdb 中查询 Q4 的营收目标是多少。拿到这两个数据之后，系统进行对比，发现实际营收低于目标。最后，系统通过 TTS 生成语音反馈：“营收低于 12% 的目标。”</p>
@@ -533,14 +533,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

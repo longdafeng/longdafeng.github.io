@@ -212,7 +212,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -223,7 +223,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -419,7 +419,7 @@
 <p>——《礼记》</p>
 <h1 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h1><p>OceanBase 最近发布了 seekdb 数据库，主打 “轻量 + 向量 + AI”。</p>
 <p>在 seekdb 发布之后，陆续收到了许多用户关于 seekdb 中向量索引在使用上的一些问题，比如：索引创建耗时慢优化问题，创建时对内存的要求，增量达到什么规模需要重建，重建性能影响怎么消除等等等等。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/01.png" alt="OceanBase 向量索引优化指南" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/01.png" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>因此，向量索引的研发同学夏进大佬，今天就专门在这篇文章中，从 OceanBase &#x2F; seekdb 向量索引的构建过程开始讲起，为大家深入且详细地分析上述问题。有任何疑问欢迎大家留言提问～🙋</p>
 <span id="more"></span>
 
@@ -427,9 +427,9 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t1(</span><br><span class="line">  c1 <span class="type">INT</span>,</span><br><span class="line">  c2 VECTOR(<span class="number">10</span>),</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY(c1),</span><br><span class="line">  VECTOR INDEX idx1(c2) <span class="keyword">WITH</span> (distance<span class="operator">=</span>l2, type<span class="operator">=</span>hnsw, lib<span class="operator">=</span>vsag));</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">   table_id,</span><br><span class="line">   table_name,</span><br><span class="line">   table_type</span><br><span class="line"><span class="keyword">from</span> oceanbase.__all_table</span><br><span class="line"><span class="keyword">where</span> database_id <span class="operator">=</span> <span class="number">500001</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="operator">|</span> table_id <span class="operator">|</span> table_name                                  <span class="operator">|</span> table_type <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500055</span> <span class="operator">|</span> t1                                          <span class="operator">|</span>          <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500061</span> <span class="operator">|</span> __AUX_LOB_META_500061_                      <span class="operator">|</span>         <span class="number">13</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500062</span> <span class="operator">|</span> __AUX_LOB_PIECE_500062_                     <span class="operator">|</span>         <span class="number">12</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500056</span> <span class="operator">|</span> __idx_500055_idx1                           <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500059</span> <span class="operator">|</span> __idx_500055_idx1_index_id_table            <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500060</span> <span class="operator">|</span> __idx_500055_idx1_index_snapshot_data_table <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500057</span> <span class="operator">|</span> __idx_500055_rowkey_vid_table               <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>   <span class="number">500058</span> <span class="operator">|</span> __idx_500055_vid_rowkey_table               <span class="operator">|</span>          <span class="number">5</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+---------------------------------------------+------------+</span></span><br><span class="line"><span class="number">8</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
 
 <p>table_type 的含义详见：<strong>seekdb 开源项目代码</strong>[2]，这里只截一张图，不再细说。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/02.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/02.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <h2 id="向量索引的组成"><a href="#向量索引的组成" class="headerlink" title="向量索引的组成"></a>向量索引的组成</h2><p>在了解向量索引构建过程前，需要先了解整个向量索引的组成部分，以 HNSW（Hierarchical Navigable Small World）索引为例，包含内存索引和磁盘索引两部分。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/03.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/03.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>上图的上半部分蓝色的是内存索引的结构，由三部分组成，分别是 snapshot 快照索引（0-1）、increment 增量内存索引（0-3）、valid_bitmap 内存结构（0-3），共同构成了向量索引的内存组成部分。</p>
 <p>下半部分黑色的是磁盘索引，包含五个辅助表：</p>
 <ul>
@@ -463,7 +463,7 @@
 </blockquote>
 <h2 id="向量索引构建流程"><a href="#向量索引构建流程" class="headerlink" title="向量索引构建流程"></a>向量索引构建流程</h2><p>在了解完索引辅助表在内存和磁盘上的整体结构后，我们来了解下索引表的构建流程。</p>
 <p>首先需要创建上文中提到的 5 个辅助表以及对应内容，当前在创建辅助表的过程中，使用的是 OceanBase DDL 框架，主要以 DDL task 的形式实现。对于一个 DDL task 来说，主要是以状态机的形式进行实现，推进每一个状态的执行以及切换，处理不同辅助表的创建过程。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/04.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/04.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>在状态机中流程共有三步。</p>
 <ul>
 <li>第一步，创建 1 号表 rowkey_vid table。如果该表已存在，可直接跳过，如果不存在，会直接创建 1 号表的 Schema、再在表中补全数据，该状态结束后会进入到下一个状态。</li>
@@ -472,27 +472,27 @@
 </ul>
 <p>待上述流程全部完成后，即进入索引生效状态，然后将索引创建流程结束，即可开始使用。</p>
 <h2 id="构建流程中的状态推进"><a href="#构建流程中的状态推进" class="headerlink" title="构建流程中的状态推进"></a>构建流程中的状态推进</h2><p><strong>对于 DDL task 的执行流程，主要以状态机的形式来进行流程处理。主要逻辑是根据当前的状态，进行对应状态的处理，以及对下一个状态的转移。可能会有用户感到疑惑，为什么要引入索引状态机？</strong></p>
-<p><img src="/img/oceanbase-vector-index-optimization/05.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/05.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>利用状态机的好处主要有两点：一是流程可视化，二是状态持久化。</p>
 <p>考虑到可能存在一些异常场景，例如 LS（LogStream）切主，或者重启、宕机等。在这些异常场景下，如果当前在进行 5 号表的补数据流程，在过程中发生了切主或重启，在场景异常恢复正常后，只需要从五号表到进行中状态继续往下进行，而不需要从头再进行一遍，以提高异常场景下的容错能力。</p>
 <h1 id="构建性能和内存分析"><a href="#构建性能和内存分析" class="headerlink" title="构建性能和内存分析"></a>构建性能和内存分析</h1><h2 id="耗时点分析"><a href="#耗时点分析" class="headerlink" title="耗时点分析"></a>耗时点分析</h2><p>通过两张图，来分析一下索引构建过程中的耗时点。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/06.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/06.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>图中集群的本地数据量为 2000 万，在该集群创建构建索引，通过查询内部表 __all_rootservice_event_history 得出构建索引每个状态的对应耗时，可以看出：</p>
 <ul>
 <li>WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 的状态耗时从 10 点 53 分一直到 14 点 28 分，中间经历了约 3.5 小时。</li>
 <li>其他状态的耗时均为几分钟。</li>
 </ul>
 <p>因此，整个构建索引过程大部分耗时都集中在 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态中。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/07.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/07.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>通过查询内部表 __all_rootservice_event_history 的 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态下对应表的构建子任务的状态和耗时可以看出：耗时比较久的是 REDEFINITION 状态，耗时为 3.5 小时，基本接近上文 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态的耗时，也就是说 WAIT_VID_RPWKEY_TABLE_COMPLEWEMT 状态的耗时点在 REDEFINITION 状态。</p>
 <h2 id="构建耗时分析"><a href="#构建耗时分析" class="headerlink" title="构建耗时分析"></a>构建耗时分析</h2><p><strong>小编划重点：</strong></p>
 <p><strong>从这里开始的内容，一定要看下！</strong></p>
 <p><strong>推荐收藏，以备不时之需~</strong></p>
 <p>GV$SESSION_LONGOPS 视图用于展示集群 DDL 操作的执行状态和进度，从该视图中可以得出构建过程的各个状态。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/08.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/08.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>首先需要关注并行度。图中的并行度 PARALLELISM 为 1，也就是说同时进行的构建过程只有一个，构建过程中的补数据操作的并行度也是 1，因此该场景下的后键过程是比较慢的，也就是说造成构建慢的很重要因素是没有开并行。</p>
 <p>第二个因素是补数据过程中的采样点。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/09.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/09.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>上图是红框为每个采样点的数值，第一个采样点是 122000，第二个采样点是 178000，第三个采样点是 297000，第四个采样点是 406000，第五个采样点是 642000，第六个采样点是 648000。</p>
 <p>第二个采样点和第一个采样点的值相差 5 万左右，因此第一个分片有 5 万左右的数据。</p>
 <p>以此类推：第二个分片有 12 万左右的数据，第三个分片有 11 万左右的数据，第四个分片有 20 万左右的数据，第五个分片只有 0.6 万左右的数据，从第三个分片开始，采样的数据量差距越来越大，到第五个分片却只有 0.6 万数据。</p>
@@ -504,7 +504,7 @@
 <p>第三个造成后键索引速度慢的原因是：单条写入慢。如果表是非分区表，在对非分区表补数据时，相当于只有一个内存索引。假设内存索引存储了 100 万数据，在做补数据时，会将全部 100 万的数据写入一个分区内。HNSW 索引是 HNSW 的图结构，插入索引时，如果图的数据量越大，在搜图的耗时就越长。可能在插入到 90 万条数据后，插入速度已经变得非常缓慢。如果将表改为分区表，例如将 100 万的数据平摊到 10 个分区中，相当于在使用并行，此时插入效率会比一个分区快很多。</p>
 <p><strong>因此，构建索引慢的优化方法有：加并行、提高采样率、改分区表三种。</strong></p>
 <h2 id="内存分析"><a href="#内存分析" class="headerlink" title="内存分析"></a>内存分析</h2><p>通过查询 __all_virtual_vector_index_info 类目表，可以得出几个关键信息。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/10.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/10.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>内存索引主要由三个部分组成，分别是：</p>
 <ul>
 <li>增量索引内存</li>
@@ -529,7 +529,7 @@
 </li>
 </ul>
 <p>除此之外，建议使用内存预估提前规划好内存。针对目前一些客户的反馈问题，例如在后期过程中，如果发现内存不足导致报错、卡住等现象，可以在建内存索引前使用工具预估内存，例如 OceanBase 官方提供的 DBMS 工具，进行预估内存、提前规划，即可避免后续出现相关报错。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/11.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/11.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>内存预估能力会在 OceanBase V4.3.5_BP3 之后的版本支持。</p>
 <h2 id="构建性能和内存优化建议"><a href="#构建性能和内存优化建议" class="headerlink" title="构建性能和内存优化建议"></a>构建性能和内存优化建议</h2><p>综上所述，构建速度优化和构建内存优化的方式总结如下。</p>
 <h3 id="构建速度优化"><a href="#构建速度优化" class="headerlink" title="构建速度优化"></a>构建速度优化</h3><ol>
@@ -544,14 +544,14 @@
 </ol>
 <h1 id="重建原理和内存分析"><a href="#重建原理和内存分析" class="headerlink" title="重建原理和内存分析"></a>重建原理和内存分析</h1><h2 id="重建目的"><a href="#重建目的" class="headerlink" title="重建目的"></a>重建目的</h2><p>随着 DML 操作带来的更新数据变多，查询内存增量索引和 valid_bitmap 的代价变大，重建的目的是减少增量索引的内存占用和查询代价。</p>
 <h2 id="重建原理"><a href="#重建原理" class="headerlink" title="重建原理"></a>重建原理</h2><p>重建索引的原理其实很简单，即新建一个同名索引表，完成数据导入后，再删除旧索引，再交换索引名，使新索引生效。下图是重建索引的框架图，如图所示，是从 RS 中做驱动，执行 DDL 任务的流程，最终完成索引的创建。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/12.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/12.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <h2 id="重建语法"><a href="#重建语法" class="headerlink" title="重建语法"></a>重建语法</h2><p>REBUILD_INDEX 过程用于全量刷新（即重建）向量索引，触发重建索引的语法为（不设置并行度）：<code>call dbms_vector.rebuild_index(&#39;idx1&#39;,&#39;t1&#39;,&#39;c2&#39;)</code>。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/13.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/13.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <p>更多介绍可参见文档：<strong>OceanBase 官方文档 —— REBUILD_INDEX</strong>[3]。</p>
 <h2 id="重建场景"><a href="#重建场景" class="headerlink" title="重建场景"></a>重建场景</h2><p>重建索引是表级别的 Rebuild，较为耗时，一般建议增量数据占比超过快照数据的 20%，或者查询时出现 3 号表的数据访问热点时，选择重建。建议在 CPU 和内存空闲的时间段进行。</p>
 <h2 id="重建过程中的内存占用"><a href="#重建过程中的内存占用" class="headerlink" title="重建过程中的内存占用"></a>重建过程中的内存占用</h2><p>由于重建索引过程中会同时存在新旧两个索引，因此内存占用最大可能会是原来索引的 2 倍，重建完成后内存下降新索引内存水位。该过程有一些可用的优化手段，因为在做构建索引时，补数据是按照分区进行的，即不是一下补所有分区，而是一个分区一个分区进行，可以在某个分区重建索引好，立即将原内存索引删除。例如有一个分区表，有 10 个分区，原索引占用了 10G 内存，在资源有限的情况下，可以只预留 11G 或 12G 的内存空间，每次只进行单分区的索引重建及重建后删除，整体不会占用太多的磁盘和内存空间。</p>
 <p>重建后的内存绝大部分集中在 snap_index 快照索引，但若重建过程中有 DML 操作，重建后的 incr_index 增量索引也会有新的内存开销，因此建议在 Rebuild 索引时，将 DML 流量关掉。</p>
-<p><img src="/img/oceanbase-vector-index-optimization/14.jpeg" alt="OceanBase 向量索引优化指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-vector-index-optimization/14.jpeg" loading="lazy" decoding="async" alt="OceanBase 向量索引优化指南"></p>
 <h1 id="未来展望"><a href="#未来展望" class="headerlink" title="未来展望"></a>未来展望</h1><p>关于 seekdb 和 OceanBase 向量索引未来的能力有如下 3 点展望：</p>
 <ol>
 <li>实现分区级自动并行重建。目前 OceanBase V4.3.5_BP3 已经支持了分区级自动重建，默认开启。但自动重建是单分区、单线程进行补数据，不支持并行，因此写入效率相对比较慢。未来希望支持并行重建，加快一个分区级自动重建效率。</li>
@@ -649,14 +649,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

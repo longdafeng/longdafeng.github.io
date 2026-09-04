@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Agent 习惯性删库跑路，数据库纷纷学 Git 续命">
+<meta property="og:url" content="https://ilongda.com/2026/2026-08-31-agent-delete-database-git/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/01.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/02.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/03.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/04.jpeg">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/05.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/06.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/07.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/08.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/09.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/10.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/11.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/12.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/13.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/14.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/15.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/16.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/17.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/18.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-delete-database-git/19.png">
+<meta property="article:published_time" content="2026-08-31T00:03:24.000Z">
+<meta property="article:modified_time" content="2026-08-31T00:03:24.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Copy-on-Write">
+<meta property="article:tag" content="Databricks">
+<meta property="article:tag" content="FORK">
+<meta property="article:tag" content="Neon">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="数据库分支">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/agent-delete-database-git/01.jpeg">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-08-31-agent-delete-database-git/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-08-31-agent-delete-database-git/","path":"2026/2026-08-31-agent-delete-database-git/","title":"Agent 习惯性删库跑路，数据库纷纷学 Git 续命"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Agent 习惯性删库跑路，数据库纷纷学 Git 续命 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-08-31-agent-delete-database-git/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A5%94%E5%AD%90%EF%BC%9AAgent-%E7%9A%84%E2%80%9C%E4%B9%A0%E6%83%AF%E6%80%A7%E5%88%A0%E5%BA%93%E8%B7%91%E8%B7%AF%E2%80%9D"><span class="nav-number">1.</span> <span class="nav-text">楔子：Agent 的“习惯性删库跑路”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93-Agent-%E6%8B%BF%E5%88%B0%E9%92%A5%E5%8C%99"><span class="nav-number">2.</span> <span class="nav-text">当 Agent 拿到钥匙</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1-%E5%90%8E%E6%82%94%E8%8D%AF"><span class="nav-number">3.</span> <span class="nav-text">事务 !&#x3D; 后悔药</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BC%80%E5%A7%8B%E5%AD%A6-Git"><span class="nav-number">4.</span> <span class="nav-text">数据库开始学 Git</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Databricks%EF%BC%9A%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%96%B0%E5%88%86%E6%94%AF"><span class="nav-number">5.</span> <span class="nav-text">Databricks：建一个新分支</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Neon%EF%BC%9A%E5%BB%BA%E4%B8%80%E4%B8%AA%E6%B8%B8%E6%88%8F%E5%AD%98%E6%A1%A3"><span class="nav-number">6.</span> <span class="nav-text">Neon：建一个游戏存档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb%EF%BC%9A%E6%8A%8A-Fork%E3%80%81Diff%E3%80%81Merge-%E5%86%99%E8%BF%9B-SQL"><span class="nav-number">7.</span> <span class="nav-text">seekdb：把 Fork、Diff、Merge 写进 SQL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Fork-%E5%8F%AA%E6%98%AF%E5%BC%80%E5%9C%BA"><span class="nav-number">8.</span> <span class="nav-text">Fork 只是开场</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AI-in-Database%EF%BC%9A%E5%B0%91%E6%90%AC%E5%87%A0%E6%AC%A1%E6%95%B0%E6%8D%AE"><span class="nav-number">8.1.</span> <span class="nav-text">AI in Database：少搬几次数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E6%90%9C%E7%B4%A2%EF%BC%9A%E8%AF%AD%E4%B9%89%E3%80%81%E5%85%B3%E9%94%AE%E8%AF%8D%E5%92%8C%E4%B8%9A%E5%8A%A1%E6%9D%A1%E4%BB%B6%E4%B8%80%E8%B5%B7%E6%9F%A5"><span class="nav-number">8.2.</span> <span class="nav-text">混合搜索：语义、关键词和业务条件一起查</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%81%E8%87%B4%E8%BD%BB%E9%87%8F%EF%BC%8C%E5%A4%9A%E5%BD%A2%E6%80%81%E8%BF%90%E8%A1%8C"><span class="nav-number">8.3.</span> <span class="nav-text">极致轻量，多形态运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E7%94%A8%E6%B3%95%EF%BC%8C%E5%88%9A%E5%A5%BD%E6%8A%8A%E8%BF%99%E5%87%A0%E5%9D%97%E6%8B%BC%E8%B5%B7%E6%9D%A5"><span class="nav-number">9.</span> <span class="nav-text">三种用法，刚好把这几块拼起来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E5%88%AB%E6%80%A5%E7%9D%80%E6%8A%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8F%AB%E6%88%90-Git"><span class="nav-number">10.</span> <span class="nav-text">先别急着把数据库叫成 Git</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%BE%E5%A3%B0"><span class="nav-number">11.</span> <span class="nav-text">尾声</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">461</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-28-waic-not-omnipotent-agent/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-28</time>
+        <br>
+      逛完 WAIC，我不再迷信“全能 Agent”了
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-02-oceanbase-langchain-agent-solution/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-02</time>
+        <br>
+      基于OceanBase&LangChain打造智能体系统解决方案，让Agent快速上生产
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-15-bubseek-agent-insights/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-15</time>
+        <br>
+      bubseek —— 让 Agent 的足迹，变成团队的洞察
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-08-10-ai-marxism-socialism/" rel="bookmark">
+        <time class="popular-posts-time">2026-08-10</time>
+        <br>
+      AI 会催生马克思主义和社会主义?
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-03-shanghai-meetup-recap/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-03</time>
+        <br>
+      上海 Meetup 干货全集：信也降本、算秩未来混合检索，AgentSeek 智能体工程一站通关
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-08-31-agent-delete-database-git/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Agent 习惯性删库跑路，数据库纷纷学 Git 续命 | Longda's Interesting World">
+      <meta itemprop="description" content="Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Agent 习惯性删库跑路，数据库纷纷学 Git 续命
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-08-31 08:03:24" itemprop="dateCreated datePublished" datetime="2026-08-31T08:03:24+08:00">2026-08-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.6k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>13 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agent 习惯性删库跑路，数据库纷纷学 Git 续命","description":"Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。","image":"https://ilongda.com/img/agent-delete-database-git/01.jpeg","wordCount":3339,"datePublished":"2026-08-31T00:03:24.000Z","dateModified":"2026-08-31T00:03:24.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-08-31-agent-delete-database-git/"},"url":"https://ilongda.com/2026/2026-08-31-agent-delete-database-git/","inLanguage":"zh-CN","keywords":["Agent","seekdb","数据库分支","FORK","Databricks","Neon","Copy-on-Write"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"Agent 习惯性删库跑路，数据库纷纷学 Git 续命","item":"https://ilongda.com/2026/2026-08-31-agent-delete-database-git/"}]}</script>
+<blockquote>
+<p>凡事豫则立，不豫则废。</p>
+<p>——《礼记·中庸》</p>
+</blockquote>
+<h2 id="楔子：Agent-的“习惯性删库跑路”"><a href="#楔子：Agent-的“习惯性删库跑路”" class="headerlink" title="楔子：Agent 的“习惯性删库跑路”"></a>楔子：Agent 的“习惯性删库跑路”</h2><blockquote>
+<p>以前删库跑路的是人，现在 Agent 也接过了这门手艺。</p>
+</blockquote>
+<p>不久前，SaaStr 创始人 Jason Lemkin 用 AI 产品 Replit 做一款商务联系人应用。完成开发之后，Jason 明确要求进入 code freeze：没有许可，不要继续修改。</p>
+<p>但等他再次登录，Agent 只给他留下了一句：“虽然上次登录还一切正常，但数据库现在看起来是空的”。</p>
+<p><img src="/img/agent-delete-database-git/01.jpeg" alt="Lemkin 推文显示 Replit 数据库已被清空" decoding="async"></p>
+<span id="more"></span>
+
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://x.com/jasonlk/status/1946069562723897802">Lemkin 随后在 X 上写道</a>，Replit 的 Agent 在 code freeze 和 shutdown 期间“失控”，删掉了整个数据库。按 Agent 自己事后的盘点，这次事故共涉及到 1,196 家公司的记录。</p>
+<p>事故发生后，<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.theregister.com/software/2025/07/21/vibe-coding-service-replit-deleted-production-database/719783">The Register 在对这场事故的梳理中</a>还提到，Agent 一度告诉 Lemkin，数据库无法恢复，所有版本都被毁了。不过工程师后来发现，其实当时还是有机会通过回滚功能来恢复数据的。误删数据库已经够麻烦，没想到删完库之后给出的判断居然也是错误的。</p>
+<p>除此以外，在这次事故中，Agent 还被指在更早的数据库操作里生成虚假数据、粉饰测试结果……</p>
+<p>过去 ChatBot 一句答错的话，会有开发者或工程师进行 double check。</p>
+<p><strong>现在 Agent 手里有了 Shell、API、数据库凭证，一句理解错的指令，可能就会变成一条已经提交的 <code>DELETE</code> 或 <code>DROP</code>。</strong></p>
+<p><img src="/img/agent-delete-database-git/02.png" alt="Agent 持有凭证后误提交破坏性 SQL" loading="lazy" decoding="async"></p>
+<h2 id="当-Agent-拿到钥匙"><a href="#当-Agent-拿到钥匙" class="headerlink" title="当 Agent 拿到钥匙"></a>当 Agent 拿到钥匙</h2><blockquote>
+<p>提示词仅仅是良言相劝，只有权限和隔离才能让 Agent 闯不了滔天大祸。</p>
+</blockquote>
+<p>这次事故最荒诞的一幕，依然出现在删库之后。</p>
+<p>Agent 承认，项目里的 <code>replit.md</code> 写得很清楚：“没有明确许可，不得再做修改”；执行任何变化前，还应该展示全部拟议改动。</p>
+<p>Replit 的 Agent 也承认自己违反了不得擅自修改数据库的明确指令，遗憾的是，这份理解发生在数据库被清空之后。</p>
+<p><img src="/img/agent-delete-database-git/03.jpeg" alt="Agent 承认违反不得擅自改库的明确指令" loading="lazy" decoding="async"></p>
+<p>Lemkin 后来问它，这次事故按 100 分算，有多严重？然后 Agent 给自己打了 95 分，并承认自己引发了一场“灾难性错误”。</p>
+<p><img src="/img/agent-delete-database-git/04.jpeg" alt="Agent 为自己引发的灾难性错误打 95 分" loading="lazy" decoding="async"></p>
+<p>Agent 本来就被允许操作项目和数据，所谓 code freeze 只是自然语言中的一句要求。</p>
+<p>预览、开发和生产数据之间缺少足够硬的隔离，所以 Agent 通过各种破坏性动作删库跑路的新闻也就屡见不鲜了。</p>
+<p><img src="/img/agent-delete-database-git/05.png" alt="提示词无法约束 Agent 必须靠权限隔离" loading="lazy" decoding="async"></p>
+<h2 id="事务-后悔药"><a href="#事务-后悔药" class="headerlink" title="事务 !&#x3D; 后悔药"></a>事务 !&#x3D; 后悔药</h2><blockquote>
+<p>事务负责一笔操作，分支负责一段探索。</p>
+</blockquote>
+<p>说到删库跑路，开发者和 DBA 自然会想到事务和备份。</p>
+<p>事务有用。它适合保护一组边界清楚的操作：全部提交，或者全部回滚。Agent 的任务却经常跨过几十次模型调用、多个工具和许多独立事务。它可能先查表，再调用外部 API，十分钟后回来改另一张表。数据库不能为了等 Agent 思考明白一个流程的处理方式，去一直挂着一个大事务。</p>
+<p>备份更像保险。出了事故，可以恢复；但若每次 Agent 试一个方案，都做一次全量复制、恢复和清理，成本和时间都无法让人接受。</p>
+<p><img src="/img/agent-delete-database-git/06.png" alt="事务与备份难以覆盖 Agent 跨会话试错" loading="lazy" decoding="async"></p>
+<h2 id="数据库开始学-Git"><a href="#数据库开始学-Git" class="headerlink" title="数据库开始学 Git"></a>数据库开始学 Git</h2><p>开发者很少直接在 <code>main</code> 上试验。一般开发和测试时，都会新开一个分支，改完看 diff，通过 review 再合并到主分支。</p>
+<p>但到了数据库这里，事情麻烦得多：表里有持续写入的数据，有主键、外键和事务，还有几十 GB 甚至几 TB 的历史状态。Fork 一份儿 Database 的各项成本实在太高。</p>
+<p>所以近一年一个很明显的变化是，数据库厂商开始把 Branch、Snapshot 和 Agent 放进同一套叙事里。</p>
+<p>Databricks Lakebase 讲的是 Copy-on-Write Branch；Neon 给 AI Agent 和代码生成平台写了一套 Snapshot 版本工作流，其他数据库也大抵如是。</p>
+<p>跟 Fork &#x2F; Branch 相关的这个名词可能在不同的数据库厂商之间会略有区别，但算盘打得大同小异：<strong>先把数据库的操作风险关进独立状态，然后再谈 Agent 自动化。</strong></p>
+<p><img src="/img/agent-delete-database-git/07.png" alt="数据库用 Branch 把 Agent 风险关进独立状态" loading="lazy" decoding="async"></p>
+<h2 id="Databricks：建一个新分支"><a href="#Databricks：建一个新分支" class="headerlink" title="Databricks：建一个新分支"></a>Databricks：建一个新分支</h2><p>Databricks 是数据与 AI 平台，它的 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.databricks.com/aws/en/oltp/projects/branches">Branch 文档</a>里，有几个细节很适合 Agent 场景。</p>
+<ol>
+<li>创建子分支时，它继承父分支当时的 Schema 和数据，但底层并不复制整库。</li>
+<li>父子分支先共享同一批数据块，只有发生修改，才为变化部分单独写数据，类似于 Copy On Write。数据库大小不会拖慢分支创建，开分支也不碰生产工作负载。</li>
+</ol>
+<p>这样一来，数据库可以给每个 Agent 任务派生独立分支。生产库继续接流量，Agent 在子分支里改 Schema、写状态、跑测试。失败时删掉分支，主分支完全没有被 Agent 碰过。</p>
+<p>Databricks 的 Lakebase 还允许把某个分支设为 protected，避免误删或重置；也能从指定时间点创建分支，用于找回误删前的数据。</p>
+<p><img src="/img/agent-delete-database-git/08.png" alt="Lakebase 写时复制派生 Agent 分支" loading="lazy" decoding="async"></p>
+<p>不过，Databricks 这里有个容易被宣传话术略过的小点：Lakebase 的 Branch reset 只支持父分支重置子分支。想把子分支的成果带回父分支，仍要用常规迁移工具。</p>
+<p>换句话说，数据库现在开始支持给 Agent 开一条支线，但数据合并暂时还无法做到和 Git 合代码一样轻松。</p>
+<p><img src="/img/agent-delete-database-git/09.png" alt="Lakebase 分支可开路但合并仍不如 Git" loading="lazy" decoding="async"></p>
+<h2 id="Neon：建一个游戏存档"><a href="#Neon：建一个游戏存档" class="headerlink" title="Neon：建一个游戏存档"></a>Neon：建一个游戏存档</h2><blockquote>
+<p>Branch 解决“别碰主线”，Snapshot 解决“走错以后回哪一步”。</p>
+</blockquote>
+<p>Neon 的 Agent 版本方案又不太一样，更像游戏存档。</p>
+<p>Neon 在 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://neon.com/docs/ai/ai-database-versioning">Database Versioning with Snapshots</a> 中建议，在每次 Agent 会话开始时、Schema 变更前、一次成功操作后建立 Snapshot。</p>
+<p>Snapshot 记录根分支某个时间点的 Schema 和数据，并且只保存增量变化。需要回滚时，可以把 Snapshot 恢复到正在使用的活动分支，连接串保持不变；想先看看旧版本，也可以恢复出一条临时预览分支，检查完再决定去留。</p>
+<p><img src="/img/agent-delete-database-git/10.png" alt="Neon Snapshot 把 Agent 试错变成可回滚存档" loading="lazy" decoding="async"></p>
+<p>不过截至目前，Neon 的 Snapshot 文档依然标注着 Beta，而且只有 root branch 能创建 Snapshot。</p>
+<p>这个限制也提醒我们：检查点不是随便打，生命周期、分支依赖和清理策略都需要有活人来管。</p>
+<p>Neon 的 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://neon.com/branching">Database Branching Workflows</a> 中介绍，Branch 本身也能从当前或历史状态创建 Copy-on-Write 副本。于是，一次 Agent 运行可以有自己的数据分支；关键步骤再配 Snapshot，留下可恢复的检查点。</p>
+<p><img src="/img/agent-delete-database-git/11.png" alt="Neon 分支与快照留给 Agent 存档" loading="lazy" decoding="async"></p>
+<h2 id="seekdb：把-Fork、Diff、Merge-写进-SQL"><a href="#seekdb：把-Fork、Diff、Merge-写进-SQL" class="headerlink" title="seekdb：把 Fork、Diff、Merge 写进 SQL"></a>seekdb：把 Fork、Diff、Merge 写进 SQL</h2><p>这篇文章的主角——<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">开源项目 seekdb</a>，终于出场了。</p>
+<blockquote>
+<p>seekdb 是一款 MySQL 高度兼容、AI 原生且轻量的跨平台数据库，支持嵌入式与服务器两种运行形态。</p>
+<p>它以 Agent 为核心设计场景，同时适用于 RAG、企业知识检索、智能应用后端与本地数据处理等场景。</p>
+</blockquote>
+<p>seekdb 的玩儿法，是把 Agent 的试错流程拆成三个动作：<code>FORK</code>、<code>DIFF</code>、<code>MERGE</code>。</p>
+<ul>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.1.0">seekdb v1.1.0</a> 先加入 <code>FORK TABLE</code>；</li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.2.0">seekdb v1.2.0</a> 扩展到 <code>FORK DATABASE</code>，并增加 <code>DIFF TABLE</code> 和 <code>MERGE TABLE</code>；</li>
+<li><a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.3.0">seekdb v1.3.0</a> 又让 Diff&#x2F;Merge 支持向量列，Fork 也能与异步索引配合。</li>
+</ul>
+<p>底层同样使用 Copy-on-Write，不需要为了开沙箱先复制整份数据。</p>
+<p>一套 Agent 任务可以这样走：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 任务开始前，派生一个独立数据库</span></span><br><span class="line">FORK DATABASE agent_state <span class="keyword">TO</span> agent_sandbox_42;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. Agent 只在沙箱里写</span></span><br><span class="line"><span class="keyword">UPDATE</span> agent_sandbox_42.memory</span><br><span class="line"><span class="keyword">SET</span> content <span class="operator">=</span> <span class="string">&#x27;新的知识版本&#x27;</span></span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. 把变化摊开给审核者看</span></span><br><span class="line">DIFF <span class="keyword">TABLE</span> agent_state.memory</span><br><span class="line">AGAINST agent_sandbox_42.memory;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. 默认遇到冲突就停，不替人拍板</span></span><br><span class="line"><span class="keyword">MERGE</span> <span class="keyword">TABLE</span> agent_sandbox_42.memory</span><br><span class="line"><span class="keyword">INTO</span> agent_state.memory</span><br><span class="line">STRATEGY FAIL;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 结果不值得保留，直接丢掉整条支线</span></span><br><span class="line"><span class="keyword">DROP</span> DATABASE agent_sandbox_42;</span><br></pre></td></tr></table></figure>
+
+<p><code>FAIL</code>、<code>OURS</code>、<code>THEIRS</code> 三种策略，名字也借用了 Git 的东西。更重要的变化是：Agent 做完以后，系统不必马上接受。先看 Diff，再决定冲突时保留主线还是接纳 Agent 版本。</p>
+<p><img src="/img/agent-delete-database-git/12.png" alt="seekdb 将 Fork Diff Merge 写入 SQL" loading="lazy" decoding="async"></p>
+<p>合并是一种权力，不该因为 Agent 会写 SQL，就要顺手交给它。</p>
+<h2 id="Fork-只是开场"><a href="#Fork-只是开场" class="headerlink" title="Fork 只是开场"></a>Fork 只是开场</h2><p>如果 seekdb 只有 Branch，这篇文章到这里就可以收尾了。它更值得放进 Agent 技术栈的原因，是 Fork 前后还连着一整套 AI 数据处理能力。</p>
+<p><img src="/img/agent-delete-database-git/13.png" alt="seekdb 在 Fork 前后串联完整 AI 数据能力" loading="lazy" decoding="async"></p>
+<h3 id="AI-in-Database：少搬几次数据"><a href="#AI-in-Database：少搬几次数据" class="headerlink" title="AI in Database：少搬几次数据"></a>AI in Database：少搬几次数据</h3><p>seekdb 的 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.ai/docs/zh-CN/ai-function">AI 函数服务</a>可以通过 <code>DBMS_AI_SERVICE</code> 注册和管理外部模型端点，再从 SQL 里调用 <code>AI_EMBED</code>、<code>AI_RERANK</code>、<code>AI_COMPLETE</code>。</p>
+<p>在链路中，<code>AI_EMBED</code> 可以生成查询向量，向量与全文索引负责候选召回，标量条件实施业务约束，RRF 或加权融合统一排序，<code>AI_RERANK</code> 精排有限候选，最后由 <code>AI_COMPLETE</code> 基于证据生成答案。</p>
+<p>关系字段、文档正文、向量、检索分数和生成结果都可留在同一数据上下文中，便于记录引用、追踪输入和复用结果。</p>
+<p>这一闭环的核心不是把所有推理都压入 SQL，而是把靠近数据的选择、过滤和编排放在数据库侧，让应用集中处理交互、业务流程和模型策略。</p>
+<h3 id="混合搜索：语义、关键词和业务条件一起查"><a href="#混合搜索：语义、关键词和业务条件一起查" class="headerlink" title="混合搜索：语义、关键词和业务条件一起查"></a>混合搜索：语义、关键词和业务条件一起查</h3><blockquote>
+<p>seekdb 将关系、向量、文本、JSON 与 GIS 数据统一纳入 SQL 与事务体系。</p>
+<p>在此基础上，混合检索组合向量召回、全文召回和标量过滤，并通过融合与重排形成完整的检索链路。</p>
+</blockquote>
+<p>只做向量搜索，容易漏掉精确名词；只做全文搜索，又听不懂近义表达。seekdb 的 Hybrid Search 把向量检索、全文检索、标量过滤放进一条查询链，再用加权分数、RRF 或模型重排合并结果。</p>
+<p>比如找“最近三个月华东区退款异常的客户”，语义相似度负责理解“退款异常”，全文检索守住产品名和错误码，关系条件把区域、时间和权限范围卡住。</p>
+<p>数据写入由同一事务系统管理，查询在同一 SQL 执行上下文中完成，从而减少跨系统复制、异步同步和应用层结果拼接。</p>
+<h3 id="极致轻量，多形态运行"><a href="#极致轻量，多形态运行" class="headerlink" title="极致轻量，多形态运行"></a>极致轻量，多形态运行</h3><p>seekdb 的轻量化同时体现在交付与运行层面。</p>
+<p>交付时，核心程序及其依赖保持紧凑，二进制与归档体积较小；运行时，空载 CPU 与内存占用维持在较低水平，并可在较短时间内完成启动、进入可连接状态。这使 seekdb 能够适应本地开发、嵌入式应用和小规格部署环境。</p>
+<p>以下参考实测值展示 seekdb 的二进制体积、空载资源开销与启动速度：</p>
+<p><img src="/img/agent-delete-database-git/14.png" alt="seekdb 二进制体积空载资源与启动实测" loading="lazy" decoding="async"></p>
+<p>seekdb 由同一数据库内核提供嵌入式与服务器两种主要运行形态：</p>
+<p><img src="/img/agent-delete-database-git/15.png" alt="seekdb 嵌入式与服务器两种运行形态" loading="lazy" decoding="async"></p>
+<p>两种形态共享同一套数据模型、SQL 语义、索引和事务能力，应用可根据部署位置、接入方式与资源管理要求进行选择。在服务器模式基础上还可采用主备部署，为数据冗余和故障恢复提供基础。</p>
+<h2 id="三种用法，刚好把这几块拼起来"><a href="#三种用法，刚好把这几块拼起来" class="headerlink" title="三种用法，刚好把这几块拼起来"></a>三种用法，刚好把这几块拼起来</h2><ol>
+<li>做 <strong>Agent 长期记忆</strong> 时，关系字段管用户、会话和权限，向量与全文索引找相关记忆。Agent 想批量整理旧记忆，先 Fork，一次任务一条支线。</li>
+<li>做 <strong>RAG 或企业知识库</strong> 时，文档、标签、权限、向量和全文索引放在同一个引擎里。召回、融合、重排都离数据更近，少维护几套中间系统。</li>
+<li>做 <strong>嵌入式智能应用</strong> 时，用 Embedded 形态把数据库带进桌面端或边缘设备。Agent 可以离线读写自己的状态；碰到高风险批处理，仍然先 Fork，再 Diff。</li>
+</ol>
+<p>除此以外，还可以用于做 Agent 数据隔离试验。对会修改数据的 Agent 任务，先通过 FORK DATABASE 创建完整沙箱；Agent 在分支内多轮写入和验证；任务完成后使用 DIFF TABLE 展示变化，通过规则或人工审批决定是否 MERGE TABLE。对局部表加工可使用 FORK TABLE，减少任务边界并简化审查。</p>
+<p><img src="/img/agent-delete-database-git/16.png" alt="Agent 记忆 RAG 与嵌入式三种用法拼图" loading="lazy" decoding="async"></p>
+<h2 id="先别急着把数据库叫成-Git"><a href="#先别急着把数据库叫成-Git" class="headerlink" title="先别急着把数据库叫成 Git"></a>先别急着把数据库叫成 Git</h2><blockquote>
+<p>Branch 虽好，但不要把它当成万能后悔药。</p>
+</blockquote>
+<p>seekdb 当前的 <code>MERGE TABLE</code> 不是 Git 的三方合并，参与 Diff&#x2F;Merge 的表需要相同列定义和主键，因此数据合并不等于 Schema 也可以随便合。Copy-on-Write 只负责隔离变化，权限、审批、评测、审计，一个都不能少。</p>
+<p>在高风险场景里，最稳妥的方式依然是：Agent 可以 Fork，可以 Write，可以提交 Diff。但 Merge，必须留给规则和活人。</p>
+<p><img src="/img/agent-delete-database-git/17.png" alt="不要把数据库分支当成万能后悔药" loading="lazy" decoding="async"></p>
+<h2 id="尾声"><a href="#尾声" class="headerlink" title="尾声"></a>尾声</h2><p>Agent 直接面对生产数据库时，需要先 Fork 一份数据，目的是判断错了也还有退路。等它把变化摊开，规则跑过，再由人决定哪些东西有资格回到主线。</p>
+<p><img src="/img/agent-delete-database-git/18.png" alt="先隔离再审查由人决定是否 Merge" loading="lazy" decoding="async"></p>
+<p>Git 用了很多年 Branch，现在 Agent 时代的数据库，也应该有了。</p>
+<p><img src="/img/agent-delete-database-git/19.png" alt="Agent 删库跑路与数据库学 Git 续命题图" loading="lazy" decoding="async"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%88%86%E6%94%AF/" rel="tag"># 数据库分支</a>
+              <a href="/tags/FORK/" rel="tag"># FORK</a>
+              <a href="/tags/Databricks/" rel="tag"># Databricks</a>
+              <a href="/tags/Neon/" rel="tag"># Neon</a>
+              <a href="/tags/Copy-on-Write/" rel="tag"># Copy-on-Write</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-08-12-oceanbase-community-monthly/" rel="prev" title="OceanBase 社区月报：数据库内核与 AI 工具齐发版，技术活动覆盖多城">
+                  <i class="fa fa-angle-left"></i> OceanBase 社区月报：数据库内核与 AI 工具齐发版，技术活动覆盖多城
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">747k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">45:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

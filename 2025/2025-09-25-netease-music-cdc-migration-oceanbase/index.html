@@ -206,7 +206,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -217,7 +217,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -420,7 +420,7 @@
 <li>SQL 统计：支持 SQL 模式、SQL 频度、慢 SQL 及多维度 QPS 统计等。</li>
 </ul>
 <p>作为网易云音乐主要的 OLTP 方案，DDB 拥有较大的数据体量，其数据流架构如图1所示。从图中可以看出，通过 DBI JAR 包这个访问接口向上层应用程序提供服务。整个数据处理流程为：当上层应用程序下发 SQL 后，由 DBI 进行解析生成语法树，而通过语法树生成的执行计划由执行器直接下发到底层 MySQL。多个 MySQL 节点的结果汇聚到 DBI 进行处理，最后返回上层应用程序。</p>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/01.png" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图1 DDB架构</p>
 <p>除了 DBI JAR 包（类似 SDK 方式），我们还提供了 QS（Query Server）方式，可将其理解为一个 Proxy。QS 兼容 MySQL 协议，可作为 Proxy 单独部署，相当于一个 MySQL 实体库，支持命令行和应用接口这两种访问方式，进而使应用程序可以像访问 MySQL 一样访问 QS。</p>
 <p>在图1中，用户通过控制流可以实现 DDL 处理和元数据分发同步，Master 节点会将元数据同步到 MetaStore 即元数据库中，然后将元数据变更通知到每一个 DBI 的应用层。DBI 和应用集成的方式虽然缩短了整个数据链路，但也带来了一些运维问题，比如当 DBI 数量较多、底层节点发生大批量切换或更改时，整体操作较为耗时，且若部分 DBI 未及时感知，可能影响该应用的读取或写入。</p>
@@ -442,7 +442,7 @@
 <li>运维成本：同样由于兼容 MySQL 协议，运维成本低。</li>
 <li>社区红利：社区生态健全、活跃度高。</li>
 </ul>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/02.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/02.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图2 OceanBase产品形态</p>
 <p>从产品特性和应用案例来初步判断，我们认为OceanBase能够解决我们使用DDB时面临的问题。</p>
 <h3 id="迁移-OceanBase-面临的核心挑战"><a href="#迁移-OceanBase-面临的核心挑战" class="headerlink" title="迁移 OceanBase 面临的核心挑战"></a>迁移 OceanBase 面临的核心挑战</h3><p>然而，DDB和OceanBase 作为两个由不同企业研发、架构差异较大的数据库产品，使我们在迁移过程中遇到了四个挑战。</p>
@@ -457,7 +457,7 @@
 <li>NDC 拉取源端系统的全量或增量数据，经过转化和过滤写入目标系统中。</li>
 <li>NDC 支持全量、增量同步&#x2F;迁移；提供结构、全量数据、快速不一致复检等多模式校验，确保源和目标的一致性。如图3所示，在 NDC 内部：Dashboard 是应用入口；Center 用于元数据管理；Engine 节点是无状态的，负责拉取源端 Binlog 等信息，然后将数据进行解析，同步到目标库。</li>
 </ul>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/03.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/03.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图3 NDC架构</p>
 <h3 id="NDC-迁移方案"><a href="#NDC-迁移方案" class="headerlink" title="NDC 迁移方案"></a>NDC 迁移方案</h3><p>使用NDC 进行数据迁移同样涉及正向同步、反向同步，正向同步指从 DDB 到 OceanBase，反向同步指从 OceanBase 到 DDB。由于涉及部分回滚场景，因此需要保证反向同步也是稳定、安全的。</p>
 <h4 id="1-正向同步"><a href="#1-正向同步" class="headerlink" title="1.正向同步"></a>1.正向同步</h4><p>正向同步主要支持如下能力：</p>
@@ -467,7 +467,7 @@
 <li>支持表内并发写，不同索引数据并发写。单个MySQL内部，可以通过表、索引维度进行并发，因此最终的表并发数是该表分布的MySQL 数量乘以每个MySQL子任务内部设置的并发数，实际并发非常高，同时可以利用不同机器资源去运行同一张表的不同的MySQL级任务。</li>
 <li>自动响应上游切换，自动感知主从切换、节点变更等。可以自动感知上游 MySQL的主从切换以及节点变更，不需要人力运维。</li>
 </ul>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/04.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/04.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图4 正向同步方案</p>
 <h4 id="2-反向同步：Binlog-or-CDC"><a href="#2-反向同步：Binlog-or-CDC" class="headerlink" title="2.反向同步：Binlog or CDC?"></a>2.反向同步：Binlog or CDC?</h4><p>Binlog 模式是我们最早支持的同步模式，简单易用、稳定性高、兼容性强。大致流程如下：</p>
 <ul>
@@ -476,7 +476,7 @@
 <li>OBLogproxy 接收 Binlog 订阅请求后启动 BD 模块，读取 Binlog 文件并对外提供订阅服务，即 Binlog Dump 服务。</li>
 </ul>
 <p>相当于为了使下游使用方便，兼容了 MySQL 的 Binlog，将 OceanBase 产生的 Clog 多转了一层转为 Binlog，但由于链路增加，效率会比较低。去年 Binlog 解析模式的效率是 25MB&#x2F;每秒，对我们来说是无法接受的，后来 OceanBase 团队将这个值优化到了 140MB&#x2F;每秒，暂时满足了业务需求。</p>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/05.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/05.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图5 Binlog同步模式</p>
 <p>相比 Binlog 模式，CDC 模式更简单，因为不需要将 Clog 转换为 Binlog，直接拉取 Clog，使用OBLogClient 启动，具体流程如下：</p>
 <ul>
@@ -484,18 +484,18 @@
 <li>OBLogProxy 鉴权通过后，启动 OBLogreader 子进程，并将连接等相关信息传递至 OBLogreader 子进程。</li>
 <li>OBLogreader 启动后会提取并解析 Clog，按照一定的数据格式发送至下游来完成数据订阅。</li>
 </ul>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/06.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/06.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图6 CDC同步模式</p>
 <h4 id="OBCDC-or-OBLogProxy？"><a href="#OBCDC-or-OBLogProxy？" class="headerlink" title="OBCDC or OBLogProxy？"></a>OBCDC or OBLogProxy？</h4><p>我们对 OBCDC 和 OBLogProxy 也做了调研，两个方案都属于 CDC 模式，OBCDC 是持续迭代版本的 OBLogProxy。</p>
 <ul>
 <li>OBCDC：以动态库的形式对外提供 OceanBase 数据库实时增量（事务）数据。通过 RPC 向 OceanBase 数据库请求各分区的 Clog（Redo）日志。</li>
 <li>OBLogProxy：OBCDC 的代理，OBLogProxy 调用 OBCDC，作为 OBCDC 的消费者获取 OceanBase 数据库的增量事务数据。</li>
 </ul>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/07.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/07.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图7 OBCDC 和 OBLogProxy 方案对比</p>
 <p>虽然CDC模式省去了binlog生成及解析的额外成本，但由于技术栈、兼容性及可维护性的考量（OceanBase 在 4.2.0版本后将不继续维护 CDC 模式），两种形式都非理想解决方案，因此我们最终并未采用CDC模式。</p>
 <p>目前我们基本上实现了业务无感迁移、零数据丢失、正向同步效率GB&#x2F;s，反向百+MB&#x2F;s。</p>
-<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/08.png" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-25-netease-music-cdc-migration-oceanbase/08.png" loading="lazy" decoding="async" alt="分布式数据库迁移OceanBase——基于网易云音乐自研CDC服务的平滑迁移方案"></p>
 <p>图8 正向迁移、反向迁移流程</p>
 <h3 id="支持迁移-OceanBase-的适配优化"><a href="#支持迁移-OceanBase-的适配优化" class="headerlink" title="支持迁移 OceanBase 的适配优化"></a>支持迁移 OceanBase 的适配优化</h3><p>在迁移过程中，我们共完成了如下方面的适配和优化工作。</p>
 <ul>
@@ -599,14 +599,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

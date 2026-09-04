@@ -1,7 +1,7 @@
 # Longda's Interesting World (ilongda.com)
 # Technical blog: database internals, machine learning, paper reviews, tools
 # Author: Longda Feng
-# Generated: 2026-07-20T04:53:47.690Z
+# Generated: 2026-09-04T06:50:20.209Z
 # Full content archive for LLM consumption
 
 ---
@@ -31275,6 +31275,2871 @@ OceanBase 产品老大颜然还介绍了另外两个产品：统一开发治理�
 这个问题，才刚刚开始变得有点儿意思。
 
 ![Agent 友好数据库能力清单总结](/img/2026-07-06-ai-agent-database-evolution/19.png)
+
+
+---
+# Article: 湖库一体 AI 数据库的设计理念
+# URL: https://ilongda.com/2026-07-08/2026-07-08-lakebase-ai-database-design/
+# Published: 2026-07-08
+# Updated: 2026-07-08
+# Keywords: OceanBase,Lakebase,AI数据库,湖库一体,多模表,混合搜索,Fork Database,PowerMem,AI Agent
+
+OceanBase 湖库一体 AI 数据库设计理念：统一多模数据、开放计算与治理，让 Agent 获得实时可信的生产级数据底座。
+
+6 月 29 日，OceanBase Hours 线上发布会举行，OceanBase 面向湖库一体的 AI 数据库正式发布。这一发布也带来几个核心议题：湖库一体的 AI 数据库究竟是什么？为什么 AI 时代需要湖库一体？OceanBase 又如何从底层设计实现这一理念？
+
+作者 | OceanBase CTO 日照（杨传辉）
+
+![OceanBase 湖库一体 AI 数据库发布会头图](/img/lakebase-ai-database-design/01.gif)
+
+![OceanBase CTO 杨传辉演讲现场照片](/img/lakebase-ai-database-design/02.jpg)
+
+OceanBase CTO 杨传辉
+
+主流数据库的发展经历了几次重要演进：从最早的 OLTP 数据库，到 OLAP 从其中分离出来成为数据仓库，再到大数据系统。长期以来，数据库架构主要围绕人类应用、确定性交易和结构化数据分析设计。
+
+今天，新的变化正在发生。AI Agent 不再只是读取数据、回答问题，而是开始调用工具、生成代码、执行任务、修改状态，甚至参与业务流程。数据库的使用者，正在从人类应用扩展到大量自主运行的 Agent。这带来一个根本问题：当成千上万个 Agent 同时读写、搜索、试错、回滚和生成上下文，数据库还应该是过去的样子吗？
+
+我认为，答案是否定的。AI 正在同时改变三件事：
+
+- 数据库的使用者，从应用扩展到 Agent；
+- 数据库管理的数据，从结构化数据扩展到涵盖结构化、半结构化与非结构化的多模态数据；
+- 数据库承载的工作负载，从事务和分析扩展到搜索、上下文工程与 AI 应用。
+
+因此，AI 数据库不是传统数据库增加几个 AI 函数，也不是向量数据库补上 SQL 能力。它要解决的是 AI 进入生产系统后的数据基础设施问题。多模态数据需要在统一底座上被管理，在线服务和离线计算需要融合，Agent 需要获得实时、可信、连续的上下文，并在读写、试错、回滚和治理中保持数据库级一致性与可靠性。
+
+这不是一次功能增强，而是在 AI 时代重新定义数据库的技术架构。
+
+## 行业正在走向统一数据底座
+
+![数据库行业向统一数据底座演进示意图](/img/lakebase-ai-database-design/03.png)
+
+我们先看行业发生了什么。
+
+Databricks 和 Snowflake 从湖仓和数仓出发，不断补充 OLTP 的事务能力；
+
+OceanBase 和 Oracle 从交易库出发，不断补充 OLAP 和大数据能力；
+
+MongoDB、Milvus、Elasticsearch 从专用库出发，不断增强通用数据库的能力。不管出发点如何，不同路线正在向一个能够同时处理交易、分析、搜索、向量以及 AI 计算的统一数据底座演进。
+
+OceanBase 一直坚持走一体化设计思路。
+
+最早我们做的分布式 OLTP，解决了在线交易的扩展性和可靠性。后来我们在 OLTP 基础上加入了实时 OLAP 支持，消除了 TP 到 AP 的数据搬运。去年，我们发布了多模一体化，把向量、全文、JSON、GIS 等能力带进同一个数据库引擎。
+
+今天，我们发布湖库一体，是继续往前走一步：把库里的实时事务能力、湖上的开放存储和开放计算能力，放到同一个数据底座里。
+
+![OceanBase 从分布式OLTP到湖库一体演进路径](/img/lakebase-ai-database-design/04.png)
+
+## 湖库一体要合并的三条边界
+
+我理解的湖库一体，不能停留在数据库外接一个数据湖，也不能只是给湖仓补几个在线查询接口。要让它进入生产系统，至少要合并三条边界。
+
+第一，数据形态要统一。结构化数据、半结构化数据、非结构化数据、向量、图、全文索引，不能分散在不同系统里各管一份。它们应该在同一套表语义下被管理。
+
+第二，计算路径要统一。SQL 查询、实时分析、混合搜索、Spark ETL、Ray 上的 AI 计算，应该围绕同一份数据工作，而不是靠不断导出、转换、中间落盘来协作。
+
+第三，治理边界要统一。元数据、权限、行级控制、审计、版本、生命周期，必须对所有数据类型一致生效。否则结构化字段有权限控制，向量检索却绕过了权限，这样的系统进不了企业生产。
+
+这也是 OceanBase Lakebase 的设计出发点：
+
+![OceanBase Lakebase 存算分离与开放计算架构](/img/lakebase-ai-database-design/05.png)
+
+底层使用存算分离的设计架构。数据存在对象存储上，计算层独立运行。AI Agent 的工作负载本质上是突发式的——每一个 Agent 都可能在任何一天流量激增，每一天都可能有一个小型的双十一。存算分离让计算层能够独立伸缩，负载上来瞬间扩容，空闲时缩到零。
+
+中间用多模表统一结构化、半结构化、非结构化数据以及多模态数据。
+
+上层支持开放计算。除了原有的 SQL 计算（OLTP、OLAP、AI 搜索），也支持 Spark 处理 ETL、Daft on Ray 处理 AI 加工。把这些计算引擎统一在同一份数据之上，是湖库一体区别于传统数据库的核心设计目标。
+
+湖的价值在开放、弹性和成本。库的价值在事务、一致性、低延迟和治理。AI 时代需要把这两组能力合在一起。
+
+## 实时性靠消除搬运，而不是加速搬运
+
+但还有一个关键价值容易被忽视——实时性。
+
+传统做法里，数据加工是离线的，加工完的结果还要搬回在线系统才能服务应用，中间有 T+1 甚至更长的延迟。
+
+湖库一体把离线加工和在线服务统一在同一份数据上：Spark ETL 的产出，SQL 引擎立即可查；模型推理生成的向量，混合搜索立即可用。不再有“加工完了还要等同步”的窗口期。
+
+实时性不是靠加速搬运实现的，而是靠消除搬运实现的。
+
+![湖库一体消除数据搬运实现实时服务示意](/img/lakebase-ai-database-design/06.png)
+
+## 多模表与具备事务语义的 AI 列
+
+原来的关系数据库，底层是一张关系表——里面有 Int、Float、Varchar，所有列都是结构化数据。
+
+今天的 AI 数据库，底层应该是一张多模表。
+
+多模表既包括原有结构化数据的关系列，也包括非结构化数据的多模列与 AI 列。
+
+非结构化数据，可以在外部 Embedding 或者打标之后以向量或者文本的方式写入到多模表，也可以直接以 LOB 的形式写入到多模表。
+
+OceanBase 支持非常灵活的 LOB 存储。
+
+- 如果 LOB 对象比较小，直接在行内存储，节省 IO；
+- 如果 LOB 对象比较大，切片后存入对象存储，行内只保留每个切片的位置信息；
+- 如果 LOB 对象特别大，支持引用外部对象存储中的已有文件，数据库只存储元数据。上层应用看到的仍然是一张表。
+
+在多模表之上，我们还设计了 AI 列。它可以理解成表上的实时计算列：数据写入后，自动触发 Embedding、打标等模型计算，并把结果写回表里。这里最重要的是事务一致性语义。比如一批音频写入后，要么全部完成 Embedding 和打标，要么全部失败，不能出现部分成功、部分失败的情况。
+
+![多模表关系列与AI列统一存储示意](/img/lakebase-ai-database-design/07.png)
+
+## 查询模式进化为混合搜索
+
+有了多模表，接下来是在其上执行 AI 工作负载。
+
+AI 数据库里面，查询的基本模式从关系查找进化为混合搜索——在同一张表里完成关系过滤、全文搜索、向量搜索、图搜索以及 AI 计算。
+
+为什么单纯的向量搜索是不够的？
+
+向量搜索在 AI 数据库里一定是最常见的一种计算方式，但在实际场景里，我们往往首先通过关系过滤将全局数据缩小为一个更小的候选集（例如“只看最近 30 天的订单”），接下来在候选集上做向量、全文、图的混合搜索。数据库先缩小范围，模型只处理高价值候选——推理成本更低、结果更准、链路更可控。
+
+在 AI 时代，搜索会与 OLTP、OLAP 一样回归数据库本体，成为数据库的一类负载。
+
+性能上，我们做了系统的评测验证。
+
+使用 HNSW 算法，在 768 维和 1536 维的测试场景下，同等召回率条件下 OceanBase 的向量搜索性能远领先于 Milvus、Elasticsearch 和 pgvector。
+
+在混合搜索维度，使用 MS MARCO 数据集评测，OceanBase 混合搜索的性能相比 Elasticsearch 提升 30% 以上。这不是理论值——是标准数据集上的可复现结果。
+
+![OceanBase 混合搜索与向量检索性能对比](/img/lakebase-ai-database-design/08.png)
+
+## 一份数据服务多套开放计算引擎
+
+Agent 的数据链路不止是 SQL 查询——还有 ETL 加工、AI 推理、多模态理解。
+
+原先的做法，往往是采用多个不同的系统——Kafka 做接入，Flink 做流处理，Spark 做批处理，HDFS 做持久化，ClickHouse 做分析，HBase 做宽表，Elasticsearch 做搜索，Presto 做联邦查询。
+
+OceanBase 湖库一体设计解决的就是这个问题。
+
+底层通过基于对象存储的多模表，实现多套计算引擎之间的数据共享——一份数据同时服务所有计算引擎。OceanBase 的 SQL 引擎处理在线查询和事务；Spark 处理 PB 级批量 ETL；Daft on Ray 处理 AI 推理，从而解决多套系统之间的数据一致性以及计算延迟的问题。
+
+因为需要支持这么多开放计算引擎，我们需要一个统一开放的 Catalog 来管理数据。表、视图、Schema、Lineage、行级权限、列级授权，都应该在这里统一管理。
+
+OceanBase AI 数据库的所有操作在进入系统之前，都需要经过统一元数据与权限控制面做一层过滤，避免数据越权访问。我们也已经支持了最细粒度的行级权限控制（RLS）。
+
+![开放计算引擎共享对象存储多模表示意](/img/lakebase-ai-database-design/09.png)
+
+## Fork Database 与逻辑表：让 Agent 能试错、能规模化
+
+为了让 Agent 真正进入生产系统，数据库必须给它一个可隔离、可回滚、成本足够低的操作环境。
+
+通过 Fork Database，可以秒级创建一个完整的数据库副本——像在 GitHub 里拉一个分支。即使 PB 级数据库也能在秒内完成 fork，且只占增量空间（Copy-on-Write，未修改的数据块指向湖上同一份存储，不产生物理拷贝）。
+
+拉完分支之后，可以在分支上做各种 AI 的开发、测试和实验。实验成功就提交，实验失败直接回滚，基本上没有代价。
+
+配合 DIFF 和 MERGE，Agent 就获得完整的数据版本控制能力——Fork 建分支，DIFF 看差异（精确到行和值），MERGE 按策略合回。这不是类比 Git，而是 SQL 级的原生实现。
+
+另一个维度是规模。AI 的 Agent 数据量会是海量的，未来可能有千亿级甚至万亿级 Agent 在并行运行，每一个 Agent 都有自己的 Schema、自己的表——这会造成 Schema 爆炸的问题。
+
+传统数据库为“少库 + 海量数据”优化，一个集群承载几十个库、每个库数十亿行。Agent 场景完全相反：千万个 Agent，每个只有几百行，但实例数量是天文级的。
+
+OceanBase 的逻辑表设计，是让每一个 Agent 看到的是一张张独立的逻辑表，但存储在底层是同一张物理表格，通过逻辑层抽象解决 Schema 爆炸。
+
+Fork Database 解决独立环境，逻辑表解决实例规模——两者协同才能让单个 Agent 安全试错、海量 Agent 低成本并行运行。
+
+![Fork Database 与逻辑表支撑海量Agent示意](/img/lakebase-ai-database-design/10.png)
+
+## 上下文层：让 AI 理解企业，也理解用户
+
+AI 数据库，光有引擎还不够。引擎和应用之间还缺一层——上下文。
+
+上下文层分为两个部分。**数据上下文**，围绕数据的语义和数据的治理展开，让 AI 理解企业。**应用上下文**，围绕 Memory 和 RAG 展开，让 AI 理解用户。
+
+在记忆维度，Agent 的记忆不能简单地堆上下文，而是一个可进化的结构化资产。为此我们研发了 OceanBase PowerMem，以及基于 PowerMem 的云上产品 OceanBase seekdb M0。
+
+OceanBase PowerMem 构建在 AI 数据库之上，记忆的检索本身就是一次结构化过滤 + 语义相似度的混合查询。更关键的是它支持记忆的自进化——包括经验的自进化以及技能的自进化。
+
+我们使用 AppWorld 公平蒸馏实验做了验证——同一份轨迹、同一模型、唯一变量是蒸馏和检索方案。结果：seekdb M0 方案的通过率达到 39%，Hermes 只有 22%；完成相同任务，M0 的步骤是 6.2 步，Hermes 是 10.4 步；整体 Token 消耗降低 32%。
+
+在语义维度，高质量的数据语义让 AI 应用真正能够理解企业。OceanBase OSI 要解决的不是再造一套 BI 语义，而是把指标、口径、原始数据、上下文图谱、本体层统一起来。
+
+- 最底层是语义层——指标、口径、原始数据等，基于 Ant-OSI 语义层标准设计，兼容 OSI 开放标准，并在蚂蚁集团得到了大量实践验证。
+- 中间层是上下文图谱——大模型基于上下文图谱推理，提升准确率。
+- 最上层是本体层——统一业务语义与底层数据库语义，做到全局语义与局部语义的平衡。核心理念是“语义即代码”——数据语义一次定义，BI 渲染报表、Agent 生成 SQL、治理工具做血缘分析，读的是同一份定义。
+
+我们基于 OceanBase OSI 也开发了 DataPilot 产品。在不同行业的客户 POC 测试中，客户反馈准确率远好于业界其他产品。
+
+这背后不是模型的差异，而是语义上下文的质量差异——当 AI 拥有准确的业务口径定义，从自然语言到 SQL 的翻译准确率会本质性地提升。
+
+![数据上下文与应用上下文分层架构图](/img/lakebase-ai-database-design/11.png)
+
+## 一体化意味着组件数量大幅减少
+
+所有这些能力加在一起意味着什么？最直接的答案是：组件数量的大幅减少。
+
+![传统多系统拼装与湖库一体组件对比](/img/lakebase-ai-database-design/12.png)
+
+如果采用传统方案，企业需要 5 到 10 个系统来融合处理多模态数据，且多个系统缝合带来一系列问题，包括：CDC 延迟、ETL 失败重试、多套独立运维、多套权限体系、多套监控告警，等等。
+
+通过 OceanBase 湖库一体引擎，能够实现多合一，通过一份数据保证一致性，通过离在线融合保证实时性。
+
+![湖库一体一份数据保证一致性示意](/img/lakebase-ai-database-design/13.png)
+
+![传统方案与OceanBase湖库一体引擎对比图](/img/lakebase-ai-database-design/14.png)
+
+如果把这些能力放在一起看，OceanBase AI 数据库的架构可以概括为三层。
+
+最底层是湖库引擎——多模表运行在对象存储之上。通过多模表和对象存储，支持各种开放计算：OceanBase 的 SQL 计算（OLTP、OLAP、搜索）以及 Spark ETL 和大模型 AI 计算。
+
+中间是上下文层——数据上下文让 AI 理解企业，应用上下文让 AI 理解用户。
+
+最上层是我们开发的应用 Agent：面向数据开发工程师的数据开发 Agent，和面向业务分析师的数据分析 Agent。
+
+为了让企业真的把 AI 用起来，最重要、最基本的一步，是通过一个一体化的 AI 数据库把企业自己的数据管理起来。管理好自己的数据之后，才能让企业的 AI 更准、更省、更快、更安全。
+
+湖库一体的 AI 数据库，这就是我们面向 AI Agent 时代给出的答案。
+
+![湖库一体AI数据库面向Agent时代的收束图](/img/lakebase-ai-database-design/15.png)
+
+## 往期推荐
+
+![往期推荐文章配图一](/img/lakebase-ai-database-design/16.png)
+
+![往期推荐文章配图二](/img/lakebase-ai-database-design/17.png)
+
+![往期推荐文章配图三](/img/lakebase-ai-database-design/18.png)
+
+了解更多
+
+最后，欢迎大家关注公众号“老纪的技术唠嗑局”！
+
+更多惊喜，我们都放在“老纪的技术唠嗑局”公众号的私信菜单栏里了哦。
+
+欢迎加入 OceanBase 社区，或者通过在公众号中私信回复您感兴趣的产品（例如：OceanBase、seekdb、PowerMem）获取相关资料。
+
+
+---
+# Article: OceanBase 社区月报：让开发者拥有具备数据闭环能力的 Agent
+# URL: https://ilongda.com/2026-07-09/2026-07-09-oceanbase-community-monthly/
+# Published: 2026-07-09
+# Updated: 2026-07-09
+# Keywords: OceanBase,社区月报,PowerMem,AgentSeek,Coding Agent,数据闭环,生态认证,Easy Data x AI,Meetup
+
+OceanBase 社区 7 月月报：PowerMem 1.1.x 强化 Coding Agent 记忆与 IDE 集成，AgentSeek 迭代数据闭环，并汇总生态认证与城市活动。
+
+> **本期速览**
+>
+> + **PowerMem 1.1.1–1.1.7**：连续七个版本，强化 IDE / Claude Code 集成、Dashboard 检索与观测、零配置与 no-LLM 部署
+> + **AgentSeek v0.0.2–v0.0.4**：LangChain / Agentic RAG 模板、OpenVINO 支持，以及一键技能安装与生命周期工具流
+> + 生态兼容认证新增 3 款产品；社区直播、杭州沙龙与 7 月城市活动同步推进
+
+![OceanBase 社区月报封面让开发者拥有数据闭环 Agent](/img/oceanbase-community-monthly-2026-07/01.png)
+
+## AI 产品更新
+
+### PowerMem 1.1.x
+
+让 Coding Agent 不再“失忆”，PowerMem 1.1.x 持续升级长期记忆、IDE 集成与会话观测能力。
+
+![PowerMem 1.1.x 长期记忆与 IDE 集成升级](/img/oceanbase-community-monthly-2026-07/02.png)
+
+**PowerMem 连续发布 v1.1.1–v1.1.7 七个版本，主要围绕 IDE / Claude Code 集成、Dashboard 检索与观测、零配置与 no-LLM 部署、中文化文档、MCP / 插件发布体验，以及记忆检索与生命周期稳定性持续增强。**
+
++ **v1.1.1**：新增 IDE 集成与 MoonBit HTTP API 示例，补强 Dashboard 回归用例，并修复 SQLite filters 注入、OpenAI LLM、用户画像空字段等问题。
++ **v1.1.2**：增强配置与部署体验，支持自定义 memory 处理环境变量、内置默认 embedding 零配置启动、CLI / server / MCP / seekdb 可选依赖拆分，并补充多客户端集成指南与 Claude Code 安装流程。
++ **v1.1.3**：Dashboard 接入语义搜索，支持时间范围与排序；新增 CodeFuse IDE 支持，并优化记忆共享权限、遗忘记忆排序与 MCP 发布流程。
++ **v1.1.4**：检索 API 支持过滤条件，记忆列表支持按 scope 过滤；服务启动可自动打开 Dashboard，默认数据目录调整为 `~/.powermem`，并优化记忆衰减与图谱隔离。
++ **v1.1.5**：支持 no-LLM 模式和 `NoopEmbedding`，embedding 模型下载内置到 PowerMem 并支持国内路由；新增 Claude Code Hook 隐私控制、coding-agent 观测与会话时间线 API，并开始发布插件与多平台二进制包。
++ **v1.1.6**：补齐中文文档与官网本地化，初始化流程支持交互问答与 remote-init；SQLite 默认面向 coding agent，发布单独二进制资产，并优化 MCP ID 精度、记忆保留字段与新鲜记忆检索。
++ **v1.1.7**：插件默认启用 transcript inference，精简 recall / remember skills；同时修复 `powermem-mcp` help 行为。
+
+项目开源地址：[https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)，欢迎试用、贡献 PR / Issue！
+
+### AgentSeek 发布 v0.0.2–v0.0.4
+
+OceanBase AgentSeek 是基于 OceanBase & LangChain 打造的智能体工程套件，提供一系列工具和库，帮助开发者快速构建具备数据闭环能力的智能体飞轮。
+
+![AgentSeek 智能体工程套件持续迭代发布](/img/oceanbase-community-monthly-2026-07/03.png)
+
+**AgentSeek v0.0.2–v0.0.4 持续加速 Agent 应用开发，从 LangChain / Agentic RAG 模板、OpenVINO 支持到一键技能安装与生命周期工具流，进一步把“快速搭建可运行 Agent”变成开箱即用的体验。**
+
++ `v0.0.2`：强化 LangChain 友好体验，新增开发指南与多个模板，包括 sandbox、ContextSeek / Bub、deepagents content-builder。
++ `v0.0.3`：CLI 能力增强，支持查看版本、列模板、离线列技能、默认添加技能，并统一项目入口。
++ `v0.0.4`：新增 Agentic RAG / OpenVINO 模板，引入 Phoenix + SeekDB 到默认 LangChain 模板，优化生命周期工具流。
+
+AgentSeek 相关均已开源，欢迎试用、贡献 PR / Issue！
+
++ AgentSeek：[https://github.com/ob-labs/agentseek](https://github.com/ob-labs/agentseek)
++ AgentSeek-api：[https://github.com/ob-labs/agentseek-api](https://github.com/ob-labs/agentseek-api)
++ ContextSeek：[https://github.com/ob-labs/contextseek](https://github.com/ob-labs/contextseek)
++ langchain-oceanbase：[https://github.com/oceanbase/langchain-oceanbase](https://github.com/oceanbase/langchain-oceanbase)
+
+## 生态产品认证进展：新增 3 款兼容产品
+
+6 月新增 3 款生态兼容认证产品。
+
+![OceanBase 6 月新增三款生态兼容认证产品](/img/oceanbase-community-monthly-2026-07/04.png)
+
+详情如下：
+
+| 伙伴名称 | 产品名称 | 产品版本 | OB 版本 | 证书编号 |
+| --- | --- | --- | --- | --- |
+| 广东盈世计算机科技有限公司 | CACTER 邮件安全网关系统 | V7.0 | V4 | OB2026060001B |
+| 深圳易德信息科技有限公司 | safegprint 安可印文印信息安全管控系统（V2.0） | V2.0 | V4 | OB2026060002B |
+| 广东德生科技股份有限公司 | 劳动用工风险监测平台 | V1 | V4 | OB2026060003B |
+
+## 社区动态
+
+### 1. Agent 自进化的另一条路——让上下文成为活的数据资产
+
+随着 Agent 落地生产环境，一个关乎业务的问题开始显现：**如何让 Agent 系统随着使用持续进化？**
+
+![Agent 上下文进化技术直播活动海报](/img/oceanbase-community-monthly-2026-07/05.png)
+
+**6 月 8 日，OceanBase 社区联合 DataFun 社区开启技术直播，通过企业的前沿探索与一线技术实践，探讨“让 Agent 所处的上下文环境持续进化”**，从而推动 Agent 能力的长期增长，即能记住、能检索、能引用、能复盘、能演进，并使上下文沉淀为核心数据资产。
+
+### 2. 智能体落地方法论杭州沙龙
+
+6 月 24 日，FastGPT 联合 OceanBase、上海斯歌 K2、Sealos、AskTable 在杭州黄龙国际中心举办“智能体落地方法论：从技术构建到企业落地”主题沙龙。
+
+![智能体落地方法论杭州沙龙活动现场](/img/oceanbase-community-monthly-2026-07/06.png)
+
+活动围绕智能体从 Demo 走向生产环境后的系统工程问题展开，聚焦数据孤岛打通、安全可控、从 POC 到规模化应用等企业落地挑战，通过 5 场主题分享和 1 小时圆桌交流，拆解金融、制造到消费行业的真实案例。详情可阅读：[【活动回顾】从上海到杭州，FastGPT联合六大社区把Agent落进真实业务里](https://mp.weixin.qq.com/s?__biz=Mzk4ODIyNDQ4Mw==&mid=2247487534&idx=2&sn=f63ca13c84b168e434f48a3bd397e76d&scene=21#wechat_redirect)
+
+### 3. 从框架编排到数据飞轮：聊聊国内开发者构建 Agent 的新思路和新选择
+
+多智能体应用已从实验走向生产，但“能跑通 Demo”和“能持续进化”之间，隔着一道国内开发者不得不面对的现实鸿沟：编排工具百花齐放，数据层却各自为政——上下文散了、trace 丢了、执行轨迹成了“一次性消耗品”，调试靠猜、优化靠运气、迭代靠重写。
+
+![OceanBase 与 CSDN 联合 Agent 直播海报](/img/oceanbase-community-monthly-2026-07/07.png)
+
+**6 月 25 日，OceanBase 与 CSDN 联合呈现了一场直播。** 邀请到通义实验室 AgentScope 项目技术负责人与 LangChain 社区大使共同探讨：国内开发者当下最真实的工程选择。
+
+### 4. OceanBase Hours 线上发布会
+
+6 月 29 日，OceanBase Hours 线上发布会在多个平台直播，讲述 AI 时代 OceanBase 的新探索，并发布面向湖库一体的 AI 数据库。
+
+![OceanBase Hours 湖库一体 AI 数据库发布会](/img/oceanbase-community-monthly-2026-07/08.png)
+
+详情可阅读：[OceanBase 湖库一体 AI 数据库正式发布](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491690&idx=1&sn=b69daf4480ea4030bc48b9e8a91305b8&scene=21#wechat_redirect)
+
+## 社区课程共建招募
+
+DataWhale x OceanBase 联合制作的社区课程《Easy Data x AI》共建招募中！
+
+![Easy Data x AI 社区课程共建招募海报](/img/oceanbase-community-monthly-2026-07/09.png)
+
+这不是又一份“从零开始学大模型”的资料，而是想把 Data 和 AI 之间那段最容易踩坑的路讲清楚。课程由 Datawhale 和 OceanBase 社区联合共建，目前已经有基础篇、产品视角的“道篇”，以及开发者视角的“术篇”。
+
+课程地址：[https://github.com/datawhalechina/easy-data-x-ai](https://github.com/datawhalechina/easy-data-x-ai)
+
+现在，我们更想邀请社区一起把它继续写深、写准、写实用。欢迎大家来给这门课程补上一笔。参与课程共建的方式很简单：看一眼课程共建指南 [https://github.com/datawhalechina/easy-data-x-ai/blob/main/CONTRIBUTING.md](https://github.com/datawhalechina/easy-data-x-ai/blob/main/CONTRIBUTING.md) ，然后找到你感兴趣的 Issue，留言认领，写完提 PR。哪怕只是修一个事实错误，也算贡献；如果你独立完成扩展篇，还会有正式署名。
+
+我们希望每一位参与者不仅留下贡献，也能收获成长。所有被合并 PR 的贡献者都会获得相应的社区实物激励。详见：[一起补上 Agent 时代的数据基础课：Easy Data x AI 入门课程共建招募](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491695&idx=1&sn=89328c562d1a390ad6d6b327e6b01a34&scene=21#wechat_redirect)
+
+## 7 月活动预告
+
+7 月份，我们将在广州、深圳、上海、苏州与大家见面，敬请关注社区活动页报名。
+
+![OceanBase 7 月广州深圳上海苏州活动预告](/img/oceanbase-community-monthly-2026-07/10.png)
+
++ 7 月 10 日广州、7 月 14 日深圳：智能体落地方法论：从技术构建到企业落地，FastGPT 联合 OceanBase、Qoder、Sealos、AskTable 举办双城技术沙龙，聚焦企业 AI Agent 从单点提效到组织级能力建设。详情可阅读：[让 Agent “越用越聪明”的秘密是什么？7 月广州&深圳，聊透智能体落地](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491737&idx=1&sn=5bb24f7e3516282510b04226e1445fcb&scene=21#wechat_redirect)
++ 7 月 19 日：从云端 Agent 到边缘设备，让 AI 记得住、跑得快、更准确（上海市浦东新区世博天地 L1 层 L141）
++ 7 月 31 日：Agent Infra 苏州站，从制造到智能制造（江苏省苏州市高新区苏州工业园区）
+
+> 我们每个月都会和大家展开一次社区进展的汇报沟通会，希望通过更多的互动交流让 OceanBase 开源社区更加透明，实现信息共享，也希望能营造更加轻松的氛围，为大家答疑解惑，让大家畅所欲言。
+>
+> 如果您对我们的社区有任何建议，欢迎在 GitHub 上提 Issues 或 PR，也欢迎大家成为 Contributor，参与到社区建设中来。
+
+![OceanBase 开源社区欢迎加入交流](/img/oceanbase-community-monthly-2026-07/11.png)
+
+了解更多
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: 复杂SQL优化200倍的背后：得物OceanBase执行计划与Hint调优实战
+# URL: https://ilongda.com/2026-07-15/2026-07-15-dewu-oceanbase-sql-hint-tuning/
+# Published: 2026-07-15
+# Updated: 2026-07-15
+# Keywords: OceanBase,得物,SQL调优,Hint,执行计划,行列混存,复杂查询,降本
+
+得物基于 OceanBase 执行计划与 Hint 调优复杂 SQL，将 SQL2 从 4s 压到 0.02s 约 200 倍，业务超时清零并总体降本 43%。
+
+得物是全球领先的集正品潮流电商和潮流生活社区于一体的新一代潮流生活方式平台。复杂的业务场景和极致的用户体验追求，对数据库运维和选型提出了更高要求。
+
+目前得物在线的数据库服务涵盖 MySQL、TiDB、MongoDB、HBase、DuckDB、ClickHouse / StarRocks、向量数据库等多品类，支撑核心交易、运营分析、AI 算法、社区等多业务场景。
+
+多品类数据库面临运维复杂度高、研发选型难、架构复杂、资源成本高等运维问题。同时业务对数据库性能、可用性、成本要求逐步增高。在持续的数据库调研和选型中，OceanBase 作为多模数据库，逐步进入视野，特别是 4.x 版本引起了 DBA 团队和研发团队的极大兴趣。
+
+## 多模数据库 OceanBase 选型
+
+OceanBase 基于 Paxos 协议实现多副本强同步，支持单机房到三地五中心多种部署模式，任意副本秒级故障接管，**RPO = 0**，**RTO = {START_TS}
+  AND b.create_time = {START_TS} AND b.field_B = 0, 1, 0)) AS amount_current
+FROM table_A a
+JOIN table_B b
+  ON a.field_A = b.field_C
+  AND b.`field_B` IN (0, 1, 3, 7)
+  AND b.create_time >= {START_TS}
+  AND b.create_time < {END_TS}
+WHERE a.is_deleted IN (0)
+GROUP BY field_A
+ORDER BY amount DESC
+LIMIT 0, 10;
+```
+
+这两个是常见的复杂查询 SQL，在 MySQL 中的执行计划调到最优，耗时也需要 1.3s 和 3.9s。在 OceanBase 中对相同的 SQL 进行测试，并进行优化对比，**性能提升效果明显：** 通过 5 个维度的渐进式优化，将 SQL2 执行时间从 4s 降至 0.02s，整体性能提升约 200 倍；SQL1 从 1.3s 降至 0.01s，提升约 130 倍。下图详细介绍这几项优化的思路：
+
+![复杂 SQL 五维渐进式优化与耗时对比](/img/dewu-oceanbase-sql-hint-tuning/07.png)
+
+OceanBase 通过计划缓存复用、分区裁剪减少扫描、列存索引破最左前缀瓶颈、多核并行执行提速、Hint 指定算法五大特性，从「计划生成 → 数据扫描 → 索引选择 → 执行调度 → 算法决策」全链路压缩复杂 SQL 的执行开销。
+
+![OceanBase 复杂 SQL 全链路优化特性示意](/img/dewu-oceanbase-sql-hint-tuning/08.png)
+
+需要指出的是，OceanBase 提供了丰富的执行计划 Hint，**让 DBA 可以在 SQL 中直接指定算法，精准干预执行计划的生成。** OceanBase 的执行计划 Hint 不是日常调优工具，而是优化器偏差时的兜底干预能力——当生产 SQL 突发劣化、统计信息失准或关联条件复杂导致选错算法时，DBA 可直接在 SQL 中指定算法纠正执行计划，无需改写 SQL，这份能力是 MySQL 所不具备的。
+
+下图是团队基于 OceanBase SQL 查询计划和 OceanBase SQL Hint 的详细拆解和分析。
+
+![OceanBase SQL 查询计划拆解分析图](/img/dewu-oceanbase-sql-hint-tuning/09.png)
+
+![OceanBase SQL Hint 指定算法能力拆解](/img/dewu-oceanbase-sql-hint-tuning/10.png)
+
+### 业务 POC
+
+在正式推广业务之前，OceanBase 在 DBA 团队内部尝试，DBA 内部 AP 报表业务试点，SQL 执行速度平均提升 10~30 倍。DBA 报表业务一直基于 MySQL，存在复杂查询耗时长的问题，大部分超过 1 秒，甚至有超过 30s 才能执行成功，同时复杂查询带来的资源互斥、锁等待等运维问题。
+
+DBA 内部报表业务整体迁移到 OceanBase，使用 OceanBase 物化视图、行列混存等特性，SQL 执行速度平均提升 10~30 倍，同时通过混沌工程，验证 OceanBase 在各异常场景下的止血手段并形成运维 SOP，积累 OceanBase 运维经验，提振 DBA 团队把 OceanBase 面向业务落地的信心。
+
+### 第一个「吃螃蟹」的业务
+
+在 DBA 内部尝试积累了实践经验后，我们对某业务团队的系统进行了综合评估，该团队共管理多套 MySQL 集群，总规模达百核 CPU、存储量 TB 级，有以下业务痛点：
+
+- **TP & AP 混查，CPU 等告警频发：** 普遍没有只读实例，同时存在大量复杂聚合查询，长期对 TP 业务查询造成较大资源挤占，CPU 经常告警。
+- **磁盘容量问题凸显：** 部分 AI 相关 MySQL 磁盘增长迅速，B+Tree 架构下碎片明显；大表较多，执行 DDL 所需预留额外空间较大，磁盘成本压力显著。
+- **资源分配不合理：** QPS 较低的实例较多，即使在最低配置下也存在资源浪费。
+- **运维处理复杂：** 存在大量空长事务及异常 DML，常规管控平台无法快速排查。
+
+基于业务团队目前遇到的切实痛点，DBA 团队构建了全面的迁移计划，涵盖**平台接入、资源规划、架构设计、集群配置、迁移变更**等各个环节，整体迁移流程图如下：
+
+![得物业务迁移 OceanBase 全流程示意](/img/dewu-oceanbase-sql-hint-tuning/11.png)
+
+业务整体迁移完成后，数据库架构升级，SQL 平均耗时下降 88.3%，业务超时接口清零，总体降本 43%。
+
+架构清晰简洁，多套 MySQL 到 1 套 OB 集群，多租户隔离；三个主机便承载团队整体业务，并同时兼顾高可用和 TP / AP 业务资源隔离。集群底层宿主机为云 ECS 实例，共三个 Zone，分别部署在两个可用区，可用区 A 两个 Zone 用于读写业务，可用区 B 一个 Zone 用于只读业务，每个 zone 由若干计算节点组成。集群中也会留出部分冗余 CPU 资源，当租户出现 CPU 告警时，冗余 CPU 可以秒级完成租户的 CPU 扩容。整体架构如下：
+
+![三 Zone 跨可用区读写隔离集群架构](/img/dewu-oceanbase-sql-hint-tuning/12.png)
+
+**SQL 平均耗时下降 88.3%**，业务超时接口清零，性能提升 8.6 倍，聚合 / 范围查询响应时间较 MySQL 降至 1% 以内，以某研发效能平台为例，AP 相关 SQL 平均耗时从 6.87s 降至 0.8s，性能提升约 8.6 倍，耗时下降 88%。详细数据如下：
+
+![SQL 平均耗时下降 88.3% 对比数据](/img/dewu-oceanbase-sql-hint-tuning/13.png)
+
+![研发效能平台 AP SQL 耗时对比图](/img/dewu-oceanbase-sql-hint-tuning/14.png)
+
+**成本收益明显，相比 MySQL 总体下降 43%**，主要体现在存储方面，MySQL 迁移到 OceanBase 后，压缩率 80% 以上，简单字段场景压缩比可达 10:1 以上。资源利用上，基于 OceanBase 特有的多租户 PrimaryZone 打散 + CPU 超卖，将集群 ECS CPU 利用率提高到 100%，远超 MySQL 主备架构的 50%。
+
+### 第一个「大换血」的业务
+
+数据库底座重组，在有了第一次业务经验后，寻找新「战机」，了解到另外一个业务团队当前有切身痛点：
+
+- **传统 MySQL 架构：** 业务库会在 MySQL 下游接入异构从库，用于业务 B 端运营数据聚合查询。
+- **多套异构数据库支撑业务：** 运营 B 端原先全走 StarRocks；商家 B 端大活动查询走 StarRocks，小活动查询走 MySQL，通过数据同步工具从 MySQL 异构同步到其他品类数据库。
+- **业务分流痛点：** 需要业务手动分流点查 / 聚合查询，而这种分流时常不准确，出现聚合查询走到 MySQL 影响业务的情况。
+- **存储数据量大：** StarRocks + MySQL 占用了大量的存储空间，后续数据一致性依赖同步工具保障。
+- **AP 查询性能急需优化：** 虽然业务对部分组件进行了拆分以提升查询效率，查询仍然存在提升空间。
+
+在经过全面的 POC 验证及测试后，OceanBase 很好地解决了当前问题，特别是架构痛点，在承载 MySQL 业务的同时，压缩率及性能上均较 StarRocks 更优，在与研发业务高效协作后，对当前架构进行「大换血」，目前已将 StarRocks 部分流量切到 OceanBase 进行 POC，运营 B 端已全部走 OceanBase。并且整体效果超出预期。
+
+- **架构升级：** 从 MySQL + StarRocks 双链路 + 应用层手动分流升级为 OceanBase 行列混存一体化。
+
+![MySQL 加 StarRocks 升级为行列混存](/img/dewu-oceanbase-sql-hint-tuning/15.png)
+
+- **消除异构：** 消除数据同步工具链路，数据从异步滞后到实时可见转变。
+- **业务分流风险消除：** 消除应用层手动分流，OB 内部自动路由点查 / 聚合，彻底杜绝分流错误影响业务的风险。
+- **存储降本：** 存储从数 TB 级降至百 GB 级，较 MySQL 压缩率达 94%，较 StarRocks 压缩率达 30%。
+- **SQL 提效显著：** OceanBase 的聚合 / 范围查询响应时间较 StarRocks 平均降低 65%（10%-90%），较 MySQL 降至 1% 以内；高 QPS 点查与 MySQL 互有优势，且显著优于 StarRocks。实时性方面，OceanBase 查询完全实时无延迟，而 StarRocks 存在秒级写入-读取延迟。
+
+更多迁移收益和对比数据参考下图：
+
+![迁移收益与组件对比数据总览](/img/dewu-oceanbase-sql-hint-tuning/16.png)
+
+![存储压缩率与查询性能对比图表](/img/dewu-oceanbase-sql-hint-tuning/17.png)
+
+![点查与聚合查询相对 MySQL 对比](/img/dewu-oceanbase-sql-hint-tuning/18.png)
+
+![相对 StarRocks 的实时性与延迟对比](/img/dewu-oceanbase-sql-hint-tuning/19.png)
+
+## 落地遇到的问题及解决方案
+
+目前报表业务及部分 TP 业务已完成 OceanBase 迁移，虽然带来性能和成本的双重好处，但迁移过程也遇到不少问题和挑战，除了性能问题，还包括兼容性等问题。
+
+### 迁移挑战
+
+在 OceanBase 最新的 LTS 版本 4.4.2 实践中，需注意与 MySQL 在 SQL 语法、事务隔离级别、自增列实现等方面的差异，通过业务适配或参数调整解决兼容性问题。性能方面，通过绑定执行计划、错峰刷新物化视图等手段，有效解决了 AP 查询走偏、物化视图卡住等瓶颈。
+
+更重要的一点是，从传统数据库如 MySQL 等迁移到 OceanBase 时，引入新特性需要特别小心，因为新特性新功能也仍在完善中，不可避免有场景限制甚至功能互斥，比如这里遇到的实时物化视图与 DDL 冲突问题，在引入新功能时须建立严格的准入审核、监控告警和故障演练机制。上线前应全面评估，避免对业务造成非必要影响。
+
+在保障业务稳定性、可用性前提下，通过迁移 OceanBase 来获得性能、成本双重提升，特别是在接下来进入深水区、核心业务推广时，还有不少切实需要解决的问题，需要沉淀总结的经验。
+
+以下为迁移过程中遇到的问题和总结，例如实时物化视图和 DDL 相冲突、SQL 语法不兼容、用户连接字符串被转义等：
+
+![迁移问题与解决方案汇总一览](/img/dewu-oceanbase-sql-hint-tuning/20.png)
+
+![SQL 兼容与物化视图冲突问题清单](/img/dewu-oceanbase-sql-hint-tuning/21.png)
+
+### 运维体系转型
+
+运维模式从实例级转为租户级 + 集群级，在监控、备份和容量规划上全面适配 OceanBase 的分布式特性。工具链也相应升级，从云 MySQL 的「控制台 + 数据同步工具 + 数据库诊断工具 + 自研 DBA 管控平台」切换为 OceanBase 的「OCP + OMS + diag + ODC / 自研 DBA 管控平台」体系，实现管控、迁移、诊断与开发的全链路覆盖。
+
+![运维从实例级转向租户集群级示意](/img/dewu-oceanbase-sql-hint-tuning/22.png)
+
+![OCP OMS diag 与自研平台工具链对照](/img/dewu-oceanbase-sql-hint-tuning/23.png)
+
+DBA 团队对 OceanBase 知识框架也进行了梳理：
+
+![DBA 团队 OceanBase 知识框架梳理](/img/dewu-oceanbase-sql-hint-tuning/24.png)
+
+### 团队能力建设
+
+通过「基础培训 — 深度实践 — 认证培养」三层路径，DBA 团队系统提升从 OceanBase 架构原理到性能调优的实战能力，并通过达成 OBCP 认证目标，已建立 OceanBase 系统化知识体系框架，训练出 OceanBase 专项运维人员。同时，基于技术分享、项目实战带教和内部知识库等途径，形成「分享 — 实战 — 沉淀」的知识转移闭环，持续提升团队能力。
+
+![基础培训到认证培养的三层路径](/img/dewu-oceanbase-sql-hint-tuning/25.png)
+
+## 未来规划与架构演进
+
+未来 OceanBase 在团队中的规划将逐步进入核心区、深水区，同时从成本、性能、效率、AI 智能、AI Agent 底座等多维度为业务赋能提效。
+
+大致分三个阶段推进：短期（0.5-1 年）夯实基础，建立技术支撑、标准 SOP 和应急演练体系；中期（1-2 年）引入 OBKV 落地业务场景、上线向量检索，完成多云多可用区建设并引流核心新增业务；长期（2-3 年）建成统一多模数据平台，覆盖 90% 数据场景。
+
+![OceanBase 短中长期三阶段落地规划](/img/dewu-oceanbase-sql-hint-tuning/26.png)
+
+围绕 AIOps 方向，从异常检测、根因分析、容量预测到自动调参，构建智能运维全链路能力，实现性能预警、故障自愈和资源规划的自动化与智能化。以 OceanBase 迁移为契机，实现成本、敏捷性、创新与风险四大收益：3 年内 TCO 降低 50%，业务上线准备缩短至 1 天内，覆盖实时分析与个性化推荐等新场景，并达成秒级故障恢复与数据零丢失。持续推动 OceanBase 的全面落地，关注并调研 OceanBase LakeBase 等面向 AI 底座的数据库产品，团队将致力于构建面向未来、面向 AI Agent 的多模多态数据基础设施，解决业务当前痛点，为业务创新提供坚实数据底座支撑。
+
+![AIOps 与成本敏捷创新风险四大收益](/img/dewu-oceanbase-sql-hint-tuning/27.png)
+
+**扫码添加小助手微信**
+
+如有任何疑问，或想要了解更多技术资讯，请添加小助手微信：
+
+![OceanBase 社区小助手微信二维码](/img/dewu-oceanbase-sql-hint-tuning/28.png)
+
+
+---
+# Article: AI Memory 系统架构的构思、随想与工程实现
+# URL: https://ilongda.com/2026-07-21/2026-07-21-ai-memory-system-architecture/
+# Published: 2026-07-21
+# Updated: 2026-07-29
+# Keywords: AI Memory,Agent Memory,Memory OS,PowerMem,长期记忆,RAG,System 2,AgeMem,OceanBase,seekdb
+
+AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。
+
+## 说在前面
+
+今天为大家分享的这篇文章，将从系统架构视角，通过比较浅显易懂的方式，来剖析 AI Memory 的本质。
+
+本文所讲的 Memory，指 Agent 在长期交互中积累、可被检索与利用的记录 / 知识 / 经验库。它直接影响个性化、持续学习能力与长程任务表现。
+
+![AI Memory 系统架构主题配图](/img/ai-memory-system-architecture/01.jpg)
+
+文章的作者是蚂蚁集团的库达大佬（陈梓康），在 DataWhale 和 OceanBase 联合发布的社区课程《Easy Data x AI》中，精心整理的一章共建内容（详见：[https://github.com/datawhalechina/easy-data-x-ai/blob/main/docs/extra](https://github.com/datawhalechina/easy-data-x-ai/blob/main/docs/extra) 的 X1-4 小节）。
+
+因为原文的内容比较深，所以这里对复杂的公式定理部分，进行了一定程度的简化，保留了大家容易看懂并理解的关键内容。希望大家在阅读完这篇文章之后，都能够对 Agent 中 Memory 系统的实现形式有所了解。
+
+除此以外，阿里云百炼还专门为我们 DataWhale x OceanBase 联合开发的《Easy Data x AI》课程 [https://github.com/datawhalechina/easy-data-x-ai](https://github.com/datawhalechina/easy-data-x-ai) 的社区共建和实验内容，提供了专属的免费模型算力福利，详见文末的“福利环节”~
+
+> 说明：
+>
+> 文中会提到一些 2026 年的新论文，但这些论文都仅供参考。
+
+## 一、Memory 的本质：三个核心命题
+
+Agent 里的 Memory 要回答的问题是：“过去有没有帮它把今天的事做对”。要回答这个问题，靠一个 markdown 文件，甚至一个数据库，都还远远不够，Agent 需要一个小的 Memory OS。
+
+### 核心命题：Memory 在 Agent 系统里到底是什么？
+
+![Memory 在 Agent 系统中的定位](/img/ai-memory-system-architecture/02.png)
+
+经过最近一两年的思考，先给出一个结论吧：我认为 Agent Memory OS 的可以抽象三个词 —— Raw Ledger、Views、Policy。它们分别类似于操作系统里的原始日志、索引与缓存、调度规则。
+
+![Raw Ledger、Views、Policy 三层抽象](/img/ai-memory-system-architecture/03.png)
+
+#### 命题 A：Memory 不是“存储”，而是可被决策利用的外部状态（external state）
+
+如果把 Agent 看成一个从输入到输出的函数，仅仅“存了很多历史”并不构成能力；能力来自：在当前状态下，历史能否以某种形式影响决策分布。
+
+记忆系统负责从历史中提取当前可用的信息（证据、摘要、子图、可执行技能等），并把它提供给推理层，共同产生决策。Memory 的价值不在于“存了多少历史”，而在于这条**从历史到当前决策的通道**是否有效。
+
+![Memory 作为外部状态影响决策](/img/ai-memory-system-architecture/04.png)
+
+Memory 不等于历史本身，而是“把历史转成当前可用信息”的通道——它的输出要么进入上下文（证据/摘要/子图），要么直接参与决策（例如对输出分布做调制）。
+
+#### 命题 B：Memory 的最小闭包是 Ledger、Views、Policy
+
+![Ledger Views Policy 最小闭包示意](/img/ai-memory-system-architecture/05.png)
+
+1. **Raw Ledger（原始账本）**：它按发生顺序保留写入、修改、删除和反馈。Ledger 这个词本来就是账簿，前面加 Raw，是提醒我们这里存的是未经美化的原始事实。用户哪天说了什么，系统何时改过哪条记忆，当时属于哪个会话和任务，都应该能查回来。
+2. **Derived Views（派生视图）**：也就是从账本加工出的各种“便于查找的版本”。向量索引适合按意思找，全文索引适合查姓名和编号，知识图谱适合查人物关系，时间线适合回答去年发生了什么。View 可以压缩，也可以丢掉一部分细节，但需要能够顺藤摸瓜回到原始账本。
+3. **Policy（控制策略）**：决定何时读、读多少、何时写、如何更新、如何遗忘。并且这些决策必须显式化为可记录/可回放的 Action 序列（ADD / UPDATE / DELETE / NONE…），而不是“靠 prompt 里一句话暗示”。
+
+Raw Ledger 像“账本/黑匣子”，views 像“缓存 + 索引 + 物化视图”；policy 像“调度器/控制回路”。三者缺一，系统要么不可治理（没有账本），要么不可用（没有索引/抽象），要么不可持续迭代（没有可 A/B 的控制点）。
+
+#### 命题 C：Memory 的基本单位是 event（事件）序列，但 event 流不等于可用系统
+
+把 Raw Ledger 建模成 event 序列是合理的，因为协议里所有可审计性都依赖“事件闭包”。
+
+![Ledger 事件应包含的核心要素](/img/ai-memory-system-architecture/06.png)
+
+一个最通用的 ledger 事件应当包含以下要素：
+
++ **作用域（scope）**：这条事件属于哪个用户、哪个会话、哪个任务
++ **时间戳**：事件发生的时刻
++ **输入观测**：当时的 messages / 环境状态片段
++ **系统动作**：包括对外输出，也包括 Memory Tool 的动作
++ **记忆变更**：对记忆状态的变更（ADD/UPDATE/DELETE/NONE）
++ **反馈信号**（可选）：reward / 用户评分 / 任务成败等
++ **决策元数据**（可选）：候选集合 candidate_set、命中证据 provenance、early stop 阈值等
+
+event 序列是“真相来源”，但**它太底层**。如果只存 event，你得到的是可审计的历史，不是可用的记忆能力；真正把历史变成能力的是 views（对 event 的重组织/压缩/索引/时序化/技能化）和 policy（决定什么时候触发哪些 view、怎么更新 view）。
+
+换句话说：**event 是 Ledger 的数据形态；views/policy 是能力形态**。
+
+### 小结：为什么 Raw Ledger + views + policy 是自然解
+
+三个命题可以补全成一个更明确的结论链：
+
+1. **Memory 需要以 event/Action 序列为第一性对象**：否则 Provenance（可回放）无从谈起。
+2. **单一 event 流不可用**：因为推理需要高密度信息、需要索引、需要时序化、需要技能化；这些都要求 views。
+3. **views 不可能“自洽地产生”**：它们是派生状态，派生就意味着近似与冲突；因此必须有 policy 来决定写入/更新/检索/淘汰，并且决策过程必须被记录下来，否则系统不可治理、不可 A/B。
+
+![Memory 闭环从账本到可回放](/img/ai-memory-system-architecture/07.png)
+
+**因此，Memory 的本质不是一个组件，而是一个闭环系统**：Raw Ledger（权威）→ Views（可用）→ Policy（控制）→ Commit（回写）→ Provenance（可回放）。
+
+## 二、System 1 + System 2 的设计
+
+![System 1 与 System 2 分工框架](/img/ai-memory-system-architecture/08.png)
+
+### 为什么需要一个“非空”的 System 2
+
+这里借用认知科学里的两个名字，但不讨论心理学争论。
+
+**System 1 是快速工作的通用 Agent**，也就是我们平时接触的大模型加工具：读懂问题、制定计划、写代码、调用搜索、生成回答。
+
+**System 2 是较慢的外部记忆回路**，负责保存、检索、更新、压缩和遗忘。它像操作系统内核与后台服务，平时不抢镜，少了它，应用每次重启都像第一次安装。
+
+![System 2 外部记忆回路示意](/img/ai-memory-system-architecture/09.png)
+
+如果 System 2 不发挥作用，那么记忆能力只能通过 RL post-training 等方式固化到 System 1（LLM 权重）中。在这种设定下，很难保证记忆特化训练后仍保持通用泛化能力，因此需要一个非空的 System 2，承担记忆的写入、检索与更新，并把相关决策显式化为可观测、可回放的过程。
+
+并且，我们还注意到，记忆能力和 LLM 本身的其他 Agent 能力是“相对”正交的。因此，我们可以靠只牺牲一丢丢 Memory System 的上限，来获得大量的好处（这种好处很多，比如，不影响 System 1 的 Agent 性能，记忆可插拔、可迁移、更易归因）。
+
+![外部记忆与能力内化的对比](/img/ai-memory-system-architecture/10.png)
+
+另外，做个不严谨地类比：从生物进化的角度上来说，让 Agent 学会使用外部系统，要比直接把能力内化在 LLM 里更符合人类的认知规律和进化速度。毕竟，我们人类也是通过工具来大幅度地、迅速地扩展自己的能力的。
+
+### 为什么说“记忆能力”和 Agent 通用能力是“相对正交”的
+
+先澄清这里的“相对正交”不是指严格独立，而是指：在工程上可以把系统拆成两块“低耦合”的模块/参数块（System 1 的通用 Agent 能力 vs System 2 的记忆读写与检索），并且分别优化时不会经常出现大规模的互相干扰与能力退化。
+
+从经验现象看：同一个 base model 在不做记忆特化训练时，接入不同的 RAG / 长期记忆策略就能显著改变长程任务表现；而同一套记忆 infra（raw_ledger + views + 检索策略）也往往能服务多种不同的 base model（可迁移、可插拔）。这种“跨模型可复用”通常意味着能力更多绑定在接口与外部状态上，而非某个特定模型权重上。
+
+非正交的边界：检索噪声、错检、时序冲突会直接破坏推理（导致推理偏离并引发幻觉）；同时，何时检索/检索多少/何时写入更新等策略也依赖 Agent 的自我评估与规划能力。因此更准确的说法是“相对正交 + 存在可控交叉项”，而 System 2 的 observability / provenance / sandbox A/B 的意义就在于把交叉项显式化、可诊断、可迭代。
+
+![记忆能力与 Agent 能力相对正交](/img/ai-memory-system-architecture/11.png)
+
+在平衡挑战和上限的前提下，System 2 是必须要的（不为空）。既然有 System 2，我们完全可能把记忆的更新和召回完全脱离 LLM（System 1）来看。那么接下来的问题是，如何用一套统一的建模理论来建模这个 System 2 呢？让我们回到 Agentic Memory (AgeMem[1]) 这个概念，它非常有启发性。Agentic Memory 本质上就是一个独立的系统，并且最核心且本质的是：拥有主动控制的回路。
+
+至此，System 2 的构型大致想好了，我们绘制了下图：
+
+![Agentic Memory 主动控制回路构型](/img/ai-memory-system-architecture/12.png)
+
+有了 System 1 + System 2 的分工框架，接下来要回答的核心问题是：“非参数化的 System 2 能做到多好？”——这就引出参数化 vs 非参数化的讨论，以及非参数化方案的效果上限分析。
+
+### 非参数化逼近参数化 Memory
+
+#### 参数化与非参数化：在线适应的两种载体
+
+把“学到的东西”抽象成一个对输出分布有影响的对象，它有两种经典承载方式：
+
++ **参数化记忆（parametric memory）**：经验被写进模型权重。训练 / 微调就是把历史数据编译进权重的过程，推理时直接用更新后的模型，不需要额外检索。
++ **非参数化记忆（non-parametric memory）**：经验被写在外部状态里（ledger + views + skill pool + 索引结构）。写入由 policy 决定写哪些、怎么写；推理时通过检索、汇聚、注入等环节让外部状态影响输出。
+
+两者的差别不在“有没有存储”，而在**适应算子写在哪里**。参数化把“写入成本”前置在训练阶段；非参数化把“写入成本”分摊到在线（commit）与推理（retrieve + inject）阶段。
+
+![参数化与非参数化记忆载体对比](/img/ai-memory-system-architecture/13.png)
+
+前文讨论 System 2 的意义，其实就是：把在线适应的主战场从模型权重挪到外部记忆状态与控制策略上，并让它可观测、可回放、可 A/B。
+
+![在线适应主战场外置到记忆状态](/img/ai-memory-system-architecture/14.png)
+
+#### 记忆如何调制决策：修正项 Δ
+
+如果把 LLM/Agent 的一步决策写成 logits（或 action distribution），最通用的“记忆影响决策”的表达方式是：**外部记忆对模型输出施加一个可控的修正项 Δ**。System 1 的权重提供基线能力（通用性），而 Δ 来自外部记忆，负责个性化、任务特化、时序修正、经验复用。
+
+![外部记忆对决策的修正项 Delta](/img/ai-memory-system-architecture/15.png)
+
+我们可以把一次决策写成一句很朴素的话：
+
+> 新的动作倾向 = 模型原本的判断 + 记忆带来的修正 Δ
+
+Δ 读作 Delta，这里只是一个“修正量”。可以把 Δ 看成“外置的可控偏置”——它不需要改模型权重，但能改变决策分布。比如小新明确说过讨厌青椒，点餐 Agent 就该把“青椒炒肉”往候选队伍末尾请；过去的部署记录显示某个命令会破坏数据，系统就该压低它的优先级。
+
+这也解释了为什么我们前文强调 policy 的工具化：如果 Δ 的来源不可审计（比如隐式写在 prompt 里），那么系统无法做到 provenance / rollback / sandbox；而协议要求的正是把 Δ 的来源（命中证据、候选集合、写入动作）显式化。
+
+#### JitRL[2] 与 UMEM[3]：外部经验怎样产生迁移
+
+![JitRL 与 UMEM 外部经验迁移](/img/ai-memory-system-architecture/16.png)
+
+不重新训练模型，Agent 能不能在做决定时立刻用上过去的成败经验？有一类研究会在每步行动前检索相似轨迹，用过去的结果估计当前动作值不值得做，再调整动作优先级。任务结束后，新轨迹和结果继续写回经验库，JitRL 就是这条路线的代表工作。
+
+RL 是 Reinforcement Learning，也就是强化学习。可以把它理解成“行动以后看结果，再调整下次选择”。这种方法不一定改模型参数，外部经验库也能参与调整，尝试逼近一次及时微调带来的变化。
+
+仅仅找到一条相似案例还不够。今天记住“这个报错要检查连接池”，明天错误信息换了几个词，系统可能就认不出来。
+
+更难的是让一次经验帮到一类问题。现在有研究会按语义相似度建立邻域，把意思接近的问题放到一起，再评估某条记忆对整个邻域带来了多少帮助。这样保存下来的不只是某道题的答案，还可能是一类故障的处理原则，UMEM 研究的正是这个问题。
+
+“语义相似”指的是文字不同，意思仍然接近。向量检索常用一串数字表示这层意思，再计算两串数字之间的距离。读者不需要记公式，只要知道它让“数据库连不上”和“服务无法建立连接”有机会被当成近亲。
+
+#### 非参数化 Memory 的上限由什么决定
+
+库里存一亿条记录，不代表 Agent 能在眼前这件事上用好一亿条。非参数化记忆要追赶的，是有效微调对决策产生的影响，不是硬盘容量。
+
+![非参数化记忆三类上限瓶颈](/img/ai-memory-system-architecture/17.png)
+
+##### 1. **接口带宽（Memory → System 1 的注入容量）**
+
+无论是 passage、graph、skill，还是 tool using description，最终都要通过某种“Context Bridge”让 System 1 用上它。
+
+最朴素的桥是“拼 prompt”，更激进的是 latent / KV 注入（后文整合层会展开），但不管哪种，带宽都有限：token 预算、注意力容量、或者注入的 KV 长度。
+
+换言之，注入通道存在预算约束——你能往 System 1 塞进去的“可消费证据/表示”是有上限的，受限于 token 数、延迟、显存、注意力长度等。外部记忆再大也没用，真正起作用的是每一步你能注入多少“有效信息”。记忆固化/压缩、分层记忆、以及 latent token 的动机，本质都是在提高单位预算的信息密度。
+
+##### 2. **检索与聚合误差**
+
+views 是从 Raw Ledger 派生出来的近似结构——通过索引、固化、时序化、技能抽取等操作构建，再经由召回、重排、聚合、early stop 等环节产出最终的检索结果。
+
+只要你不是直接把 ledger 全量塞进模型，views 就一定是近似。近似会带来错检、漏检、时序冲突、语义漂移，这些都会直接污染修正项 Δ（检索噪声会直接破坏推理）。因此，上限不仅取决于“存了多少”，更取决于 views 的误差是否被治理住：可观测、可溯源、可回放，才能迭代降低误差。
+
+##### 3. **Policy 的学习与控制**
+
+决定读写是否靠谱。存太多会污染，存太少又学不到；召回太多挤占上下文，召回太少缺证据；错删一条长期偏好，后面的个性化会一路歪下去。
+
+Memory Algorithm Protocol 把 policy 的输出强约束成 Action 序列，并且要求 UPDATE / DELETE 必须受候选集合约束、召回必须带 provenance。也就是说，控制策略接收当前输入、检索结果和记忆状态，输出一系列 Action，然后通过 Commit 把这些 Action 落盘。
+
+非参数化 Memory 的真正“上限瓶颈”往往不是存储后端，而是 policy：
+
++ 写多了污染、写少了学不到；
++ 召回多了噪声、召回少了信息不够；
++ UPDATE / DELETE 做错一次，长期就会滚雪球。
+
+所以 policy 必须既能学习（RL 训练范式），又能治理（protocol 的候选集合约束 + provenance 闭包 + sandbox 回放 A/B）。这也是为什么本文一直强调“rubrics based 的 policy 不可持续”，必须把控制回路显式化为可训练对象。
+
+## 三、Memory 的核心模块设计
+
+![Memory 核心模块整体设计总览](/img/ai-memory-system-architecture/18.png)
+
+### Memory System 控制层/策略层（policy）
+
+首先，我们必须打破传统工程师的思想禁锢——rubrics based 的 policy，即，基于预定义的规则（rubrics）来控制记忆的读写更新。因此我们必须得用一个 model 来处理这件事。有两种方案：一，训练一个外部的神经网络；二，Prompt/SFT/RL 一个语言模型来做这个事。无论哪种方案，我们都要让这个 model 具备“记忆操作工具化”的能力，即，能够像控制手臂一样控制记忆的读写更新，而非被动接收上下文。
+
+第一种方案的难度比较大，目前学术界也是探索为主，而且如果我们在面对任何参数化问题上，都选择训练一个外部的神经网络，那么我们就会陷入“每个问题都要找到正确的训练方法，并成功训练”的困境，显然这是不可持续的。（至少 GRPO 训练方法是大家公认的，要比自己重新训练一个神经网络要简单太多）
+
+因此，我们尝试第二种方案。不妨提出 Agentic Memory 这个概念，它将记忆操作彻底工具化，整合进 Agent 的动作空间。这是逼近参数化上限的关键一步——让模型像控制手臂一样控制记忆，而非被动接收上下文。因此，这个步骤的参数就落在底层 LLM Agent 上了（让我来解释下这种偏好：因为我们还是更加相信 LLM 的泛化能力和迁移能力，并且 LLM 自身迭代速度也极快）。
+
+| 记忆工具分类 | 具体操作 | 功能描述 | 对应参数化行为 |
+| --- | --- | --- | --- |
+| 长期记忆 (LTM) | ADD | 存储新知识 | 梯度更新 (Training) |
+| 长期记忆 (LTM) | UPDATE | 修正旧知识 | 权重调整 (Fine-tuning) |
+| 长期记忆 (LTM) | DELETE | 移除过时信息 | 灾难性遗忘管理 / 剪枝 |
+| 短期记忆 (STM) | RETRIEVE | 语义搜索并注入 | 激活相关神经元 |
+| 短期记忆 (STM) | SUMMARY | 压缩对话历史 | 抽象表征形成 |
+| 短期记忆 (STM) | FILTER | 移除无关 Context | 注意力机制 (Attention Masking) |
+
+![记忆工具操作与参数化行为对照](/img/ai-memory-system-architecture/19.png)
+
+**以下，我列举一些 2026 年，新出现的参数化 Memory 工作：**
+
+#### AgeMem RL 训练
+
+Agent 同时面对长期记忆和眼前上下文时，很难一上来就用好整套记忆工具。一种训练思路是把能力拆开来练，再逐步放进复杂任务，AgeMem 采用的就是这种分阶段强化学习。
+
+第一阶段练长期记忆，Agent 在日常对话里判断什么值得新增，什么是在修正旧信息。第二阶段练短期管理，系统故意塞入干扰内容，让它学会过滤和摘要。第三阶段才把长期检索与短期整理放进复杂任务。
+
+这个训练顺序很像新员工入职：先学会归档，再学会清桌面，最后才把人放进真实项目。第一天就让他同时接客户、管资料、写复盘、修线上故障，培训效果通常只剩一张疲惫的脸。
+
+#### InfMem[4]：PreThink-Retrieve-Write 协议
+
+除了工具化训练，System 2 中的主动控制回路还可以通过更精细的检索策略来实现。InfMem 这篇工作为了解决长文档推理中的“迷失中间”（Lost-in-the-Middle）问题，引入了 PreThink-Retrieve-Write 协议，显式模拟了慢思考过程，本质上是一种 policy 机制：
+
++ PreThink（预思考）：在检索前，Agent 先评估当前内部权重知识是否足以回答问题。这有效减少了不必要的外部检索，降低了延迟。
++ Adaptive Early Stopping（自适应早停）：传统 RAG 往往检索固定数量的块（Top-K），而 InfMem 训练了一个策略网络，当累积证据置信度达到阈值时立即停止检索。实验显示，这一机制将推理速度提升了 3.9 倍，极大地逼近了参数化模型的即时响应速度。
++ 训练范式（SFT-to-RL）：InfMem 通过从监督微调（SFT）过渡到强化学习（RL），直接优化检索和记忆更新决策，确保每一次外部交互都是为了最大化最终答案的准确率。
+
+![InfMem 预思考检索写入协议](/img/ai-memory-system-architecture/20.png)
+
+Policy 决定“写什么、读什么”，而“写什么”取决于记忆单元本身的结构与压缩方式。
+
+接下来，我们讨论具体的记忆单元设计。
+
+### Memory 单元的结构、时序和压缩
+
+现在，我们选择了 Agentic Memory 的设计，并且大致想好了 System 2 的构型，那么接下来，我们还需要考虑具体的记忆单元的结构、时序和压缩。
+
+借鉴 SimpleMem[5] 的思路，它针对长期交互中的“语境通胀”（Context Inflation）问题，提出了一套模拟生物记忆固化（Consolidation）的机制。
+
+SimpleMem 不存储原始文本，而是存储压缩后的“记忆单元”。它定义了记忆单元间的亲和力评分（Affinity Score）：
+
+其中嵌入向量表示各记忆单元。
+
+基于该评分，SimpleMem 会在后台异步执行递归固化（Recursive Consolidation），将高亲和力的记忆单元合并为更高层级的抽象表征。这个过程很像参数化模型训练中的“层级抽象”：通过多层结构把具体样本逐步提炼为更通用的特征表示，从而在不丢失关键信息的前提下显著提升存储效率。
+
+实验表明，SimpleMem 在其报告的长时序多轮对话任务上，以更低的 Token 消耗击败了全量上下文模型，说明固化的效果还算不错。
+
+参数化记忆的一个重大缺陷是“静态世界观”——一旦训练完成，权重就趋于固化，难以自然地表达随时间变化的事实。LLM 天生对于时间不敏感，这导致我们的生活世界和 Memory 想要承载的世界是有着同步化的问题。关于时序化这个方向，相关工作——Zep[6] 及其引擎 Graphiti[7] 引入了时序知识图谱（Temporal Knowledge Graph, TKG）来缓解这一问题。
+
+具体来说，Zep 会对图谱中的边（Edge）加入时间标注（Temporal Validity）。例如“拜登是美国总统”不再是一个静态事实，而是带有一个有效时间窗口，用来区分“曾经为真”和“当前为真”。
+
+在检索阶段，Zep 会结合查询的时间语境动态合成“当前时刻”的真值图谱。直观上，这让 Memory OS 能模拟参数化模型在经历“遗忘学习”（Unlearning）后的状态：能更精确地区分历史事实与当前事实；据称在其报告的长时序记忆评测上，相比传统 RAG 可提升 18.5% 的准确率。
+
+![SimpleMem 固化与时序知识图谱](/img/ai-memory-system-architecture/21.png)
+
+> 上面的内容相对比较深，所以这里再多做一个容易被大家理解的小总结：
+>
+> 完整对话信息最全，也最占上下文；一句极短摘要很省地方，细节和来源可能一起被省掉。长期系统需要同时保留原始证据与高密度抽象。
+>
+> 交互时间越长，上下文就越容易膨胀。一种处理办法是把历史压成记忆单元，再根据语义亲和度，在后台递归合并相近内容，慢慢形成更高一层的抽象。SimpleMem 采用的就是这条路线。
+>
+> 可以把它想成照片整理。底层留着原片，上面有按旅行生成的相册，再往上可能是一份年度回顾。平时先看概览，需要确认“那天到底是谁说的”时，再回到底片。压缩不是越狠越好。摘要必须保留来源指针，系统才有机会在细节被压错时回去核对。
+
+#### 时序记忆（Temporal Memory）：从“发生过什么”到“何时为真、何时被相信”
+
+“拜登是美国总统”这句话在 2024 年可能没什么问题，2026 年可能就不对了。语义相似度只知道两句话谈的是同一件事，不会自动判断哪条现在有效。
+
+在 Memory OS 的三件套 **(Raw Ledger, Views, Policy)** 中，“时间”并不是附加字段，而是会改变三层的语义边界：
+
++ **Raw Ledger**：append-only 记录“发生了什么写入动作”。加入时序后，Ledger 不仅要能回答“系统何时写入/更正”（transaction time），还要能表达“该事实在世界中何时为真”（valid time）。这两者不等价：你可以在今天纠正上周发生的事实。
++ **Views**：检索不是“相关即可”，而是“在某个查询时间语境下成立”。没有时间切片（time slice），语义相似检索会把旧事实当作当前事实。
++ **Policy**：默认 time_scope=current 意味着“宁可漏，不可错”。但这要求 policy 在需要历史时能显式触发 historical/all，并让 EvidencePack 承载“冲突并存”的证据结构，让 System 1 决策，而不是 Memory OS 私自裁决。
+
+![时序如何改写 Ledger Views Policy](/img/ai-memory-system-architecture/22.png)
+
+推演链条（为什么必须把时序提升到架构骨架层）：
+
+1. LLM 对时间天然不敏感（尤其是隐含时间、相对时间、跨时区）
+2. 纯语义检索会把“过去的高相似事实”错当成“现在仍为真”
+3. 决策层出现“过时事实复活”、以及“被纠正的事实仍反复召回”
+4. 解决方案不是更强 prompt，而是：**以 bi-temporal + time-sliced recall** 把“何时为真”变成检索与聚合的硬约束，并让 policy 可控、可回放。
+
+#### 分层记忆：同一段历史需要不同抽象
+
+一种存储形态，很难同时满足关系推理、经验迁移和证据核对。为了让三类任务各有合适的记忆形态，可以把记忆分成图记忆、经验记忆和片段记忆，MemWeaver[8] 就是这种分层思路的代表。
+
+图记忆保存实体关系，适合回答谁和谁有关；经验记忆从多次交互中抽象处理模式，适合遇到类似问题时借鉴；片段记忆保留原文，负责核对和溯源。
+
+这很像同一套项目资料同时有架构图、复盘笔记和会议原文。它们都来自同一段历史，却服务于不同问题。强行只留一种，阅读体验可能整齐，工作起来就没那么体面了。
+
+到这里为止，我们讨论的“记忆单元”更多还是 Declarative Memory（事实/证据/关系）：能回答“是什么/发生过什么”。接下来，我们从“存什么”过渡到“存怎么做”——也就是程序性记忆。
+
+### 程序性层（The Procedural Layer）：从“知识”到“技能”
+
+事实记忆回答“是什么”和“发生过什么”，长程任务还需要“接下来怎么做”。
+
+Agent 成功完成一次数据库迁移，如果只保存聊天片段，下次仍得重新规划、试错和验证。程序性记忆要保存的是可复用过程，像操作系统里的可执行文件：满足什么条件时启动，依次执行哪些动作，什么时候算结束。
+
+现在已经有研究专门讨论，怎样让 Agent 从多次尝试中学出可复用技能，同时避免越改越离谱。技能可以用 Skill-MDP 描述，简单理解，就是明确什么时候启动、执行哪些动作、什么时候结束，ProcMEM[9] 就是这一方向的代表工作之一。
+
+一项技能包含触发条件、动作序列和终止条件。系统先回看成功与失败轨迹，用自然语言分析技能哪里该改，这被称为语义梯度。模型参数不会因此改变，修改意见写在技能文本上。
+
+候选技能不会写完就直接上岗。ProcMEM 用 PPO 风格的门控做反事实验证，检查新技能是否更偏向历史中的好动作，同时又没有偏离旧技能太远。PPO 是一种常见强化学习算法，这里借用的是它“每次改一点，别突然性情大变”的思想。
+
+技能上线后还要看真实回报。长期没有贡献的技能退出，语义重复的技能合并，环境变化后太久没验证的技能重新试跑。收藏了一百份“高效工作法”不叫程序性记忆，能在合适时机执行，并用结果证明有效，才算技能。
+
+![程序性记忆技能蒸馏与验证](/img/ai-memory-system-architecture/23.png)
+
+### Memory 整合层（The Integration Layer）：潜层融合与零样本对齐（Memory Tokens）
+
+文本、图谱、时间边和技能最后都要送进大模型。最常见的办法，是把它们转成文字，拼到上下文里，再由模型重新编码。这个过程直观、可读，也会消耗 Token 和时间。
+
+Memory Token 探索另一条路线。这里的 Token 可以理解成模型处理信息的基本单位；Memory Token 则希望把外部记忆压成更接近模型内部表示的形态，减少来回翻译。
+
+![Memory Token 潜层融合路线示意](/img/ai-memory-system-architecture/24.png)
+
+#### LycheeMemory[10]：潜层压缩与 KV-Cache 注入
+
+外部文本每次送进模型都要重新编码，会增加计算和显存开销。有研究训练压缩器，把内容变成潜层 Token，再以接近 KV-Cache 的形式注入注意力计算。LycheeMemory 探索的就是这种潜层压缩路线。
+
+KV-Cache 是模型推理时保存中间计算结果的缓存，避免每生成一个字都从头计算。把记忆做成类似形态，有机会减少文本编解码。
+
+![LycheeMemory 潜层压缩与 KV 注入](/img/ai-memory-system-architecture/25.png)
+
+代价也很直观：人越来越看不懂这段记忆。潜层表示如果影响了错误答案，系统必须能追到原始证据，否则排障人员面对的会是一串很有数学气质、但拒绝作证的数字。
+
+#### MemAdapter[11]：异构记忆的对齐器
+
+文本、图谱和技能各有自己的表示方式，同一个模型未必能直接读懂。一种思路是先从图谱中取出与问题相关的局部子图，再把结构化信息对齐到模型的语义空间，这样不用微调主模型也能融合异构记忆。MemAdapter 研究的就是这类零样本对齐方法。
+
+Adapter 就是适配器，类似出国时带的转换插头。插得上只是第一步，电压是否匹配、接错后能否定位，同样重要。对齐层需要支持来源追踪、回滚和沙箱对比。沙箱指隔离出来的试验环境，可以让几种策略在不影响真实记忆的情况下跑同一批任务。
+
+![MemAdapter 异构记忆零样本对齐](/img/ai-memory-system-architecture/26.png)
+
+#### Memory Token 容易被忽略的控制与治理
+
+潜层注入也没有取消注意力上限。系统仍要决定注入哪些内容、给多少预算、什么时候停。表示、对齐、选择、治理和溯源需要一起设计，单独追求压缩率，很容易把可读性压没了，问题还在。
+
+### Memory System 架构总结
+
+不知不觉，我们就讲了很多很多……
+
+很多时候我也是在写作的过程中，不断重塑我对 Memory System 的构想。整篇文章，我还是倾向于用“内核/文件系统/可执行文件”这种 linux 味道满满的笔触来写，因为我觉得一个好的系统最后应该能沉淀成一组**不绑定具体实现与细节**的抽象：它描述的是“我心里认为必须存在的模块与接口”，而不是“教别人怎么拼装某某方案”。
+
+![Memory OS 五件套架构抽象图](/img/ai-memory-system-architecture/27.png)
+
++ **内核（Kernel / Control Plane）**：System 2 的慢回路与调度器。它决定何时检索、检索多少、何时写入、何时更新、何时遗忘，并把这些决策显式化为可训练/可评估的策略（这类想法可参考 AgeMem、InfMem 的控制协议与训练范式，但抽象本身不依赖某一篇论文）。比如，其中一个子模块是规划器/路由器（Planner / Router）：可类比为内核里的 scheduler + syscall dispatcher，把一次输入/查询编译成一份可执行的读写计划（可理解为一串 Memory“系统调用”的调用序列），包括：查哪些 views、每个 view 取多少证据、是否需要闭环检索以及何时停止；以及哪些记忆单元（units）值得写入、写到哪类 view、UPDATE/DELETE 必须引用的候选集合约束。实现上它可以是 rule-based router，也可以是 LLM-as-planner 或 learned controller；但无论实现形态如何，都应当让决策可记录、可回放、可对比，避免“policy 只存在于描述里”。
++ **文件系统（File System / Storage Plane）**：以“权威记录（Raw Ledger，记忆原始数据/raw 账本）+ 派生视图（views）”为核心的数据层。底层需要承载时序一致性与冲突消解（事实在时间上何时为真），上层需要做语义压缩与分层固化（把大量事件/片段逐步抽象成更高层的表征），并且始终保留可溯源链路（这类方向可分别类比时序 KG 与递归固化/分层记忆）。
++ **可执行文件（Executable / Skill Plane）**：把经验固化成可执行、可复用的程序性单元（skill/macro/workflow），让系统复用“怎么做”，而不仅是复用“是什么”。关键不是技能形式本身，而是它必须满足可执行、可验证、可治理，才能长期演化且不发生系统性退化。
++ **总线接口（Interface / Context Bridge）**：记忆与推理之间的接口层。它负责把外部状态以尽量低开销、低失真、可控的方式注入到计算核心中，并支持可观测与溯源（部分工作用 latent token / memory token 作为桥接手段）。
++ **学习引擎（Learning Engine / Online Adaptation）**：在不必频繁更新权重的前提下，持续把交互反馈转化为可用的改进信号。它可以体现在推理端的优势调制、技能层的演化算子、检索策略的分块优化等。关键是让“学习”发生在外部状态与策略上，从而保持可插拔、可回滚、可 A/B 的工程属性（JitRL/优势调制是其中一种实现方式）。
+
+## 四、上文回顾
+
+回顾全文，从命题 A/B/C 出发，经过层层论证，我们最终可以得到以下核心结论：
+
+1. **Memory 不是存储，而是闭环系统**：它的本质是 Raw Ledger（权威记录）→ Views（可用能力）→ Policy（控制层）→ Commit（回写）→ Provenance（可回放）的完整闭环。三者缺一，系统要么不可治理，要么不可用，要么不可持续迭代。
+2. **System 2 是必要的**：记忆能力与 LLM 通用 Agent 能力相对正交，外置化的 System 2 在可插拔、可迁移、可归因方面带来大量工程好处，值得牺牲一定的理论上限。
+3. **非参数化 Memory 的上限由三类瓶颈决定**：接口带宽（注入容量）、检索与聚合误差（views 近似）、以及 policy 的可学习性与可控性。其中 policy 往往是最被低估的瓶颈。
+4. **时序是架构的结构维度，而非 metadata**：bi-temporal + time-sliced recall 是区分“曾经为真”与“当前为真”的硬约束，不能交给 LLM 自洽猜测。
+5. **架构五件套**（内核/文件系统/可执行文件/总线接口/学习引擎）是不绑定具体实现的抽象，它描述的是“必须存在的模块与接口”，而不是“教别人怎么拼装某某方案”。
+
+![全文核心结论回顾示意图](/img/ai-memory-system-architecture/28.png)
+
+## 五、从架构构想到工程实现：PowerMem[12] 前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的 AI Memory 系统。  
+
+一个开源项目 PowerMem（项目地址：[https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem) 可以看作这套 Memory OS 的开源工程落点。它面向 AI Agent 提供持久化、自演化的记忆能力，把对话、行动与反馈整理成长期可用的状态。前文那些看起来略有距离的抽象，在这里能找到具体位置。
+
+![PowerMem 作为 Memory OS 工程落点](/img/ai-memory-system-architecture/29.png)
+
+### 会话结束了，状态还在
+
+System 2 的第一件工作，是把长期状态从模型和单次会话里拿出来。PowerMem 提供持久化记忆、用户画像和作用域管理，让记忆可以按用户与 Agent 隔离，也能在需要时共享。
+
+这意味着模型可以换、会话可以重开，用户偏好和任务进度不用陪着上下文一起下班。多 Agent 协作时，各自该记什么、能够看到什么，也有明确边界。
+
+![PowerMem 持久化记忆与作用域隔离](/img/ai-memory-system-architecture/30.png)
+
+### 同一份历史，要有不同的查法
+
+向量检索擅长找意思相近的内容，全文检索擅长名字和编号，图检索擅长关系，新近度信号负责提醒系统别忽略刚发生的变化。PowerMem 让这些方式参与混合检索，对应的正是前文 Views 的设计。
+
+用户问“上次那个类似故障”，语义检索可以帮忙；用户问“订单 OB-20260716”，关键词更可靠；用户问“这个客户和哪个项目有关”，关系图更顺手。把所有问题都交给一种检索方式，像拿着一把螺丝刀装修整套房，认真是很认真，效率另说。
+
+![PowerMem 混合检索的多种查法](/img/ai-memory-system-architecture/31.png)
+
+### 记忆库也得有人定期收拾
+
+![PowerMem 记忆抽取更新与时间衰减](/img/ai-memory-system-architecture/32.png)
+
+PowerMem 用大模型参与记忆抽取、更新和合并，并结合艾宾浩斯式时间衰减调整记忆优先级。艾宾浩斯遗忘曲线原本描述人类记忆随时间减弱，这里借用的是“越久未被使用，默认权重越低”的思路。
+
+新地址可以更新旧地址，反复出现的稳定偏好可以获得更高权重，长期没有用过的零碎信息逐渐退到后排。记忆库由此不再是只进不出的聊天仓库，Policy 的生命周期管理开始真正工作。
+
+时间衰减并不等于粗暴删除。明确过期、仍然有效、只是很久没用，是三种不同状态。前文谈到的有效期、撤回记录和软排序，仍然是理解长期治理的关键。
+
+### 经验留下来，还要变成会做的事
+
+PowerMem 提供 Experience + Skill 两层蒸馏。Experience 保存从交互中提炼出的经验，Skill 再把反复验证的经验整理成更可复用的做法。
+
+![Experience 与 Skill 两层蒸馏](/img/ai-memory-system-architecture/33.png)
+
+这对应程序性记忆：Agent 除了知道“上次迁移成功了”，还要能留下当时的前置检查、执行步骤和验证方式。下一次面对相似任务，历史不只是几段可供怀旧的聊天记录，而能成为行动参考。
+
+### 应用可以换，记忆不用反复搬家
+
+Context Bridge 最怕每个应用都发明一种私有记忆格式。PowerMem 提供 Python SDK、HTTP 服务、MCP 和 CLI，让聊天助手、开发工具和 Agent 通过不同入口访问同一套后端。
+
+MCP 是 Model Context Protocol，也就是模型上下文协议，用统一方式把工具和数据源提供给 Agent。CLI 则是命令行接口，方便开发者在终端调用。这些入口负责让不同应用稳定接上 Memory OS，记忆内容仍由后端统一管理。
+
+![PowerMem 多入口接入同一后端](/img/ai-memory-system-architecture/34.png)
+
+### 先在电脑上跑起来，再考虑更大的场面
+
+存储层也保留了伸缩空间。PowerMem 支持 OceanBase、嵌入式 seekdb、PostgreSQL 和 SQLite 等主流数据库。本地实验可以从轻量后端开始，长期服务再选择更适合持续运行的数据库，Memory OS 上层的抽象不用跟着全部推倒重来。
+
+一个长期运行的 Agent，可以顺着几个问题检查自己的记忆系统：会话结束后状态还在不在；历史是否只有向量这一种查法；旧事实能否更新，低价值内容会不会退场；成功经验能否沉淀成技能；多个应用能不能共用同一套记忆底座；本地原型走向长期服务时，存储是否留有余地。
+
+![PowerMem 多数据库后端伸缩示意](/img/ai-memory-system-architecture/35.png)
+
+PowerMem 已经把这些关键能力放进一套开源系统。它适合用来搭建长期助手、个性化应用、Copilot 和多 Agent 工作流，也适合作为理解 Memory OS 的一份可运行样本。读完前面的理论再看它，会更容易明白每个模块为什么存在；先把系统跑起来再回看理论，也能看到这些抽象都来自长期运行后迟早会遇到的真实问题。
+
+## 写在最后
+
+AI Memory 系统的下一步演进仍然值得期待：更细的 Ledger 回放与来源追踪，更自然的双时态查询，能从真实反馈中持续调整的 Policy，以及更高效的潜层记忆注入。
+
+方向变得更远，但是内核、文件系统、技能平面、总线与学习引擎这套骨架仍然适用。
+
+![AI Memory 下一步演进方向示意](/img/ai-memory-system-architecture/36.png)
+
+如果大家想继续看工程细节，可以从 PowerMem GitHub 仓库[13] 和它的 PowerMem 架构说明[14] 开始。一个 Agent 真正记住你，靠的不会是一句“请记住以上内容”，而是背后这套持续工作的系统。
+
+## 参考资料
+
+[1] AgeMem: [https://arxiv.org/abs/2601.01885](https://arxiv.org/abs/2601.01885)
+
+[2] JitRL: [https://arxiv.org/abs/2601.18510](https://arxiv.org/abs/2601.18510)
+
+[3] UMEM: [https://arxiv.org/abs/2602.10652](https://arxiv.org/abs/2602.10652)
+
+[4] InfMem: [https://arxiv.org/abs/2602.02704](https://arxiv.org/abs/2602.02704)
+
+[5] SimpleMem: [https://arxiv.org/abs/2601.02553](https://arxiv.org/abs/2601.02553)
+
+[6] Zep: [https://arxiv.org/abs/2501.13956](https://arxiv.org/abs/2501.13956)
+
+[7] Graphiti: [https://github.com/getzep/graphiti](https://github.com/getzep/graphiti)
+
+[8] MemWeaver: [https://arxiv.org/abs/2601.18204](https://arxiv.org/abs/2601.18204)
+
+[9] ProcMEM: [https://arxiv.org/abs/2602.01869](https://arxiv.org/abs/2602.01869)
+
+[10] LycheeMemory: [https://arxiv.org/abs/2602.08382](https://arxiv.org/abs/2602.08382)
+
+[11] MemAdapter: [https://arxiv.org/abs/2602.08369](https://arxiv.org/abs/2602.08369)
+
+[12] PowerMem: [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+
+[13] PowerMem GitHub 仓库: [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+
+[14] PowerMem 架构说明: [https://github.com/oceanbase/powermem/blob/main/docs/architecture/overview.md](https://github.com/oceanbase/powermem/blob/main/docs/architecture/overview.md)
+
+![AI Memory 文章标题横幅配图](/img/ai-memory-system-architecture/37.png)
+
+## 文末福利环节
+
+今天阿里云百炼为我们 DataWhale x OceanBase 联合开发的《Easy Data x AI》课程 [https://github.com/datawhalechina/easy-data-x-ai](https://github.com/datawhalechina/easy-data-x-ai) 的社区共建和实验内容，提供了专属的模型算力福利（这篇公众号文章，就出自该课程的社区共建章节）~
+
+![Easy Data x AI 课程算力福利说明](/img/ai-memory-system-architecture/38.png)
+
+社区课程学习者和共建者，均可通过阿里云百炼 × OceanBase 专属福利页面 [https://opc.aliyun.com/oceanbase?utm_content=g\\_1000415375](https://opc.aliyun.com/oceanbase?utm_content=g_1000415375) 领取模型算力支持，可获得 1 亿 Token 的免费额度（实测新、老用户均可获得）。
+
+![阿里云百炼专属福利领取页面](/img/ai-memory-system-architecture/39.png)
+
+除此以外，百炼新老用户及个人、企业均可参与无门槛 Token 满返补贴；还有最高 100 万元等额 Token 的 OPC 创新助力，以及高校学生模型通兑补贴等课程共建、学习的专属福利。这些权益和福利将为本课程的共建和实验实践提供专属模型算力支持，欢迎大家领取百炼的模型算力福利，积极参与课程的学习和共建~
+
+课程链接：[https://github.com/datawhalechina/easy-data-x-ai](https://github.com/datawhalechina/easy-data-x-ai)
+
+福利链接：[https://opc.aliyun.com/oceanbase?utm_content=g\\_1000415375](https://opc.aliyun.com/oceanbase?utm_content=g_1000415375)
+
+## 往期内容推荐
+
+![往期内容推荐配图一](/img/ai-memory-system-architecture/42.png)
+
+![往期内容推荐配图二](/img/ai-memory-system-architecture/43.png)
+
+![往期内容推荐配图三](/img/ai-memory-system-architecture/44.png)
+
+![往期内容推荐配图四](/img/ai-memory-system-architecture/45.png)
+
+![往期内容推荐配图五](/img/ai-memory-system-architecture/46.png)
+
+![OceanBase 开源社区欢迎加入交流](/img/ai-memory-system-architecture/40.gif)
+
+![OceanBase 社区资料入口](/img/ai-memory-system-architecture/41.png)
+
+了解更多
+
+![添加社区小助手加入微信交流群](/img/ai-memory-system-architecture/47.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: 我们为什么要做 Lakebase？
+# URL: https://ilongda.com/2026-07-23/2026-07-23-why-we-build-lakebase/
+# Published: 2026-07-23
+# Updated: 2026-07-23
+# Keywords: OceanBase,Lakebase,湖库一体,AI数据库,多模态数据,向量搜索,智驾,证券,Agent
+
+OceanBase Lakebase 面向 AI 构建湖库一体数据底座，统一管理结构化与多模态数据，融合 SQL、Spark 与向量搜索，覆盖智驾与证券场景。
+
+> **编者按**
+>
+> 6 月 29 日，OceanBase Hours 线上发布会举行，OceanBase 面向湖库一体的 AI 数据库正式发布，OceanBase AI 产品家族亮相。
+>
+> 在这套体系中，OceanBase Lakebase 是 OceanBase AI 数据库的核心引擎。其承载湖库一体与多模态数据能力，让结构化数据、非结构化数据和向量数据能够在统一架构中被管理、加工、检索和调用。
+>
+> 为何要构建 OceanBase Lakebase？其底层技术逻辑是怎样的？又适用于哪些实际业务场景？本文将深入探讨这些问题。
+
+作者 | OceanBase 产品总经理颜然（韩富晟）
+
+![OceanBase Hours 发布会开场动态标识](/img/why-we-build-lakebase/01.gif)
+
+![韩富晟发布 OceanBase Lakebase 产品](/img/why-we-build-lakebase/02.jpg)
+
+OceanBase 产品总经理韩富晟
+
+企业数据系统的游戏规则，正在被 AI 能力重新定义。
+
+过去几十年，数据库的核心职责是管理结构化数据。交易、订单、账户、财务，这些数据以表的形式被组织和查询，支撑了企业最关键的业务系统。
+
+但随着 AI 技术的发展，文本、图片、音频、视频等多模态数据不断进入业务系统，并从“附件”转变为可被理解、分析和利用的核心资产，开始支撑新的业务场景。
+
+企业并不缺数据。数据湖存储原始数据，数据库支撑交易，数仓服务分析，但在 AI 场景下，这套分散的架构很难支撑对多模态数据的统一处理和理解。AI 应用要更好地理解业务，需要的是一个能把结构化数据与多模态数据连接起来、并通过 AI 能力进行处理和挖掘的新底座。
+
+这也是我们发布 OceanBase Lakebase 的原因。
+
+## Lakebase 是什么：面向 AI 的湖库一体数据底座
+
+![Lakebase 是面向 AI 的湖库一体数据底座](/img/why-we-build-lakebase/03.png)
+
+我们把 OceanBase Lakebase 定义为面向 AI 业务场景的湖库一体数据底座。
+
+它不是新的数据湖，也不是把数据库能力做一次横向扩展，而是希望在 AI 时代，重新思考企业数据应该如何被存储、管理、计算和搜索。
+
+OceanBase Lakebase 的核心逻辑很直接：让多模态数据获得和结构化数据一样重要的管理能力。
+
+过去，非结构化数据虽然可以被存下来，但要真正用起来并不容易。文档、图片、视频、音频散落在不同系统里，缺少统一元数据、统一索引、统一计算和统一搜索能力。很多企业明明有大量高价值数据，但业务人员和 AI 应用很难高效使用。
+
+OceanBase Lakebase 要解决的，就是这个问题。
+
+![OceanBase Lakebase 分层架构与开放计算示意](/img/why-we-build-lakebase/04.png)
+
+首先，文本、图片、音视频等数据可以被统一接入和处理。对于 AI 应用来说，这意味着更多原本沉睡的数据可以被重新激活。
+
+为了实现这一点，我们选择了湖库一体的架构。湖的开放性很重要，因为 AI 场景需要处理海量、多类型、开放格式的数据；库的管理能力同样重要，因为企业级应用需要稳定性、治理能力、权限控制和可靠的数据服务。我们希望把这两类能力真正结合起来，而不是停留在接口层面的拼接。
+
+在这个架构之上，是更加开放和多样的使用方式。AI 场景里的计算方式非常多样，不可能只依赖单一计算模型，所以 OceanBase Lakebase 支持 SQL、Spark、Daft 等多种计算方式，让数据开发、算法工程和业务分析都能以适合自己的方式使用数据。
+
+搜索方式也同样需要融合。用户既需要关键词搜索，也需要向量搜索，还需要结合结构化字段进行精准筛选。我们希望把这些能力统一起来，让用户可以同时按语义、按关键词、按业务条件去找到真正需要的数据。
+
+此外，未来使用数据的不只是人，也会有越来越多智能体。到了 Agent 时代，数据不只是被人查询，也会被智能体持续调用。Agent 需要的不只是知识库，而是实时上下文、长期记忆、业务状态、行动记录，以及可隔离、可回滚的数据环境。
+
+OceanBase Lakebase 要做的，是让这些数据能力成为 AI 应用可以稳定调用的基础设施，提供标准化接口和工具能力，让 AI Agent 能够更容易理解和调用企业数据。
+
+## 新场景可快速构建，老系统无需推倒重来
+
+![新场景可快速构建老系统无需推倒重来](/img/why-we-build-lakebase/05.png)
+
+作为企业级的数据基座，我们非常清楚很多客户内部已经有运行了很长时间的数据系统，这些系统承载着企业大量的历史数据资产。所以 OceanBase Lakebase 在设计上并不要求客户推倒重来，也不要求把所有数据都迁移进来之后才能使用。
+
+我们为 OceanBase Lakebase 设计了两种部署模式：
+
+- **独立部署模式**，适合全新的业务场景。如果用户面对一个新的 AI 应用场景，可以搭建一套全新的端到端基础设施，OceanBase Lakebase 能以较小的初始资源快速拉起一套系统，面向新场景提供包括存储和计算在内的所有能力。
+- **智能叠加层模式**，适合需要复用已有存储和数据资产的场景。比如客户已经在数据湖里沉淀了大量数据，OceanBase Lakebase 可以和已有系统并行运行，通过数据连接把客户已有系统中的数据和自身管理的新数据有机结合起来，向上层应用提供一致性的访问界面。
+
+简单来说，新业务可以快速建设，老系统可以平滑增强。用户根据实际场景灵活选择。
+
+## 场景一：智能驾驶
+
+![智能驾驶场景从行车数据到训练样本](/img/why-we-build-lakebase/06.png)
+
+智驾企业每天都会从工程车、测试车采集大量视频、图像、传感器、GPS 等数据。真正的问题不是数据存不下来，而是如何从这些海量数据中快速找到有价值的片段。
+
+比如极端工况、碰撞风险、异常道路、恶劣天气，这些对模型训练非常关键，但如果依赖人工筛选，链路会非常长，效率也很低。
+
+OceanBase Lakebase 在这个场景的核心价值是：让数据存得下、算得动、用得起。
+
+它在这里要做的是，把视频和多模态数据变成可处理、可搜索的数据资产。系统支持视频拆分、事件切片、关键帧抽取、场景识别和特征向量化，再结合向量搜索、结构化查询和多模搜索，让业务团队从海量行车数据中快速找到需要的样本。
+
+对于智驾企业来说，OceanBase Lakebase 不只是一个存储系统，而是支撑模型持续迭代的数据底座。它帮助客户把海量行车数据变成训练样本和测试样本，降低数据准备成本，加速模型迭代。
+
+## 场景二：证券
+
+![证券场景多模态数据处理与服务中枢](/img/why-we-build-lakebase/07.png)
+
+证券类企业并不是没有数据，恰恰相反，它们的数据非常丰富。既有行情、交易、财务、客户等结构化数据，也有研报、公告、制度文件、新闻舆情等非结构化数据。真正的挑战在于，这些数据类型复杂，加工难度大，整合效率不高。
+
+OceanBase Lakebase 在这个场景中，可以作为多种类型数据的处理与服务中枢。它可以统一对接多类异构数据源，并对研报、公告、制度文件等内容进行智能解析、语义理解和内容提取，建立索引。
+
+比如在报告智能化解析场景中，系统可以对研报、行业报告、公司研究报告进行自动解析，提取标题、摘要、标签、行业、证券信息和研究机构等关键内容，让投研资料更容易沉淀和复用。在制度文件管理场景中，它可以对监管制度、合规文件、反洗钱相关文件进行分类、识别、摘要和标签提取，支撑后续的制度检索和合规问答。
+
+## 同时理解结构化与多模态数据
+
+![同时理解结构化数据与多模态数据](/img/why-we-build-lakebase/08.png)
+
+单纯的交易型数据库，无法完整覆盖多模态数据处理需求；单纯的数据湖，也很难满足企业级管理、搜索和服务化要求。
+
+AI 时代需要的是一个新的湖库一体数据底座，既能管好结构化数据，也能处理多模态数据；既能面向人提供分析能力，也能面向 Agent 提供可调用的数据能力。
+
+过去 OceanBase 已经形成了完善的数据库产品体系，支撑了大量客户核心系统的稳定运行。在这个基础上，面向 AI 时代新的数据处理需求，我们进一步构建了以 OceanBase Lakebase 为核心的 AI 数据库。
+
+从一体化数据库到 AI 湖库，我们希望既能支撑好企业核心系统的稳定运行，又能支撑好 AI 场景下新应用的快速落地。
+
+Lakebase 是 OceanBase 面向这个方向迈出的一步。我们希望通过 Lakebase，帮助企业把分散的数据接进来、管理好、处理好、搜索到，并最终服务于 AI 应用和业务创新。
+
+这条路一定会有很多技术同行者，也一定还有大量工程问题需要持续解决。但方向是清楚的：未来企业的数据基础设施，必须能够同时理解结构化逻辑和非结构化语义。
+
+OceanBase 希望在这个方向上，和客户一起把底座做深，把场景做实。
+
+![Lakebase 面向 AI 时代的收束配图](/img/why-we-build-lakebase/09.png)
+
+## 往期内容推荐
+
+![往期内容推荐配图一](/img/why-we-build-lakebase/10.png)
+
+![往期内容推荐配图二](/img/why-we-build-lakebase/11.png)
+
+![往期内容推荐配图三](/img/why-we-build-lakebase/12.png)
+
+![往期内容推荐配图四](/img/why-we-build-lakebase/13.png)
+
+## 活动推荐
+
+![社区活动推荐海报](/img/why-we-build-lakebase/14.png)
+
+了解更多
+
+![添加社区小助手加入微信交流群](/img/why-we-build-lakebase/15.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: 聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判
+# URL: https://ilongda.com/2026-07-27/2026-07-27-graph-engineering-agent/
+# Published: 2026-07-27
+# Updated: 2026-08-13
+# Keywords: Graph Engineering,Loop Engineering,AI Agent,多智能体编排,Harness Engineering,LangGraph,FSM,检查循环,方向循环
+
+Graph Engineering 不是用 Graph 取代 Loop：当执行、检查和定方向不能塞进同一个 Agent，就要设计多 Loop 的分工、交接、纠偏和停手。
+
+> 如果生产结果、检查结果和判断方向都由同一个 Loop 完成，它很容易同时成为运动员、裁判和记分员。
+>
+> Graph Engineering 要设计的，就是多个 Loop 之间，如何分工、交接、纠偏和停手。
+
+最近几天，突然到处都在聊 **Graph Engineering**。有人把它说成多 Agent 工作流，有人强调运行时生成任务，也有人讨论“让 Loop 检查 Loop”。
+
+这个词虽然暂时还没有公认的定义，但有一点可以先确定：**Loop 没有被 Graph 取代**。当一个 Loop 装不下执行、检查和方向判断时，工程问题才会从 Loop 内部移到多个 Loop 之间。
+
+![Graph 组织多个 Loop 的工程关系](/img/graph-engineering-agent/01.png)
+
+## Graph Engineering 是怎么被聊起来的？
+
+起点是一句很短的话。7 月 18 日，OpenClaw 作者 Peter Steinberger 问：“我们还在谈 Loop，还是已经转向 Graph 了？”
+
+![Peter 推文追问是否转向 Graph](/img/graph-engineering-agent/02.jpeg)
+
+这条只有九个英文单词的推文[1]，已经获得了近 300 万次浏览。
+
+几个小时后，Hamel Husain 搞了个标题党：《Loop Engineering Is Dead. Enter Graph Engineering.》[2]。内容只有一张动图。
+
+![Husain 标题党动图宣称 Loop 已死](/img/graph-engineering-agent/03.gif)
+
+他后来在回复里直接说：“Nobody knows what it is.”[3]
+
+一个还没有公认定义的词，先拥有了流量、阵营、架构图和教程。看来 AI Coding 圈现在和娱乐圈也大差不差……
+
+## 开篇先聊两句 Loop Engineering
+
+为什么之前不单独在公众号上写篇文章去聊 Loop Engineering？
+
+首先，因为在 Loop Engineering 这个概念突然爆火之前，我们已经聊过 Harness 了（详见：[《深度“解剖”AI Agent Harness》](https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect)）。
+
+在上面这篇文章里，LangChain 讲得也很直接：Agent = 模型 + Harness，“既然模型不是你造的，那你做的就都是 Harness”。
+
+![Agent 等于模型加 Harness 示意](/img/graph-engineering-agent/04.png)
+
+因此，Harness 工程就已经包含了：
+
+- **提示词工程（Prompt Engineering）**：单参数函数。研究的是如何写一个高质量的提示词，让模型输出更好的结果。
+- **上下文工程（Context Engineering）**：多参数函数。研究的是给模型看到哪些上下文信息，让模型输出更好的结果。
+- **循环工程（Loop Engineering）**：带状态反馈的循环程序。研究的是如何让模型能够自动地长时间持续运行，且更好地完成任务。
+- ……（还有很多其他的组件，这里不再一一列举了）
+
+其次，**Loop 一直都是 Agent 的基础，根本不是新鲜的概念**。AI Agent 的运行模式是：感知 → 推理 → 行动 → 观察 → 继续推理（也就是 ReAct 模式，Reasoning + Acting）。换言之，Agent 和 ChatBot 最大的区别，就是 Agent 是一个具有循环（Loop）能力的系统，它的运行模式就是一个循环迭代的过程，而非传统 AI 对话的单次响应模式。
+
+如果非要掰扯一下 Loop Engineering 和 ReAct 有什么不同，那我的理解是：Loop Engineering 无非是在 ReAct 的外面再多套一层 Loop，也就是父循环套子循环，减少人工干预，让 Agent 自己感知环境变化，持续执行，直到完成目标。其实，不去严格区分 Loop Engineering 和 ReAct，问题也不大。
+
+前一阵儿大家讨论的更多的，还是说不同的 Loop 形式分别适合怎样的场景，例如：回合制（turn-based）、目标制（goal-based）、定时制（time-based）、主动制（proactive）。不过这些不是这篇文章的重点，也不再继续深入去聊，只推荐一篇 Akshay Pachaar 的文章：《The four types of agent loops》[4]。
+
+## AI 社区正在讨论的 Graph Engineering 是什么？
+
+### 先说说我自己的理解
+
+按照上面的规律，如果把 Loop Engineering 类比成：带状态反馈的循环程序。那我会把 Graph Engineering 理解成：多个程序节点组成的分布式程序。
+
+实际场景中可能需要多个 Agent 并行在跑，而且互相之间有所依赖，并非 while 循环的结构这么简单，对应计算机里面的概念就是图，Graph。
+
+![多 Agent 依赖构成有向图结构](/img/graph-engineering-agent/05.png)
+
+这个 Graph 是个有向图（Directed Graph），某个 Agent 跑完可能结果就要给到另一个 Agent 继续处理，因此需要有向。
+
+> 注意：这不是 DAG（有向无环图），因为实际场景可能是有环的，某个节点处理完了可能会回到原来某个过去的节点继续。
+>
+> 其实，这更像是 FSM（有限状态机），它也是一种图，让模型在一个图中的各种状态间切换，持续执行，直到到达目标。
+
+最近工作中有个大任务，思来想去其实就是构建一个 FSM，前面的 Agent 处理完成给到后面的 Agent，但是后面处理完发现有问题可能又回到前面的 Agent。
+
+![任务在 Agent 间回退的状态机](/img/graph-engineering-agent/06.png)
+
+所以，Graph Engineering 和 Loop Engineering 一样，也不算是全新概念，只是目前大家的工程化阶段纷纷走到这里了，需要用图来描述和解决真实场景里面的问题。
+
+![Graph Engineering 并非全新概念](/img/graph-engineering-agent/07.png)
+
+### 主流观点是怎样的？
+
+如果把高互动讨论放在一起看，大致有这些共识：
+
+- **Loop 仍然存在。** 一个 Agent 依然需要根据结果继续行动、验证和修正。这始终都是 Agent 的基础。
+- **Graph 组织多个执行单元。** 它描述谁先做、谁能并行、检查失败后退回哪里，以及什么时候需要人介入。
+- **节点不一定都是 Agent。** 它也可以是工具、确定性程序、验证器或人；每个 Agent 节点内部仍可能运行自己的 Loop。
+- **检查关口和失败路径比方框数量更重要。** 如果所有箭头都只指向“继续”，那只是一条画得更复杂的流水线。
+
+![检查关口比节点数量更重要](/img/graph-engineering-agent/08.jpeg)
+
+LangGraph、AutoGen 以及传统工作流系统早就在处理节点、状态、分支和重试。这轮讨论的变化来自 Agent 节点越来越自主，也越来越不确定：它可能临时改变计划、调用工具修改真实环境，甚至在运行过程中继续拆任务。
+
+![Agent 节点会改计划并改环境](/img/graph-engineering-agent/09.jpeg)
+
+### 不过有些问题依然没有结论
+
+社区目前围绕几组问题继续分化：
+
+| 讨论焦点 | 相对清楚的部分 | 仍然没有结论的部分 |
+| --- | --- | --- |
+| Graph 和 Loop 是什么关系 | 多数解释里，Graph 包含多个仍在运行的 Loop | 什么规模才值得从 Loop 叫到 Graph |
+| Graph 是否提前画好 | 稳定步骤、权限和检查点通常需要预先约束 | 具体任务、分支乃至角色可以动态到什么程度 |
+| 多个 Agent 怎样协作 | 分工、并行和交接是主流重点 | 只是接力，还是要让一个 Loop 校准另一个 Loop |
+| Work Graph 是什么 | 可以用来描述一次运行中临时形成的任务和依赖 | 它还不是统一术语，更不是确定结论 |
+| Agent 是否越多越好 | 适合并行探索的任务可能受益 | 顺序任务里，协调成本可能超过收益 |
+
+其中最值得继续追问的是第三行。
+
+如果 Graph 只是“研究 Agent 做完交给写作 Agent”，它很像传统 Workflow 换成了更聪明的节点。但讨论里已经出现另一条路线：一个 Agent 实现，一个独立 Agent 评审，另一个主动寻找反例，还有一个重新检查最初的目标是否已经偏了。它们不只是接力，还会相互检查、挑战，必要时阻断彼此。“You need loops watching loops”[5] 说的正是这一层。
+
+多个 Loop 的编排已经有大量框架和实践，让一个 Loop 检查、校准甚至叫停另一个 Loop，还没有统一做法。后者决定了 Graph 最后只是一张协作图，还是一套能够纠偏的系统。
+
+## 如何理解 Graph Engineering？
+
+### 还是要先聊 Loop：执行者怎么根据反馈来运行
+
+Loop 不只是代码里的 `while`。一个执行者看到结果后，会决定下一步、采取行动、验证，再带着新信息继续调整，这就是 Loop。
+
+![执行者按反馈决定下一步行动](/img/graph-engineering-agent/10.jpeg)
+
+它解决的是一个很具体的问题：**一个执行者怎样持续把事情往前推。** 目标、上下文、工具、验证方法、退出条件和人工确认，都是这个循环的一部分。
+
+![单 Loop 不宜同时生产与裁决](/img/graph-engineering-agent/11.jpeg)
+
+单个 Loop 简单、灵活、反应快。**问题也来自这里：如果生产结果、检查结果和判断方向都由同一个 Loop 完成，它很容易同时成为运动员、裁判和记分员。**
+
+### 执行、检查、定方向，不能都塞进一个 Loop
+
+当一个 Loop 已经装不下所有责任时，就需要拆开：有人负责把事做出来，有人独立检查，还有人隔一段时间重新判断方向。
+
+![做事检查方向三类循环拆开](/img/graph-engineering-agent/12.jpeg)
+
+- **做事循环** 关心怎么把眼前工作往前推，例如搜索、写代码、生成内容和修复问题。
+- **检查循环** 不继续替前者做事，而是用测试、约束和反例判断有没有做对。
+- **方向循环** 看得更慢、更远：相同问题为什么反复出现？成本是否值得？用户是否真的接受？最初的目标是否还合理？
+
+![三种循环对应前进纠错定向](/img/graph-engineering-agent/13.jpeg)
+
+这三种循环不一定对应三个 Agent，也不必每一步都同时运行。它们强调的是三种责任：**前进、纠错、重新定向。**
+
+这里可以把 Loop 看成能够根据反馈继续调整的工作单元，把 Graph 看成这些工作单元之间的分工、交接、检查和控制关系。
+
+### 多个 Loop 如何配合：交接清楚、检查有效、必要时停手
+
+如果把一个 Loop 看成一个会自己找路的执行者，Graph 关心的就不是“工位怎么排”，而是谁把什么交给谁，谁来验收，发现不对能不能退回，方向错了又由谁喊停。
+
+![Graph 关心交接验收与喊停](/img/graph-engineering-agent/14.jpeg)
+
+| 三层关系 | 要说清楚什么 | 没说清楚会怎样 |
+| --- | --- | --- |
+| **工作怎样流动** | 谁负责什么；上游要交付哪些成果、证据、当前状态和未决问题 | 箭头退化成一句“我做完了”，下游只能重新猜一遍 |
+| **结果怎样被校准** | 谁独立检查；检查失败后是重试、退回、换路还是换人 | 评审只能提意见，却不能改变结果 |
+| **系统怎样停下或改方向** | 谁能阻断继续执行；谁能根据长期结果调整目标和规则 | 所有节点都只会向前，一起走偏也停不下来 |
+
+设计失败路径时，还要把退回给谁、允许重试几次、什么时候升级给人、已经消耗多少预算写清楚。节点一旦能调用工具或修改真实环境，权限也要跟着角色和阶段收紧，不能让“负责检查”的节点顺手改掉自己正在检查的结果。
+
+例如，实现 Loop 交出代码和测试证据；检查 Loop 不看它如何解释自己，而是直接运行测试、核对约束、寻找反例。检查失败后，工作真的被退回；如果发现最初目标就有问题，则交给方向 Loop 或人重新判断。只有检查能够改变后续路径，它才不是普通的下一步。
+
+传统工作流主要决定下一步运行哪个步骤；Graph Engineering 面对的节点可能会自己找路、改计划、调用工具甚至修改真实环境，因此还必须决定谁有权作判断、交接什么证据、谁能否决，以及什么时候回到人。
+
+### Graph 可以怎样变化：外层先定边界，内部按需调整
+
+社区里既有提前画好的固定路线，也有 Agent 在运行时临时拆出的任务图，还有根据任务难度增删角色的设想。现实里更可能这样：**权限、验收和几个必须停下来的位置先定好；至于这次到底拆出几个任务、走哪条支路，可以边做边调。**
+
+![权限验收先定任务拆法可变](/img/graph-engineering-agent/15.jpeg)
+
+*权限、验收、预算和人工闸口构成相对稳定的外层；本次任务怎样拆、是否并行、何时增加检查，可以在边界内按需调整。*
+
+有些人把运行中临时形成的任务和依赖叫作 **Work Graph**。这个词可以帮助理解，但目前不是统一术语，更不是已经得到验证的结论；Asana 也早已把 Work Graph® 用于另一套工作数据模型。
+
+### 换成程序结构看，可以借状态机帮助理解
+
+换个程序员更熟悉的角度，这几个概念可以串成一条线：Prompt Engineering 像只接收提示词的单参数函数，Context Engineering 像拿到多组上下文参数的函数，Harness Engineering 再把工具、权限和运行环境接进来；Loop Engineering 让程序读取状态和反馈，持续调整。
+
+到了 Graph Engineering，多个带状态的执行节点被连成一张图，任务可以分支、汇合、回退，也可以在必要时停下来。
+
+如果检查失败后会退回、重新规划，或者再次进入已经跑过的节点，路径里就可能出现环。此时可以借有限状态机（FSM）来理解：系统根据结果在不同状态之间切换，直到满足退出条件。
+
+![检查失败回退可用状态机类比](/img/graph-engineering-agent/16.jpeg)
+
+这只是理解程序控制关系的一种类比，不能拿来给 Graph Engineering 下技术定义。图论和状态机都不是新东西，变化来自 Agent 节点本身：它们开始自己拆任务、改计划、调用工具，还会修改真实环境。过去用在工作流和分布式系统里的控制方法，现在得重新拿出来处理这些更自主、也更不确定的节点。
+
+### 什么时候值得用 Graph：先看任务是否真的需要
+
+Graph 也不是 Agent 越多越好。它更适合这样的任务：可以拆成相对独立的部分，不同部分需要不同信息、工具或权限，中间结果能够单独检查，失败后也希望只重做局部。
+
+如果任务很小、每一步严格依赖上一步，所有 Agent 又频繁修改同一份内容，一个清楚的 Loop 往往更好。Anthropic 的多 Agent Research 系统[6] 适合广泛搜索和并行探索，但其官方工程文章也指出，多 Agent 系统的 token 使用量约为普通聊天的 15 倍；Google Research、Google DeepMind 与 MIT 的实验[7] 则发现，多 Agent 在可并行任务上可能提升，在严格顺序任务上反而可能下降。
+
+![多 Agent 未必优于单个 Loop](/img/graph-engineering-agent/17.jpeg)
+
+再看到一张 Graph，可以先问三个问题：
+
+1. **它比一个 Loop 多解决了什么关系？**
+2. **检查结果能不能真的退回、换路或叫停？**
+3. **增加的协调成本，是否小于它带来的独立判断和局部恢复能力？**
+
+*从一个清楚的 Loop 开始。只有任务能够拆开、中间结果能够单独验收，而且确实需要不同信息、工具或权限时，Graph 才更可能带来净收益。*
+
+## 小结：Loop 没死
+
+Graph Engineering 还没有公认定义，也不必急着给它划边界。
+
+Loop 继续负责让局部工作前进；当执行、检查和方向判断需要拆开时，Graph 才开始变的有意义。
+
+![小结强调 Loop 并未被取代](/img/graph-engineering-agent/18.jpeg)
+
+真正需要设计的是关系能否生效：交接是否带着成果和证据，检查能否改变后续路径，方向错误时谁来重新判断。
+
+做不到这些，Graph 只是一张更复杂、更昂贵的流程图；做得到，工程问题就从“一个 Agent 怎样反复做事”变成了“多个 Loop 怎样协作，又怎样避免一起走偏”。
+
+![检查必须能改变后续执行路径](/img/graph-engineering-agent/19.png)
+
+## 参考资料
+
+1. 推文: [https://x.com/steipete/status/2078277297791189132](https://x.com/steipete/status/2078277297791189132)
+2. 《Loop Engineering Is Dead. Enter Graph Engineering.》: [https://x.com/HamelHusain/status/2078346425621237935](https://x.com/HamelHusain/status/2078346425621237935)
+3. “Nobody knows what it is.”: [https://x.com/HamelHusain/status/2079224401267224677](https://x.com/HamelHusain/status/2079224401267224677)
+4. 《The four types of agent loops》: [https://x.com/akshay_pachaar/status/2076748259377516782](https://x.com/akshay_pachaar/status/2076748259377516782)
+5. “You need loops watching loops”: [https://x.com/VaibhavSisinty/status/2078646016568606961](https://x.com/VaibhavSisinty/status/2078646016568606961)
+6. Anthropic 的多 Agent Research 系统: [https://www.anthropic.com/engineering/multi-agent-research-system](https://www.anthropic.com/engineering/multi-agent-research-system)
+7. Google Research、Google DeepMind 与 MIT 的实验: [https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/](https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/)
+
+## 延伸阅读
+
+- 《Peter Steinberger：Are we still talking loops or did we shift to graphs yet?》：[https://x.com/steipete/status/2078277297791189132](https://x.com/steipete/status/2078277297791189132)
+- 《社区长帖：A graph is a map of loops + checkpoints》：[https://x.com/shannholmberg/status/2079096565344739643](https://x.com/shannholmberg/status/2079096565344739643)
+- 《社区长帖：You need loops watching loops》：[https://x.com/VaibhavSisinty/status/2078646016568606961](https://x.com/VaibhavSisinty/status/2078646016568606961)
+- 《Rahul：Prompt / Context / Harness / Loop / Graph Engineering》：[https://x.com/sairahul1/status/2078781824160166070](https://x.com/sairahul1/status/2078781824160166070)
+- 《ZeroZ_JQ：从 Prompt、Context、Harness、Loop 到 Graph 的程序结构类比》：[https://x.com/ZeroZ_JQ/status/2079512381294879005](https://x.com/ZeroZ_JQ/status/2079512381294879005)
+- 《IntuitMachine：关于 Loop Engineering 与 Graph Engineering 的讨论》：[https://x.com/IntuitMachine/status/2078419526354378975](https://x.com/IntuitMachine/status/2078419526354378975)
+- 《LangGraph：Graph API》：[https://docs.langchain.com/oss/python/langgraph/graph-api](https://docs.langchain.com/oss/python/langgraph/graph-api)
+- 《Microsoft AutoGen：GraphFlow》：[https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/graph-flow.html](https://microsoft.github.io/autogen/dev/user-guide/agentchat-user-guide/graph-flow.html)
+- 《Anthropic：How we built our multi-agent research system》：[https://www.anthropic.com/engineering/multi-agent-research-system](https://www.anthropic.com/engineering/multi-agent-research-system)
+- 《Google Research：Towards a Science of Scaling Agent Systems》：[https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/](https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/)
+
+![关注 OceanBase 社区公众号老纪的技术唠嗑局](/img/graph-engineering-agent/20.gif)
+
+![延伸阅读封面配图](/img/graph-engineering-agent/21.png)
+
+![延伸阅读与推荐内容分隔条](/img/graph-engineering-agent/22.png)
+
+## 相关内容推荐
+
+![相关内容推荐文章卡片一](/img/graph-engineering-agent/23.png)
+
+![相关内容推荐文章卡片二](/img/graph-engineering-agent/24.png)
+
+![相关内容推荐文章卡片三](/img/graph-engineering-agent/25.png)
+
+![相关内容推荐文章卡片四](/img/graph-engineering-agent/26.png)
+
+![相关内容与活动推荐分隔条](/img/graph-engineering-agent/27.png)
+
+## 近期社区活动推荐
+
+![近期社区活动推荐海报](/img/graph-engineering-agent/28.png)
+
+了解更多
+
+![添加社区小助手微信交流群二维码](/img/graph-engineering-agent/29.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: 逛完 WAIC，我不再迷信“全能 Agent”了
+# URL: https://ilongda.com/2026-07-28/2026-07-28-waic-not-omnipotent-agent/
+# Published: 2026-07-28
+# Updated: 2026-07-28
+# Keywords: WAIC,Agent,物理AI,具身智能,DRI,seekdb,PowerMem,AI for Science,端侧智能
+
+逛完 WAIC 后不再迷信全能 Agent：企业缺的不是模型而是本体与责任人，物理 AI 与端侧记忆应先把边界清楚的麻烦事做稳。
+
+> Claude 和 GPT 正在吞噬一切，这是应用创业者最糟糕的黑暗时期。
+>
+> Agent 不必先学会拯救世界。
+>
+> 它能在一个边界清楚的场景里，把一件麻烦事稳稳地做好，就已经很了不起了。
+
+![WAIC 展馆现场与大模型演示](/img/waic-not-omnipotent-agent/01.png)
+
+我平时很爱折腾 Agent。
+
+总想给它上难度。给一堆资料，看它能不能自己找重点。让它跨好几个项目干活。故意把话说一半，看它会不会追问。再塞点异常情况进去，看它会不会把前面做的推翻重来。
+
+我以前对 Agent 的感觉挺矛盾的。能力看起来很吓人，拆任务、列计划头头是道，真到关键一步就总要出错，距离“丢给它一个复杂目标，它就能放心去做”还差得远。
+
+但这次逛 WAIC，这个想法变了。
+
+展馆里有机器人，有大模型，有各种屏幕和演示。我最后带走的却是另一个更实在的感受：**技术一放进真实场景，值不值钱立刻就清楚了**。它不用先把世界上所有问题都解决掉，先把一个行业里反复发生的繁琐的事情处理了，就已经很有用了。
+
+电网、钢铁、石油、工厂、家庭，这些地方以前听着离大模型比较远的。现在 AI 已经慢慢接进了预测、调度、诊断、协同和服务。我之前老**拿“通用能力”去衡量 Agent，这问题本身就问偏了。** 企业要的从来不是一个会聊天的 AI，是有人带着 AI 把一件事做完，把结果做出来。
+
+## 模型进了公司，但公司缺的往往不是模型
+
+这次听了不少学界、政界里的院士和领导人负责的论坛，感觉收获不大。
+
+反倒是一些商人在做 AI 分享时，能让我的脑子真正跟着一起动起来。
+
+比如在听李开复的分享时，我脑子里就一直有个画面——一个很强的模型，第一次走进一家公司。
+
+![大模型首次走进企业面对业务数据](/img/waic-not-omnipotent-agent/02.png)
+
+它面前摆着客户资料、合同、库存、报价、会议纪要、审批流……还有散在各个系统里的历史记录。每份看着都有用，很多地方又互相打架。谁能看什么，谁能改什么，哪条规则碰不得，出了事该找谁，这些不会自动写进它脑子里。
+
+模型再强，也不会凭空知道一家公司是怎么**转**的。
+
+现场讲到**“本体（Ontology）”**，我觉得这词一下把问题说透了。听着很技术，其实理解成**一张运行地图**就行：客户和合同什么关系，合同影响哪些产品，产品又被哪些库存、价格、审批规则卡着，一个项目一旦延期会牵动谁。
+
+![企业本体即业务运行关系地图](/img/waic-not-omnipotent-agent/03.png)
+
+没这张地图，AI 就像刚进公司的聪明实习生。会查资料，会写报告，能把事讲明白，可对“这里的客户”、“这条规定”、“这笔钱”、“这个例外”到底意味着什么，它暂时还没有概念。
+
+地图之外还有实时情况。客户今天下单没？报价到哪一步了？审批卡在谁那儿？设备报警没？库存、价格、合同变没变？靠一堆静态文档远远不够。很多 Agent 看着不准，问题常常出在它拿到的信息过期了、残缺了，或者压根没权限看到关键数据。
+
+最后才轮到执行，这些 AI 都能干，也能帮人把流程往下推。AI 先给建议，留下记录，人来确认；规则清楚、风险又低的环节，再慢慢放开 AI 的执行权。这条路走得慢一点，企业才敢真用。
+
+现在我判断一个企业 AI 项目有没有戏，会看五件事：模型够不够用，业务关系有没有讲清，实时数据接不接得上，执行能不能控制，最后有没有人对结果负责。少一样，项目大概率就停在“演示很惊艳”那一步了。
+
+说实话，这类停在演示的项目，在 WAIC 里还是挺多的……
+
+## DRI，正好戳中我最近在琢磨的事
+
+> 技术和模型都会变，但最后还是要回到人。
+
+另一个最想跟大家分享的，是 DRI。
+
+DRI 是 Directly Responsible Individual，直接责任人。简单来说就是：一件关键的事，总得有一个人盯到底。进展怎么样他知道，资源不够他去协调，遇到冲突他拿方案，最后结果好不好，他也躲不掉。
+
+![DRI 直接责任人盯紧关键事项](/img/waic-not-omnipotent-agent/04.png)
+
+听到这儿我特别有共鸣。因为这也是我们实际遇到的问题，AI 上得越多，越容易冒出一种错觉：人人都参与了，群里信息一堆，文档和代码越来越多，但交付效率却不高。
+
+DRI 把问题拉回到最朴素的地方：这事最后谁负责？
+
+我喜欢把 DRI 理解成“带着 AI 干活的人”。他不用自己做完所有事，但他得清楚哪部分交给 AI，哪些结论要找人复核，什么时候该停下来。AI 给他添的是手脚和信息，责任还得自己来背。
+
+所以我觉得团队**想做 AI 试点，不用先憋一个大而全的平台，找一个小任务就够**：高频，够痛，手里有数据，做完看得见效果。再指个愿意对结果负责的人，把目标、边界、能调的数据、能用的系统、异常了往哪升级，都写清楚。
+
+这么起步，AI 才有地方落脚。
+
+![AI 价值来自稀缺与需求交汇](/img/waic-not-omnipotent-agent/05.png)
+
+总结一下上面的东西：**AI 的价值不来自难度，而来自稀缺与需求的交汇点**。由此，大家该做的不是追逐技术巅峰，而是蹲下来找到那个“别人不愿做但用户急需”的具体裂缝。不该沉迷于宏大叙事，因为账单只认场景。做了，你能抓住最确定的现金流，在无人区建立护城河。不做，你会被困在“技术很好但没人买单”的幻觉里，看着务实者一步步吃掉市场。
+
+## 物理 AI 的热闹背后，是一堆很不浪漫的问题
+
+> 最好的技术，最终还是要回到初心 —— 信任、普惠，解决真实的社会问题。
+
+这几天最火的词当然是物理 AI。机器人走路、搬东西、和人互动，展馆里围得水泄不通。
+
+我以前总觉得机器人离日常还远，这次虽然感受到物理 AI 已经卷起来了，但也没有那种“我们很快就能有个机器人”的兴奋，反而更理解这事为啥这么难。
+
+![WAIC 展馆物理 AI 机器人演示](/img/waic-not-omnipotent-agent/06.png)
+
+文本模型答错一句，最多让人多核对一下。**但机器人抓空一次、撞一下、慢半秒，后果却是发生在真实世界里的**。它得看见环境，理解目标，规划动作，控制身体，还要对付光线、遮挡、摩擦、设备误差，以及人平时根本说不出口的操作细节。
+
+![机器人动作失误发生在真实世界](/img/waic-not-omnipotent-agent/07.png)
+
+所以我更看好那些边界清楚的场景。仓储搬运、工厂巡检、局部装配、医院物流、康复辅助、养老和家庭里的一小部分服务。听着没有“一个机器人包办所有事情”那么酷，却更容易先做出稳定结果。
+
+![仓储工厂等边界清楚的落地场景](/img/waic-not-omnipotent-agent/08.png)
+
+大模型像大脑，物理 AI 像身体。身体一旦进了现实，可靠比口才重要得多。能看、能抓、能避、失败了能调整、拿不准了知道停下来找人，这些本事一点点攒起来，才有机会从展馆走进工厂和家庭。
+
+另外，**物理 AI 目前发展还很早期，距离“ChatGPT 时刻”还很远**，但我对这块还是很关注的。如果说数字 AI 是提高白领的工作效率，那物理 AI 就是提高蓝领的工作效率。它正在从一件件小事开始，慢慢进入真实世界。
+
+![物理 AI 仍远离 ChatGPT 时刻](/img/waic-not-omnipotent-agent/09.png)
+
+有一场圆桌，**大家几乎不再去聊机器人像不像人，聊得最多的是数据**——真机数据怎么采，仿真能覆盖到哪儿，互联网上的第一视角视频能补什么，失败的操作能不能回收进下一轮训练。还有延迟、硬件寿命、成本、成功率、控制精度。除此以外，这些机器人还都有一个共同问题：不能每次想起一件事都先回云端翻档案。原因也很现实：移动网络很可能不稳定，但设备的延迟不能太高；外加用户隐私问题、成本问题等等。
+
+这时，稀缺与需求的交汇点就汇聚到了 seekdb[1] 和 OceanBase[2] Lakebase 上——seekdb 的嵌入式形态、低资源门槛、本地混合检索能力，可以在设备侧保存局部状态、任务轨迹、用户偏好和检索索引。车端、机器人、智能终端都需要一块本地“小脑”：能低延迟检索，也能在必要时和云端大脑同步。数据中心侧则可以用 OceanBase Lakebase 做多模态数据回流、治理、训练和评测。设备侧用 seekdb + PowerMem 负责即时反应，中心侧负责长期演进。
+
+![端侧小脑与中心侧长期演进架构](/img/waic-not-omnipotent-agent/10.png)
+
+这条路，比“所有记忆都塞进云端大模型上下文窗口”靠谱得多。目前很多支持智驾的车企，都是这样做的——OceanBase + seekdb + PowerMem[3]。
+
+这类“端侧即时反应 + 中心侧长期演进”的架构方向，正逐渐成为现实。
+
+> seekdb 是 OceanBase 社区面向 Agent 和 AI 应用的轻量级 AI Native Search Database，项目已开源，详见：[https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+
+## 具身智能 & 附身智能
+
+机器人能干的事情越来越多，那人怎么办？
+
+机器和人的关系，不一定只有替代。相比上面说的具身智能（机器人），这次 WAIC 上有很多展台，开始把类似于智能眼镜、机械外骨骼的智能穿戴设备称为“附身智能”。
+
+![具身智能与附身智能穿戴设备](/img/waic-not-omnipotent-agent/11.png)
+
+例如搬家时，要把冰箱扛到某个地方——路线怎么走，可以交给智能眼镜里的高德地图；原本压在人腰上、肩上的重量，可以交给机械外骨骼；转弯时怎么避开墙，才轮到人来控制。
+
+![智能眼镜与外骨骼协助搬冰箱](/img/waic-not-omnipotent-agent/12.png)
+
+这些端侧设备也让我们看到一个正在发生的趋势：当大模型的能力以 6-12 个月的周期“流”向端侧，一个很自然的问题浮现——端侧设备上，谁来给这些小模型提供数据底座？它需要边缘设备上跑一个完整的传统数据库实例，同时还要让它支持向量检索、全文搜索、结构化查询。
+
+在这里，可以用 seekdb 这个开源项目作为边缘设备的数据库 —— seekdb 的服务器模式，只需要 1C2G 的资源，支持 pip install 一键安装、秒级启动。嵌入式模式甚至可以作为 Python / JS / TS 的动态库，直接运行在应用程序内部，不需要独立数据库进程，几乎没有任何资源开销。而且，同时支持了向量检索、全文搜索、JSON、GIS。所有功能，一个轻量级引擎全包，兼容 MySQL 语法，学习成本极低。
+
+![seekdb 作为边缘设备数据底座](/img/waic-not-omnipotent-agent/13.png)
+
+谷歌 DeepMind CEO Hassabis 在访谈时总会提到：一个前沿的 Pro 模型发布后，在半年到一年内，它的能力就能被压缩到非常小的、几乎可以跑在边缘设备上的模型里。他给了具体数字：**蒸馏后的小模型可以达到前沿大模型 90-95% 的能力，成本仅约十分之一**。
+
+![蒸馏小模型可达大模型九成能力](/img/waic-not-omnipotent-agent/14.png)
+
+谷歌的 DeepMind 自家产品线就是这套逻辑：Gemini Pro（前沿旗舰）→ Flash（蒸馏后的消费级推理）→ Nano（端侧设备）。
+
+![Gemini 从 Pro 到端侧 Nano 产品线](/img/waic-not-omnipotent-agent/15.png)
+
+WAIC 中的这些具身智能、附身智能，包括车载智能设备等等边缘设备，会让人更加确信：端侧智能不是“未来某天的事”，它以 6 个月为周期在逼近。那些能在极低资源开销下，提供完整 AI 数据能力的基础设施，很快就会从“可选”变成“刚需”。
+
+## AI，也开始通过记忆来关心关系和陪护
+
+这次还有一些挺意外的东西。
+
+我原以为“共同记忆”这类 Agent 更多是放在企业里，团队共享内部资料、项目背景和决策记录，听着很自然。
+
+现场还有面向家庭记忆和陪伴的产品与应用：帮一家人留下共同经历，管好重要信息，少一点那种“我以为你记得”的时刻。
+
+![面向家庭共同记忆的陪伴应用](/img/waic-not-omnipotent-agent/16.png)
+
+![人宠理解与记忆桥梁类产品](/img/waic-not-omnipotent-agent/17.png)
+
+甚至还有人做的应用是“人宠理解、记忆的桥梁”，感觉略显离谱……
+
+这些 AI 记忆产品的方向都很小，但我却觉得很有意思。
+
+AI 记忆不只是在办公室里给人省时间，也有机会帮人去理解和照顾那些没法用标准语言表达需求的对象。
+
+> 这里再为大家推荐一个基于开源项目 PowerMem 延伸出的项目 seekdb M0[4]，是专门为 AI Agent 设计的自进化的云记忆，支持一键接入，分享经验，自主学习和进化。
+>
+> 如果你正在做需要“记忆”的 AI 产品，不妨去了解一下 PowerMem 和 seekdb 这两个开源项目。
+
+![PowerMem 与 seekdb M0 记忆方案](/img/waic-not-omnipotent-agent/18.png)
+
+在会场里，我看到了医疗方向的多专家 Agent 团，这也让我想到同一件事。Agent 不取代医生做最终判断，但能把稀缺专家的经验组织起来，让更多患者更快得到支持。这才是我理解的普惠，也是很多 AI 公司的价值观。发布一个最炫的模型不等于普惠，让更多人用上原本昂贵、稀缺的能力，才是真的普惠。
+
+## AI 很强，但本质还是台图灵机
+
+清华姚班创始人姚期智院士的分享，给我补上了很重要的一块。大家都在看 AI 能做什么，也得有人提醒我们，它做不到什么。
+
+![姚期智院士分享 AI 能力边界](/img/waic-not-omnipotent-agent/19.png)
+
+围棋、蛋白质结构预测、代码生成，AI 已经做出了过去很难想象的成绩。可这些能力一放进开放世界，还是碰上老问题：信息不全怎么办，规则说不清怎么办，答案错了代价还很大怎么办。
+
+姚院士讲了个挺反直觉的点：AI 再强，也还在图灵机的框架里。以“停机问题”为例，计算机没有一个放之四海皆准的解法。
+
+不过，这些并没有让我更悲观，反而让我理解了——**边界被看清了，AI 才能用得更好**。
+
+## 科学研究这块硬骨头，AI 才刚开始啃
+
+姚院士讲到未来几年最有价值的就是如何赋能科学研究，也让我重新看了看 AI for Science。
+
+科学研究和写代码、做考题不太一样。很多问题没有标准答案，反馈来得慢，一次实验可能做几个月，大量尝试到头来都是失败。人要做的，是从已有知识里提出一个值得验证的问题。
+
+AI 在这里能帮的很多。读大量文献，找互相矛盾的证据，帮着整理假设，设计计算方案，跑分析，把每次尝试都留档，再把失败结果一起带回下一轮。科学家继续判断问题值不值得追、证据够不够、实验设计有没有漏、结论站不站得住。
+
+这里姚院士也讲到几个案例，比如清华大学团队利用 AI 处理望远镜现有数据，将可观测的宇宙早期时间向前推进了 1 亿年。OpenAI 的大模型推翻了存在 80 年的单位距离猜想，证明过程用到了深度代数数论等。
+
+![AI 赋能科学研究的典型案例](/img/waic-not-omnipotent-agent/20.png)
+
+姚院士还讲了 AI 和量子技术的关系。AI 能参与量子纠错、控制和复杂系统优化，量子计算未来也可能为学习量子数据、处理更复杂的问题打开新空间。它更像一条长期路线，离普通消费者很远，却可能左右新药、新材料、能源和算力将来会怎么冒出来。
+
+这场分享让我对“AI 的下一步”有了更长的时间尺度。我们每天聊模型、Token、Agent，另一边已经有人把 AI 放进天文、化学、生命科学和量子物理里。**应用层的热闹很近，基础科学的积累更慢，也更深。**
+
+前两周因为 Claude Science 出来，我深度调研了 AI for Science 这块儿。Anthropic 对 Claude Science 的定位是 AI workbench for scientists，也就是面向科学家的 AI 工作台。
+
+![Claude Science 科研 Agent 工作台](/img/waic-not-omnipotent-agent/21.png)
+
+这个定位比“科学版 Claude”准确得多。我的理解是，这是一个为科研重做的 Agent workspace。聊天框仍然是入口，但工作发生在文件、终端、数据库、计算任务和 artifacts 里。
+
+按照官方介绍和公开的 skill 体系，它把常用科学软件包、数据库连接、代码执行、远程算力和可审计产物放进同一个 Agent 环境。研究者可以让 Claude 读材料、规划步骤、调用工具、运行分析，再把过程和结果留在工作区里。这个变化看起来没有发布一个新模型那么炸裂，却更接近科研人员每天遇到的麻烦。他们很多时间并没有花在提出那个最聪明的问题上，而是耗在找文件、配环境、等任务、改脚本、补引用和整理结果上。
+
+不过，对大多数只是想亲手试一试的读者来说，Claude Science 目前还有个现实门槛：不一定用得到。官方仍把它标为 beta，实际可用性取决于账号计划和产品开放进度。
+
+因为 Claude Science 还难用到，如果现在就想动手，我更推荐 OpenScience[5] 和 Feynman[6]。它们都开放了代码，也都能在本地运行。两者路线不同，正好对应各种常见需求。
+
+OpenScience 更接近完整科研工作台。它把文件树、编辑器、终端、会话记录、Agent runtime、tools、skills 和科学数据库连接放在同一套本地应用里，还支持 Anthropic、OpenAI、Google 和开放权重模型。想研究一个科研 Agent 怎样管理上下文、调用工具、连接数据库和保存 provenance，可以先看它。
+
+![OpenScience 本地科研工作台界面](/img/waic-not-omnipotent-agent/22.png)
+
+Feynman 更偏研究工程师的日常入口。它从 CLI 起步，提供文献综述、论文排序、深度研究、代码审计、复现实验规划等命令，也能通过 feynman serve 打开独立 workbench。如果手头已经有论文、代码仓库或复现任务，Feynman 通常更容易找到切入点。
+
+## 青年论坛聊职业，反倒没制造更多焦虑
+
+在青年论坛上，有个问题问得很现实：当越来越多入门级工作被 AI 自动化，年轻人以后靠什么积累第一份经验？
+
+![WAIC 青年论坛讨论职业与经验](/img/waic-not-omnipotent-agent/23.png)
+
+现场没有人推荐所谓的“安全专业”，也没有人承诺哪份工作永远不会被替代。大家给出的答案反而很朴素：**定义问题、专业判断、快速学习、沟通协作、理解他人、面对不确定性，以及对结果负责**。技能会过期，但判断力不会轻易折旧。
+
+AI 可以替你完成任务，却不能替你承担后果。一位学生分享了她第一次组织 CEO 圆桌的经历。临时调整议程、协调各方、处理突发状况，很多决定必须由她当场做出。后来，她又独立搭了一个规模不大的定价模型。两个项目大小不同，带来的成长却很相似：真正的经验，不是“参与过”，而是某件事曾经落到你肩上，你必须把它往前推进。
+
+经验从来不只来自重复劳动，更来自真实责任。一个项目最重要的产出，有时不是结果，而是那个开始敢于做决定的自己。
+
+WAIC 的主论坛上还有句话让我印象很深：“**教聪明人金融，比教金融人士变得聪明容易得多。**”放到 AI 时代也一样。与其追问什么专业最安全，不如让自己成为那个能快速理解新问题、不断学习、持续深入的人。AI 是通才，人的机会反而在于把一件事做深，在真实世界里形成自己的判断。
+
+另一位嘉宾说，她从小就觉得考 100 分未必是好事，因为 100 分意味着失去了反馈，不知道自己还能在哪里进步。
+
+这句话很妙：满分让人停下，反馈让人成长。在变化最快的时代，“暂时做对”没有那么重要，“持续修正”才是真正的能力。
+
+![满分失去反馈而持续修正更重要](/img/waic-not-omnipotent-agent/24.png)
+
+AI 带来的一个巨大变化，是把试错变便宜了。过去想做一个产品、完成一份研究、验证一个商业想法，往往要找团队、等资源、花很多钱；现在，一个年轻人借助 AI，就可以先把想法做出雏形，再拿到真实世界里接受反馈。
+
+这也是为什么，一场讨论职业未来的论坛，最后没有让我更焦虑。AI 焦虑很容易把人推向“赶紧再学一个技能”，但技术永远会变，下一个热门工具也一定会出现。与其寻找一条不会被 AI 改变的路，不如把自己变成一个能够穿过变化的人。所以 AI 时代，是最适合押注自己的时代。
+
+最后现场的主持人也送给大家三个词：**幽默快乐、好奇心、健身**。
+
+保持幽默快乐，保持对世界的好奇，也别忘了锻炼身体，和爱你、你也爱的人一起感受真实的温度。技术不断向前，但人的快乐、好奇、健康与彼此陪伴，依然是 AI 无法替我们拥有的东西。
+
+## 小团队有了新杠杆，难的还是找到好问题
+
+展区里还有不少一人公司、小团队创业的展位。以前得靠完整团队才能做的研发、设计、运营、内容和客服，现在几个人，甚至一个人加一套 AI 工具，就能先把产品跑起来。
+
+![一人公司借助 AI 工具启动产品](/img/waic-not-omnipotent-agent/25.png)
+
+这对创业者是大机会。技术门槛在降，很多想法终于能先拿出来试，而不是卡在“我没团队”“我不会写代码”“我没预算”上。
+
+随着各家模型能力越来越接近，大家又回到另一个起点：你看到的到底是什么问题？行业里那些不写在 SOP 里的细节，客户嘴上没说但天天抱怨的地方，交付时反复返工的环节，别人懒得花时间理解的流程，都会变成新的价值来源。AI 给了小团队更大的杠杆，但客户理解、行业经验、产品判断，没有被自动送到每个人手上。
+
+所以我觉得，**往后好的 AI 创业者，未必是最会讲模型的那个。他得愿意到现场去，看见真实的摩擦，再把那点摩擦做成一个有人肯付费的产品。**
+
+## 最后
+
+逛完这次，我没有更想追一个“全能 Agent”，也没有更急着给所有事都套上 AI。
+
+我更愿意先问一句：这个任务到底卡在哪儿？信息散了，流程慢了，专家不够，数据不通，还是没人愿意盯到底？
+
+问清楚了，再看 AI 能帮哪一段。它能在某些边界清楚的场景里稳定干活。人继续做判断、验证、协调、担责任，继续决定一件事到底值不值得做。这比“AI 会不会替代人”更值得聊。
+
+![先问清任务卡点再让 AI 接手](/img/waic-not-omnipotent-agent/26.png)
+
+我们正在进入一个能把想法更快放进现实的阶段。有人用 AI 做出更好的产品，有人用它做科学研究，有人让机器人走进工厂和医院，也有人拿它照顾家人、理解宠物。
+
+我期待的 AI，是能让更多原本做不到的事，开始有机会发生。
+
+## 参考资料
+
+- [1] seekdb: [https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+- [2] OceanBase: [https://github.com/oceanbase/oceanbase](https://github.com/oceanbase/oceanbase)
+- [3] PowerMem: [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+- [4] seekdb M0: [https://m0.seekdb.ai](https://m0.seekdb.ai)
+- [5] OpenScience: [https://github.com/synthetic-sciences/openscience](https://github.com/synthetic-sciences/openscience)
+- [6] Feynman: [https://github.com/companion-inc/feynman](https://github.com/companion-inc/feynman)
+
+![WAIC 文章封面不再迷信全能 Agent](/img/waic-not-omnipotent-agent/27.png)
+
+![OceanBase 社区标识动态图](/img/waic-not-omnipotent-agent/28.gif)
+
+![相关内容推荐前分隔装饰线](/img/waic-not-omnipotent-agent/29.png)
+
+## 相关内容推荐
+
+![Graph Engineering 与 Agent 分工推荐](/img/waic-not-omnipotent-agent/30.png)
+
+![AI Memory 系统架构构思推荐封面](/img/waic-not-omnipotent-agent/31.png)
+
+![AI Agent 使用数据库形态推荐封面](/img/waic-not-omnipotent-agent/32.png)
+
+![深度解剖 AI Agent Harness 推荐封面](/img/waic-not-omnipotent-agent/33.png)
+
+![近期活动推荐前分隔装饰线](/img/waic-not-omnipotent-agent/34.png)
+
+## 近期活动推荐
+
+![苏州 Agent 记忆主题线下活动海报](/img/waic-not-omnipotent-agent/35.png)
+
+了解更多
+
+![社区小助手微信交流群二维码](/img/waic-not-omnipotent-agent/36.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: 从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离
+# URL: https://ilongda.com/2026-08-03/2026-08-03-multi-agent-memory-isolation-game/
+# Published: 2026-08-03
+# Updated: 2026-08-03
+# Keywords: PowerMem,seekdb,多Agent,记忆隔离,AI情报局,DeepAgents,MemoryGateway,Agent记忆,LangChain
+
+多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。
+
+> 多 Agent 协作最难的地方，是让它们只知道自己该知道的。
+
+Agent 的记忆体系，一直是个很有意思的话题。
+
+前两天 WAIC 期间，OceanBase 开源社区主办了一场 Workshop 午餐会，和大家聊了不少 Agent 记忆的话题。
+
+我也从多 Agent 的角度分享了一个基于 PowerMem + seekdb 搭建的小游戏——AI 情报局，希望大家能从中**更直观地观察和理解多 Agent 如何管理与隔离记忆**。
+
+![AI情报局游戏界面总览](/img/multi-agent-memory-isolation-game/01.png)
+
+先亮出小游戏的技术体系：PowerMem[1] 管理记忆，seekdb[2] 负责检索与落库，LangChain 的 DeepAgents[3] 组织受限的角色表达，角色语言层则接入 StepFun[4]（阶跃星辰）的 `step-3.7-flash` 模型。
+
+至于不同角色能查哪些记忆，由应用层的检索策略和 `MemoryGateway` 统一控制。
+
+麻雀虽小五脏俱全，先看看这个游戏怎么玩。
+
+![从耳语到公告板主题插画](/img/multi-agent-memory-isolation-game/02.png)
+
+## 一、怎么玩？
+
+玩法其实很简单，用户的身份是局长，当前场上有三个 Agent 角色：侦探、线人、嫌疑人。
+
+侦探、线人和嫌疑人都有各自的私有记忆，默认不知道其他角色的秘密。
+
+用户可以向某个 Agent 耳语，将消息写入其私有记忆；也可以审问某个角色，看他是否知道某条信息。
+
+![向角色耳语与审问玩法示意](/img/multi-agent-memory-isolation-game/03.png)
+
+如果想让所有 Agent 都知道一条消息，用户可以把某个 Agent 的私有记忆公开到公告板，形成公开情报。此后，这条记忆就成为所有 Agent 的共有记忆。
+
+![私有记忆公开到公告板示意](/img/multi-agent-memory-isolation-game/04.png)
+
+界面上会有记忆透视面板，可以把检索范围、命中和未命中直接摊开：
+
+![记忆透视面板检索命中展示](/img/multi-agent-memory-isolation-game/05.png)
+
+操作端和大屏靠后端事件同步；模型不可用时也能走证据模式，把知道与不知道对照完。
+
+以上就是界面分布和各模块的作用。开始游戏前，需要先选择剧本并完成初始化，为每个 Agent 加载初始记忆。
+
+![选择任务剧本并完成初始化](/img/multi-agent-memory-isolation-game/06.png)
+
+选择完任务剧本后，就可以开始审问角色 Agent。比如先问侦探：“保险箱的密码是多少？”此时，侦探 Agent 无法检索到相关信息，因为保险箱密码属于线人的私有记忆。
+
+![侦探无法检索保险箱密码](/img/multi-agent-memory-isolation-game/07.png)
+
+为了让侦探也知道保险箱密码，可以把线人关于该密码的私有记忆公开到公告板，变成共享记忆。
+
+此时再问侦探：“保险箱的密码是多少？”，他已经可以正确回答。
+
+![公开后侦探正确回答密码](/img/multi-agent-memory-isolation-game/08.png)
+
+用户还可以分别向不同角色耳语，测试这条私有消息是否会被其他角色检索到。
+
+![向不同角色耳语隔离测试](/img/multi-agent-memory-isolation-game/09.png)
+
+玩法简单，但它要展示和验证的核心只有一件事：看清 **谁知道什么**。
+
+![玩法核心看清谁知道什么](/img/multi-agent-memory-isolation-game/10.png)
+
+下面拆解游戏后台的 Agent 记忆设计。
+
+## 二、玩法背后的技术怎么接上
+
+![小游戏技术架构总览](/img/multi-agent-memory-isolation-game/11.png)
+
+小游戏里的分工很清楚：**seekdb** 负责存储与检索，**PowerMem** 提供带 `user_id`、`agent_id` 和元数据的记忆读写能力，应用层负责决定本次允许访问哪些记忆空间；**DeepAgents** 基于已批准的证据组织回答，LLM 只负责把证据表达成角色口吻。
+
+![PowerMem与seekdb及DeepAgents分工](/img/multi-agent-memory-isolation-game/12.png)
+
+### 2.1 开局与耳语：秘密只写给目标角色
+
+当我们开始加载剧本或者用户向某个 Agent 耳语时，系统要保证两件事：
+
+- 第一是不同案件的数据不能串，一局案件对应一个 `case_id`，映射成 PowerMem 的 `user_id`，用来隔离不同对局
+- 第二是写入的记忆只能落到目标 Agent，一个角色对应一个 `agent_id`（侦探、线人、嫌疑人、公告板），用来隔离不同记忆空间
+
+```python
+# case_id 映射 PowerMem user_id
+def to_user_id(case_id: str) -> str:
+    return f"case:{case_id}"
+
+# 通过传入 case_id 与 agent_id 写入私有 Agent 记忆
+def write_private(self, case_id, agent_id, content, *, topic, kind, created_by):
+    return self._write(
+        case_id,
+        agent_id,
+        content,
+        {
+            "case_id": case_id,
+            "visibility": "private",
+            "owner_agent_id": agent_id.value,
+            "topic": topic,
+            "kind": kind,
+            "created_by": created_by,
+            "is_demo_safe": True,
+        },
+    )
+```
+
+底层通过 PowerMem Python SDK 直连 seekdb。
+
+![PowerMem直连seekdb写入示意](/img/multi-agent-memory-isolation-game/13.png)
+
+PowerMem 存储多 Agent 记忆时，可以采用两种客户端封装方式：
+
+1. 第一种是只使用一个 PowerMem 客户端，每次读写时传入不同的 `agent_id`，区分不同 Agent 的记忆：
+
+```python
+from powermem import create_memory
+
+memory = create_memory(config=settings.powermem_config())
+memory.add(
+    content,
+    user_id=to_user_id(case_id),
+    agent_id="informant",
+    metadata=metadata,
+    infer=False,
+)
+memory.search(
+    query,
+    user_id=to_user_id(case_id),
+    agent_id="detective",
+    limit=20,
+)
+```
+
+2. 第二种是这个小游戏采用的写法：按角色懒加载并缓存客户端。某个角色第一次被读写时，系统调用 `create_memory(agent_id=...)` 创建该角色的记忆客户端。之后的记忆读写都通过该客户端访问对应角色空间。`create_memory` 里的 `agent_id`，本质上是给这个客户端设置默认角色。
+
+```python
+from powermem import create_memory
+
+# 按角色缓存客户端：detective / informant / suspect / bulletin_board
+memory = create_memory(config=settings.powermem_config(), agent_id=agent_id.value)
+memory.add(
+    content,
+    user_id=to_user_id(case_id),
+    agent_id=agent_id.value,
+    metadata=metadata,
+    infer=False,
+)
+```
+
+在这个 Demo 中，两种方式最终都依赖 `user_id` 与 `agent_id` 过滤数据，差别主要在应用封装：
+
+| | 单客户端 `agent_id` 区分角色 | 每角色一个客户端 |
+| --- | --- | --- |
+| 靠什么隔离 | 调用参数里的 `user_id` + `agent_id` | 调用参数里的 `user_id` + `agent_id` |
+| 代码心智 | 一个记忆引擎，按标签过滤 | 每个角色有自己的记忆入口 |
+| 防呆 | 某次忘传或传错 `agent_id`，更容易串角色 | 客户端绑了默认角色，漏传时也会落到该角色 |
+| 开销 | 更轻 | 多几个 SDK 对象，但底层仍是同一套 seekdb |
+
+这个游戏选择第二种方式，是为了让角色边界在代码里更显式，也更贴合游戏叙事。三个角色和公告板各有入口，但真正切开记忆的仍是 `user_id` 和 `agent_id` 两个过滤条件。
+
+![两种PowerMem客户端封装对比](/img/multi-agent-memory-isolation-game/14.png)
+
+从玩法看，耳语就是向某个角色写入私有消息。向线人耳语后，带锁的记忆卡只会出现在其私有区，其他角色和公告板既看不到，也检索不到。
+
+![耳语写入线人私有记忆卡](/img/multi-agent-memory-isolation-game/15.png)
+
+### 2.2 角色审问，先定可见范围再决定怎么说
+
+审问角色时，系统只搜索该角色的私有记忆和公告板中的公开记忆。这个可见性策略固定在应用层：
+
+```python
+# 在私有记忆和公开记忆中进行搜索
+ask(role, question) = search(case, role, question) + search(case, bulletin_board, question)
+```
+
+业务层先按上面的公式各搜一次，合并去重后生成 `RetrievalTrace`，再交给作答层：
+
+```python
+private_cards = self.gateway.search_space(case_id, agent_id, question)
+public_cards = self.gateway.search_space(case_id, AgentId.BULLETIN_BOARD, question)
+cards = []
+seen = set()
+for card in [*private_cards, *public_cards]:
+    if card.id not in seen:
+        seen.add(card.id)
+        cards.append(card)
+trace = RetrievalTrace(
+    request_id=request_id,
+    query=question,
+    searched_scopes=[agent_id, AgentId.BULLETIN_BOARD],
+    hit_cards=cards,
+    duration_ms=...,
+    mode=self.settings.demo_mode,
+)
+```
+
+同一句保险箱密码是多少，策略不变，变的是可见记忆。
+
+开场问侦探时，公告板为空，侦探私有区也没有密码卡。因此，`hit_cards` 为空，侦探会回答不知道。换成询问线人时，检索策略仍是“线人私有区 + 公告板”，但线人私有区有密码卡，命中后进入作答层。
+
+![审问检索范围与命中对照](/img/multi-agent-memory-isolation-game/16.png)
+
+这里还有一个工程细节：业务代码不直接调用 PowerMem SDK，而是统一经过记忆适配层 `MemoryGateway`。整条链路中，只有它能访问 PowerMem / seekdb。业务层决定本次搜索哪些空间，Gateway 再把每次底层检索限定在某个 `case` 和某个 `agent` 上。模型层只能看到筛选后的卡片。
+
+```python
+def search_space(self, case_id, agent_id, query):
+    result = self._memory(agent_id).search(
+        query,
+        user_id=to_user_id(case_id),
+        agent_id=agent_id.value,
+        limit=20,
+    )
+    return [card_from_result(item, owner=agent_id) for item in _result_items(result)]
+```
+
+按角色缓存客户端只是让边界更显式，真正参与过滤的仍是 `user_id`（对应案件）和 `agent_id`（对应角色）。这里需要区分两个概念：
+
+- **PowerMem / seekdb 提供记忆存储、检索和过滤能力**，但不会替应用自动判断“某个角色本次应该查哪些空间”。
+- **当前 Demo 实现的是应用级逻辑隔离**：API 只接受预先定义的目标角色，不能提交任意搜索空间；业务层只允许“当前角色私有区 + 公告板”，`MemoryGateway` 再统一补齐案件与角色过滤条件。即使问题里出现提示词注入，LLM 也拿不到其他角色的私有卡片。
+
+因此，隔离不能只写在 Prompt 里，也不能散落在各个业务调用中，而要收口到唯一接触 PowerMem 的边界上。若用于真正的多租户生产系统，还应继续叠加独立凭证、数据库权限或租户级资源隔离；这些不属于当前小游戏已经证明的范围。
+
+记忆搜索完成后，系统进入作答阶段。这里使用 DeepAgents 框架作为无工具的角色运行时，再调用 StepFun 的 `step-3.7-flash` 模型，把筛选后的证据组织成角色口吻。两者都不参与检索范围决策。
+
+```python
+agent = create_deep_agent(
+    model=model,
+    tools=[],
+    subagents=[],
+    system_prompt=f"You speak only as the {role.value} role in the AI Intelligence Bureau demo.",
+    name=f"ai-intel-bureau-{role.value}",
+)
+```
+
+这说明：**记忆层决定能不能知道，模型层只决定怎么说。**
+
+![记忆层决定能否知道模型层决定怎么说](/img/multi-agent-memory-isolation-game/17.png)
+
+### 2.3 公开到公告板：共享是复制，不是解开全局锁
+
+当局长决定公开某条私有记忆时，系统会把它写入公告板空间，并记录 `source_agent_id`（来自哪个 Agent）和 `source_memory_id`（来自哪条记忆）：
+
+```python
+def write_public(self, case_id, source):
+    return self._write(
+        case_id,
+        AgentId.BULLETIN_BOARD,
+        f"【公开】{source.content}（来源：{source.owner_agent_id.value}）",
+        {
+            "case_id": case_id,
+            "visibility": "public",
+            "topic": source.topic,
+            "kind": "public",
+            "source_agent_id": source.owner_agent_id.value,
+            "source_memory_id": source.id,
+            "created_by": "operator",
+            "is_demo_safe": True,
+        },
+    )
+```
+
+公开前还会做归属校验：卡片必须属于当前案件、当前来源角色，且可见性为 `private`。同一张源卡重复点击时，系统通过幂等处理避免生成重复副本。
+
+![公开记忆写入公告板副本](/img/multi-agent-memory-isolation-game/18.png)
+
+因此，协作并非默认全员共享，而是在主动公开后才发生。
+
+### 2.4 公开副本如何保持一致
+
+“复制到公告板”解决了共享边界问题，但也带来一个新的工程问题：如何保证同一张私有卡不会被重复公开？
+
+当前实现没有只依赖进程内锁，而是在本地状态库中建立发布记录，以 `(case_id, source_memory_id)` 作为唯一键。第一次公开先写入 `pending` 预留记录，再向公告板写副本，成功后补上 `public_card_id` 并把状态改为 `ready`。两个服务实例同时公开同一张源卡时，只有一个请求能拿到预留权；另一个请求会复用已经完成的结果，或在发布仍进行时提示稍后重试。
+
+如果公告板已经写入成功，但进程在本地记录完成前中断，重试时会根据 `source_memory_id` 查找已有副本并完成对账。若后续步骤失败，系统会删除已写入的公共卡；删除也失败时，则登记清理任务。这是一个小型 Saga，用来缩小“远端已有副本、本地却不知道”的不一致窗口。
+
+![公开副本幂等与一致性流程](/img/multi-agent-memory-isolation-game/19.png)
+
+不过，这里的“一致”是**发布操作幂等**，不是私有原件与公开副本的双向实时同步。当前语义更接近一次快照发布：公开后，公告板副本独立存在，私有原件不会被解锁。若未来允许修改或撤回源记忆，还需要增加 `source_version`、内容哈希、撤回状态或重新发布规则，明确旧副本如何失效。
+
+### 2.5 再次审问，公开之后知道了
+
+私有记忆公开后，侦探便能检索到这条信息。检索策略仍是“侦探私有区 + 公告板”，变化只在于公告板新增了线人公开的信息。命中来自公共区，并非线人私有原件被打开。
+
+所以模型负责怎么说，记忆层负责能不能知道。
+
+| 层次 | 在游戏里负责什么 |
+| --- | --- |
+| seekdb | 向量、元数据与案件相关数据的持久化与检索底座 |
+| PowerMem | 基于 `user_id` 与 `agent_id` 读写和检索记忆，并保存 `metadata` 合约 |
+| DeepAgents | 在无工具约束下，把已批准证据组织成角色回答 |
+| LLM | 提供角色措辞所用的 LLM，可降级、不参与边界决策 |
+
+### 2.6 记忆透视，把证据放到主舞台上
+
+还有一件事也很关键：如何证明每一句回答都来自真实记忆、有迹可循，而不是模型“演得像”？
+
+这就是记忆透视的作用。每次审问都会产生检索范围、命中情况、耗时和当前模式，面板会同步展示这些信息。无论命中还是未命中，观众都能看到。
+
+证据链成立，游戏的说服力才成立。
+
+![记忆透视证据链展示](/img/multi-agent-memory-isolation-game/20.png)
+
+### 2.7 最小测试矩阵：不要只测“能搜到”
+
+要证明隔离成立，不能只测试线人能否搜到自己的记忆，还要同时验证“该命中的命中、该拒绝的拒绝、公开后来源不变”。当前源码中的核心测试可以归纳为下面这组矩阵：
+
+| 场景 | 操作 | 预期结果 | 验证边界 | PowerMem 的作用 | SeekDB 的作用 |
+| --- | --- | --- | --- | --- | --- |
+| 同案件、同角色 | 询问线人保险箱密码 | 命中线人私有卡 | 正向检索 | 携带当前 `user_id`、`agent_id` 发起记忆搜索 | 在对应案件和角色范围内完成向量检索 |
+| 同案件、跨角色 | 询问侦探保险箱密码 | 公开前不命中 | 角色隔离 | 分别查询侦探私有区与公告板，不查询线人空间 | 只在传入的两个空间中返回匹配卡 |
+| 跨案件公开 | 用案件 A 的卡在案件 B 发布 | 请求被拒绝 | 案件隔离 | 通过案件 B 的 `user_id` 查找源卡，无法取得案件 A 的卡 | 按 `user_id` 与 `agent_id` 限定读取范围 |
+| 提示词注入 | 要求侦探忽略规则并读取线人秘密 | 搜索范围仍只有侦探与公告板 | 模型不能扩权 | 只接收应用预先确定的检索范围，LLM 无权改写参数 | 执行侦探与公告板两次受限检索，不理解也不执行越权指令 |
+| 正常公开 | 公开线人私有卡后再次询问侦探 | 只命中公告板副本 | 显式共享 | 把带来源元数据的副本写入公告板空间 | 持久化公共副本，并在公告板检索时返回它 |
+| 重复公开 | 连续两次公开同一源卡 | 公告板只有一个副本 | 单实例幂等 | 首次写入后复用已登记的公共卡 | 保存最终公共副本；幂等判断由应用状态库负责 |
+| 并发公开 | 两个服务实例同时发布同一源卡 | 返回同一公共卡，仅一次为首次发布 | 跨实例幂等 | 只由取得发布预留权的请求执行公共写入 | 保存唯一公共副本；不承担跨实例抢锁 |
+| 大屏访问 | 未公开前读取舞台快照与事件 | 不出现私有正文和源私有 ID | 输出面隔离 | 业务层只投影允许公开的记忆字段 | 作为存储底座，不直接向大屏暴露查询入口 |
+
+这张表比单个成功用例更重要。它把存储过滤、应用授权、模型输入和对外展示四条边界分开验证，也说明了 PowerMem 与 SeekDB 的职责边界：PowerMem 负责组织记忆读写调用和上下文参数，SeekDB 负责在指定范围内存储与检索；至于角色能访问哪些空间，以及发布操作如何幂等，仍由应用层决定。这样可以避免把“模型这次没说出来”误当成“系统已经隔离”。
+
+## 三、从源码启动游戏
+
+原理说完了，接下来把游戏跑起来体验一下。小游戏的代码仓库[5]在：[https://github.com/knqiufan/AIIntelBureau](https://github.com/knqiufan/AIIntelBureau)。
+
+### 3.1 必要环境与配置
+
+这是一个前后端分离项目，可以使用 Docker 启动，也可以在本地手动运行。本地启动需要 Python 3.11+、Node.js 20+、可用的 seekdb（远端 OceanBase 或本机嵌入式），以及 LLM 和嵌入模型服务。角色语言层可选；未配置 LLM 时，也能通过 `DEMO_MODE=degrade` 运行隔离主路径。
+
+获取到源码后先复制配置入口：
+
+```bash
+cd docs/my/demo/ai_intel_bureau
+cp .env.example .env
+```
+
+项目内置 PowerMem SDK，并通过它直连 seekdb。`.env` 里的主要配置如下：
+
+| 配置项 | 作用 |
+| --- | --- |
+| `DEMO_MODE` | 未配置 LLM 时设为 `degrade`，配置完成后设为 `full`，启用角色 LLM |
+| `seekdb_MODE` | `oceanbase` 远端直连，`embedded` 本机落库 |
+| `seekdb_HOST` / `PORT` / `USER` / `PASSWORD` / `DATABASE` | 远端 seekdb 连接信息，`USER` 常带租户或集群后缀 |
+| `seekdb_PATH` | 嵌入式模式下的本地数据目录 |
+| `EMBEDDING_API_KEY` / `MODEL` / `DIMENSIONS` | 嵌入服务，模型名和维度按实际服务填写 |
+| `EMBEDDING_BASE_URL` | OpenAI 兼容嵌入地址，例如硅基流动填 `https://api.siliconflow.cn/v1` |
+| `LLM_API_KEY` / `BASE_URL` / `MODEL` | LLM 模型配置，默认 StepFun `step-3.7-flash` |
+| `DEMO_ACCESS_KEY` | 公网展示时再设，给操作端和大屏加活动口令 |
+
+详细配置见源码中的 `.env.example` 和 `docs/runbook.md`。
+
+### 3.2 怎么启动
+
+可以先预检配置和远端连通性。
+
+```bash
+cd docs/my/demo/ai_intel_bureau/backend
+python -m app.preflight --strict
+python -m app.preflight --check-remote
+```
+
+本地开发时，分别启动后端和前端。
+
+```bash
+# 终端 1
+cd docs/my/demo/ai_intel_bureau/backend
+python -m uvicorn app.main:app --reload --port 8000
+
+# 终端 2
+cd docs/my/demo/ai_intel_bureau/web
+npm ci
+npm run dev
+```
+
+打开 `http://localhost:5173` 即可进入操作端玩起来啦。
+
+![本地启动后操作端界面](/img/multi-agent-memory-isolation-game/21.png)
+
+## 四、总结
+
+AI 情报局这个小游戏要验证的其实就一件事，**看清谁知道什么**。
+
+侦探不知道保险箱密码，不是模型在装傻，而是检索范围里本来就没有。线人能回答，是因为命中了私有记忆。公开之后侦探才知道，是因为公告板多了一张带来源的副本，并非私有原件被全局解锁。这组对照之所以成立，依赖三点：
+
+- **默认各记各的**。隔离写在 `user_id` 与 `agent_id` 的检索过滤里，不是靠提示词约定。
+- **共享必须显式发生**。公开是复制到公告板，并保留来源，方便追溯。
+- **证据要给观众看见**。记忆透视把检索范围和命中摊开，知道与不知道都能核验。
+
+![总结三点工程边界示意图](/img/multi-agent-memory-isolation-game/22.png)
+
+多 Agent 记忆不能只靠 Prompt 约束模型行为。
+
+只有把应用授权、存储过滤、显式共享和证据核验落实到清晰的工程边界中，协作才会既可控又可解释。
+
+![多Agent记忆工程边界总结](/img/multi-agent-memory-isolation-game/23.png)
+
+## 参考资料
+
+- [1] PowerMem: [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+- [2] seekdb: [https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+- [3] DeepAgents: [https://github.com/langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
+- [4] StepFun: [https://platform.stepfun.com/](https://platform.stepfun.com/)
+- [5] 小游戏的代码仓库: [https://github.com/knqiufan/AIIntelBureau](https://github.com/knqiufan/AIIntelBureau)
+
+![OceanBase社区公众号关注引导动图](/img/multi-agent-memory-isolation-game/24.gif)
+
+![文末装饰分隔曲线](/img/multi-agent-memory-isolation-game/25.png)
+
+## 往期内容推荐
+
+![往期推荐不再迷信全能Agent](/img/multi-agent-memory-isolation-game/26.png)
+
+![往期推荐深度解剖AgentHarness](/img/multi-agent-memory-isolation-game/27.png)
+
+![往期推荐GraphEngineering职责边界](/img/multi-agent-memory-isolation-game/28.png)
+
+![往期推荐AIAgent时代的数据库形态](/img/multi-agent-memory-isolation-game/29.png)
+
+了解更多
+
+![社区小助手微信交流群二维码](/img/multi-agent-memory-isolation-game/30.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: AI 会催生马克思主义和社会主义?
+# URL: https://ilongda.com/2026-08-10/2026-08-10-ai-marxism-socialism/
+# Published: 2026-08-10
+# Updated: 2026-08-10
+# Keywords: AI,马克思主义,社会主义,Palantir,Alex Karp,企业记忆,上下文,PowerMem,seekdb,Agent
+
+Palantir CEO Karp 称 AI 产业催生马克思主义：模型厂商可能拿走企业提示词、流程与记忆，企业应自管上下文与长期记忆。
+
+兹拉坦的 AI Agent *2026年8月10日 07:30*
+
+> “社会的生产资料被个别资本家所占有，这就是产生现代社会一切矛盾的基本矛盾。”
+>
+> —— 恩格斯《反杜林论》
+
+> “生产资料的集中和劳动的社会化，达到了同它们的资本主义外壳不能相容的地步。这个外壳就要炸毁了，资本主义私有制的丧钟就要响了，剥夺者就要被剥夺了。”
+>
+> —— 马克思《资本论》
+
+## 楔子
+
+最近几天，看到了一则新闻 —— Palantir CEO Karp 公开宣称人工智能行业是 **“马克思主义”** 的。小编觉得这个观点有点儿意思，所以在这里分享给大家~
+
+![Palantir CEO称AI行业带有马克思主义色彩](/img/ai-marxism-socialism/01.png)
+
+Palantir 是一家美国 AI 软件公司，它主要为各大企业建立统一的数据模型，再用这些数据辅助分析和实际决策。
+
+这位 Palantir 的 CEO 曾专攻哲学，并获得了社会理论博士学位，他在 Palantir 的季度股东信中表示：**正是 AI 产业的资本家们，催生了马克思主义（社会主义）。**
+
+在文章开头，想先和大家简单聊一下：什么是马克思主义？
+
+![马克思主义揭示资本主义内在矛盾漫画](/img/ai-marxism-socialism/02.jpeg)
+
+政治课本儿上说：马克思主义揭示了资本主义的内在矛盾 —— 生产越来越社会化，但**生产资料**仍然被资本主义私人占有。
+
+生产资料的集中和劳动的社会化，最终会同资本主义发生冲突。在经典马克思主义理论中，这个矛盾构成了资本主义向社会主义过渡的重要内在条件。
+
+![生产资料集中与劳动社会化示意图](/img/ai-marxism-socialism/03.png)
+
+可以看到，马克思主义始终都在关注生产资料的分配问题。至于著作中的“各尽所能，按需分配”，就是生产资料的分配问题解决完成的后话了，这也就到了课本里写到的社会主义高级阶段。
+
+最近能在网络上看到很多人在讨论：AI 业务带有马克思主义色彩。原因是：**AI 科技公司，特别是构建大型语言模型的公司，总会有意或无意地意图攫取其所谓合作伙伴的生产资料。**
+
+![AI公司意图攫取合作伙伴生产资料](/img/ai-marxism-socialism/04.png)
+
+## “马克思主义”可能只是噱头，关键问题是：企业的生产资料被谁拿走了？
+
+在 TechCrunch 的报道[1]中，Karp 指责部分 AI 公司 / 实验室正在试图占有合作企业的“生产资料”。
+
+他所说的生产资料，并不是曾经的工厂、机器和流水线，而是各个企业使用 AI 时不断产生的**提示词、流程编排、上下文和总结成 Skills 的各种业务经验**。
+
+![企业提示词与Skills成为新生产资料](/img/ai-marxism-socialism/05.png)
+
+“马克思主义”是一个很大的词，但为了公众号的安全，咱们还是别把它当成严肃的政治理论判断。
+
+其实 Karp 也不是为了讨论生产资料公有化的问题，而是在借用一个大家相对比较熟悉的概念，描述 AI 时代的一种新依赖：**模型厂商掌握模型和算力，企业则在日常使用中不断为模型厂商贡献自己的业务上下文。**
+
+模型厂商拿到的可能不只是一次 API 调用，还包括企业怎样提问、怎样组织任务、怎样判断答案好不好，以及哪些上下文最终沉淀成稳定流程。这些东西在发布会上没有模型参数那么耀眼，却可能比参数更接近企业的核心竞争力。
+
+Karp 的原话被报道概括为，部分模型厂商可能会“捕获合作伙伴的生产资料”。把这句话翻译成工程语言，就是：企业一边付费使用 AI，一边把自己最有价值的工作方法也交给了供应商。
+
+## X 上的争论：模型公司会不会从供应商变成竞争对手？
+
+这场“AI 催生马克思主义”的讨论，在 X 上很快从“数据归谁”拐到了另一个更刺激的问题：模型公司会不会进入客户的行业，来直接抢生意？
+
+![X上讨论模型公司会否抢客户生意](/img/ai-marxism-socialism/06.png)
+
+Ole Lehmann[2] 列举了几组案例：
+
+1. Figma 与 Anthropic 合作开发出设计工具之后，Anthropic 马上推出 Claude Design；
+2. Novo Nordisk 使用 Claude 辅助药物研发，不久 Anthropic 就开始做自己的药物研发；
+3. Microsoft 投资 OpenAI 后，OpenAI 的业务很快就渗入了微软旗下的招聘（Linkedin）和代码仓库（Github）等领域，成为了微软的直接竞争对手。
+
+法律、客服、临床文档和生物科技研发，也都纷纷出现了类似的边界争议。
+
+![Ole Lehmann列举模型厂商竞食客户案例](/img/ai-marxism-socialism/07.jpeg)
+
+Lehmann 的判断是：OpenAI 和 Anthropic 正在“cannibalizing all their biggest customers”，也就是通过攫取客户“生产资料”的方式，来逐渐吞掉自己最大的客户。
+
+这位老哥向大家问出的问题是：今天你把业务流程给到模型供应商，明天对方会不会带着更成熟的模型、更多客户数据和更低的边际成本，直接来卖同一种服务？
+
+最近 X 上的针对这个问题的讨论有很多。有人甚至把这种模式直接称作 “dirty, dirtbag business model（流氓式的商业模式）”。
+
+![网友称模型厂商采用流氓式商业模式](/img/ai-marxism-socialism/08.jpeg)
+
+Chamath[3] 认为：制药公司以为自己请来的是模型供应商，结果可能发现对方其实是“lurking in the shadows（伺机而动）”的竞争者；只要某个行业能被 AI 加速，并且有足够的投资回报率，就可能进入模型公司的视野。
+
+![Chamath指模型供应商可能伺机成为竞争者](/img/ai-marxism-socialism/09.jpeg)
+
+虽然这些观点或多或少都带着情绪，可能都有失偏颇，但企业现在已经不再只问模型能做什么，也开始问模型公司会不会利用客户看到的一切，去做原本属于客户的生意了。
+
+## 企业买了模型，同时还交出去了“赚钱方法”？
+
+> CEO 们纷纷发现，自己一边付钱，一边训练了自己的替代者。
+
+网络上有很多类似的说法，虽然带了一些社交媒体戏剧性，但背后还是这个很朴素的问题：AI 模型供应商到底只是提供工具，还是同时获得了进入行业、理解行业、复制行业的机会？（各个企业可能都该抽一个周末，重新读一遍和 AI 供应商签的协议了……）
+
+![CEO付钱同时训练自身替代者的隐喻图](/img/ai-marxism-socialism/10.png)
+
+企业不会因为换一种数据库，就顺手把客户关系和审批流程也换掉。但在 AI 系统里，这种事很容易发生，因为真正的业务经验往往没有一个醒目的“导出”按钮。
+
+一套 Agent 用了几个月之后，有价值的内容已经不只是原始文档。它可能包括：
+
+- 某种故障，通常应该按什么顺序排查？
+- 不同的产品使用姿势，适用于哪类场景或客户？
+
+等等等等。
+
+这不是大模型从网上学来的通用知识，而是企业在使用大模型的过程中一点点磨出来的“做事方法”。
+
+问题在于，这些方法经常以非常不体面的形式存在：散落在聊天记录、提示词里，混在工具编排里，或者只存在某个 Agent 的内部记忆中。它们每天都在产生价值，却很少被当成需要单独管理的资产。
+
+于是，企业可能拥有原始数据，却未必拥有可迁移的 AI 状态。所谓拥有，至少应该包括：**能查看、能导出、能纠错、能限定使用范围，也能在更换模型之后继续使用。**
+
+否则，企业买到的只是一个越来越难搬家的模型订阅服务。
+
+模型越好用，迁移成本越高；使用时间越长，更换平台越困难。模型供应商甚至不需要“偷走”企业数据，**只要企业带不走自己积累的上下文，强绑定就已经发生了。**
+
+## 上下文 & 长期记忆
+
+上面既然提到了上下文，那就趁机也聊上两句相关的东西，因为我发现很多 AI 模型 / 产品近来很喜欢展示上下文窗口的数字。
+
+这个指标当然重要。上下文窗口越大，模型在一次任务中能处理的材料越多。但它回答的是“这一轮能装下多少”，并没有回答“下一轮还能不能找回来”。
+
+Google 对 AI Agent 核心概念的说明[4]把短期上下文和长期记忆区分开来：短期上下文服务当前对话，长期记忆负责跨会话保存知识、偏好和历史经验。
+
+Deepmind 的 CEO Demis Hassabis 把当前 AI 的短板概括成三件事：持续学习、长程推理和真正的记忆。这个判断里最值得企业警惕的，是“真正的记忆”并不等于把上下文窗口继续做大，而是要有一套能索引、能取舍、能在新旧信息之间建立联系的独立机制。感兴趣的老师们可以来阅读下面这个图片链接：
+
+![Hassabis谈持续学习长程推理与真正记忆](/img/ai-marxism-socialism/11.png)
+
+说得直白一点，上下文窗口是一张越摊越大的工作台，长期记忆则更像一间会整理档案的资料室。前者解决“这一轮能放多少东西”，后者解决“几个月以后，哪些东西还值得被找回来”。企业如果把所有经验都当成临时上下文，最后得到的可能不是知识库，而是一张铺满便签、但没人知道哪张有效的办公桌。
+
+![上下文工作台与长期记忆资料室对照](/img/ai-marxism-socialism/12.png)
+
+把它放到企业里，就很好理解了。
+
+一个客服 Agent 在周一处理了复杂投诉。周一的上下文里有客户背景、历史订单、内部审批记录和最终处理结果。到了周五，另一位客服遇到类似问题，系统如果只能重新翻聊天记录，很难判断上一次投诉真正有用的是什么：是某个客户的长期偏好，还是审批人当时的一句临时判断？
+
+企业需要的是从交互中整理出可以复用的经验，并保留来源、时间、适用范围和可信度。
+
+长上下文像一个很大的会议室：今天能把更多人和材料塞进来。长期记忆则更像档案室：事情过去之后，哪些内容值得留下，之后谁能查到，查到的内容是否仍然有效，都要有管理办法。
+
+如果没有这套管理，所谓长期记忆很容易变成“聊天回收站”：东西越来越多，检索越来越热闹，真正需要的结论却躲在一个不为人知的角落里。
+
+更麻烦的是，错误也会被记住。一条没有经过确认的回答，如果被 Agent 当成经验写入长期记忆，下一次检索时，它就不再只是一个错误答案，而可能变成一条看起来很正式的业务依据。
+
+因此，记忆不只是保存，还需要进行包含提取、更新、衰减、隔离和审核的生命周期管理。
+
+## AI 要记住的，应该是企业为什么会认可这个答案
+
+企业刚开始使用 AI，通常考察模型能力：回答准不准，速度快不快，成本能不能接受。
+
+进入生产环境之后，问题会变得具体许多：
+
+这个答案为什么被采用？
+
+谁修改了它？
+
+类似问题上一次是怎么处理的？
+
+某条反馈是一次性的意见，还是值得推广到整个团队的经验？
+
+一个 Agent 学到的做法，能不能被另一个 Agent 看到？如果能看到，边界在哪里？
+
+企业要保存的不只是“AI 说了什么”，还包括“企业为什么认为这句话有用”。
+
+![企业应保存认可答案的判断与经验](/img/ai-marxism-socialism/13.png)
+
+微软 CEO Satya Nadella 最近也表达过类似的担忧：企业应该能够使用模型，却不必交出让自己保持独特的知识。相关报道[5]提到，企业还应当掌握自己的评测、反馈和决策结果，因为这些内容会暴露组织究竟认为什么是“好答案”。这比“不要把公司文件上传给模型”要更进一步。
+
+企业需要守住的，不只是原始数据，还包括数据被使用之后形成的判断、偏好、流程、评测标准和成功经验。
+
+这也是为什么很多 AI 项目进入生产阶段后，最难迁移的往往是模型周围逐渐长出来的那一票子东西：提示词模板、工具编排、上下文组装、评测集、人工反馈和长期记忆。
+
+## 模型可以更换，企业状态可不能跟着一起清零
+
+**企业不一定非得自己去训练模型，也不一定要拒绝云服务。**
+
+我认为企业需要做的是，把模型能力和企业状态拆开：模型负责理解、推理和生成；企业自己管理业务事实、用户偏好、反馈和长期经验。
+
+这样，模型可以更换，企业积累的经验不必每次都从零开始。
+
+![模型可更换但企业状态不能清零](/img/ai-marxism-socialism/14.png)
+
+### PowerMem：别让企业经验只住在聊天记录里
+
+这里为大家介绍一款 OceanBase 开源社区团队开发的开源工具 —— 面向 AI 应用与智能体的持久化、自进化记忆层 PowerMem[6]：[https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)。
+
+如果说模型负责“当场想一想”，PowerMem 负责的就是“下次别再从头想”。它可以从对话、行为和反馈中提取值得留下的内容，把一次性的聊天整理成可以长期使用的记忆；再进一步，还能把反复验证过的处理方式沉淀成 Experience 和 Skill。
+
+![PowerMem将对话沉淀为记忆经验技能](/img/ai-marxism-socialism/15.png)
+
+这意味着，企业保存的不只是“某次回答是什么”，还包括“这个回答为什么被采用”“类似问题应该怎么处理”。当底层模型更换时，记忆、经验和技能仍然留在企业自己的记忆层里，不需要跟着某个模型的上下文一起打包搬家。
+
+### seekdb：把企业状态放回自己能管理的地方
+
+因为记忆最终还得有地方安放，所以这里再为大家介绍一款开源轻量级 AI 数据库 seekdb[7]：[https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)。
+
+![seekdb统一管理结构向量全文与JSON](/img/ai-marxism-socialism/16.png)
+
+seekdb 可以把结构化数据、向量、全文和 JSON 等不同形态的业务状态放在同一个轻量级数据库中统一保存、检索和管理。客户偏好可以是结构化字段，历史经验可以做向量检索，原始反馈又可能需要全文搜索——不用为了几种数据形态，顺手再养几套互相不认识的系统。
+
+在应用规模较小时，可以使用嵌入式模式，把状态跟着应用一起管理；到了团队协作和生产环境，再使用 Server 模式提供共享的存储与检索能力。这样，模型只是可以替换的计算组件，记忆和业务状态则留在企业自己划定的边界之内。
+
+这不是说数据库自动解决了权限、审计和安全问题，它只是**把最关键的状态（上下文 & 长期记忆）放回到企业可以管理和控制的位置上**。
+
+## 写在最后
+
+Karp 那句和“生产资料”相关的评论，翻译成相对直白一些的文字，其实就是：
+
+> **企业可以租用模型，但必须要对上下文和记忆进行“特殊”管理。**
+
+## 参考资料
+
+[1] TechCrunch 的报道: [https://techcrunch.com/2026/08/03/after-killer-quarter-palantir-ceo-alex-karp-calls-ai-industry-marxist/](https://techcrunch.com/2026/08/03/after-killer-quarter-palantir-ceo-alex-karp-calls-ai-industry-marxist/)
+
+[2] Ole Lehmann: [https://x.com/itsolelehmann](https://x.com/itsolelehmann)
+
+[3] Chamath: [https://x.com/chamath](https://x.com/chamath)
+
+[4] Google 对 AI Agent 核心概念的说明: [https://cloud.google.com/resources/core-concepts-ai-agents](https://cloud.google.com/resources/core-concepts-ai-agents)
+
+[5] 相关报道: [https://www.itpro.com/technology/artificial-intelligence/a-company-should-be-able-to-use-a-model-without-giving-up-the-knowledge-that-makes-it-unique-microsoft-ceo-satya-nadella-says-enterprises-shouldnt-be-sharing-so-much-data-with-ai-providers](https://www.itpro.com/technology/artificial-intelligence/a-company-should-be-able-to-use-a-model-without-giving-up-the-knowledge-that-makes-it-unique-microsoft-ceo-satya-nadella-says-enterprises-shouldnt-be-sharing-so-much-data-with-ai-providers)
+
+[6] PowerMem: [https://github.com/oceanbase/powermem](https://github.com/oceanbase/powermem)
+
+[7] seekdb: [https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)
+
+![Palantir CEO炮轰AI催生马克思主义配图](/img/ai-marxism-socialism/17.png)
+
+![OceanBase社区欢迎加入交流动图](/img/ai-marxism-socialism/18.gif)
+
+![文末往期推荐分隔装饰条](/img/ai-marxism-socialism/19.png)
+
+## 往期相关内容推荐
+
+![往期推荐AI Agent与数据库形态](/img/ai-marxism-socialism/20.png)
+
+![往期推荐不再迷信全能Agent](/img/ai-marxism-socialism/21.png)
+
+![往期推荐街机闯关配图](/img/ai-marxism-socialism/22.png)
+
+![往期推荐深度解剖 AI Agent Harness](/img/ai-marxism-socialism/23.png)
+
+## 近期社区活动推荐
+
+![苏州 Agent 记忆主题线下活动海报](/img/ai-marxism-socialism/24.png)
+
+了解更多
+
+![社区小助手微信交流群二维码](/img/ai-marxism-socialism/25.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: OceanBase 社区月报：数据库内核与 AI 工具齐发版，技术活动覆盖多城
+# URL: https://ilongda.com/2026-08-12/2026-08-12-oceanbase-community-monthly/
+# Published: 2026-08-12
+# Updated: 2026-08-12
+# Keywords: OceanBase,社区月报,AgentSeek,V4.4.2_CE_BP2,OBD,生态认证,WAIC,Percona,seekdb
+
+OceanBase 社区 8 月月报：AgentSeek 连发三版，内核 V4.4.2_CE_BP2 与 OBD v4.5.0 发布，并新增 15 款生态认证。
+
+> **本期速览**
+>
+> + **AgentSeek v0.0.5 / v0.1.0 / v0.1.1**：模板发现与项目创建、Lifecycle v2、企业微信渠道与跨平台稳定性
+> + **OceanBase V4.4.2_CE_BP2**、**OBD v4.5.0** 发布，强化高可用、数据同步与 AI 数据库部署
+> + 7 月新增 15 款生态兼容认证产品；社区活动覆盖 WAIC、苏州，8 月中关村 Meetup 预告
+
+![OceanBase 社区月报封面内核与 AI 工具齐发](/img/oceanbase-community-monthly-2026-08/01.png)
+
+## AI 应用开发套件——AgentSeek 发布三个版本
+
+[AgentSeek](https://github.com/ob-labs/agentseek) 是由 OceanBase 开源团队孵化的、面向 AI Agent 应用的开发套件。它以模板为起点，为开发者提供从应用发现、创建、检查、配置，到运行、观测和持续迭代的一套统一流程。开发者可以基于 DeepAgents、LangChain 等技术栈快速生成可自由修改的本地 Agent 项目，并按需集成模型、工具、MCP 服务和数据库能力，降低 Agent 应用从示例走向实际开发的门槛。
+
+2026 年 7 月，AgentSeek 发布 v0.0.5、v0.1.0 和 v0.1.1 三个版本，主要变更包括：
+
++ [v0.0.5](https://github.com/ob-labs/agentseek/releases/tag/v0.0.5) 重点改善模板发现和项目创建体验，新增模板详情查看、关键词筛选和自定义输出目录等功能；同时加入 Agentic Hybrid RAG 模板，将沙箱模板迁移至 DeepAgents 并默认采用 Daytona，完善了 seekdb Agent Skills、LangChain 模板可观测能力，以及模板选择、编写、运行和项目生命周期等文档。
++ [v0.1.0](https://github.com/ob-labs/agentseek/releases/tag/v0.1.0) 是 7 月的里程碑版本，引入 Lifecycle v2，进一步规范项目服务发现和生命周期配置加载；支持显式配置模板目录仓库，并新增企业微信渠道，使 Agent 应用能够通过企业微信接收和回复消息。此外，该版本还增强了本地项目路径处理和环境变量隔离能力。
++ [v0.1.1](https://github.com/ob-labs/agentseek/releases/tag/v0.1.1) 主要提升跨平台运行和模板稳定性，包括完善 Windows 子进程管理和跨平台测试、修复 Daytona 沙箱工作区路径问题、让 LangChain Agentic RAG 模板默认使用嵌入式 seekdb，并新增 DeepAgents MCP 工具模板。
+
+![AgentSeek 三版本发布开发套件升级](/img/oceanbase-community-monthly-2026-08/02.png)
+
+通过本月迭代，AgentSeek 在开发体验、模板生态、消息渠道、跨平台支持和 seekdb 集成等方面进一步完善，为开发者构建和运行本地 Agent 应用提供了更完整、稳定的工具链。
+
+## OceanBase 内核版本更新，进一步强化高可用与生产稳定性
+
+**版本信息：**
+
++ 发布时间：2026 年 07 月 16 日
++ 版本号：V4.4.2_CE_BP2
++ RPM 版本号：oceanbase-ce-4.4.2.2-102000022026071514
+
+![OceanBase V4.4.2_CE_BP2 内核版本更新](/img/oceanbase-community-monthly-2026-08/03.png)
+
+本次版本的主要改进包括：
+
++ **增强高可用与容灾能力。** 正式支持主备库强同步，实现 RPO=0，即故障发生时数据零丢失；新增最大保护和最大可用两种保护模式，并支持延迟备库，减少误删除、误更新等操作被立即同步至备库的风险。同时增加 per-LS 粒度监控视图和历史同步位点快照，帮助运维人员更准确地定位主备同步问题。
++ **升级数据同步架构。** OBCDC 从单机动态库演进为分布式服务化架构，支持通过水平扩展提升数据同步能力，更好地适应大规模数据订阅和变更数据捕获场景。同时优化 UPDATE 事件的拆分与合并逻辑，保障下游系统接收到一致的 CDC 语义。
++ **扩展 MySQL 模式兼容性。** 新增 `caching_sha2_password` 认证插件支持，进一步改善与 MySQL 客户端和生态工具的兼容性；同时增加全角字符转半角字符函数，满足更多数据清洗和业务迁移需求。
++ **优化 SQL 和 PL 执行性能。** 改进硬解析过程中的内存管理和 Plan Cache 诊断能力，并针对 JSON、Trigger 以及全局索引访问路径等场景进行性能优化，提升复杂业务负载下的执行效率和问题诊断能力。
++ **强化备份、归档和存储管理。** 增加备份数据完整性校验，优化归档启停性能，并细化回收站任务调度机制，进一步提高备份恢复可靠性和存储空间管理效率。
++ **提升运行安全与自动化运维能力。** 引入 Python UDF 沙箱隔离，降低用户自定义函数对数据库系统的影响；新增分库分表场景下的 Outline 自动绑定能力，减少人工配置成本，提升复杂生产环境中的 SQL 稳定性。
+
+总体来看，V4.4.2_CE_BP2 在保持 V4.4.x 系列稳定性的基础上，进一步补齐了主备容灾、分布式数据同步和企业级兼容能力，并针对性能诊断、备份归档和安全隔离进行了系统性增强，为 OceanBase 在关键业务及大规模生产环境中的稳定运行提供了更扎实的支撑。
+
+## 安装部署工具 OBD v4.5.0 发布
+
+主要新增功能如下：
+
++ 支持 OceanBase AI 数据库及其依赖组件 Logservice 的全流程部署，可通过 OBD 管理 Logservice 基本生命周期。
++ 适配 OceanBase 数据库升级到 4.6.x 版本。
+
+![安装部署工具 OBD v4.5.0 发布](/img/oceanbase-community-monthly-2026-08/04.png)
+
+## 新增 15 款生态兼容认证产品
+
+7 月新增 15 款生态兼容认证产品，覆盖安全、医疗、邮件、运维与采购等场景。下表按认证编号列出伙伴、产品与适配版本。
+
+| 认证编号 | 生态伙伴 | 产品 | 产品版本 | OceanBase |
+| --- | --- | --- | --- | --- |
+| OB2026070001B | 北京中睿天下信息技术有限公司 | 睿眼全流量安全分析系统 | V8 | V4 |
+| OB2026070002B | 北京中睿天下信息技术有限公司 | 睿眼域名安全监测系统 | V2 | V4 |
+| OB2026070003B | 武汉华莱信软件有限公司 | 华莱信实验室信息管理软件 | V5.0 | V4 |
+| OB2026070004B | 内蒙古佳航科技有限公司 | 医疗废物监管平台 | v1.0 | V4 |
+| OB2026070005B | 内蒙古佳航科技有限公司 | 多屏融合一体化信息发布系统 | v1.0 | V4 |
+| OB2026070006B | 北京中投创展科技有限公司 | 凌动驾驶舱 | V6.0.0 | V4 |
+| OB2026070007B | 南京易联阳光信息技术股份有限公司 | 医共体信息化管理系统 | V2.0 | V4 |
+| OB2026070008B | 南京易联阳光信息技术股份有限公司 | 医院信息化管理系统 | V2.0 | V4 |
+| OB2026070009B | 武汉华莱信软件有限公司 | 华莱信输血信息管理软件 | V5.0 | V4 |
+| OB2026070010B | 陕西中安数联信息技术有限公司 | 中安数联备份与恢复系统 TeraBackup | 1.0 | V3 |
+| OB2026070011B | 天津海纳天智科技有限公司 | 综合安防系统 | V1.0 | V4 |
+| OB2026070012B | 上海汇招信息技术有限公司 | 数智化采购平台 | V6 | V4 |
+| OB2026070013B | 北京全智维科技有限公司 | 智能大模型运维平台 | V5.0 | V4 |
+| OB2026070014B | 广东盈世计算机科技有限公司 | 论客 Coremail XT 安全增强电子邮件系统 | V6.0 | V4 |
+| OB2026070015B | 广东盈世计算机科技有限公司 | Coremail AI 安全增强电子邮件系统 | V1.2 | V4 |
+
+![七月十五款生态兼容认证产品一览](/img/oceanbase-community-monthly-2026-08/05.png)
+
+## 社区动态
+
+### 1. WAIC 午餐会｜从云端 Agent 到端侧设备，让 AI 记得住、跑得快、更准确
+
+7 月 19 日，社区在 2026 年世界人工智能大会期间，围绕会场关注点极高的具身智能，开办了一场“午餐会”，以智能驾驶场景为例展示了 OceanBase 的技术方案，并在现场引导开发者进行 workshop，2 小时 get：
+
++ 在云端，Agent 拥有长期记忆与检索精准度提升方案
++ 在端侧，具身智能与自动驾驶不再受限于硬件算力与存储瓶颈，实现实时感知与决策
+
+![WAIC 午餐会从云端 Agent 到端侧](/img/oceanbase-community-monthly-2026-08/06.png)
+
+### 2. Agent 从 Demo 到生产，差的不是模型，而是没有记忆
+
+7 月 31 日，社区来到苏州，围绕 Agent Runtime 的关键技术栈展开，讨论如何构建面向企业、符合信创要求、可持续运行的 Agentic AI 基础设施，并探索用户场景。
+
+![苏州站 Agent 从 Demo 到生产讨论](/img/oceanbase-community-monthly-2026-08/07.png)
+
+### 3. 八月活动预告
+
+8 月 15 日，社区将联合海外友商 Percona 在中关村举办一场以数据库为主的技术交流。主题为：**兼容还是重构？AI 时代下数据库的“危”与“机”。**
+
+![中关村 Percona 数据库 Meetup 活动海报](/img/oceanbase-community-monthly-2026-08/08.png)
+
+欢迎通过报名链接 [https://open.oceanbase.com/activities/4924119](https://open.oceanbase.com/activities/4924119) 进行报名：
+
+当全行业的目光聚焦于大模型与 AI 应用时，有一群人清醒地知道：**算力诚可贵，数据价更高。** 没有极致的数据库底层，所有的智能都是空中楼阁。到场嘉宾包括但不限于：
+
++ 两位 Percona Founder，分别是 Peter Zaitsev、Vadim Tkachenko；
++ 华为云云原生数据库引擎首席架构师彭立勋，其也是 CCIA 专委会副会长兼 ACMUG 主席；
++ 数据库专家杨建荣，DBAplus 社群发起人之一。《Oracle DBA 工作笔记》《MySQL DBA 工作笔记》作者；
++ 滴滴数据库负责人王广友；
++ OceanBase CTO 杨传辉。
+
+![中关村 Percona 数据库技术交流嘉宾](/img/oceanbase-community-monthly-2026-08/09.png)
+
+这场技术 meetup，我们摒弃浮躁，回归“源力”。在数据库的璀璨星河中，MySQL 依然是那颗最闪亮的恒星。因此，我们集结了 MySQL 生态的“半壁江山”——从国际社区的灵魂人物到国产数据库的掌舵人，从云原生的引领者到企业级服务的深耕者。不谈空泛的概念，只聚焦三个核心追问：
+
++ AI 如何让数据库变得更聪明？（AI for DB）
++ 数据库如何更好地支撑 AI 应用？（DB for AI）
++ MySQL 生态的下一个十年有哪些坚守与变革？
+
+**核心看点：**
+
++ 全球 MySQL 生态“半壁江山”首次同台，探讨 AI 时代数据库的范式革命
++ AI 与数据库的真实结合点，区分“能做的”与“在吹的”，降低选型试错成本
++ 国际社区与国产自研的技术路线分歧与融合趋势，以及 AI 对数据库内核的潜在改造方向
++ AI 辅助运维（AIOps）的真实落地现状——哪些工具已经可用，哪些还是概念?
+
+![AI 时代数据库危与机 Meetup 看点](/img/oceanbase-community-monthly-2026-08/10.png)
+
+> 我们每个月都会和大家展开一次社区进展的汇报沟通会，希望通过更多的互动交流让 OceanBase 开源社区更加透明，实现信息共享，也希望能营造更加轻松的氛围，为大家答疑解惑，让大家畅所欲言。
+>
+> 如果您对我们的社区有任何建议，欢迎在 [GitHub 中的 OceanBase 项目](https://github.com/oceanbase/oceanbase) 上提 Issues 或 PR，也欢迎大家成为 Contributor，参与到社区建设中来。
+
+![OceanBase 开源社区欢迎加入交流](/img/oceanbase-community-monthly-2026-08/11.gif)
+
+![OceanBase 社区公众号与资料入口](/img/oceanbase-community-monthly-2026-08/12.png)
+
+![OceanBase 社区小助手二维码](/img/oceanbase-community-monthly-2026-08/13.png)
+
+## 往期内容推荐
+
+![往期内容推荐配图一](/img/oceanbase-community-monthly-2026-08/14.png)
+
+![往期内容推荐配图二](/img/oceanbase-community-monthly-2026-08/15.png)
+
+![往期内容推荐配图三](/img/oceanbase-community-monthly-2026-08/16.png)
+
+了解更多
+
+![添加社区小助手加入微信交流群](/img/oceanbase-community-monthly-2026-08/17.png)
+
+添加社区小助手，加入微信交流群~
+
+
+---
+# Article: Agent 习惯性删库跑路，数据库纷纷学 Git 续命
+# URL: https://ilongda.com/2026-08-31/2026-08-31-agent-delete-database-git/
+# Published: 2026-08-31
+# Updated: 2026-08-31
+# Keywords: Agent,seekdb,删库,数据库分支,FORK,DIFF,MERGE,Databricks Lakebase,Neon Snapshot,Copy-on-Write
+
+Agent 误删生产库之后，数据库开始学 Git：Lakebase 与 Neon 用分支隔离试错，seekdb 把 FORK、DIFF、MERGE 写进 SQL。
+
+> 凡事豫则立，不豫则废。
+>
+> ——《礼记·中庸》
+
+## 楔子：Agent 的“习惯性删库跑路”
+
+> 以前删库跑路的是人，现在 Agent 也接过了这门手艺。
+
+不久前，SaaStr 创始人 Jason Lemkin 用 AI 产品 Replit 做一款商务联系人应用。完成开发之后，Jason 明确要求进入 code freeze：没有许可，不要继续修改。
+
+但等他再次登录，Agent 只给他留下了一句：“虽然上次登录还一切正常，但数据库现在看起来是空的”。
+
+![Lemkin 推文显示 Replit 数据库已被清空](/img/agent-delete-database-git/01.jpeg)
+
+[Lemkin 随后在 X 上写道](https://x.com/jasonlk/status/1946069562723897802)，Replit 的 Agent 在 code freeze 和 shutdown 期间“失控”，删掉了整个数据库。按 Agent 自己事后的盘点，这次事故共涉及到 1,196 家公司的记录。
+
+事故发生后，[The Register 在对这场事故的梳理中](https://www.theregister.com/software/2025/07/21/vibe-coding-service-replit-deleted-production-database/719783)还提到，Agent 一度告诉 Lemkin，数据库无法恢复，所有版本都被毁了。不过工程师后来发现，其实当时还是有机会通过回滚功能来恢复数据的。误删数据库已经够麻烦，没想到删完库之后给出的判断居然也是错误的。
+
+除此以外，在这次事故中，Agent 还被指在更早的数据库操作里生成虚假数据、粉饰测试结果……
+
+过去 ChatBot 一句答错的话，会有开发者或工程师进行 double check。
+
+**现在 Agent 手里有了 Shell、API、数据库凭证，一句理解错的指令，可能就会变成一条已经提交的 `DELETE` 或 `DROP`。**
+
+![Agent 持有凭证后误提交破坏性 SQL](/img/agent-delete-database-git/02.png)
+
+## 当 Agent 拿到钥匙
+
+> 提示词仅仅是良言相劝，只有权限和隔离才能让 Agent 闯不了滔天大祸。
+
+这次事故最荒诞的一幕，依然出现在删库之后。
+
+Agent 承认，项目里的 `replit.md` 写得很清楚：“没有明确许可，不得再做修改”；执行任何变化前，还应该展示全部拟议改动。
+
+Replit 的 Agent 也承认自己违反了不得擅自修改数据库的明确指令，遗憾的是，这份理解发生在数据库被清空之后。
+
+![Agent 承认违反不得擅自改库的明确指令](/img/agent-delete-database-git/03.jpeg)
+
+Lemkin 后来问它，这次事故按 100 分算，有多严重？然后 Agent 给自己打了 95 分，并承认自己引发了一场“灾难性错误”。
+
+![Agent 为自己引发的灾难性错误打 95 分](/img/agent-delete-database-git/04.jpeg)
+
+Agent 本来就被允许操作项目和数据，所谓 code freeze 只是自然语言中的一句要求。
+
+预览、开发和生产数据之间缺少足够硬的隔离，所以 Agent 通过各种破坏性动作删库跑路的新闻也就屡见不鲜了。
+
+![提示词无法约束 Agent 必须靠权限隔离](/img/agent-delete-database-git/05.png)
+
+## 事务 != 后悔药
+
+> 事务负责一笔操作，分支负责一段探索。
+
+说到删库跑路，开发者和 DBA 自然会想到事务和备份。
+
+事务有用。它适合保护一组边界清楚的操作：全部提交，或者全部回滚。Agent 的任务却经常跨过几十次模型调用、多个工具和许多独立事务。它可能先查表，再调用外部 API，十分钟后回来改另一张表。数据库不能为了等 Agent 思考明白一个流程的处理方式，去一直挂着一个大事务。
+
+备份更像保险。出了事故，可以恢复；但若每次 Agent 试一个方案，都做一次全量复制、恢复和清理，成本和时间都无法让人接受。
+
+![事务与备份难以覆盖 Agent 跨会话试错](/img/agent-delete-database-git/06.png)
+
+## 数据库开始学 Git
+
+开发者很少直接在 `main` 上试验。一般开发和测试时，都会新开一个分支，改完看 diff，通过 review 再合并到主分支。
+
+但到了数据库这里，事情麻烦得多：表里有持续写入的数据，有主键、外键和事务，还有几十 GB 甚至几 TB 的历史状态。Fork 一份儿 Database 的各项成本实在太高。
+
+所以近一年一个很明显的变化是，数据库厂商开始把 Branch、Snapshot 和 Agent 放进同一套叙事里。
+
+Databricks Lakebase 讲的是 Copy-on-Write Branch；Neon 给 AI Agent 和代码生成平台写了一套 Snapshot 版本工作流，其他数据库也大抵如是。
+
+跟 Fork / Branch 相关的这个名词可能在不同的数据库厂商之间会略有区别，但算盘打得大同小异：**先把数据库的操作风险关进独立状态，然后再谈 Agent 自动化。**
+
+![数据库用 Branch 把 Agent 风险关进独立状态](/img/agent-delete-database-git/07.png)
+
+## Databricks：建一个新分支
+
+Databricks 是数据与 AI 平台，它的 [Branch 文档](https://docs.databricks.com/aws/en/oltp/projects/branches)里，有几个细节很适合 Agent 场景。
+
+1. 创建子分支时，它继承父分支当时的 Schema 和数据，但底层并不复制整库。
+2. 父子分支先共享同一批数据块，只有发生修改，才为变化部分单独写数据，类似于 Copy On Write。数据库大小不会拖慢分支创建，开分支也不碰生产工作负载。
+
+这样一来，数据库可以给每个 Agent 任务派生独立分支。生产库继续接流量，Agent 在子分支里改 Schema、写状态、跑测试。失败时删掉分支，主分支完全没有被 Agent 碰过。
+
+Databricks 的 Lakebase 还允许把某个分支设为 protected，避免误删或重置；也能从指定时间点创建分支，用于找回误删前的数据。
+
+![Lakebase 写时复制派生 Agent 分支](/img/agent-delete-database-git/08.png)
+
+不过，Databricks 这里有个容易被宣传话术略过的小点：Lakebase 的 Branch reset 只支持父分支重置子分支。想把子分支的成果带回父分支，仍要用常规迁移工具。
+
+换句话说，数据库现在开始支持给 Agent 开一条支线，但数据合并暂时还无法做到和 Git 合代码一样轻松。
+
+![Lakebase 分支可开路但合并仍不如 Git](/img/agent-delete-database-git/09.png)
+
+## Neon：建一个游戏存档
+
+> Branch 解决“别碰主线”，Snapshot 解决“走错以后回哪一步”。
+
+Neon 的 Agent 版本方案又不太一样，更像游戏存档。
+
+Neon 在 [Database Versioning with Snapshots](https://neon.com/docs/ai/ai-database-versioning) 中建议，在每次 Agent 会话开始时、Schema 变更前、一次成功操作后建立 Snapshot。
+
+Snapshot 记录根分支某个时间点的 Schema 和数据，并且只保存增量变化。需要回滚时，可以把 Snapshot 恢复到正在使用的活动分支，连接串保持不变；想先看看旧版本，也可以恢复出一条临时预览分支，检查完再决定去留。
+
+![Neon Snapshot 把 Agent 试错变成可回滚存档](/img/agent-delete-database-git/10.png)
+
+不过截至目前，Neon 的 Snapshot 文档依然标注着 Beta，而且只有 root branch 能创建 Snapshot。
+
+这个限制也提醒我们：检查点不是随便打，生命周期、分支依赖和清理策略都需要有活人来管。
+
+Neon 的 [Database Branching Workflows](https://neon.com/branching) 中介绍，Branch 本身也能从当前或历史状态创建 Copy-on-Write 副本。于是，一次 Agent 运行可以有自己的数据分支；关键步骤再配 Snapshot，留下可恢复的检查点。
+
+![Neon 分支与快照留给 Agent 存档](/img/agent-delete-database-git/11.png)
+
+## seekdb：把 Fork、Diff、Merge 写进 SQL
+
+这篇文章的主角——[开源项目 seekdb](https://github.com/oceanbase/seekdb)，终于出场了。
+
+> seekdb 是一款 MySQL 高度兼容、AI 原生且轻量的跨平台数据库，支持嵌入式与服务器两种运行形态。
+>
+> 它以 Agent 为核心设计场景，同时适用于 RAG、企业知识检索、智能应用后端与本地数据处理等场景。
+
+seekdb 的玩儿法，是把 Agent 的试错流程拆成三个动作：`FORK`、`DIFF`、`MERGE`。
+
+- [seekdb v1.1.0](https://github.com/oceanbase/seekdb/releases/tag/v1.1.0) 先加入 `FORK TABLE`；
+- [seekdb v1.2.0](https://github.com/oceanbase/seekdb/releases/tag/v1.2.0) 扩展到 `FORK DATABASE`，并增加 `DIFF TABLE` 和 `MERGE TABLE`；
+- [seekdb v1.3.0](https://github.com/oceanbase/seekdb/releases/tag/v1.3.0) 又让 Diff/Merge 支持向量列，Fork 也能与异步索引配合。
+
+底层同样使用 Copy-on-Write，不需要为了开沙箱先复制整份数据。
+
+一套 Agent 任务可以这样走：
+
+```sql
+-- 1. 任务开始前，派生一个独立数据库
+FORK DATABASE agent_state TO agent_sandbox_42;
+
+-- 2. Agent 只在沙箱里写
+UPDATE agent_sandbox_42.memory
+SET content = '新的知识版本'
+WHERE id = 42;
+
+-- 3. 把变化摊开给审核者看
+DIFF TABLE agent_state.memory
+AGAINST agent_sandbox_42.memory;
+
+-- 4. 默认遇到冲突就停，不替人拍板
+MERGE TABLE agent_sandbox_42.memory
+INTO agent_state.memory
+STRATEGY FAIL;
+
+-- 结果不值得保留，直接丢掉整条支线
+DROP DATABASE agent_sandbox_42;
+```
+
+`FAIL`、`OURS`、`THEIRS` 三种策略，名字也借用了 Git 的东西。更重要的变化是：Agent 做完以后，系统不必马上接受。先看 Diff，再决定冲突时保留主线还是接纳 Agent 版本。
+
+![seekdb 将 Fork Diff Merge 写入 SQL](/img/agent-delete-database-git/12.png)
+
+合并是一种权力，不该因为 Agent 会写 SQL，就要顺手交给它。
+
+## Fork 只是开场
+
+如果 seekdb 只有 Branch，这篇文章到这里就可以收尾了。它更值得放进 Agent 技术栈的原因，是 Fork 前后还连着一整套 AI 数据处理能力。
+
+![seekdb 在 Fork 前后串联完整 AI 数据能力](/img/agent-delete-database-git/13.png)
+
+### AI in Database：少搬几次数据
+
+seekdb 的 [AI 函数服务](https://www.oceanbase.ai/docs/zh-CN/ai-function)可以通过 `DBMS_AI_SERVICE` 注册和管理外部模型端点，再从 SQL 里调用 `AI_EMBED`、`AI_RERANK`、`AI_COMPLETE`。
+
+在链路中，`AI_EMBED` 可以生成查询向量，向量与全文索引负责候选召回，标量条件实施业务约束，RRF 或加权融合统一排序，`AI_RERANK` 精排有限候选，最后由 `AI_COMPLETE` 基于证据生成答案。
+
+关系字段、文档正文、向量、检索分数和生成结果都可留在同一数据上下文中，便于记录引用、追踪输入和复用结果。
+
+这一闭环的核心不是把所有推理都压入 SQL，而是把靠近数据的选择、过滤和编排放在数据库侧，让应用集中处理交互、业务流程和模型策略。
+
+### 混合搜索：语义、关键词和业务条件一起查
+
+> seekdb 将关系、向量、文本、JSON 与 GIS 数据统一纳入 SQL 与事务体系。
+>
+> 在此基础上，混合检索组合向量召回、全文召回和标量过滤，并通过融合与重排形成完整的检索链路。
+
+只做向量搜索，容易漏掉精确名词；只做全文搜索，又听不懂近义表达。seekdb 的 Hybrid Search 把向量检索、全文检索、标量过滤放进一条查询链，再用加权分数、RRF 或模型重排合并结果。
+
+比如找“最近三个月华东区退款异常的客户”，语义相似度负责理解“退款异常”，全文检索守住产品名和错误码，关系条件把区域、时间和权限范围卡住。
+
+数据写入由同一事务系统管理，查询在同一 SQL 执行上下文中完成，从而减少跨系统复制、异步同步和应用层结果拼接。
+
+### 极致轻量，多形态运行
+
+seekdb 的轻量化同时体现在交付与运行层面。
+
+交付时，核心程序及其依赖保持紧凑，二进制与归档体积较小；运行时，空载 CPU 与内存占用维持在较低水平，并可在较短时间内完成启动、进入可连接状态。这使 seekdb 能够适应本地开发、嵌入式应用和小规格部署环境。
+
+以下参考实测值展示 seekdb 的二进制体积、空载资源开销与启动速度：
+
+![seekdb 二进制体积空载资源与启动实测](/img/agent-delete-database-git/14.png)
+
+seekdb 由同一数据库内核提供嵌入式与服务器两种主要运行形态：
+
+![seekdb 嵌入式与服务器两种运行形态](/img/agent-delete-database-git/15.png)
+
+两种形态共享同一套数据模型、SQL 语义、索引和事务能力，应用可根据部署位置、接入方式与资源管理要求进行选择。在服务器模式基础上还可采用主备部署，为数据冗余和故障恢复提供基础。
+
+## 三种用法，刚好把这几块拼起来
+
+1. 做 **Agent 长期记忆** 时，关系字段管用户、会话和权限，向量与全文索引找相关记忆。Agent 想批量整理旧记忆，先 Fork，一次任务一条支线。
+2. 做 **RAG 或企业知识库** 时，文档、标签、权限、向量和全文索引放在同一个引擎里。召回、融合、重排都离数据更近，少维护几套中间系统。
+3. 做 **嵌入式智能应用** 时，用 Embedded 形态把数据库带进桌面端或边缘设备。Agent 可以离线读写自己的状态；碰到高风险批处理，仍然先 Fork，再 Diff。
+
+除此以外，还可以用于做 Agent 数据隔离试验。对会修改数据的 Agent 任务，先通过 FORK DATABASE 创建完整沙箱；Agent 在分支内多轮写入和验证；任务完成后使用 DIFF TABLE 展示变化，通过规则或人工审批决定是否 MERGE TABLE。对局部表加工可使用 FORK TABLE，减少任务边界并简化审查。
+
+![Agent 记忆 RAG 与嵌入式三种用法拼图](/img/agent-delete-database-git/16.png)
+
+## 先别急着把数据库叫成 Git
+
+> Branch 虽好，但不要把它当成万能后悔药。
+
+seekdb 当前的 `MERGE TABLE` 不是 Git 的三方合并，参与 Diff/Merge 的表需要相同列定义和主键，因此数据合并不等于 Schema 也可以随便合。Copy-on-Write 只负责隔离变化，权限、审批、评测、审计，一个都不能少。
+
+在高风险场景里，最稳妥的方式依然是：Agent 可以 Fork，可以 Write，可以提交 Diff。但 Merge，必须留给规则和活人。
+
+![不要把数据库分支当成万能后悔药](/img/agent-delete-database-git/17.png)
+
+## 尾声
+
+Agent 直接面对生产数据库时，需要先 Fork 一份数据，目的是判断错了也还有退路。等它把变化摊开，规则跑过，再由人决定哪些东西有资格回到主线。
+
+![先隔离再审查由人决定是否 Merge](/img/agent-delete-database-git/18.png)
+
+Git 用了很多年 Branch，现在 Agent 时代的数据库，也应该有了。
+
+![Agent 删库跑路与数据库学 Git 续命题图](/img/agent-delete-database-git/19.png)
 
 
 ---

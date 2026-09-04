@@ -200,7 +200,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -211,7 +211,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -454,11 +454,11 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+index(test label_idx)*/</span></span><br><span class="line">  id, label,</span><br><span class="line">  cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
 
 <p>通过 explain 可以观察到执行计划会显示自适应查询（前过滤）：</p>
-<p><img src="/img/2025-09-24-oceanbase-vector-db-guide/01.png" alt="OceanBase 向量数据库使用指南" decoding="async"></p>
+<p><img src="/img/2025-09-24-oceanbase-vector-db-guide/01.png" decoding="async" alt="OceanBase 向量数据库使用指南"></p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+index(test vec_idx)*/</span> id, label, cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
 
 <p>通过 explain 可以观察到执行计划会显示自适应查询（迭代式）：</p>
-<p><img src="/img/2025-09-24-oceanbase-vector-db-guide/02.png" alt="OceanBase 向量数据库使用指南" loading="lazy" decoding="async"></p>
+<p><img src="/img/2025-09-24-oceanbase-vector-db-guide/02.png" loading="lazy" decoding="async" alt="OceanBase 向量数据库使用指南"></p>
 <p>对于 IVF&#x2F;IVFPQ 算法同样可以通过 hint 进行指定，但定 hint 后执行方法就不再改变，IVF&#x2F;IVFPQ 的自适应算法选择将在 435BP5 提供。</p>
 <h4 id="通过-PARAMETERS-调整查询参数"><a href="#通过-PARAMETERS-调整查询参数" class="headerlink" title="通过 PARAMETERS 调整查询参数"></a>通过 PARAMETERS 调整查询参数</h4><p>在使用 HNSW &#x2F; HNSWSQ &#x2F; HNSWBQ 索引进行查询时，可以通过 PARAMETERS 进行语句级的调整。当前支持的语句级查询参数包括 ef_search，refine_k（仅 HNSWBQ）</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span></span><br><span class="line">  id, label,</span><br><span class="line">  cosine_distance(embedding, <span class="variable">@query_vector</span>) <span class="keyword">as</span> distance</span><br><span class="line"><span class="keyword">from</span> test</span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000</span> <span class="keyword">and</span> label<span class="operator">=</span><span class="string">&#x27;red&#x27;</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> distance approximate limit <span class="number">10</span></span><br><span class="line">PARAMETERS (ef_search<span class="operator">=</span><span class="number">200</span>);</span><br></pre></td></tr></table></figure>
@@ -1235,14 +1235,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -214,7 +214,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -225,7 +225,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -421,7 +421,7 @@
 <li>通过不同的查询方式，查到很多和 session id 有关的 ID 值，没法在脑中组织成知识网络，不理解部分 ID 为什么这么设计。</li>
 </ol>
 <h2 id="session-id-概述"><a href="#session-id-概述" class="headerlink" title="session id 概述"></a>session id 概述</h2><p>session id 是用于描述客户端和数据库的访问链路的，OceanBase 数据库架构中使用了 ODP（一般也称为 proxy，下文也用 proxy 指代），所以客户端对数据库的访问链路被拆成了两段，第一段是客户端和 ODP 之间的连接（Client session，下文用 C 连接指代），第二段是 ODP 和 OBServer 之间的连接（Server session，下文多用 S 连接指代）。</p>
-<p><img src="/img/oceanbase-session-id-mystery/01.png" alt="OceanBase Session ID 之谜" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/01.png" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <span id="more"></span>
 
 <p>一个客户端的连接，会使用一个 C 连接，然后对应多个 S 连接，C 连接和 S 连接的对应关系是 1 : N。值得注意的是，在执行一条 SQL 的时候，同一时间，只有一个 S 连接在服务（先不考虑远程计划或分布式计划带来的二次路由）。</p>
@@ -442,7 +442,7 @@
 <h1 id="二-写作思路"><a href="#二-写作思路" class="headerlink" title="二. 写作思路"></a>二. 写作思路</h1><p>开始研究这个主题的时候，是想要写一个 Session ID 的前世今生的，但在翻文档、找人聊、自己测之后，发现问题比以前更多了……</p>
 <p>在几次草稿都被自己否了以后，我悟了 —— 追求细节和完备最终导致我无法搞定文章，一个理解框架才是我们需要的东西。通过这个框架可以串联起知识，然后遇到问题之后可以通过框架解决问题，这才是最有价值的。</p>
 <h1 id="三-session-id-介绍"><a href="#三-session-id-介绍" class="headerlink" title="三. session id 介绍"></a>三. session id 介绍</h1><p>从一张图开始：</p>
-<p><img src="/img/oceanbase-session-id-mystery/02.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/02.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <p>图中直观的展示了客户端（client）和数据库（ODP + OBServer）之间的链路关系。</p>
 <p>为了方便下面的描述，我们把图中的 4 根连接线分别命名，client 和 ODP 之间的链路叫 C-1，ODP 分别连接 OBServer 的 3 个链路叫 S-1、S-2、S-3（下面没有特殊说明，都不考虑直连的情况）。</p>
 <p>那么有一些事情需要大家能想清楚（可能会有点儿绕）：</p>
@@ -474,7 +474,7 @@
 <li><strong>server session id</strong>：就是 server_sessid，有时也指代 S 连接。</li>
 <li><strong>connection id</strong>：MySQL 租户使用函数 connection_id() 查询获得，就是 server_sessid。需要注意的是使用 obclient 连接 proxy 时候，登陆信息中会有输出 Your Mysql connection id is xxx，这里显示的 id 是 cs_id。</li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/03.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/03.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li><strong>MASTER_SESSID</strong>：这个比较特殊，指的是分布式查询中的主 server_sessid，不属于 S 连接（本文暂不讨论）。</li>
 </ul>
@@ -492,7 +492,7 @@
 </ul>
 </li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/04.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/04.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>show proxysession attribute; 这里就是查看这个 cs_id 的明细了。这个 cs_id 对应了 2 个 server_sessid，分别是 3221550874 和 3221876366，它们的区别在 info 这个列：<ul>
 <li>last used ss 指的就是我执行这个查询 SQL 是用的这个 S 连接。</li>
@@ -501,9 +501,9 @@
 </li>
 </ul>
 <p>同样的，这个命令在直连时候是无法执行的，因为这个命令只有 proxy 能处理。</p>
-<p><img src="/img/oceanbase-session-id-mystery/05.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
-<p><img src="/img/oceanbase-session-id-mystery/06.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
-<p><img src="/img/oceanbase-session-id-mystery/07.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/05.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
+<p><img src="/img/oceanbase-session-id-mystery/06.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
+<p><img src="/img/oceanbase-session-id-mystery/07.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>show processlist;<ul>
 <li>使用 proxy 的时候，这个 ID 是 cs_id。需要注意 show processlist 在 proxy 的语境下，就是查这个 proxy 上的 session，以 C 连接的视角（也就是一个客户端连接就显示一条）。</li>
@@ -511,7 +511,7 @@
 </ul>
 </li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/08.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/08.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>show full processlist;<ul>
 <li>这个就是查看所有的 S 连接了，这里的 ID 是 server_sessid。</li>
@@ -519,14 +519,14 @@
 </ul>
 </li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/09.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/09.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>select connection_id();<ul>
 <li>查到的是执行这个 SQL 的 S 连接，是 server_sessid。</li>
 </ul>
 </li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/10.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/10.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>select * from gv$ob_session;<ul>
 <li>这里标蓝的部分都属于同一个 C 连接，它们拥有同一个 proxy_sessid，按理只有 2 个 S 连接，为什么有 4 条数据对应 4 个 ID 呢？</li>
@@ -537,9 +537,9 @@
 </li>
 </ul>
 <p>这也可以看到，实际上 OceanBase 数据库的访问连接是比较复杂的，这个案例中连接分了 3 段，第一段是客户端到 proxy，第二段是 proxy 到 OBServer，第三段是 OBServer 到 OBServer（自己也需要重新访问自己的）。</p>
-<p><img src="/img/oceanbase-session-id-mystery/11.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
-<p><img src="/img/oceanbase-session-id-mystery/12.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
-<p><img src="/img/oceanbase-session-id-mystery/13.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/11.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
+<p><img src="/img/oceanbase-session-id-mystery/12.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
+<p><img src="/img/oceanbase-session-id-mystery/13.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <ul>
 <li>select * from gv$ob_processlist;<ul>
 <li>这里和 show full processlist 的结果是一样的。</li>
@@ -547,8 +547,8 @@
 </ul>
 </li>
 </ul>
-<p><img src="/img/oceanbase-session-id-mystery/14.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
-<p><img src="/img/oceanbase-session-id-mystery/15.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/14.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
+<p><img src="/img/oceanbase-session-id-mystery/15.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <p>如果能坚持看完上面这些例子，要么你已经对 session id 的情况有了全面的了解，要么你已经彻底晕菜。没关系，如果晕了，可以先收藏，后面遇到问题时再有的放矢地看。</p>
 <p>如果你能坚持看到这里的话，那我们就继续再说一个与 session id 配套的命令 —— kill。</p>
 <h1 id="五-session-id-与-kill-命令"><a href="#五-session-id-与-kill-命令" class="headerlink" title="五. session id 与 kill 命令"></a>五. session id 与 kill 命令</h1><p>kill 后面跟的是 session id，执行后这个会话就会被杀死，执行的 SQL 会停止，之前锁定的资源也将释放。</p>
@@ -635,7 +635,7 @@
 <li>数据库软件复杂度很高，多个团队协作开发，必然有一些东西是不统一的，并且存在冗余设计，否则沟通成本将被无限放大。</li>
 <li>数据库软件是一个不断演进的系统，有些东西虽然现在看来已经没有用了，但是也不能去掉，作为兼容性的一部分长久留在代码中。如同我们的 DNA，很多序列都是不表达的，没什么用处，但是是人类演进过程中的一部分也就被保存在 DNA 中了。</li>
 </ol>
-<p><img src="/img/oceanbase-session-id-mystery/16.png" alt="OceanBase Session ID 之谜" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-session-id-mystery/16.png" loading="lazy" decoding="async" alt="OceanBase Session ID 之谜"></p>
 <h1 id="七-后续"><a href="#七-后续" class="headerlink" title="七. 后续"></a>七. 后续</h1><p>还有一个出现在 proxy 日志中，用于指代 C 连接的代码 sm_id，相关的信息比较少。sm_id 是 proxy 中的 proxy_sm 模块对 cs_id 的指代。只在日志中出现，由于数据库里没有视图查到这个信息，我认为主要是给 proxy_sm 模块研发使用的。一般排查日志可以通过 trace_id 来过滤。</p>
 
     </div>
@@ -724,14 +724,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

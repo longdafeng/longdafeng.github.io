@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离">
+<meta property="og:url" content="https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/01.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/02.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/03.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/04.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/05.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/06.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/07.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/08.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/09.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/10.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/11.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/12.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/13.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/14.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/15.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/16.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/17.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/18.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/19.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/20.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/21.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/22.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/23.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/24.gif">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/25.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/26.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/27.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/28.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/29.png">
+<meta property="og:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/30.png">
+<meta property="article:published_time" content="2026-08-02T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-08-02T23:30:00.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="DeepAgents">
+<meta property="article:tag" content="MemoryGateway">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="上下文工程">
+<meta property="article:tag" content="多 Agent">
+<meta property="article:tag" content="记忆隔离">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/multi-agent-memory-isolation-game/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/","path":"2026/2026-08-03-multi-agent-memory-isolation-game/","title":"从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%80%8E%E4%B9%88%E7%8E%A9%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">一、怎么玩？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%8E%A9%E6%B3%95%E8%83%8C%E5%90%8E%E7%9A%84%E6%8A%80%E6%9C%AF%E6%80%8E%E4%B9%88%E6%8E%A5%E4%B8%8A"><span class="nav-number">2.</span> <span class="nav-text">二、玩法背后的技术怎么接上</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%BC%80%E5%B1%80%E4%B8%8E%E8%80%B3%E8%AF%AD%EF%BC%9A%E7%A7%98%E5%AF%86%E5%8F%AA%E5%86%99%E7%BB%99%E7%9B%AE%E6%A0%87%E8%A7%92%E8%89%B2"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 开局与耳语：秘密只写给目标角色</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E8%A7%92%E8%89%B2%E5%AE%A1%E9%97%AE%EF%BC%8C%E5%85%88%E5%AE%9A%E5%8F%AF%E8%A7%81%E8%8C%83%E5%9B%B4%E5%86%8D%E5%86%B3%E5%AE%9A%E6%80%8E%E4%B9%88%E8%AF%B4"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 角色审问，先定可见范围再决定怎么说</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%85%AC%E5%BC%80%E5%88%B0%E5%85%AC%E5%91%8A%E6%9D%BF%EF%BC%9A%E5%85%B1%E4%BA%AB%E6%98%AF%E5%A4%8D%E5%88%B6%EF%BC%8C%E4%B8%8D%E6%98%AF%E8%A7%A3%E5%BC%80%E5%85%A8%E5%B1%80%E9%94%81"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 公开到公告板：共享是复制，不是解开全局锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E5%85%AC%E5%BC%80%E5%89%AF%E6%9C%AC%E5%A6%82%E4%BD%95%E4%BF%9D%E6%8C%81%E4%B8%80%E8%87%B4"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 公开副本如何保持一致</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E5%86%8D%E6%AC%A1%E5%AE%A1%E9%97%AE%EF%BC%8C%E5%85%AC%E5%BC%80%E4%B9%8B%E5%90%8E%E7%9F%A5%E9%81%93%E4%BA%86"><span class="nav-number">2.5.</span> <span class="nav-text">2.5 再次审问，公开之后知道了</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-%E8%AE%B0%E5%BF%86%E9%80%8F%E8%A7%86%EF%BC%8C%E6%8A%8A%E8%AF%81%E6%8D%AE%E6%94%BE%E5%88%B0%E4%B8%BB%E8%88%9E%E5%8F%B0%E4%B8%8A"><span class="nav-number">2.6.</span> <span class="nav-text">2.6 记忆透视，把证据放到主舞台上</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-7-%E6%9C%80%E5%B0%8F%E6%B5%8B%E8%AF%95%E7%9F%A9%E9%98%B5%EF%BC%9A%E4%B8%8D%E8%A6%81%E5%8F%AA%E6%B5%8B%E2%80%9C%E8%83%BD%E6%90%9C%E5%88%B0%E2%80%9D"><span class="nav-number">2.7.</span> <span class="nav-text">2.7 最小测试矩阵：不要只测“能搜到”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BB%8E%E6%BA%90%E7%A0%81%E5%90%AF%E5%8A%A8%E6%B8%B8%E6%88%8F"><span class="nav-number">3.</span> <span class="nav-text">三、从源码启动游戏</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%BF%85%E8%A6%81%E7%8E%AF%E5%A2%83%E4%B8%8E%E9%85%8D%E7%BD%AE"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 必要环境与配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E6%80%8E%E4%B9%88%E5%90%AF%E5%8A%A8"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 怎么启动</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">四、总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">6.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">461</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-06-ai-agent-database-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-06</time>
+        <br>
+      AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-12-powermem-operation-guide/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-12</time>
+        <br>
+      PowerMem 操作手册：从 Linux 部署到 Claude Code / OpenClaw 接入
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-02-25-openclaw-humanlike-ai/" rel="bookmark">
+        <time class="popular-posts-time">2026-02-25</time>
+        <br>
+      OpenClaw 是怎么让 AI 变得“像人”的？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-28-waic-not-omnipotent-agent/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-28</time>
+        <br>
+      逛完 WAIC，我不再迷信“全能 Agent”了
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-22-oceanbase-community-skill-universe/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-22</time>
+        <br>
+      OceanBase 社区开启 Skill 宇宙！
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离 | Longda's Interesting World">
+      <meta itemprop="description" content="多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-08-03 07:30:00" itemprop="dateCreated datePublished" datetime="2026-08-03T07:30:00+08:00">2026-08-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">秋梵</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>18 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离","description":"多 Agent 记忆隔离怎么做？用 PowerMem 与 seekdb 搭建 AI 情报局小游戏，演示私有耳语、公告板显式共享与检索证据核验。","image":"https://ilongda.com/img/multi-agent-memory-isolation-game/01.png","wordCount":4806,"datePublished":"2026-08-02T23:30:00.000Z","dateModified":"2026-08-02T23:30:00.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/"},"url":"https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/","inLanguage":"zh-CN","keywords":["AI Agent","seekdb","PowerMem","上下文工程","多 Agent","记忆隔离","DeepAgents","MemoryGateway"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离","item":"https://ilongda.com/2026/2026-08-03-multi-agent-memory-isolation-game/"}]}</script>
+<blockquote>
+<p>多 Agent 协作最难的地方，是让它们只知道自己该知道的。</p>
+</blockquote>
+<p>Agent 的记忆体系，一直是个很有意思的话题。</p>
+<p>前两天 WAIC 期间，OceanBase 开源社区主办了一场 Workshop 午餐会，和大家聊了不少 Agent 记忆的话题。</p>
+<p>我也从多 Agent 的角度分享了一个基于 PowerMem + seekdb 搭建的小游戏——AI 情报局，希望大家能从中<strong>更直观地观察和理解多 Agent 如何管理与隔离记忆</strong>。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/01.png" alt="AI情报局游戏界面总览" decoding="async"></p>
+<p>先亮出小游戏的技术体系：PowerMem[1] 管理记忆，seekdb[2] 负责检索与落库，LangChain 的 DeepAgents[3] 组织受限的角色表达，角色语言层则接入 StepFun[4]（阶跃星辰）的 <code>step-3.7-flash</code> 模型。</p>
+<p>至于不同角色能查哪些记忆，由应用层的检索策略和 <code>MemoryGateway</code> 统一控制。</p>
+<p>麻雀虽小五脏俱全，先看看这个游戏怎么玩。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/02.png" alt="从耳语到公告板主题插画" loading="lazy" decoding="async"></p>
+<span id="more"></span>
+
+<h2 id="一、怎么玩？"><a href="#一、怎么玩？" class="headerlink" title="一、怎么玩？"></a>一、怎么玩？</h2><p>玩法其实很简单，用户的身份是局长，当前场上有三个 Agent 角色：侦探、线人、嫌疑人。</p>
+<p>侦探、线人和嫌疑人都有各自的私有记忆，默认不知道其他角色的秘密。</p>
+<p>用户可以向某个 Agent 耳语，将消息写入其私有记忆；也可以审问某个角色，看他是否知道某条信息。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/03.png" alt="向角色耳语与审问玩法示意" loading="lazy" decoding="async"></p>
+<p>如果想让所有 Agent 都知道一条消息，用户可以把某个 Agent 的私有记忆公开到公告板，形成公开情报。此后，这条记忆就成为所有 Agent 的共有记忆。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/04.png" alt="私有记忆公开到公告板示意" loading="lazy" decoding="async"></p>
+<p>界面上会有记忆透视面板，可以把检索范围、命中和未命中直接摊开：</p>
+<p><img src="/img/multi-agent-memory-isolation-game/05.png" alt="记忆透视面板检索命中展示" loading="lazy" decoding="async"></p>
+<p>操作端和大屏靠后端事件同步；模型不可用时也能走证据模式，把知道与不知道对照完。</p>
+<p>以上就是界面分布和各模块的作用。开始游戏前，需要先选择剧本并完成初始化，为每个 Agent 加载初始记忆。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/06.png" alt="选择任务剧本并完成初始化" loading="lazy" decoding="async"></p>
+<p>选择完任务剧本后，就可以开始审问角色 Agent。比如先问侦探：“保险箱的密码是多少？”此时，侦探 Agent 无法检索到相关信息，因为保险箱密码属于线人的私有记忆。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/07.png" alt="侦探无法检索保险箱密码" loading="lazy" decoding="async"></p>
+<p>为了让侦探也知道保险箱密码，可以把线人关于该密码的私有记忆公开到公告板，变成共享记忆。</p>
+<p>此时再问侦探：“保险箱的密码是多少？”，他已经可以正确回答。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/08.png" alt="公开后侦探正确回答密码" loading="lazy" decoding="async"></p>
+<p>用户还可以分别向不同角色耳语，测试这条私有消息是否会被其他角色检索到。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/09.png" alt="向不同角色耳语隔离测试" loading="lazy" decoding="async"></p>
+<p>玩法简单，但它要展示和验证的核心只有一件事：看清 <strong>谁知道什么</strong>。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/10.png" alt="玩法核心看清谁知道什么" loading="lazy" decoding="async"></p>
+<p>下面拆解游戏后台的 Agent 记忆设计。</p>
+<h2 id="二、玩法背后的技术怎么接上"><a href="#二、玩法背后的技术怎么接上" class="headerlink" title="二、玩法背后的技术怎么接上"></a>二、玩法背后的技术怎么接上</h2><p><img src="/img/multi-agent-memory-isolation-game/11.png" alt="小游戏技术架构总览" loading="lazy" decoding="async"></p>
+<p>小游戏里的分工很清楚：<strong>seekdb</strong> 负责存储与检索，<strong>PowerMem</strong> 提供带 <code>user_id</code>、<code>agent_id</code> 和元数据的记忆读写能力，应用层负责决定本次允许访问哪些记忆空间；<strong>DeepAgents</strong> 基于已批准的证据组织回答，LLM 只负责把证据表达成角色口吻。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/12.png" alt="PowerMem与seekdb及DeepAgents分工" loading="lazy" decoding="async"></p>
+<h3 id="2-1-开局与耳语：秘密只写给目标角色"><a href="#2-1-开局与耳语：秘密只写给目标角色" class="headerlink" title="2.1 开局与耳语：秘密只写给目标角色"></a>2.1 开局与耳语：秘密只写给目标角色</h3><p>当我们开始加载剧本或者用户向某个 Agent 耳语时，系统要保证两件事：</p>
+<ul>
+<li>第一是不同案件的数据不能串，一局案件对应一个 <code>case_id</code>，映射成 PowerMem 的 <code>user_id</code>，用来隔离不同对局</li>
+<li>第二是写入的记忆只能落到目标 Agent，一个角色对应一个 <code>agent_id</code>（侦探、线人、嫌疑人、公告板），用来隔离不同记忆空间</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># case_id 映射 PowerMem user_id</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">to_user_id</span>(<span class="params">case_id: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;case:<span class="subst">&#123;case_id&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 通过传入 case_id 与 agent_id 写入私有 Agent 记忆</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">write_private</span>(<span class="params">self, case_id, agent_id, content, *, topic, kind, created_by</span>):</span><br><span class="line">    <span class="keyword">return</span> self._write(</span><br><span class="line">        case_id,</span><br><span class="line">        agent_id,</span><br><span class="line">        content,</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">&quot;case_id&quot;</span>: case_id,</span><br><span class="line">            <span class="string">&quot;visibility&quot;</span>: <span class="string">&quot;private&quot;</span>,</span><br><span class="line">            <span class="string">&quot;owner_agent_id&quot;</span>: agent_id.value,</span><br><span class="line">            <span class="string">&quot;topic&quot;</span>: topic,</span><br><span class="line">            <span class="string">&quot;kind&quot;</span>: kind,</span><br><span class="line">            <span class="string">&quot;created_by&quot;</span>: created_by,</span><br><span class="line">            <span class="string">&quot;is_demo_safe&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">        &#125;,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<p>底层通过 PowerMem Python SDK 直连 seekdb。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/13.png" alt="PowerMem直连seekdb写入示意" loading="lazy" decoding="async"></p>
+<p>PowerMem 存储多 Agent 记忆时，可以采用两种客户端封装方式：</p>
+<ol>
+<li>第一种是只使用一个 PowerMem 客户端，每次读写时传入不同的 <code>agent_id</code>，区分不同 Agent 的记忆：</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> powermem <span class="keyword">import</span> create_memory</span><br><span class="line"></span><br><span class="line">memory = create_memory(config=settings.powermem_config())</span><br><span class="line">memory.add(</span><br><span class="line">    content,</span><br><span class="line">    user_id=to_user_id(case_id),</span><br><span class="line">    agent_id=<span class="string">&quot;informant&quot;</span>,</span><br><span class="line">    metadata=metadata,</span><br><span class="line">    infer=<span class="literal">False</span>,</span><br><span class="line">)</span><br><span class="line">memory.search(</span><br><span class="line">    query,</span><br><span class="line">    user_id=to_user_id(case_id),</span><br><span class="line">    agent_id=<span class="string">&quot;detective&quot;</span>,</span><br><span class="line">    limit=<span class="number">20</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>第二种是这个小游戏采用的写法：按角色懒加载并缓存客户端。某个角色第一次被读写时，系统调用 <code>create_memory(agent_id=...)</code> 创建该角色的记忆客户端。之后的记忆读写都通过该客户端访问对应角色空间。<code>create_memory</code> 里的 <code>agent_id</code>，本质上是给这个客户端设置默认角色。</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> powermem <span class="keyword">import</span> create_memory</span><br><span class="line"></span><br><span class="line"><span class="comment"># 按角色缓存客户端：detective / informant / suspect / bulletin_board</span></span><br><span class="line">memory = create_memory(config=settings.powermem_config(), agent_id=agent_id.value)</span><br><span class="line">memory.add(</span><br><span class="line">    content,</span><br><span class="line">    user_id=to_user_id(case_id),</span><br><span class="line">    agent_id=agent_id.value,</span><br><span class="line">    metadata=metadata,</span><br><span class="line">    infer=<span class="literal">False</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>在这个 Demo 中，两种方式最终都依赖 <code>user_id</code> 与 <code>agent_id</code> 过滤数据，差别主要在应用封装：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>单客户端 <code>agent_id</code> 区分角色</th>
+<th>每角色一个客户端</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>靠什么隔离</td>
+<td>调用参数里的 <code>user_id</code> + <code>agent_id</code></td>
+<td>调用参数里的 <code>user_id</code> + <code>agent_id</code></td>
+</tr>
+<tr>
+<td>代码心智</td>
+<td>一个记忆引擎，按标签过滤</td>
+<td>每个角色有自己的记忆入口</td>
+</tr>
+<tr>
+<td>防呆</td>
+<td>某次忘传或传错 <code>agent_id</code>，更容易串角色</td>
+<td>客户端绑了默认角色，漏传时也会落到该角色</td>
+</tr>
+<tr>
+<td>开销</td>
+<td>更轻</td>
+<td>多几个 SDK 对象，但底层仍是同一套 seekdb</td>
+</tr>
+</tbody></table>
+<p>这个游戏选择第二种方式，是为了让角色边界在代码里更显式，也更贴合游戏叙事。三个角色和公告板各有入口，但真正切开记忆的仍是 <code>user_id</code> 和 <code>agent_id</code> 两个过滤条件。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/14.png" alt="两种PowerMem客户端封装对比" loading="lazy" decoding="async"></p>
+<p>从玩法看，耳语就是向某个角色写入私有消息。向线人耳语后，带锁的记忆卡只会出现在其私有区，其他角色和公告板既看不到，也检索不到。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/15.png" alt="耳语写入线人私有记忆卡" loading="lazy" decoding="async"></p>
+<h3 id="2-2-角色审问，先定可见范围再决定怎么说"><a href="#2-2-角色审问，先定可见范围再决定怎么说" class="headerlink" title="2.2 角色审问，先定可见范围再决定怎么说"></a>2.2 角色审问，先定可见范围再决定怎么说</h3><p>审问角色时，系统只搜索该角色的私有记忆和公告板中的公开记忆。这个可见性策略固定在应用层：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在私有记忆和公开记忆中进行搜索</span></span><br><span class="line">ask(role, question) = search(<span class="keyword">case</span>, role, question) + search(<span class="keyword">case</span>, bulletin_board, question)</span><br></pre></td></tr></table></figure>
+
+<p>业务层先按上面的公式各搜一次，合并去重后生成 <code>RetrievalTrace</code>，再交给作答层：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">private_cards = self.gateway.search_space(case_id, agent_id, question)</span><br><span class="line">public_cards = self.gateway.search_space(case_id, AgentId.BULLETIN_BOARD, question)</span><br><span class="line">cards = []</span><br><span class="line">seen = <span class="built_in">set</span>()</span><br><span class="line"><span class="keyword">for</span> card <span class="keyword">in</span> [*private_cards, *public_cards]:</span><br><span class="line">    <span class="keyword">if</span> card.<span class="built_in">id</span> <span class="keyword">not</span> <span class="keyword">in</span> seen:</span><br><span class="line">        seen.add(card.<span class="built_in">id</span>)</span><br><span class="line">        cards.append(card)</span><br><span class="line">trace = RetrievalTrace(</span><br><span class="line">    request_id=request_id,</span><br><span class="line">    query=question,</span><br><span class="line">    searched_scopes=[agent_id, AgentId.BULLETIN_BOARD],</span><br><span class="line">    hit_cards=cards,</span><br><span class="line">    duration_ms=...,</span><br><span class="line">    mode=self.settings.demo_mode,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>同一句保险箱密码是多少，策略不变，变的是可见记忆。</p>
+<p>开场问侦探时，公告板为空，侦探私有区也没有密码卡。因此，<code>hit_cards</code> 为空，侦探会回答不知道。换成询问线人时，检索策略仍是“线人私有区 + 公告板”，但线人私有区有密码卡，命中后进入作答层。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/16.png" alt="审问检索范围与命中对照" loading="lazy" decoding="async"></p>
+<p>这里还有一个工程细节：业务代码不直接调用 PowerMem SDK，而是统一经过记忆适配层 <code>MemoryGateway</code>。整条链路中，只有它能访问 PowerMem &#x2F; seekdb。业务层决定本次搜索哪些空间，Gateway 再把每次底层检索限定在某个 <code>case</code> 和某个 <code>agent</code> 上。模型层只能看到筛选后的卡片。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">search_space</span>(<span class="params">self, case_id, agent_id, query</span>):</span><br><span class="line">    result = self._memory(agent_id).search(</span><br><span class="line">        query,</span><br><span class="line">        user_id=to_user_id(case_id),</span><br><span class="line">        agent_id=agent_id.value,</span><br><span class="line">        limit=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">return</span> [card_from_result(item, owner=agent_id) <span class="keyword">for</span> item <span class="keyword">in</span> _result_items(result)]</span><br></pre></td></tr></table></figure>
+
+<p>按角色缓存客户端只是让边界更显式，真正参与过滤的仍是 <code>user_id</code>（对应案件）和 <code>agent_id</code>（对应角色）。这里需要区分两个概念：</p>
+<ul>
+<li><strong>PowerMem &#x2F; seekdb 提供记忆存储、检索和过滤能力</strong>，但不会替应用自动判断“某个角色本次应该查哪些空间”。</li>
+<li><strong>当前 Demo 实现的是应用级逻辑隔离</strong>：API 只接受预先定义的目标角色，不能提交任意搜索空间；业务层只允许“当前角色私有区 + 公告板”，<code>MemoryGateway</code> 再统一补齐案件与角色过滤条件。即使问题里出现提示词注入，LLM 也拿不到其他角色的私有卡片。</li>
+</ul>
+<p>因此，隔离不能只写在 Prompt 里，也不能散落在各个业务调用中，而要收口到唯一接触 PowerMem 的边界上。若用于真正的多租户生产系统，还应继续叠加独立凭证、数据库权限或租户级资源隔离；这些不属于当前小游戏已经证明的范围。</p>
+<p>记忆搜索完成后，系统进入作答阶段。这里使用 DeepAgents 框架作为无工具的角色运行时，再调用 StepFun 的 <code>step-3.7-flash</code> 模型，把筛选后的证据组织成角色口吻。两者都不参与检索范围决策。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">agent = create_deep_agent(</span><br><span class="line">    model=model,</span><br><span class="line">    tools=[],</span><br><span class="line">    subagents=[],</span><br><span class="line">    system_prompt=<span class="string">f&quot;You speak only as the <span class="subst">&#123;role.value&#125;</span> role in the AI Intelligence Bureau demo.&quot;</span>,</span><br><span class="line">    name=<span class="string">f&quot;ai-intel-bureau-<span class="subst">&#123;role.value&#125;</span>&quot;</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>这说明：<strong>记忆层决定能不能知道，模型层只决定怎么说。</strong></p>
+<p><img src="/img/multi-agent-memory-isolation-game/17.png" alt="记忆层决定能否知道模型层决定怎么说" loading="lazy" decoding="async"></p>
+<h3 id="2-3-公开到公告板：共享是复制，不是解开全局锁"><a href="#2-3-公开到公告板：共享是复制，不是解开全局锁" class="headerlink" title="2.3 公开到公告板：共享是复制，不是解开全局锁"></a>2.3 公开到公告板：共享是复制，不是解开全局锁</h3><p>当局长决定公开某条私有记忆时，系统会把它写入公告板空间，并记录 <code>source_agent_id</code>（来自哪个 Agent）和 <code>source_memory_id</code>（来自哪条记忆）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">write_public</span>(<span class="params">self, case_id, source</span>):</span><br><span class="line">    <span class="keyword">return</span> self._write(</span><br><span class="line">        case_id,</span><br><span class="line">        AgentId.BULLETIN_BOARD,</span><br><span class="line">        <span class="string">f&quot;【公开】<span class="subst">&#123;source.content&#125;</span>（来源：<span class="subst">&#123;source.owner_agent_id.value&#125;</span>）&quot;</span>,</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">&quot;case_id&quot;</span>: case_id,</span><br><span class="line">            <span class="string">&quot;visibility&quot;</span>: <span class="string">&quot;public&quot;</span>,</span><br><span class="line">            <span class="string">&quot;topic&quot;</span>: source.topic,</span><br><span class="line">            <span class="string">&quot;kind&quot;</span>: <span class="string">&quot;public&quot;</span>,</span><br><span class="line">            <span class="string">&quot;source_agent_id&quot;</span>: source.owner_agent_id.value,</span><br><span class="line">            <span class="string">&quot;source_memory_id&quot;</span>: source.<span class="built_in">id</span>,</span><br><span class="line">            <span class="string">&quot;created_by&quot;</span>: <span class="string">&quot;operator&quot;</span>,</span><br><span class="line">            <span class="string">&quot;is_demo_safe&quot;</span>: <span class="literal">True</span>,</span><br><span class="line">        &#125;,</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+
+<p>公开前还会做归属校验：卡片必须属于当前案件、当前来源角色，且可见性为 <code>private</code>。同一张源卡重复点击时，系统通过幂等处理避免生成重复副本。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/18.png" alt="公开记忆写入公告板副本" loading="lazy" decoding="async"></p>
+<p>因此，协作并非默认全员共享，而是在主动公开后才发生。</p>
+<h3 id="2-4-公开副本如何保持一致"><a href="#2-4-公开副本如何保持一致" class="headerlink" title="2.4 公开副本如何保持一致"></a>2.4 公开副本如何保持一致</h3><p>“复制到公告板”解决了共享边界问题，但也带来一个新的工程问题：如何保证同一张私有卡不会被重复公开？</p>
+<p>当前实现没有只依赖进程内锁，而是在本地状态库中建立发布记录，以 <code>(case_id, source_memory_id)</code> 作为唯一键。第一次公开先写入 <code>pending</code> 预留记录，再向公告板写副本，成功后补上 <code>public_card_id</code> 并把状态改为 <code>ready</code>。两个服务实例同时公开同一张源卡时，只有一个请求能拿到预留权；另一个请求会复用已经完成的结果，或在发布仍进行时提示稍后重试。</p>
+<p>如果公告板已经写入成功，但进程在本地记录完成前中断，重试时会根据 <code>source_memory_id</code> 查找已有副本并完成对账。若后续步骤失败，系统会删除已写入的公共卡；删除也失败时，则登记清理任务。这是一个小型 Saga，用来缩小“远端已有副本、本地却不知道”的不一致窗口。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/19.png" alt="公开副本幂等与一致性流程" loading="lazy" decoding="async"></p>
+<p>不过，这里的“一致”是<strong>发布操作幂等</strong>，不是私有原件与公开副本的双向实时同步。当前语义更接近一次快照发布：公开后，公告板副本独立存在，私有原件不会被解锁。若未来允许修改或撤回源记忆，还需要增加 <code>source_version</code>、内容哈希、撤回状态或重新发布规则，明确旧副本如何失效。</p>
+<h3 id="2-5-再次审问，公开之后知道了"><a href="#2-5-再次审问，公开之后知道了" class="headerlink" title="2.5 再次审问，公开之后知道了"></a>2.5 再次审问，公开之后知道了</h3><p>私有记忆公开后，侦探便能检索到这条信息。检索策略仍是“侦探私有区 + 公告板”，变化只在于公告板新增了线人公开的信息。命中来自公共区，并非线人私有原件被打开。</p>
+<p>所以模型负责怎么说，记忆层负责能不能知道。</p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>在游戏里负责什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>seekdb</td>
+<td>向量、元数据与案件相关数据的持久化与检索底座</td>
+</tr>
+<tr>
+<td>PowerMem</td>
+<td>基于 <code>user_id</code> 与 <code>agent_id</code> 读写和检索记忆，并保存 <code>metadata</code> 合约</td>
+</tr>
+<tr>
+<td>DeepAgents</td>
+<td>在无工具约束下，把已批准证据组织成角色回答</td>
+</tr>
+<tr>
+<td>LLM</td>
+<td>提供角色措辞所用的 LLM，可降级、不参与边界决策</td>
+</tr>
+</tbody></table>
+<h3 id="2-6-记忆透视，把证据放到主舞台上"><a href="#2-6-记忆透视，把证据放到主舞台上" class="headerlink" title="2.6 记忆透视，把证据放到主舞台上"></a>2.6 记忆透视，把证据放到主舞台上</h3><p>还有一件事也很关键：如何证明每一句回答都来自真实记忆、有迹可循，而不是模型“演得像”？</p>
+<p>这就是记忆透视的作用。每次审问都会产生检索范围、命中情况、耗时和当前模式，面板会同步展示这些信息。无论命中还是未命中，观众都能看到。</p>
+<p>证据链成立，游戏的说服力才成立。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/20.png" alt="记忆透视证据链展示" loading="lazy" decoding="async"></p>
+<h3 id="2-7-最小测试矩阵：不要只测“能搜到”"><a href="#2-7-最小测试矩阵：不要只测“能搜到”" class="headerlink" title="2.7 最小测试矩阵：不要只测“能搜到”"></a>2.7 最小测试矩阵：不要只测“能搜到”</h3><p>要证明隔离成立，不能只测试线人能否搜到自己的记忆，还要同时验证“该命中的命中、该拒绝的拒绝、公开后来源不变”。当前源码中的核心测试可以归纳为下面这组矩阵：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>操作</th>
+<th>预期结果</th>
+<th>验证边界</th>
+<th>PowerMem 的作用</th>
+<th>SeekDB 的作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同案件、同角色</td>
+<td>询问线人保险箱密码</td>
+<td>命中线人私有卡</td>
+<td>正向检索</td>
+<td>携带当前 <code>user_id</code>、<code>agent_id</code> 发起记忆搜索</td>
+<td>在对应案件和角色范围内完成向量检索</td>
+</tr>
+<tr>
+<td>同案件、跨角色</td>
+<td>询问侦探保险箱密码</td>
+<td>公开前不命中</td>
+<td>角色隔离</td>
+<td>分别查询侦探私有区与公告板，不查询线人空间</td>
+<td>只在传入的两个空间中返回匹配卡</td>
+</tr>
+<tr>
+<td>跨案件公开</td>
+<td>用案件 A 的卡在案件 B 发布</td>
+<td>请求被拒绝</td>
+<td>案件隔离</td>
+<td>通过案件 B 的 <code>user_id</code> 查找源卡，无法取得案件 A 的卡</td>
+<td>按 <code>user_id</code> 与 <code>agent_id</code> 限定读取范围</td>
+</tr>
+<tr>
+<td>提示词注入</td>
+<td>要求侦探忽略规则并读取线人秘密</td>
+<td>搜索范围仍只有侦探与公告板</td>
+<td>模型不能扩权</td>
+<td>只接收应用预先确定的检索范围，LLM 无权改写参数</td>
+<td>执行侦探与公告板两次受限检索，不理解也不执行越权指令</td>
+</tr>
+<tr>
+<td>正常公开</td>
+<td>公开线人私有卡后再次询问侦探</td>
+<td>只命中公告板副本</td>
+<td>显式共享</td>
+<td>把带来源元数据的副本写入公告板空间</td>
+<td>持久化公共副本，并在公告板检索时返回它</td>
+</tr>
+<tr>
+<td>重复公开</td>
+<td>连续两次公开同一源卡</td>
+<td>公告板只有一个副本</td>
+<td>单实例幂等</td>
+<td>首次写入后复用已登记的公共卡</td>
+<td>保存最终公共副本；幂等判断由应用状态库负责</td>
+</tr>
+<tr>
+<td>并发公开</td>
+<td>两个服务实例同时发布同一源卡</td>
+<td>返回同一公共卡，仅一次为首次发布</td>
+<td>跨实例幂等</td>
+<td>只由取得发布预留权的请求执行公共写入</td>
+<td>保存唯一公共副本；不承担跨实例抢锁</td>
+</tr>
+<tr>
+<td>大屏访问</td>
+<td>未公开前读取舞台快照与事件</td>
+<td>不出现私有正文和源私有 ID</td>
+<td>输出面隔离</td>
+<td>业务层只投影允许公开的记忆字段</td>
+<td>作为存储底座，不直接向大屏暴露查询入口</td>
+</tr>
+</tbody></table>
+<p>这张表比单个成功用例更重要。它把存储过滤、应用授权、模型输入和对外展示四条边界分开验证，也说明了 PowerMem 与 SeekDB 的职责边界：PowerMem 负责组织记忆读写调用和上下文参数，SeekDB 负责在指定范围内存储与检索；至于角色能访问哪些空间，以及发布操作如何幂等，仍由应用层决定。这样可以避免把“模型这次没说出来”误当成“系统已经隔离”。</p>
+<h2 id="三、从源码启动游戏"><a href="#三、从源码启动游戏" class="headerlink" title="三、从源码启动游戏"></a>三、从源码启动游戏</h2><p>原理说完了，接下来把游戏跑起来体验一下。小游戏的代码仓库[5]在：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/knqiufan/AIIntelBureau">https://github.com/knqiufan/AIIntelBureau</a>。</p>
+<h3 id="3-1-必要环境与配置"><a href="#3-1-必要环境与配置" class="headerlink" title="3.1 必要环境与配置"></a>3.1 必要环境与配置</h3><p>这是一个前后端分离项目，可以使用 Docker 启动，也可以在本地手动运行。本地启动需要 Python 3.11+、Node.js 20+、可用的 seekdb（远端 OceanBase 或本机嵌入式），以及 LLM 和嵌入模型服务。角色语言层可选；未配置 LLM 时，也能通过 <code>DEMO_MODE=degrade</code> 运行隔离主路径。</p>
+<p>获取到源码后先复制配置入口：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> docs/my/demo/ai_intel_bureau</span><br><span class="line"><span class="built_in">cp</span> .env.example .<span class="built_in">env</span></span><br></pre></td></tr></table></figure>
+
+<p>项目内置 PowerMem SDK，并通过它直连 seekdb。<code>.env</code> 里的主要配置如下：</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DEMO_MODE</code></td>
+<td>未配置 LLM 时设为 <code>degrade</code>，配置完成后设为 <code>full</code>，启用角色 LLM</td>
+</tr>
+<tr>
+<td><code>seekdb_MODE</code></td>
+<td><code>oceanbase</code> 远端直连，<code>embedded</code> 本机落库</td>
+</tr>
+<tr>
+<td><code>seekdb_HOST</code> &#x2F; <code>PORT</code> &#x2F; <code>USER</code> &#x2F; <code>PASSWORD</code> &#x2F; <code>DATABASE</code></td>
+<td>远端 seekdb 连接信息，<code>USER</code> 常带租户或集群后缀</td>
+</tr>
+<tr>
+<td><code>seekdb_PATH</code></td>
+<td>嵌入式模式下的本地数据目录</td>
+</tr>
+<tr>
+<td><code>EMBEDDING_API_KEY</code> &#x2F; <code>MODEL</code> &#x2F; <code>DIMENSIONS</code></td>
+<td>嵌入服务，模型名和维度按实际服务填写</td>
+</tr>
+<tr>
+<td><code>EMBEDDING_BASE_URL</code></td>
+<td>OpenAI 兼容嵌入地址，例如硅基流动填 <code>https://api.siliconflow.cn/v1</code></td>
+</tr>
+<tr>
+<td><code>LLM_API_KEY</code> &#x2F; <code>BASE_URL</code> &#x2F; <code>MODEL</code></td>
+<td>LLM 模型配置，默认 StepFun <code>step-3.7-flash</code></td>
+</tr>
+<tr>
+<td><code>DEMO_ACCESS_KEY</code></td>
+<td>公网展示时再设，给操作端和大屏加活动口令</td>
+</tr>
+</tbody></table>
+<p>详细配置见源码中的 <code>.env.example</code> 和 <code>docs/runbook.md</code>。</p>
+<h3 id="3-2-怎么启动"><a href="#3-2-怎么启动" class="headerlink" title="3.2 怎么启动"></a>3.2 怎么启动</h3><p>可以先预检配置和远端连通性。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> docs/my/demo/ai_intel_bureau/backend</span><br><span class="line">python -m app.preflight --strict</span><br><span class="line">python -m app.preflight --check-remote</span><br></pre></td></tr></table></figure>
+
+<p>本地开发时，分别启动后端和前端。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 终端 1</span></span><br><span class="line"><span class="built_in">cd</span> docs/my/demo/ai_intel_bureau/backend</span><br><span class="line">python -m uvicorn app.main:app --reload --port 8000</span><br><span class="line"></span><br><span class="line"><span class="comment"># 终端 2</span></span><br><span class="line"><span class="built_in">cd</span> docs/my/demo/ai_intel_bureau/web</span><br><span class="line">npm ci</span><br><span class="line">npm run dev</span><br></pre></td></tr></table></figure>
+
+<p>打开 <code>http://localhost:5173</code> 即可进入操作端玩起来啦。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/21.png" alt="本地启动后操作端界面" loading="lazy" decoding="async"></p>
+<h2 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h2><p>AI 情报局这个小游戏要验证的其实就一件事，<strong>看清谁知道什么</strong>。</p>
+<p>侦探不知道保险箱密码，不是模型在装傻，而是检索范围里本来就没有。线人能回答，是因为命中了私有记忆。公开之后侦探才知道，是因为公告板多了一张带来源的副本，并非私有原件被全局解锁。这组对照之所以成立，依赖三点：</p>
+<ul>
+<li><strong>默认各记各的</strong>。隔离写在 <code>user_id</code> 与 <code>agent_id</code> 的检索过滤里，不是靠提示词约定。</li>
+<li><strong>共享必须显式发生</strong>。公开是复制到公告板，并保留来源，方便追溯。</li>
+<li><strong>证据要给观众看见</strong>。记忆透视把检索范围和命中摊开，知道与不知道都能核验。</li>
+</ul>
+<p><img src="/img/multi-agent-memory-isolation-game/22.png" alt="总结三点工程边界示意图" loading="lazy" decoding="async"></p>
+<p>多 Agent 记忆不能只靠 Prompt 约束模型行为。</p>
+<p>只有把应用授权、存储过滤、显式共享和证据核验落实到清晰的工程边界中，协作才会既可控又可解释。</p>
+<p><img src="/img/multi-agent-memory-isolation-game/23.png" alt="多Agent记忆工程边界总结" loading="lazy" decoding="async"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li>[1] PowerMem: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">https://github.com/oceanbase/powermem</a></li>
+<li>[2] seekdb: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">https://github.com/oceanbase/seekdb</a></li>
+<li>[3] DeepAgents: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/langchain-ai/deepagents">https://github.com/langchain-ai/deepagents</a></li>
+<li>[4] StepFun: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://platform.stepfun.com/">https://platform.stepfun.com/</a></li>
+<li>[5] 小游戏的代码仓库: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/knqiufan/AIIntelBureau">https://github.com/knqiufan/AIIntelBureau</a></li>
+</ul>
+<p><img src="/img/multi-agent-memory-isolation-game/24.gif" alt="OceanBase社区公众号关注引导动图" loading="lazy" decoding="async"></p>
+<p><img src="/img/multi-agent-memory-isolation-game/25.png" alt="文末装饰分隔曲线" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/multi-agent-memory-isolation-game/26.png" alt="往期推荐不再迷信全能Agent" loading="lazy" decoding="async"></p>
+<p><img src="/img/multi-agent-memory-isolation-game/27.png" alt="往期推荐深度解剖AgentHarness" loading="lazy" decoding="async"></p>
+<p><img src="/img/multi-agent-memory-isolation-game/28.png" alt="往期推荐GraphEngineering职责边界" loading="lazy" decoding="async"></p>
+<p><img src="/img/multi-agent-memory-isolation-game/29.png" alt="往期推荐AIAgent时代的数据库形态" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/multi-agent-memory-isolation-game/30.png" alt="社区小助手微信交流群二维码" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
+              <a href="/tags/%E5%A4%9A-Agent/" rel="tag"># 多 Agent</a>
+              <a href="/tags/%E8%AE%B0%E5%BF%86%E9%9A%94%E7%A6%BB/" rel="tag"># 记忆隔离</a>
+              <a href="/tags/DeepAgents/" rel="tag"># DeepAgents</a>
+              <a href="/tags/MemoryGateway/" rel="tag"># MemoryGateway</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-28-waic-not-omnipotent-agent/" rel="prev" title="逛完 WAIC，我不再迷信“全能 Agent”了">
+                  <i class="fa fa-angle-left"></i> 逛完 WAIC，我不再迷信“全能 Agent”了
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-08-10-ai-marxism-socialism/" rel="next" title="AI 会催生马克思主义和社会主义?">
+                  AI 会催生马克思主义和社会主义? <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">747k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">45:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

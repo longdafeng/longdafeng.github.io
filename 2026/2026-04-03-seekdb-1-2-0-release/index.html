@@ -206,7 +206,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -217,7 +217,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -415,14 +415,14 @@
 <p>这个版本带来了 seekdb 的首个高可用方案——主备库异步复制架构。除此之外，还有整库级别快照克隆的 Fork Database，以及给数据加上 Git 能力的 Diff &amp; Merge。</p>
 <p>这三个能力各自解决不同的问题：主备库解决可用性问题，业务不能因为一台机器挂了就全面瘫痪；Fork Database 解决效率问题，AI 场景下的数据版本管理不能还停留在 mysqldump 的速度；Diff &amp; Merge 解决可控性问题，数据变更不能是个黑盒，改了什么、能不能回滚，开发者要心里有数。</p>
 <p>其中主备库是大家最关心的，也是这个版本分量最重的部分，先从它说起。</p>
-<p><img src="/img/seekdb-1-2-0-release/01.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/01.webp" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <span id="more"></span>
 
 <h2 id="主备库：首个高可用方案"><a href="#主备库：首个高可用方案" class="headerlink" title="主备库：首个高可用方案"></a>主备库：首个高可用方案</h2><p>单点故障的痛，用过单机数据库的人都懂。<strong>seekdb 1.2.0 给出了解决方案：主备库异步复制架构。</strong></p>
 <h3 id="架构设计：优雅、实用、可演进"><a href="#架构设计：优雅、实用、可演进" class="headerlink" title="架构设计：优雅、实用、可演进"></a>架构设计：优雅、实用、可演进</h3><p>seekdb 的主备库方案，采用的是最大性能模式的异步复制架构。这个选择是经过深思熟虑的。</p>
 <p>同步复制虽然能保证数据零丢失，但代价是每次写入都要等备库确认，性能损耗明显。对于 AI 应用场景来说，很多时候写入的是向量数据、知识库文档、对话记录，这些数据的实时一致性要求并没有金融交易那么高。异步复制在性能和可靠性之间取得了一个务实的平衡。</p>
 <p>整个架构基于 gRPC 框架进行 RPC 通信，这是一个成熟、高效、跨语言的选择。主库在运行过程中不断产生增量日志，备库通过网络拉取这些日志并回放，从而保持与主库的数据同步。</p>
-<p><img src="/img/seekdb-1-2-0-release/02.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/02.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <p>架构图大概是这样的：主库在左边，持续接收业务读写请求；备库在右边，通过 gRPC 连接从主库拉取日志；如果你需要更高的容灾能力，还可以在备库后面再挂一个备库，形成级联架构。</p>
 <p>这个设计有几个值得说的点。</p>
 <p>第一是<strong>备库异步搭建</strong>。你可以在任意时刻搭建备库，不需要停止主库服务。这意味着什么？意味着你可以在业务高峰期之后，悄悄加一个备库，而不用协调什么“维护窗口”。搭建过程也很优雅：先拷贝一份基线数据，然后同步增量日志，整个过程对主库的影响微乎其微。</p>
@@ -437,18 +437,18 @@
 <p>能，而且这是备库的重要价值之一。备库提供只读服务，你可以把一些报表查询、分析任务路由到备库，减轻主库的负担。但有一点需要注意：因为是异步复制，备库的数据可能会略微滞后于主库，通常是毫秒到秒级的延迟。对于大多数查询场景，这个延迟是可以接受的；但如果你的业务对实时性要求极高，需要考虑这个因素。</p>
 <p>那向量索引在备库上能正常查询吗？1.2.0 版本对向量索引的备库读支持还不完整，这是一个已知的限制，后续版本会优化。如果你的应用重度依赖向量查询，目前建议主要在主库上进行。</p>
 <p>另一个常见的问题是：切换之后，应用需要改连接串吗？目前需要。切换完成后，新的主库 IP 地址变了，应用需要更新连接配置。在实际操作中，你可以通过 DNS、VIP、或者连接代理来简化这个过程，后续版本也会考虑提供更自动化的方案。</p>
-<p><img src="/img/seekdb-1-2-0-release/03.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/03.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <h2 id="Fork-Database：AI-时代的数据版本管理"><a href="#Fork-Database：AI-时代的数据版本管理" class="headerlink" title="Fork Database：AI 时代的数据版本管理"></a>Fork Database：AI 时代的数据版本管理</h2><p>如果说主备库解决的是“不能挂”的问题，Fork Database 解决的就是“不能慢”的问题。</p>
 <p>做 AI 应用的同学应该深有体会。你在调试一个 RAG 应用，知识库里有几十万条文档，跑了一版效果不太好，想回退到之前的状态试试别的参数。传统做法是什么？要么提前做好备份，要么用 mysqldump 导出再导入。数据量稍微大一点，几个小时就过去了。</p>
 <p>你在做 A&#x2F;B 测试，需要两份完全相同的数据跑不同的算法。你在训练模型，每个实验需要独立的数据快照。你在做 AI Coding，让大模型修改数据库里的数据，但你想保留一份原始版本以防改坏了。</p>
 <p>这些场景有一个共同点：<strong>你需要快速、低成本地创建数据的副本。</strong></p>
 <p>seekdb 1.1.0 版本支持了 Fork Table，能够快速克隆单张表。1.2.0 把这个能力升级到了整库级别。一条命令，整个数据库瞬间克隆，所有表、所有数据、所有关系，全部保留。</p>
-<p><img src="/img/seekdb-1-2-0-release/04.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/04.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <p>这里的“瞬间”不是夸张。Fork 操作的耗时与数据量无关，不管原库有 1GB 还是 100GB，都是秒级完成。背后的原理是 Copy-on-Write 机制：Fork 出来的目标库一开始只是指向源库数据的引用，只有当你真正写入时，才会复制被修改的那部分数据。</p>
 <p>更妙的是库级原子快照。Fork Database 会选取一个一致性快照时刻，目标库中所有表共享这同一个快照版本。这意味着多表关联查询、外键约束，在 Fork 后仍然保持逻辑一致。你可以放心地在目标库上做任何操作，不用担心数据不一致的问题。</p>
 <p>这个能力放在 AI 场景下特别有价值。知识库版本管理变得轻而易举，每次大的更新前 Fork 一个版本，效果不好随时回退。A&#x2F;B 测试数据准备从几个小时变成几秒钟。模型训练的数据快照不再需要每次都复制一份完整数据。AI Agent 的多分支对话可以有独立的数据上下文。</p>
 <p>同一个源库可以 Fork 多次，每次产生独立的目标库，互不影响。你可以 Fork 出 dev、test、staging 多个环境，想怎么折腾就怎么折腾，不会影响源库。</p>
-<p><img src="/img/seekdb-1-2-0-release/05.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/05.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <h2 id="Diff-Merge：给数据加上-Git-的能力"><a href="#Diff-Merge：给数据加上-Git-的能力" class="headerlink" title="Diff &amp; Merge：给数据加上 Git 的能力"></a>Diff &amp; Merge：给数据加上 Git 的能力</h2><p>Fork Database 让你能快速创建数据副本，但副本改完之后呢？改了什么、要不要合并回去、怎么合并？</p>
 <p>代码世界早就有了标准答案：Git。branch、diff、merge、pull request，这套工作流开发者闭着眼睛都能用。但数据世界呢？大多数时候还是原始状态——改了什么不知道，能不能回滚不好说，想对比两个版本的差异得自己写脚本。</p>
 <p>seekdb 1.2.0 引入了 Diff &amp; Merge 功能，让数据也能像代码一样被管理。</p>
@@ -462,16 +462,16 @@
 <li>**可协作：**多人可以在不同的 Fork 上并行工作，最后合并到一起。</li>
 </ul>
 <p>对于 AI 应用来说，这个能力特别实用。RAG 知识库更新可以先在 Fork 上验证效果，好了再合并，不好就丢弃。AI Agent 不同对话分支的记忆可以独立演进，需要时再合并。数据清洗流水线可以把每个步骤作为一个分支，最终 Merge 得到干净数据。</p>
-<p><img src="/img/seekdb-1-2-0-release/06.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/06.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>回到开头的问题：单点故障怎么办？</p>
 <p>seekdb 1.2.0 给出的答案是一整套组合拳。主备库让你有了容灾能力，业务不会因为一台机器的故障而全面瘫痪。Fork Database 让数据版本管理变得轻盈，不用再为备份恢复耗费大量时间。Diff &amp; Merge 让数据变更变得可控，改了什么、要不要回滚，心里有数。</p>
 <p>这是 seekdb 从“开发友好”走向“生产就绪”的关键一步。</p>
 <p>如果你正在用 <strong>seekdb 构建 AI 应用，这个版本值得认真看看。如果你还没用过，现在是一个不错的起点——它依然保持着轻量、易用的特点，pip install pyseekdb 就能在本地跑起来，但它现在也有了生产环境需要的高可用能力。</strong></p>
 <p>AI 原生数据库正在从“能用”走向“好用”，从“开发友好”走向“生产就绪”。</p>
 <p>PS：若觉得 seekdb 对你有帮助，欢迎在 GitHub 上点个 ⭐，这对项目非常有帮助！</p>
-<h2 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h2><p><img src="/img/seekdb-1-2-0-release/07.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<h2 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h2><p><img src="/img/seekdb-1-2-0-release/07.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <p>添加社区小助手微信</p>
-<p><img src="/img/seekdb-1-2-0-release/08.webp" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-2-0-release/08.webp" loading="lazy" decoding="async" alt="seekdb 1.2.0 发布：主备容灾上线，整库秒级克隆实现了"></p>
 <p>学习优质社区课程</p>
 
     </div>
@@ -560,14 +560,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

@@ -204,7 +204,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -402,7 +402,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agent / Skills / Teams 架构演进流程及技术选型之道","description":"本文梳理 Agent 架构从 Single Agent、Multi-Agent 到 Agent Skills、Agent Teams 的演进脉络，结合 Google DeepMind 论文与 Anthropic 实践经验，总结出一套“由简入繁、按需升级”的 Agent 架构选型方法论。","image":"https://ilongda.com/img/agent-skills-teams-architecture-evolution/01.png","wordCount":9458,"datePublished":"2026-03-09T23:56:27.000Z","dateModified":"2026-03-09T23:56:27.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-10-agent-skills-teams-architecture-evolution/"},"url":"https://ilongda.com/2026/2026-03-10-agent-skills-teams-architecture-evolution/","inLanguage":"zh-CN","keywords":["Agent","上下文工程","Agent Skills","Multi-Agent","Agent Teams","Claude Code","架构选型"],"articleSection":["技术详解"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agent / Skills / Teams 架构演进流程及技术选型之道","description":"本文梳理 Agent 架构从 Single Agent、Multi-Agent 到 Agent Skills、Agent Teams 的演进脉络，结合 Google DeepMind 论文与 Anthropic 实践经验，总结出一套“由简入繁、按需升级”的 Agent 架构选型方法论。","image":"https://ilongda.com/img/agent-skills-teams-architecture-evolution/01.png","wordCount":9458,"datePublished":"2026-03-09T23:56:27.000Z","dateModified":"2026-03-09T23:56:27.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-03-10-agent-skills-teams-architecture-evolution/"},"url":"https://ilongda.com/2026/2026-03-10-agent-skills-teams-architecture-evolution/","inLanguage":"zh-CN","keywords":["Agent","上下文工程","Multi-Agent","Agent Skills","Agent Teams","Claude Code","架构选型"],"articleSection":["技术详解"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"Agent / Skills / Teams 架构演进流程及技术选型之道","item":"https://ilongda.com/2026/2026-03-10-agent-skills-teams-architecture-evolution/"}]}</script>
 <p>前几天阅读了一些阿里、蚂蚁大佬们在内部分享的 AI 技术文章。其中有几篇写的实在太好，学习完之后受益极大。在这里分享给大家~</p>
 <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>近几年，我一直从事于 Agent 领域的探索、应用与实践，也陆续沉淀了许多相关的技术文章，相信不少朋友都读过我之前那篇<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/zEZ53f7EtnI2ve1QRELUSw">《如何构建和调优高可用性的 Agent？浅谈阿里云服务领域 Agent 构建的方法论》</a>。在那篇文章中，我们从 Agent 的概念起源聊到落地挑战，再到具体的解决方案，进行了一次较为系统的梳理。后来随着上下文工程、Multi-Agent、Agent Skills 等技术的不断发展，我又通过《<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/u6F93L0sCfR-rjqBSJi3lQ">如何让 Agent 更符合预期？基于上下文工程和多智能体构建云小二 Aivis 的十大实战经验</a>》详细介绍了我们在多个 Agent 技术细节上的一些落地实践经验。</p>
@@ -417,7 +417,7 @@
 <span id="more"></span>
 
 <h1 id="Agent-架构的演化本质"><a href="#Agent-架构的演化本质" class="headerlink" title="Agent 架构的演化本质"></a>Agent 架构的演化本质</h1><p>为什么市面上会出现如此纷繁复杂的 Agent 架构？追根溯源，这并不是纯粹是为了炫技，而是对大模型底层能力缺失的一种补偿机制。本质上，Agent 架构的演化史，就是因为我们在<strong>基础大模型无法完美内化“领域知识”和高效复用“长期记忆”的背景下</strong>，不断尝试“外挂”出这些能力的。<strong>本质上</strong>就是大家对大模型如何更好的 <strong>注入领域知识</strong>和<strong>记忆管理</strong>这两方面的需求，不断促进了 Agent 架构的演化。</p>
-<p><img src="/img/agent-skills-teams-architecture-evolution/01.png" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" decoding="async"></p>
+<p><img src="/img/agent-skills-teams-architecture-evolution/01.png" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <p>不妨畅享一下，假设某一天，我们已经实现了这样的效果：<strong>LLM 基座模型天生就具备完美的领域知识注入和自主记忆的能力</strong>，只要我们将海量的行业文档、业务规则直接“喂”给模型，它就能瞬间记住并精准执行任务，那么今天我们所讨论的各种 RAG、Multi-Agent、Workflow、Skills 等架构模式可能都将失去存在的意义。因为大模型本身已经从根源上解决了“学什么”和“记什么”的问题。</p>
 <p>然而，现实是骨感的。回想 2023~2024 年，在大模型发展的早期，业界普遍认为解决领域垂类知识注入问题的最优解是<strong>模型训练</strong>。这套从 BERT 时代就发展过来的 <strong>“预训练-微调”</strong> 范式一直走到了 LLM 时代，我们将基础模型作为底座，通过 SFT、DPO 等模型微调，再加上 RLHF、GRPO 等强化学习方式，试图将领域知识“刻录”进模型的参数中。在那个阶段，我们也基于 Qwen 早期版本作为基座模型进行了很多轮次的、深入的模型训练、微调实践。</p>
 <p>但是，随着训练过程的深入，几个难以回避的痛点逐渐浮出水面：</p>
@@ -429,7 +429,7 @@
 <p>除了成本与时效性问题，硬件门槛和模型生态的变化也加速了这一转变。随着 Scaling Law 的生效，顶尖模型的参数量日益庞大，传统的单机甚至小规模集群已难以承担训练任务。更重要的是，目前最强有力的模型多为闭源状态。即便我们使用开源的顶尖模型作为基础进行训练，其最终效果往往也难以匹敌闭源巨头的最新基座模型。在这种“投入产出比”严重失衡的背景下，继续死磕模型训练显然不再是明智之选。</p>
 <p>这就说明，现阶段的 LLM 在 <strong>特定领域的知识内化</strong>和 <strong>长周期记忆管理上</strong>仍存在显著的挑战。既然“向内”修改模型参数的路走不通，或者性价比太低，我们自然开始转向“向外”寻求解决方案：<strong>如何在不改变模型权重的前提下，通过架构设计更高效地注入领域知识？</strong></p>
 <p>这正是 Agent 架构演化的逻辑起点，我们不得不在大模型外围构建层层叠叠的结构与工具，通过“工程化”的手段来辅助其完成知识的检索、上下文的组装以及记忆的维护。这也正是当前各类 Agent 架构百花齐放的最本质的原因。我们不再执着于让模型“记住”所有知识，而是转而设计一套机制，让模型能够“找到”并“理解”所需的知识。基于这一思路，Agent 架构的演化逐渐分化出了四条最主要的路径：“<strong>Single Agent → Multi-Agent → Agent Skills → Agent Teams</strong>”。</p>
-<p><img src="/img/agent-skills-teams-architecture-evolution/02.jpeg" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-skills-teams-architecture-evolution/02.jpeg" loading="lazy" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <h1 id="Single-Agent：知识注入与上下文窗口博弈"><a href="#Single-Agent：知识注入与上下文窗口博弈" class="headerlink" title="Single Agent：知识注入与上下文窗口博弈"></a>Single Agent：知识注入与上下文窗口博弈</h1><p>在探索 Agent 落地的过程中，我们最先尝试的往往是 <strong>Single Agent 架构（单智能体）</strong>。其核心逻辑非常直观：既然大模型无法直接内化我们特定的领域知识，那我们就通过 <strong>System Prompt</strong>的方式，将这些知识“无脑”地注入到大模型的上下文中，期望它能基于这些注入的信息生成符合预期的答案。</p>
 <p>这种做法最大的优势在于 <strong>实现成本极低、开发效率极高</strong>。你只需要将领域知识整理好，配合清晰的指令写入系统级指令的 System Prompt 中，再使用基础模型原生的 ReAct 模式自主调用工具、记录上下文并解决问题。对于生成简单的代码段、写文案、执行某类标准化输出等场景，这种串行调用的单 Agent 模式往往能跑出最流畅的体验，是 <strong>验证想法、ROI 最高</strong>的原型方案。</p>
 <p>然而，随着实践的深入，我们发现这种看似简单的架构隐藏着一个致命的瓶颈：<strong>Context Window 会爆炸</strong>。</p>
@@ -454,7 +454,7 @@
 <p>简而言之，如果你的需求是 <strong>“小而美”</strong>，或者你的领域知识边界清晰、检索链路成熟，那么<strong>单 Agent</strong>架构完全足以胜任，无需过度设计。但当面对海量非结构化数据、复杂推理需求或对检索准确率极其敏感的场景时，我们就需要跳出单点的思维，探索更复杂的架构演进了。</p>
 <h1 id="Multi-Agent：架构隔离与通信带宽的权衡"><a href="#Multi-Agent：架构隔离与通信带宽的权衡" class="headerlink" title="Multi-Agent：架构隔离与通信带宽的权衡"></a>Multi-Agent：架构隔离与通信带宽的权衡</h1><p>面对单 Agent 在海量知识注入和复杂场景处理上的局限，<strong>Multi-Agent 架构（多智能体）</strong> 应运而生。这不仅是 Agent 数量的堆叠，更是质量的飞跃。以我们阿里云客户服务领域云小二 Aivis 的实践为例，通过构建 <strong>Planner（规划者）、Reasoner（推理者）、Executor（执行者）</strong> 等角色协同的架构，我们将复杂的宏观问题拆解为微观的子任务，由不同的 Agent 各司其职。</p>
 <p>Multi-Agent 的模式其实有很多种，在 Google 的论文里，主要列为四种：<strong>独立的（Independent）、去中心化（Decentralized）、中心化的（Centralized）、混合模式（Hybrid）</strong>。</p>
-<p><img src="/img/agent-skills-teams-architecture-evolution/03.png" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-skills-teams-architecture-evolution/03.png" loading="lazy" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <ul>
 <li><strong>Independent</strong>：多个 Agent 并行处理子任务而不进行沟通，仅在最后汇总结果。</li>
 <li><strong>Decentralized</strong>：一种点对点网状结构，Agent 之间直接沟通以共享信息并达成共识。</li>
@@ -531,7 +531,7 @@
 <p>Google DeepMind 前段时间发表的论文《<a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2512.08296">Towards a Science of Scaling Agent Systems</a>》，翻译成中文就是“迈向智能体系统的科学”。这篇文章开启了科学设计 Agent 系统架构的新篇章，也给我们提供了一套基于大量 Benchmark 的<strong>实证方法论</strong>。不过这篇论文在撰写的时候，肯定是没有考虑到 Anthropic 后来会发布 Agent Skills 和 Agent Teams 机制的，但其对于 Single Agent 和 Multi-Agent 的讨论也已经提供了很多科学的、建设性的建议。</p>
 <p>这篇论文通过对比了 <strong>Single Agent</strong> 和四种 <strong>Multi-Agent</strong> 架构，也就是上文所说的 <strong>Independent</strong>、<strong>Decentralized、Centralized</strong> 以及 <strong>Hybrid</strong> 共五种主流架构，得出了若干<strong>反直觉</strong>却极具<strong>指导意义</strong>的结论。</p>
 <p>结合前文我们对 Single Agent、Agent Skills、Multi-Agent 及 Agent Teams 的探讨，我们可以参考这些结论来校准我们的选型策略：</p>
-<h3 id="模型越强效果越好，但并非-Agent-越多效果就越好"><a href="#模型越强效果越好，但并非-Agent-越多效果就越好" class="headerlink" title="模型越强效果越好，但并非 Agent 越多效果就越好"></a>模型越强效果越好，但并非 Agent 越多效果就越好</h3><p><img src="/img/agent-skills-teams-architecture-evolution/04.png" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" loading="lazy" decoding="async"></p>
+<h3 id="模型越强效果越好，但并非-Agent-越多效果就越好"><a href="#模型越强效果越好，但并非-Agent-越多效果就越好" class="headerlink" title="模型越强效果越好，但并非 Agent 越多效果就越好"></a>模型越强效果越好，但并非 Agent 越多效果就越好</h3><p><img src="/img/agent-skills-teams-architecture-evolution/04.png" loading="lazy" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <p>Google 为了量化模型能力对 Agent 性能的影响，在 OpenAI GPT、Google Gemini 和 Anthropic Claude 上评估了 Single Agent 和四种 Multi-Agent 架构。结果可以看到，模型能力与架构之间复杂的关系。通常来说，上了越强大的模型，Agent 的效果就越好，Agent 的能力与模型能力基本上呈现正相关。</p>
 <p>但 Mulit-Agent 并不是万能的解决方案，有时候上了 Multi-Agent 确实是显著提升了效果，有时候也会意外地降低效果。所以并不是“无脑”堆 Agent 数量，上 Multi-Agent 架构，就能明显的提高模型效果。</p>
 <h3 id="尽量降低沟通成本和通信带宽"><a href="#尽量降低沟通成本和通信带宽" class="headerlink" title="尽量降低沟通成本和通信带宽"></a>尽量降低沟通成本和通信带宽</h3><p>Google 的实验发现：<strong>在固定 Token 预算下，频繁的 Agent 间沟通会显著降低系统整体效果。</strong></p>
@@ -545,13 +545,13 @@
 <li><strong>警示</strong>：如果你的单智能体基线已经超过 45%，盲目增加复杂的 Multi-Agent 协同机制，反而会降低整体表现，带来负向收益，应该简化架构。</li>
 </ul>
 <h3 id="错误放大效应"><a href="#错误放大效应" class="headerlink" title="错误放大效应"></a>错误放大效应</h3><p>这是最令人警醒的数据：纯粹的 <strong>独立架构（Independent）可能将错误放大 17.2 倍</strong>，而引入<strong>中心化机制</strong>后，错误放大就可控制在 <strong>4.4 倍</strong>。</p>
-<p><img src="/img/agent-skills-teams-architecture-evolution/05.png" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-skills-teams-architecture-evolution/05.png" loading="lazy" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <ul>
 <li><strong>解读</strong>：没有监管的“群策群力”极易演变成“集体幻觉”。如果缺乏一个强有力的 Manager 进行校验和纠偏，多个 Agent 同时犯错并相互印证的概率极高。</li>
 <li><strong>结论</strong>：因此，在使用 Agent Teams 进行并行探索时，也必须配套强大的<strong>中心化决策机制</strong>，否则稳定性是无从谈起的。</li>
 </ul>
 <h3 id="场景决定架构：没有万能钥匙"><a href="#场景决定架构：没有万能钥匙" class="headerlink" title="场景决定架构：没有万能钥匙"></a>场景决定架构：没有万能钥匙</h3><p>Google 在不同任务的 Benchmark 上跑了多种 Agent 架构，结论：<strong>任务类型决定最佳架构</strong>。</p>
-<p><img src="/img/agent-skills-teams-architecture-evolution/06.png" alt="Agent / Skills / Teams 架构演进流程及技术选型之道" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-skills-teams-architecture-evolution/06.png" loading="lazy" decoding="async" alt="Agent / Skills / Teams 架构演进流程及技术选型之道"></p>
 <ul>
 <li><strong>规划类任务（PlanCraft）</strong>：Agent Planning 任务。这类任务线逻辑性强、工具依赖少，<strong>Single Agent</strong>往往是最高效的选择，避免了不必要的工具、子 Agent 调度开销。</li>
 <li><strong>工具使用类任务（WorkBench &#x2F; BrowseComp-Plus）</strong>：包括工具规划、工具选择、浏览器获取信息。这类任务天然适合<strong>去中心化的 Multi-Agent 架构，</strong> 才能充分发挥效率优势。</li>
@@ -626,8 +626,8 @@
           <div class="post-tags">
               <a href="/tags/Agent/" rel="tag"># Agent</a>
               <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
-              <a href="/tags/Agent-Skills/" rel="tag"># Agent Skills</a>
               <a href="/tags/Multi-Agent/" rel="tag"># Multi-Agent</a>
+              <a href="/tags/Agent-Skills/" rel="tag"># Agent Skills</a>
               <a href="/tags/Agent-Teams/" rel="tag"># Agent Teams</a>
               <a href="/tags/Claude-Code/" rel="tag"># Claude Code</a>
               <a href="/tags/%E6%9E%B6%E6%9E%84%E9%80%89%E5%9E%8B/" rel="tag"># 架构选型</a>
@@ -685,14 +685,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

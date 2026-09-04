@@ -204,7 +204,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -402,7 +402,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表","description":"介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。","image":"https://ilongda.com/img/oceanbase-merge-on-write/01.jpeg","wordCount":4069,"datePublished":"2025-11-05T22:24:38.000Z","dateModified":"2025-11-05T22:24:38.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"},"url":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/","inLanguage":"zh-CN","keywords":["OceanBase","列存","HTAP","存储引擎","Merge-On-Write","LSM Tree","读放大"],"articleSection":["技术详解"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表","description":"介绍 OceanBase 4.3.5 推出的 Merge-On-Write 表：通过将 update 拆分为 delete + insert 并写入全列数据，解决 LSM Tree 架构下 Merge-On-Read 查询的读放大问题，显著提升更新频繁场景的实时分析性能。","image":"https://ilongda.com/img/oceanbase-merge-on-write/01.jpeg","wordCount":4069,"datePublished":"2025-11-05T22:24:38.000Z","dateModified":"2025-11-05T22:24:38.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"},"url":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/","inLanguage":"zh-CN","keywords":["OceanBase","HTAP","列存","存储引擎","Merge-On-Write","LSM Tree","读放大"],"articleSection":["技术详解"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表","item":"https://ilongda.com/2025/2025-11-06-oceanbase-merge-on-write/"}]}</script>
 <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>OceanBase 从 4.3.0 版本开始，推出了加速 AP 查询的列存引擎，具体包含：</p>
 <ul>
@@ -425,7 +425,7 @@
 <li>为了优化写 IO，SSTABLE 内数据按固定 2MB 大小切割成宏块（MacroBlock），宏块是数据文件写 IO 的基本单位。</li>
 <li>为了优化读 IO，每个宏块内的数据按 16KB 切割成一个个微块（MicroBlock），微块是数据读 IO 的基本单位。</li>
 </ul>
-<p><img src="/img/oceanbase-merge-on-write/01.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/01.jpeg" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <h2 id="Merge-On-Read-表查询及其痛点"><a href="#Merge-On-Read-表查询及其痛点" class="headerlink" title="Merge-On-Read 表查询及其痛点"></a>Merge-On-Read 表查询及其痛点</h2><p>OceanBase 当前存储架构中，为了优化写入性能和节省存储空间，增量 SSTABLE 只记录主键和更新列的值。</p>
 <p>查询时为了获取主键的最新值，需要依次读取 MemTable、增量 SSTABLE、基线 SSTABLE，融合每层读到的数据获取完整行，这种在查询时对数据进行融合的流程叫做 Merge-On-Read。</p>
 <p>Merge-On-Read 能较好地支持按主键点查，但是对于范围查询不太友好。当各层 SSTABLE 之间主键存在重叠和交叉时，对于每层 SSTABLE 吐出的行，需要用败者树（最小&#x2F;大堆）来对各层吐出的数据进行融合和去重，这样执行引擎只能按行来计算下压谓词和投影，整体处理性能不高。</p>
@@ -434,16 +434,16 @@
 <p>说明：上面这段内容，不理解也无妨。</p>
 <p>大意就是说 OceanBase 存储引擎有一些实现上的优化，来缓解读放大的问题。</p>
 </blockquote>
-<p><img src="/img/oceanbase-merge-on-write/02.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/02.png" loading="lazy" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <p>Merge-On-Read 查询流程中实现单边扫描优化之后，虽然 AP 能力得到了一定的增强，但是增数数据较多时，尤其增量与基线之间主键存在大量交叉时，整体的查询性能仍然会受到一定影响。</p>
 <h2 id="Merge-On-Write-表查询流程"><a href="#Merge-On-Write-表查询流程" class="headerlink" title="Merge-On-Write 表查询流程"></a>Merge-On-Write 表查询流程</h2><p>与 merge-on-read 不同，merge-on-write 能更好地解决对基线数据做大量更新之后的查询性能问题。</p>
 <p>为了不影响查询的性能，merge-on-write 会将更新数据的修改，移到写入阶段。业界中常用的做法是在旧行上标记 delete bitmap，然后在尾部追加写入新行。查询时，只需要读取原始数据和相应的 delete bitmap，便可以对相同主键的数据进行去重，获取最新值。</p>
 <p>OceanBase 也参考了业界的经典方案，添加了 merge-on-write 表类型，将查询的部分热点的 merge 动作，前置到写入模块。</p>
 <p>但考虑到 HTAP 业务中数据的更新量比较大，OceanBase 需要支持的业务比较复杂，需要维护每个快照点的多版本信息，这样对于 delete bitmap 的多版本信息维护将是一个比较大的挑战，并且在数据部分，OceanBase 已经有了一套比较成熟的 MVCC 多版本管理机制。</p>
 <p>因此 OceanBase 对 merge-on-write 方案做了一些改进，写入时更新行会将 update 改写成 delete + insert，update 时会读出旧值，将融合之后的最新行的全列数据 insert 写入 memtable（即下图中的 mini），每行数据都会记录其提交版本信息。</p>
-<p><img src="/img/oceanbase-merge-on-write/03.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/03.jpeg" loading="lazy" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <p>OceanBase merge-on-write 表的查询过程中，将增量数据和基线数据分成了两个部分，而不是像原来一样放入一棵败者树中进行比较。</p>
-<p><img src="/img/oceanbase-merge-on-write/04.jpeg" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/04.jpeg" loading="lazy" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <p>扫描时先选取提交版本号大于基线的增量数据进行扫描，计算下压谓词，再做投影。</p>
 <p>若投影时，发现增量数据有对基线数据做修改，会将相应的更新信息缓存住，扫描基线时会跳过相应的主键行。相对于原有查询流程的主要优化点是：</p>
 <ol>
@@ -517,7 +517,7 @@
 <li>这个实验有导入数据（大概要 100 秒左右）之类耗时较长的操作，大家可以一次性把实验文档所有 SQL 语句全都复制到右边的实验环境里去执行，然后一边等待最后的实验结果，一边阅读下面的文章内容。</li>
 <li>在实验环境是在纯列存表上做了一个小规模数据的测试，在这个测试中，性能差异可能没有那么明显（不过 2 ~ 3 倍应该还是有的，<strong>为确保测试准确性，建议在实验环境中多次重复执行最后的性能对比 SQL，并取平均值</strong>）。实际在更大规模数据或更高并发场景下（生产环境），才能真正体现出 merge-on-write 表的优势。</li>
 </ul>
-<p><img src="/img/oceanbase-merge-on-write/05.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/05.png" loading="lazy" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <ul>
 <li><strong>文档不可尽信，实践才出真知。</strong><ul>
 <li>OceanBase 官网文档《创建表》<sup>[3]</sup>中的创建 MOW 表的语法如下（截至 2025.10.22）：</li>
@@ -539,7 +539,7 @@
 <p>大家可以在实验环境中通过测试，来验证下这个家伙的猜想是否正确？</p>
 <p>如果不正确，可以再思考下为何不正确？</p>
 </blockquote>
-<p><img src="/img/oceanbase-merge-on-write/06.png" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-merge-on-write/06.png" loading="lazy" decoding="async" alt="应对 “读放大” 问题的新方法 —— OceanBase 中的 Merge-On-Write 表"></p>
 <ul>
 <li>课后小测地址：【DBA 实战营】 Merge-On-Write 表<sup>[4]</sup>，在第三季的实战营活动中，每通过一个课后练习，就会自动获得 10 个社区积分，并获得一次抽奖的资格。抽奖时有机会获得实体礼物或更高额的积分奖励。</li>
 </ul>
@@ -583,8 +583,8 @@
 
           <div class="post-tags">
               <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
-              <a href="/tags/%E5%88%97%E5%AD%98/" rel="tag"># 列存</a>
               <a href="/tags/HTAP/" rel="tag"># HTAP</a>
+              <a href="/tags/%E5%88%97%E5%AD%98/" rel="tag"># 列存</a>
               <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" rel="tag"># 存储引擎</a>
               <a href="/tags/Merge-On-Write/" rel="tag"># Merge-On-Write</a>
               <a href="/tags/LSM-Tree/" rel="tag"># LSM Tree</a>
@@ -643,14 +643,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

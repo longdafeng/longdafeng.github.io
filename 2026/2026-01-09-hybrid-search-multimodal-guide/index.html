@@ -201,7 +201,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -212,7 +212,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -399,7 +399,7 @@
     
     
     
-    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"混合检索（Hybrid Search）：多模态检索实战指南（第四章）","description":"本文是 Agentic RAG 系列第四章，详解混合检索（Hybrid Search）如何融合向量检索、稀疏检索与全文检索三种模态，并基于 seekdb 实战构建加权分数融合与 Agent 动态选择搜索策略的完整方案。","image":"https://ilongda.com/img/hybrid-search-multimodal-guide/01.jpeg","wordCount":5591,"datePublished":"2026-01-09T01:27:45.000Z","dateModified":"2026-01-09T01:27:45.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-09-hybrid-search-multimodal-guide/"},"url":"https://ilongda.com/2026/2026-01-09-hybrid-search-multimodal-guide/","inLanguage":"zh-CN","keywords":["OceanBase","向量检索","RAG","混合检索","LangChain","全文检索","seekdb","Hybrid Search"],"articleSection":["AI & 应用"]}</script>
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"混合检索（Hybrid Search）：多模态检索实战指南（第四章）","description":"本文是 Agentic RAG 系列第四章，详解混合检索（Hybrid Search）如何融合向量检索、稀疏检索与全文检索三种模态，并基于 seekdb 实战构建加权分数融合与 Agent 动态选择搜索策略的完整方案。","image":"https://ilongda.com/img/hybrid-search-multimodal-guide/01.jpeg","wordCount":5591,"datePublished":"2026-01-09T01:27:45.000Z","dateModified":"2026-01-09T01:27:45.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-01-09-hybrid-search-multimodal-guide/"},"url":"https://ilongda.com/2026/2026-01-09-hybrid-search-multimodal-guide/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","混合检索","向量检索","LangChain","全文检索","seekdb","Hybrid Search"],"articleSection":["AI & 应用"]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"混合检索（Hybrid Search）：多模态检索实战指南（第四章）","item":"https://ilongda.com/2026/2026-01-09-hybrid-search-multimodal-guide/"}]}</script>
 <h2 id="1-从-Corrective-RAG-到多模态检索"><a href="#1-从-Corrective-RAG-到多模态检索" class="headerlink" title="1. 从 Corrective RAG 到多模态检索"></a>1. 从 Corrective RAG 到多模态检索</h2><p>在第三章，我们学习了 Corrective RAG（CRAG），通过文档评分和托底机制来提升 RAG 系统的可靠性。CRAG 主要解决检索结果的质量验证问题，但在检索环节本身，传统 RAG 系统还存在一个根本性的问题：单一检索方式的盲区。</p>
 <p>本章将解决这个问题：如何通过混合检索（Hybrid Search）结合多种检索方式，提升检索的召回率和精确度。</p>
@@ -413,7 +413,7 @@
 <p>关键词检索擅长匹配精确的术语，但它不理解语义。比如你搜索 “machine learning”，它找不到包含 “AI” 的文档；你搜索 “revenue”，它找不到包含 “earnings” 或 “income” 的内容。这就是语义盲区的问题。</p>
 <p>问题的本质在于：向量检索会遗漏关键词，关键词检索会遗漏语义——每种方法都有自己的盲区。</p>
 <h3 id="2-3-混合检索：融合三种模态"><a href="#2-3-混合检索：融合三种模态" class="headerlink" title="2.3 混合检索：融合三种模态"></a>2.3 混合检索：融合三种模态</h3><p>混合检索的思路是：既然单一方法都有盲区，那就把它们组合起来。具体来说，混合检索结合了三种互补的检索方式：</p>
-<p><img src="/img/hybrid-search-multimodal-guide/01.jpeg" alt="混合检索（Hybrid Search）：多模态检索实战指南（第四章）" decoding="async"></p>
+<p><img src="/img/hybrid-search-multimodal-guide/01.jpeg" decoding="async" alt="混合检索（Hybrid Search）：多模态检索实战指南（第四章）"></p>
 <p>三种检索方式各有侧重：</p>
 <ul>
 <li><strong>Vector Search（向量检索）</strong> → 理解语义相似度</li>
@@ -500,7 +500,7 @@
 </tbody></table>
 <hr>
 <h2 id="4-seekdb：AI-原生的搜索数据库"><a href="#4-seekdb：AI-原生的搜索数据库" class="headerlink" title="4. seekdb：AI 原生的搜索数据库"></a>4. seekdb：AI 原生的搜索数据库</h2><h3 id="4-1-seekdb-是什么？"><a href="#4-1-seekdb-是什么？" class="headerlink" title="4.1 seekdb 是什么？"></a>4.1 seekdb 是什么？</h3><p>seekdb 是 OceanBase 推出的 AI 原生搜索数据库，它将向量存储、关系数据、全文搜索整合到一个统一的平台中。传统方案需要使用专门的向量数据库，会带来额外的运维成本和系统复杂度，seekdb 通过统一的多模型引擎解决了这个问题。</p>
-<h3 id="4-2-seekdb-的核心优势"><a href="#4-2-seekdb-的核心优势" class="headerlink" title="4.2 seekdb 的核心优势"></a>4.2 seekdb 的核心优势</h3><p><img src="/img/hybrid-search-multimodal-guide/02.jpeg" alt="混合检索（Hybrid Search）：多模态检索实战指南（第四章）" loading="lazy" decoding="async"></p>
+<h3 id="4-2-seekdb-的核心优势"><a href="#4-2-seekdb-的核心优势" class="headerlink" title="4.2 seekdb 的核心优势"></a>4.2 seekdb 的核心优势</h3><p><img src="/img/hybrid-search-multimodal-guide/02.jpeg" loading="lazy" decoding="async" alt="混合检索（Hybrid Search）：多模态检索实战指南（第四章）"></p>
 <h3 id="4-3-为什么选择-seekdb-实现混合检索？"><a href="#4-3-为什么选择-seekdb-实现混合检索？" class="headerlink" title="4.3 为什么选择 seekdb 实现混合检索？"></a>4.3 为什么选择 seekdb 实现混合检索？</h3><ul>
 <li>单次查询就能调用 3 种模态，无需调用外部服务</li>
 <li>原生加权融合，内置 RRF 和线性组合算法</li>
@@ -701,9 +701,9 @@
 
           <div class="post-tags">
               <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
-              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
               <a href="/tags/RAG/" rel="tag"># RAG</a>
               <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2/" rel="tag"># 向量检索</a>
               <a href="/tags/LangChain/" rel="tag"># LangChain</a>
               <a href="/tags/%E5%85%A8%E6%96%87%E6%A3%80%E7%B4%A2/" rel="tag"># 全文检索</a>
               <a href="/tags/seekdb/" rel="tag"># seekdb</a>
@@ -762,14 +762,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

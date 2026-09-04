@@ -204,7 +204,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -215,7 +215,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -468,7 +468,7 @@
 <h1 id="系统概况"><a href="#系统概况" class="headerlink" title="系统概况"></a>系统概况</h1><p>millwheel实际上就是一系列用户定义的transform操作组成的dag 图， 我们称这些transform为compuation操作，任何一个transform都能并行运行在任意的机器上。因此，用户无需考虑在一个合适范围内负载平衡。</p>
 <p>在millwheel里面的输入和输出都是用(key, value, timestamp)来表示, key 是含有语义含义的元数据字段，value是任意的字符串，代表整个record。用户代码运行的context被限定到一个特定的key，每个computation根据自己的逻辑为每个输入源定义key。 比如， zeitgeist中某些computation为了计算每个query的统计信息，会选择搜索字段作为key，而另外一些compuation为了统计基于地理位置的统计信息，会选择地理位置为key。 而triple里面的timestamp可以由用户随意定义（但通常都是墙钟时间），而mill wheel根据timestamp来计算低水位。如果一个用户想要aggregate search term的每秒统计值， 他就需要assign timestamp 为这个search被处理的时间。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/key.jpg" alt="Google Millwheel" decoding="async">
+		<img src="/img/millwheel/key.jpg" decoding="async" alt="Google Millwheel">
 </div>
 
 <p>一个compuation的output可以成为另外一个computation的输入，从而形成一个pipeline。用户可以动态增加或删除一个compuation到这个topology中而无需重启这个topology。一个compuation可以任意处理records，新建，修改，删除，过滤等操作。</p>
@@ -476,20 +476,20 @@
 <p><b>分发保障</b>：所有因处理record而产生的内部update都会自动基于per－key做checkpoint并保证exactly－once delivery。这种特性不需要依赖外部存储。</p>
 <h1 id="核心概念"><a href="#核心概念" class="headerlink" title="核心概念"></a>核心概念</h1><p>数据在一个dag中分发，每一个环节都独立操作和emit数据。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/api.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/api.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 
 
 <h2 id="computation："><a href="#computation：" class="headerlink" title="computation："></a>computation：</h2><p>用户代码运行在compuation中。 当接受到数据时，会调用compuation，会触发用户定义的一些操作，比如连接外部存储， 输出数据或操作其它millwhell的数据。如果连接外部存储，则用户来保证操作外部存储的行为具有冥等性。computation在一个单key的context中执行，但key之间是相互不可知的。如下图所示， 另外一个key的所有操作是串行的，但多个不同的key可以并行被处理</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/key-serial.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/key-serial.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 
 <h2 id="key"><a href="#key" class="headerlink" title="key"></a>key</h2><p>key是mill wheel中不同record aggregate和comparison最重要的抽象，系统中每一个record，消费者需要定义一个key－extraction 函数, 这个key-extraction函数会分配一个key给这个record。 用户代码运行在某个key的context下，只能允许访问这个key相关的stat。 举例来说， 在zeitgeist系统中，一个好的选择key的方式是使用search text， 从而，我们可以基于query 的text来进行counts和query模型的aggregate。同样不同的系统，可以使用不同的key-extract函数来处理相同的数据源来获取不同的key。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/key-extract.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/key-extract.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <h2 id="streams"><a href="#streams" class="headerlink" title="streams:"></a>streams:</h2><p>streams 表示mill wheel内不同computation的分发机制。一个computation订阅零个或多个input，然后产生一个或多个stream， 系统保证分发正确性。每个stream内每个consumer有自己key-extract 函数，一份stream可以被多个consumer订阅. streams 根据名字来唯一标识，任何computation可以消费任何stream， 也可以产生records到任何stream。</p>
@@ -500,30 +500,30 @@
 <p>如果没有输入数据，则低水位值等同于oldest work 值。<br>低水位值由injectors （从外部系统获取数据，并发送到millwheel）进行seed，经常用外部系统监控pending work 作为评估手段， computation 期望少量的late records（小于低水位）。zeitgeist处理late records的方法就是知己丢弃这种数据， 但会跟踪有多少数据被丢弃掉了（一般在0.001%）。 一些流水线当接受到晚到的数据，可以根据这个进行反向矫正。系统保证一个computation的低水位单调递增，即使对于晚到的数据。</p>
 <p>通过等待compuation 的低水位（提前一定值），用户可以有一个完整的picture 关于他们的到低水位时间的数据，就像之前zeitgeist的dip 探测系统展示的一样。当分配timestamp到新的或aggregate的record， 取决于用户去选择一个时间戳，只要不小于来源record的timestamp。通过millwheel低水位可以测量进度。如图所示：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/key-extract.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/key-extract.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <p>上图中，watermark像record一样前进。 pending works在时间轴上面，完成的在时间轴下面。新到的数据为pending work， 带着时间戳值提前于低水位值，数据可以乱序执行，低水位值反映出系统所有的pending work</p>
 <h2 id="timers"><a href="#timers" class="headerlink" title="timers"></a>timers</h2><p>timers 是一个基于key的编程hook， 由一定的墙钟时间或低水位值进行触发。 timer 由一个computation的context创建并运行。用户来决定是使用墙钟还是低水位，比如邮件提醒系统使用墙钟，或者基于window进行aggregate的分析系统是基于low watermark。一旦设定，保障以时间戳的递增的顺序触发timer。timer会在持久化存储中记录日志并保障当机器故障时能够重启恢复。 当触发一个timer， 它运行一定的用户函数并像普通输入数据一样需要保障exactly-once。 zeitgeist的dips简单实现就是用一个指定时间的bucket的终止时间设置一个低水位timer， 并当监控的流量低于预测的模型时汇报一个dip。<br>timer的使用是可选的， 用户无timer barrier需求时可以直接跳过。 举例来说， zeitgeist 能够探测spiking 查询而无需timers， 发现一个spike 无需完整的数据视图。 如果观察的流量已经超过预测模型的预测值， 延迟的数据会加到总数据中并增加spike的大小。</p>
 <h1 id="api"><a href="#api" class="headerlink" title="api"></a>api</h1><p>如下图所示， 提供借口访问所有的抽象（状态，timer和输出）。一旦设定，这些代码会自动在framework中运行。 用户无需构建任何per-key的locking语义， 系统是基于key的序列化执行。 </p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/computation-api.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/computation-api.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <h2 id="computation-api"><a href="#computation-api" class="headerlink" title="computation api"></a>computation api</h2><p>用户代码的2大入口点是ProcessRecord和ProcessTimer， 当数据来了会触发ProcessRecord，当timer 超时时触发ProcessTimer。这些构成了应用的compation。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/computation-run.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/computation-run.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <p>在这些hook（ProcessRecord和ProcessTimer）执行过程中， 系统提供api 获取或控制 per-key 状态， 产生record和设置timer。 如下图所示， 展示了这些接口之间交互。 注意并没有错误恢复的逻辑，因为由框架自动进行错误恢复。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/api-interactive.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/api-interactive.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <h2 id="injector／low-watermark-api"><a href="#injector／low-watermark-api" class="headerlink" title="injector／low watermark api"></a>injector／low watermark api</h2><p>在系统层面， 每一个computation会为所有自己的pending work(处理中或队列中等待的deliver)计算一个低水位值。可以分配一个timestamp值给持久化state 。这样系统可以自动roll up，为了提供一种透明的timers 的api 语义， 用户很少直接和低水位值进行交互，但通过分配给record的timestamp间接计算出他们。</p>
 <p><b>injector</b>：injector从外部获取数据，并发送到millwheel中。因为injector会为流水线其他部分seed low watermark，injector可以publish 一个injector low watermark到他的output streams中， 而其他subscriber可以获取他们。举例来说， 一个injector分析日志文件， 可以通过计算未完成文件的最小创建时间来计算low watermark。<br>一个injector可以跨进程运行，因此这些进程的低水位aggregate值会作为injector的低水位。 用户设定一组injector进程，从而防止injector单点故障。 实际上，常见的类型如日志，pubsub service等都有现成的injector， 用户无需再实现。如果一个injector 违反低水位语义并且发送一个迟于低水位的record， 用户代码可以决定丢弃这个record或者不对它进行现成aggregate的update。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/injector.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/injector.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <h1 id="容错性"><a href="#容错性" class="headerlink" title="容错性"></a>容错性</h1><h2 id="分发保障"><a href="#分发保障" class="headerlink" title="分发保障"></a>分发保障</h2><p>大部分millwheel 编程模型的概念性简洁让用户代码无需冥等，但却可以达到冥等的效果， 让用户不用担心这些问题（数据可靠性问题）。</p>
@@ -540,7 +540,7 @@
 <h3 id="weak-production-和冥等"><a href="#weak-production-和冥等" class="headerlink" title="weak production 和冥等"></a>weak production 和冥等</h3><p>通过strong production， exactly-once delivery， token使用从而让计算冥等。然而，一些compuation已经冥等了， 可以不需要这些措施，因为这些措施会消耗资源和加大latency。因此，用户可以自己控制disable strong production或exactly-once delivery 。 系统层面，disable exactly－once可以简单允许重复record 来实现，但禁止strong production需要注意性能影响。</p>
 <p>对于weak production， 不是在发送数据前进行checkpoint 产生数据， 在持久化state之前，乐观的发送给下游。这会带来一个新问题， 流水线的完成时间会被大幅翻倍，尤其是连续stage，因为他们在等待下游的ack records。 这种情况会大大增加端到端的latency因为流水线深度增加。 举例来说，我们假设在某个分钟有1%的概率机器会出现故障， 至少出现一次failure的可能性就会按照流水线的深度大大提高，假设流水线深度是5， 那每分钟出现失败的概率就是5%。为了降低这种失败概率， 通过checkpoint 小比例的产生数据（production）， 允许这些stage 可以ack 他们的sender （说白了，就是strong production就是每个stage 做checkpoint， week production就是 在发送前做checkpoint，并且要求下游能够做数据去重）。 通过选择性checkpoint 这种方式，millwheel可以即提高端到端的latency并减少整体的资源消耗量。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/weekproduction.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/weekproduction.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <p>当流水线是冥等的computation时，上述的方案是可行的， 因为重试不会影响正确性并且downstream production会是重试不可知。 真实的冥等例子就是无状态的filter， 重发的数据不会影响结果。</p>
@@ -554,7 +554,7 @@
 </ul>
 <p>为了避免在持久化状态时的不一致， millwheel会封装所有的基于key的update到一个原子操作中。 在任何一个时间点，有可能因为非预期事件或处理失败导致中断处理。就像前面所述， exactly-once 数据在相同的操作中被更新， 增加它到基于per－key 一致性封装中。<br>因为工作会在不同机器之间迁移， 对于数据一致性的主要威胁是僵死的writer和网络里残留的写操作到backing store。为了跟踪这些问题， 我们attach 一个sequencer token到每一个write， backing store的代理， 在允许commit write前做检查。新worker在开始工作之前使所有现存的sequencer失效， 因此没有残留的更新能够成功。这个sequencer是一种类似lease 加强机制， 类似Centrifuge系统。 因此，我们可以保证， 对于一个指定的key， 在一个时间点，仅仅一个worker能被更新那个key相关内容。<br>这种single－writer 同样对于soft state非常关键， 但事务无法保证single-writer。 以pending timer来说， 如下图所示：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-		<img src="/img/millwheel/softstage.jpg" alt="Google Millwheel" loading="lazy" decoding="async">
+		<img src="/img/millwheel/softstage.jpg" loading="lazy" decoding="async" alt="Google Millwheel">
 </div>
 
 <p>当僵死进程b 触发一个延迟写的transaction 作为response 给a， 在transaction 开始， 新的b， b-prime 执行初始化扫描timer， 当扫描结束， transaction 执行并且a 接收ack， 这样b-prime 就出在一个非一致状态。 就会永远丢失一个timer， 并且这个timer触发的更新操作就会被延迟， 因此，对于一些延迟敏感的系统，这些是不可接受的。</p>
@@ -648,14 +648,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

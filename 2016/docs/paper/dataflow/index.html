@@ -212,7 +212,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -223,7 +223,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -468,7 +468,7 @@
 <h2 id="unbounded-bounded-vs-streaming-batch"><a href="#unbounded-bounded-vs-streaming-batch" class="headerlink" title="unbounded&#x2F;bounded vs streaming&#x2F;batch"></a>unbounded&#x2F;bounded vs streaming&#x2F;batch</h2><p>当描述 无限／有限数据集时， 我们倾向使用字符unbounded／bounded， 而不是stream／batch 上， 因为后面会暗示特定的执行引擎。 batch系统可以重复执行来处理unbounded数据集， 同样好的设计streaming 系统同样可以处理bounded 数据。 这个角度上， streaming和batch系统的区别是不相干的。</p>
 <h2 id="windowing"><a href="#windowing" class="headerlink" title="windowing"></a>windowing</h2><p>window 将数据集切成有限的块，并作为一组数据来处理。 当处理无限数据（unbounded）时， 一些operation（aggregation， outer join， time-bouunded operation）需要window，然后另外一些operation（filter，mapping， inner join 等）没有需求。 对于有限数据集， window基本上是可选的， 尽管在一些场景中语义上是有帮助。 window一般是基于时间的， 不过一些系统支持基于tuple的window， 它实际上是在逻辑时间领域上的基于时间window， 并且按顺序的元素在逻辑时间上连续增长。 window 有可能是aligned（window time应用在所有数据上）， 有可能unalign（window of time 应用在部分数据上）。 下图展示了3种window类型。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/windowtype.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" decoding="async">
+                <img src="/img/dataflow/windowtype.jpg" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <h3 id="Fixed-window-tumbling-window"><a href="#Fixed-window-tumbling-window" class="headerlink" title="Fixed window&#x2F;tumbling window"></a>Fixed window&#x2F;tumbling window</h3><p>定义一个静态的window大小，比如小时或天window。 他们一般是aligned， 每个window 贯穿对应时间的数据。 有的时候，为了分摊window完成时的压力， 系统会shift window以一个随机值。</p>
@@ -482,7 +482,7 @@
 <p>event time 从来不变，process time 不停会变， 因为event会随着流转整个pipeline而导致时间会不停向前走。</p>
 <p>在处理过程中， 因为系统的真实使用（communication dely， 调度算法， 用于处理时间， 流水线序列化 等等）导致这两种时间发生差异并且动态变化。 全局进度metrics比如打标（punctuations）或者watermark，提供一个好方式展示这种差异。 我们采用像millwheel的watermark， 它是一种时间戳，在event time上的下限值，小于这个时间戳的都已经被处理. 完成的概念并不兼容正确性， 我们因此并不依赖watermark（来保证正确性）。 系统常常使用一种有用的方式， 系统会认为截止到一个指定的event time前所有的数据已经接收， 因此应用既可以visualizing skew（可视化时间差），又可以监控系统整体的健康和进度， 同时如果不依赖完全正确性的情况下，可以做一些决策，比如常见的垃圾回收。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/timeskew.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/timeskew.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>在理想情况下， time domain skew（process time和event time 差异）是为0， 只要event一出现，系统会处理event。 现实并非如此美好， 如上图所示， 从12点开始， watermark都滞后一段时间。 上图在分布式系统中是非常正常的现象， 并且在考虑提供准确性和可重复的result时， 必须要考虑这种情况。</p>
@@ -490,11 +490,11 @@
 <h2 id="core-primitives"><a href="#core-primitives" class="headerlink" title="core primitives"></a>core primitives</h2><p>开始之前，先想想经典batch 模型的基本元素。 dataflow sdk 有2个核心 transform 操作在(key, value).</p>
 <h3 id="ParDo"><a href="#ParDo" class="headerlink" title="ParDo"></a>ParDo</h3><p>ParDo 是普通的并发处理。 将输入的数据传递给用户的代码， 每个input可能产生0或多个output elements。 在无限数据中， pardo 操作每个input上元素，可能转化为无限的数据。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/pardo.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/pardo.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <h3 id="GroupByKey"><a href="#GroupByKey" class="headerlink" title="GroupByKey"></a>GroupByKey</h3><div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/pardo.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/pardo.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>GroupByKey 在发送结果到下游进行reduce前，收集一个key的所有数据。 如果输入数据是无限的，系统不知道什么时候结束。 常见的解决方案是window 这些数据。</p>
@@ -507,13 +507,13 @@
 <p>为了天然支持event-time window, 修改数据结构为(key, value, event time, window), 每个元素都会带event-time并被初始化到全局window， covering 所有的event time， 这种方式match 默认的标准batch 方式。</p>
 <h3 id="window-assignment"><a href="#window-assignment" class="headerlink" title="window assignment"></a>window assignment</h3><p>window assignment会copy一份新的元素， 每个元素会分配自己的window。 举例来说， 如下图所示，划窗中window为2分钟长度和移动步长为1分钟。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/windowassign.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/windowassign.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p> window 同它的元素关联起来， 这表示， 在流水线使用grouping之前的任何地方都可以做window assignment操作。 这很重要， 在一个合成转换中（如Sum.integersPerKey()）有可能将grouping 操作隐藏在下游的什么地方。</p>
 <h3 id="window-merging"><a href="#window-merging" class="headerlink" title="window merging"></a>window merging</h3><p>windows merging是GroupByKeyAndWindow的一部分。 如下例所示：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/windowmerge.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/windowmerge.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>上图中， 做session window， session window的timeout为30分钟。 一开始都放在全局window中。 AssignWindows 会把每个元素放到一个window中（在它自己的timestamp 延伸30分钟）。 然后开始GroupByKeyAndWindow， 实际上它进行了5步组合操作：</p>
@@ -526,7 +526,7 @@
 </ul>
 <h3 id="api"><a href="#api" class="headerlink" title="api"></a>api</h3><p>下例中：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/apisimple.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/apisimple.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>在求和之前，增加一个Window.into 来生成时长30分钟的session window</p>
@@ -554,68 +554,68 @@
 </ul>
 <h2 id="example"><a href="#example" class="headerlink" title="example"></a>example</h2><p>考虑下例中，做整数求和：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/apisimple.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/apisimple.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>我们假设从某个数据源我们观察到了10个数据点，每个数据点都是一个比较小的整数。我们会考虑有边界输入源和无边界输入源两种情况。为了画图简单，我们假设这些数据点的键是一样的，而生产环境里我们这里所描述的数据处理是多个键并行处理的。图5展示了数据在我们关心的两个时间轴上的分布。X轴是事件发生时间（也就是事件发生的时间），而Y轴是处理时间（即数据管道观测到数据的时间）。（译者注：圆圈里的数值是从源头采样到的数值）除非是另有说明，所有例子假设数据的处理执行都是在流处理引擎上。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/exampleinput.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/exampleinput.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>很多例子都要考虑水位线，因此我们的图当中也包括了理想的水位线，也包括了实际的水位线。直的虚线代表了理想的水位线，即，事件发生时间和数据处理时间不存在任何延迟，所有的数据一产生就马上消费了。不过考虑到分布式系统的不确定性，这两个时间之间有偏差是非常普遍的。在图5中，实际的水位线（黑色弯曲虚线）很好的说明了这一点。另外注意由于实际的水位线是猜测获得的，因此有一个迟到比较明显的数据点落在了水位线的后面。</p>
 <p>如果我们在传统的批处理系统中构建上述的对数据进行求和的数据处理管道，那么我们会等待所有的数据到达，然后聚合成一个批次（因为我们现在假设所有的数据拥有同样的键），再进行求和，得到了结果51。如图6所示黑色的长方形是这个运算的示意图。长方形的区域代表求和运算涵盖的处理时间和参与运算的数据的事件发生时间区间。长方形的上沿代表计算发生，获得结果的管道处理时间点。因为传统的批处理系统不关心数据的事件发生时间，所有的数据被涵盖在一个大的全局性窗口中，因此包含了所有事件发生时间内的数据。而且因为管道的输出在收到所有数据后只计算一次，因此这个输出包含了所有处理时间的数据（译者注：处理时间是数据系统观察到数据的时间，而不是运算发生时的时间）。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/classicbatch.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/classicbatch.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>注意上图中包含了水位线。尽管在传统批处理系统中不存在水位线的概念，但是在语义上我们仍然可以引入它。批处理的水位线刚开始时一直停留不动。直到系统收到了所有数据并开始处理，水位线近似平行于事件发生时间轴开始平移，然后一直延伸到无穷远处。我们之所以讨论这一点，是因为如果让流处理引擎在收到所有数据之后启动来处理数据，那么水位线进展和传统批处理系统是一模一样的。（译者注：这提示我们其实水位线的概念可以同样适用于批处理）</p>
 <p>现在假设我们要把上述的数据处理管道改造成能够接入无边界数据源的管道。在Dataflow模型中，默认的窗口触发方式是当水位线移过窗口时吐出窗口的执行结果。但如果对一个无边界数据源我们使用了全局性窗口，那么窗口就永远不会触发（译者注：因为窗口的大小在不停地扩大）。因此，我们要么用其他的触发器触发计算（而不是默认触发器），或者按某种别的方式开窗，而不是一个唯一的全局性窗口。否则，我们永远不会获得计算结果输出。</p>
 <p>我们先来尝试改变窗口触发方式，因为这会帮助我们产生概念上一致的输出（一个全局的包含所有时间的按键进行求和），周期性地输出更新的结果。在这个例子中，我们使用了Window.trigger操作，按处理时间每分钟周期性重复触发窗口的计算。我们使用累积的方式对窗口结果进行修正（假设结果输出到一个数据库或者KV数据库，因而新的结果会持续地覆盖之前的计算结果）。这样，如图7所示，我们每分钟（处理时间）产生更新的全局求和结果。注意图中半透明的输出长方形是相互重叠的，这是因为累积窗格处理机制计算时包含了之前的窗口内容。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/globalaccumulate.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/globalaccumulate.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>如果我们想要求出每分钟的和的增量，那么我们可以使用窗格的抛弃模式，如图8所示。注意这是很多流处理引擎的处理时间窗口的窗口计算模式。窗格不再相互重合，因此窗口的结果包含了相互独立的时间区域内的数据.</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/globaldiscard.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/globaldiscard.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>另外一种更健壮的处理时间窗口的实现方式，是把数据摄入时的数据到达时间作为数据的事件发生时间，然后使用eventtime window。这样的另一个效果是系统对流入系统的数据的事件发生时间非常清楚，因而能够生成完美的水位线，不会存在迟到的数据。如果数据处理场景中不关心真正的事件发生时间，或者无法获得真正的事件发生时间，那么采用这种方式生成事件发生时间是一种非常低成本且有效的方式。</p>
 <p>在我们讨论其他类型的窗口前，我们先来考虑下另外一种触发器。一种常见的窗口模式是基于记录数的窗口。我们可以通过改变触发器为每多少条记录到达触发一次的方式来实现基于记录数的窗口。图9是一个以两条记录为窗口大小的例子。输出是窗口内相邻的两条记录之和。更复杂的记录数窗口（比如说滑动记录数窗口）可以通过定制化的窗口触发器来支持。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/globaldiscardatcount.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/globaldiscardatcount.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>我们接下来考虑支持无边界数据源的其他选项，不再仅仅考虑全局窗口。一开始，我们来观察固定的2分钟窗口，累积窗格。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/unboundfixedwindow.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/unboundfixedwindow.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>水位线触发器是指当水位线越过窗口底线时窗口被触发。我们这里假设批处理和流处理系统都实现了水位线（详见3.1）。Repeat代表的含义是如何处理迟到的数据。在这里Repeat意味着当有迟于水位线的记录到达时，窗口都会立即触发再次进行计算，因为按定义，此时水位线早已经越过窗口底线了。</p>
 <p>图10-12描述了上述窗口在三种不同的数据处理引擎上运行的情况。首先我们来观察下批处理引擎上这个数据处理管道如何执行的。受限于我们当前的实现，我们认为数据源现在是有边界的数据源，而传统的批处理引擎会等待所有的数据到来。之后，我们会根据数据的事件发生时间处理，在模拟的水位线到达后窗口计算触发吐出计算结果。整个过程如图10所示</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/fixedbatch.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/fixedbatch.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>然后来考虑一下微批次引擎，每分钟做一次批次处理。系统会每分钟收集输入的数据进行处理，反复重复进行。每个批次开始后，水位线会从批次的开始时间迅速上升到批次的结束时间（技术上来看基本上是即刻完成的，取决于一分钟内积压的数据量和数据处理管道的吞吐能力）。这样每轮微批次完成后系统会达到一个新的水位线，窗口的内容每次都可能会不同（因为有迟到的数据加入进来），输出结果也会被更新。这种方案很好的兼顾了低延迟和结果的最终准确性。如图11所示：</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/fixedmicrobatch.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/fixedmicrobatch.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div> 
 
 <p>接下来考虑数据管道在流处理引擎上的执行情况，如图12所示。大多数窗口在水位线越过它们之后触发执行。注意值为9的那个数据点在水位线之后到达。不管什么原因（移动设备离线，网络故障分区等），系统并没有意识到那一条数据并没有到达，仍然提升了水位线并触发了窗口计算。当值为9的那条记录到达后，窗口会重新触发，计算出一个新的结果值。</p>
 <p>如果说我们一个窗口只有一个输出，而且针对迟到的数据仅做一次的修正，那么这个计算方式还是不错的。不过因为窗口要等待水位线进展，整体上的延迟比起微批次系统可能要更糟糕，这就是我们之前在2.3里所说的，单纯依赖水位线可能引起的问题（水位线可能太慢）</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/fixedstream.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/fixedstream.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div>
 
 <p>如果我们想降低整体的延迟，那么我们可以提供按数据处理时间的触发器进行周期性的触发，这样我们能够尽早得到窗口的计算结果，并且在随后得到周期性的更新，直到水位线越过窗口边界。参见图13。这样我们能够得到比微批次系统更低的延迟，因为数据一到达就进入了窗口随后就可能被触发，而不像在微批次系统里必须等待一个批次数据完全到达。假设微批次系统和流处理系统都是强一致的，那么我们选择哪种引擎，就是在能接受的延迟程度和计算成本之间的选择（对微批次系统也是批大小的选择）。这就是我们这个模型想要达到的目标之一。参见图13：固定窗口，流处理，部分窗格</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/fixedstreampartial.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/fixedstreampartial.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div>
 
 <p>作为最后一个例子，我们来看一下如何支持之前提到的视频会话需求（为了保持例子之间的一致性，我们继续把求和作为我们的计算内容。改变成其他的聚合函数也是很容易的）。我们把窗口定义为会话窗口，会话超时时间为1分钟，并且支持retraction操作。这个例子也体现了我们把模型的四个维度拆开之后带来的灵活的可组合性（计算什么，在哪段事件发生时间里计算，在哪段处理时间里真正触发计算，计算产生的结果后期如何进行修正）。也演示了对之前的计算结果可以进行撤回是一个非常强力的工具，否则可能会让下游之前接收到的数据无法得到修正。</p>
 <div align="center" style="width: 480px; height: auto;  text-align: center;">
-                <img src="/img/dataflow/sessionretraction.jpg" alt="The Dataflow Model： Google Dataflow 编程模型" loading="lazy" decoding="async">
+                <img src="/img/dataflow/sessionretraction.jpg" loading="lazy" decoding="async" alt="The Dataflow Model： Google Dataflow 编程模型">
 </div>
 
 <p>在这个例子中，我们首先接收到了数据5 和数据7。由于5和7之间事件发生时间大于1分钟，因此被当做了两个会话。在第一次窗口被触发时，产生了两条计算结果，和分别为5和7。在第二个因处理时间引起的窗口触发时，我们接收到了数据3,4,3，并且第一个3和上一个7之间时间大于1分钟，因此被分组到一个新的会话窗口，窗口触发计算并输出了计算结果10。紧接着，数据8到达了。数据8的到达使得数据7,3,4,3,8合并成了一个大窗口。当水位线越过数据点8后，新窗口计算被触发。触发后需要先撤回之前两个小窗口的计算结果，撤回方式是往下游发送两条键为之前的两个会话标记，值为-7和-10的记录，然后发送一个新的值为25的新窗口计算结果。同样，当值为9的记录迟于水位线到达后，之前的所有7条记录都合并成了一个会话，因此要对之前的会话再次进行撤回。值为-5和-25的记录又被发送往下游，新的值为39的会话记录随后也被发往下游。</p>
@@ -721,14 +721,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">

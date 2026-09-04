@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI Memory 系统架构的构思、随想与工程实现">
+<meta property="og:url" content="https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/01.jpg">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/02.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/03.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/04.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/05.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/06.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/07.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/08.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/09.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/10.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/11.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/12.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/13.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/14.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/15.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/16.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/17.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/18.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/19.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/20.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/21.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/22.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/23.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/24.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/25.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/26.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/27.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/28.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/29.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/30.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/31.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/32.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/33.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/34.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/35.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/36.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/37.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/38.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/39.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/42.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/43.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/44.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/45.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/46.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/40.gif">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/41.png">
+<meta property="og:image" content="https://ilongda.com/img/ai-memory-system-architecture/47.png">
+<meta property="article:published_time" content="2026-07-20T23:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-28T19:27:24.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Memory">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Memory OS">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerMem">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="System 2">
+<meta property="article:tag" content="长期记忆">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/ai-memory-system-architecture/01.jpg">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/","path":"2026/2026-07-21-ai-memory-system-architecture/","title":"AI Memory 系统架构的构思、随想与工程实现"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>AI Memory 系统架构的构思、随想与工程实现 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%B4%E5%9C%A8%E5%89%8D%E9%9D%A2"><span class="nav-number">1.</span> <span class="nav-text">说在前面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81Memory-%E7%9A%84%E6%9C%AC%E8%B4%A8%EF%BC%9A%E4%B8%89%E4%B8%AA%E6%A0%B8%E5%BF%83%E5%91%BD%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">一、Memory 的本质：三个核心命题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%91%BD%E9%A2%98%EF%BC%9AMemory-%E5%9C%A8-Agent-%E7%B3%BB%E7%BB%9F%E9%87%8C%E5%88%B0%E5%BA%95%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">核心命题：Memory 在 Agent 系统里到底是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88-Raw-Ledger-views-policy-%E6%98%AF%E8%87%AA%E7%84%B6%E8%A7%A3"><span class="nav-number">2.2.</span> <span class="nav-text">小结：为什么 Raw Ledger + views + policy 是自然解</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81System-1-System-2-%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">二、System 1 + System 2 的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%B8%80%E4%B8%AA%E2%80%9C%E9%9D%9E%E7%A9%BA%E2%80%9D%E7%9A%84-System-2"><span class="nav-number">3.1.</span> <span class="nav-text">为什么需要一个“非空”的 System 2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AF%B4%E2%80%9C%E8%AE%B0%E5%BF%86%E8%83%BD%E5%8A%9B%E2%80%9D%E5%92%8C-Agent-%E9%80%9A%E7%94%A8%E8%83%BD%E5%8A%9B%E6%98%AF%E2%80%9C%E7%9B%B8%E5%AF%B9%E6%AD%A3%E4%BA%A4%E2%80%9D%E7%9A%84"><span class="nav-number">3.2.</span> <span class="nav-text">为什么说“记忆能力”和 Agent 通用能力是“相对正交”的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9D%9E%E5%8F%82%E6%95%B0%E5%8C%96%E9%80%BC%E8%BF%91%E5%8F%82%E6%95%B0%E5%8C%96-Memory"><span class="nav-number">3.3.</span> <span class="nav-text">非参数化逼近参数化 Memory</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Memory-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97%E8%AE%BE%E8%AE%A1"><span class="nav-number">4.</span> <span class="nav-text">三、Memory 的核心模块设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-System-%E6%8E%A7%E5%88%B6%E5%B1%82-%E7%AD%96%E7%95%A5%E5%B1%82%EF%BC%88policy%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">Memory System 控制层&#x2F;策略层（policy）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-%E5%8D%95%E5%85%83%E7%9A%84%E7%BB%93%E6%9E%84%E3%80%81%E6%97%B6%E5%BA%8F%E5%92%8C%E5%8E%8B%E7%BC%A9"><span class="nav-number">4.2.</span> <span class="nav-text">Memory 单元的结构、时序和压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E6%80%A7%E5%B1%82%EF%BC%88The-Procedural-Layer%EF%BC%89%EF%BC%9A%E4%BB%8E%E2%80%9C%E7%9F%A5%E8%AF%86%E2%80%9D%E5%88%B0%E2%80%9C%E6%8A%80%E8%83%BD%E2%80%9D"><span class="nav-number">4.3.</span> <span class="nav-text">程序性层（The Procedural Layer）：从“知识”到“技能”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-%E6%95%B4%E5%90%88%E5%B1%82%EF%BC%88The-Integration-Layer%EF%BC%89%EF%BC%9A%E6%BD%9C%E5%B1%82%E8%9E%8D%E5%90%88%E4%B8%8E%E9%9B%B6%E6%A0%B7%E6%9C%AC%E5%AF%B9%E9%BD%90%EF%BC%88Memory-Tokens%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">Memory 整合层（The Integration Layer）：潜层融合与零样本对齐（Memory Tokens）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-System-%E6%9E%B6%E6%9E%84%E6%80%BB%E7%BB%93"><span class="nav-number">4.5.</span> <span class="nav-text">Memory System 架构总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%B8%8A%E6%96%87%E5%9B%9E%E9%A1%BE"><span class="nav-number">5.</span> <span class="nav-text">四、上文回顾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E4%BB%8E%E6%9E%B6%E6%9E%84%E6%9E%84%E6%83%B3%E5%88%B0%E5%B7%A5%E7%A8%8B%E5%AE%9E%E7%8E%B0%EF%BC%9APowerMem-12-%E5%89%8D%E9%9D%A2%E8%8A%B1%E4%BA%86%E8%BF%99%E4%B9%88%E5%A4%9A%E7%AF%87%E5%B9%85%E8%AE%B2%E8%B4%A6%E6%9C%AC%E3%80%81%E5%86%85%E6%A0%B8%E3%80%81%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%92%8C%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%EF%BC%8C%E4%BD%86%E7%90%86%E8%AE%BA%E7%9C%9F%E6%AD%A3%E6%9C%89%E7%94%A8%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%98%AF%E5%AE%83%E8%83%BD%E5%8F%98%E6%88%90%E4%B8%80%E5%A5%97%E5%8F%AF%E8%BF%90%E8%A1%8C%E3%80%81%E5%8F%AF%E6%8E%A5%E5%85%A5%E3%80%81%E8%83%BD%E6%8C%81%E7%BB%AD%E7%A7%AF%E7%B4%AF%E7%9A%84-AI-Memory-%E7%B3%BB%E7%BB%9F%E3%80%82"><span class="nav-number">6.</span> <span class="nav-text">五、从架构构想到工程实现：PowerMem[12] 前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的 AI Memory 系统。</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%9A%E8%AF%9D%E7%BB%93%E6%9D%9F%E4%BA%86%EF%BC%8C%E7%8A%B6%E6%80%81%E8%BF%98%E5%9C%A8"><span class="nav-number">6.1.</span> <span class="nav-text">会话结束了，状态还在</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E4%B8%80%E4%BB%BD%E5%8E%86%E5%8F%B2%EF%BC%8C%E8%A6%81%E6%9C%89%E4%B8%8D%E5%90%8C%E7%9A%84%E6%9F%A5%E6%B3%95"><span class="nav-number">6.2.</span> <span class="nav-text">同一份历史，要有不同的查法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E5%BA%93%E4%B9%9F%E5%BE%97%E6%9C%89%E4%BA%BA%E5%AE%9A%E6%9C%9F%E6%94%B6%E6%8B%BE"><span class="nav-number">6.3.</span> <span class="nav-text">记忆库也得有人定期收拾</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%8F%E9%AA%8C%E7%95%99%E4%B8%8B%E6%9D%A5%EF%BC%8C%E8%BF%98%E8%A6%81%E5%8F%98%E6%88%90%E4%BC%9A%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-number">6.4.</span> <span class="nav-text">经验留下来，还要变成会做的事</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%8F%AF%E4%BB%A5%E6%8D%A2%EF%BC%8C%E8%AE%B0%E5%BF%86%E4%B8%8D%E7%94%A8%E5%8F%8D%E5%A4%8D%E6%90%AC%E5%AE%B6"><span class="nav-number">6.5.</span> <span class="nav-text">应用可以换，记忆不用反复搬家</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E5%9C%A8%E7%94%B5%E8%84%91%E4%B8%8A%E8%B7%91%E8%B5%B7%E6%9D%A5%EF%BC%8C%E5%86%8D%E8%80%83%E8%99%91%E6%9B%B4%E5%A4%A7%E7%9A%84%E5%9C%BA%E9%9D%A2"><span class="nav-number">6.6.</span> <span class="nav-text">先在电脑上跑起来，再考虑更大的场面</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">7.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E6%9C%AB%E7%A6%8F%E5%88%A9%E7%8E%AF%E8%8A%82"><span class="nav-number">9.</span> <span class="nav-text">文末福利环节</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">10.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">279</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">461</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-03-seekdb-agent-ai-architecture/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-03</time>
+        <br>
+      专为AI而生：用OceanBase seekdb高效搭建你的Agent与AI系统架构
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-03-19-powermem-1-0-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-03-19</time>
+        <br>
+      给 OpenClaw 装上长期记忆 —— PowerMem 1.0.0 正式发布
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-02-07-skills-vs-prompt-agent-thinking/" rel="bookmark">
+        <time class="popular-posts-time">2026-02-07</time>
+        <br>
+      Skills 出世，Prompt 已死？2026 年，如何为 Agent 构建可控思维？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-26-oceanbase-ai-products-developer-view/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-26</time>
+        <br>
+      从开发者视角观察 OceanBase 开源的 AI 产品御三家
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-28-waic-not-omnipotent-agent/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-28</time>
+        <br>
+      逛完 WAIC，我不再迷信“全能 Agent”了
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="AI Memory 系统架构的构思、随想与工程实现 | Longda's Interesting World">
+      <meta itemprop="description" content="AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AI Memory 系统架构的构思、随想与工程实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-07-21 07:00:00" itemprop="dateCreated datePublished" datetime="2026-07-21T07:00:00+08:00">2026-07-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">库达（陈梓康）</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>12k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>42 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AI Memory 系统架构的构思、随想与工程实现","description":"AI Memory 系统架构：用 Raw Ledger、Views、Policy 解释 Agent 长期记忆本质，并对照 System 2 与 PowerMem 工程实现。","image":"https://ilongda.com/img/ai-memory-system-architecture/01.jpg","wordCount":11116,"datePublished":"2026-07-20T23:00:00.000Z","dateModified":"2026-07-28T19:27:24.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/"},"url":"https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/","inLanguage":"zh-CN","keywords":["OceanBase","RAG","Agent","PowerMem","AI Memory","Memory OS","长期记忆","System 2"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"AI Memory 系统架构的构思、随想与工程实现","item":"https://ilongda.com/2026/2026-07-21-ai-memory-system-architecture/"}]}</script>
+<h2 id="说在前面"><a href="#说在前面" class="headerlink" title="说在前面"></a>说在前面</h2><p>今天为大家分享的这篇文章，将从系统架构视角，通过比较浅显易懂的方式，来剖析 AI Memory 的本质。</p>
+<p>本文所讲的 Memory，指 Agent 在长期交互中积累、可被检索与利用的记录 &#x2F; 知识 &#x2F; 经验库。它直接影响个性化、持续学习能力与长程任务表现。</p>
+<p><img src="/img/ai-memory-system-architecture/01.jpg" alt="AI Memory 系统架构主题配图" decoding="async"></p>
+<p>文章的作者是蚂蚁集团的库达大佬（陈梓康），在 DataWhale 和 OceanBase 联合发布的社区课程《Easy Data x AI》中，精心整理的一章共建内容（详见：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/datawhalechina/easy-data-x-ai/blob/main/docs/extra">https://github.com/datawhalechina/easy-data-x-ai/blob/main/docs/extra</a> 的 X1-4 小节）。</p>
+<span id="more"></span>
+
+<p>因为原文的内容比较深，所以这里对复杂的公式定理部分，进行了一定程度的简化，保留了大家容易看懂并理解的关键内容。希望大家在阅读完这篇文章之后，都能够对 Agent 中 Memory 系统的实现形式有所了解。</p>
+<p>除此以外，阿里云百炼还专门为我们 DataWhale x OceanBase 联合开发的《Easy Data x AI》课程 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/datawhalechina/easy-data-x-ai">https://github.com/datawhalechina/easy-data-x-ai</a> 的社区共建和实验内容，提供了专属的免费模型算力福利，详见文末的“福利环节”~</p>
+<blockquote>
+<p>说明：</p>
+<p>文中会提到一些 2026 年的新论文，但这些论文都仅供参考。</p>
+</blockquote>
+<h2 id="一、Memory-的本质：三个核心命题"><a href="#一、Memory-的本质：三个核心命题" class="headerlink" title="一、Memory 的本质：三个核心命题"></a>一、Memory 的本质：三个核心命题</h2><p>Agent 里的 Memory 要回答的问题是：“过去有没有帮它把今天的事做对”。要回答这个问题，靠一个 markdown 文件，甚至一个数据库，都还远远不够，Agent 需要一个小的 Memory OS。</p>
+<h3 id="核心命题：Memory-在-Agent-系统里到底是什么？"><a href="#核心命题：Memory-在-Agent-系统里到底是什么？" class="headerlink" title="核心命题：Memory 在 Agent 系统里到底是什么？"></a>核心命题：Memory 在 Agent 系统里到底是什么？</h3><p><img src="/img/ai-memory-system-architecture/02.png" alt="Memory 在 Agent 系统中的定位" loading="lazy" decoding="async"></p>
+<p>经过最近一两年的思考，先给出一个结论吧：我认为 Agent Memory OS 的可以抽象三个词 —— Raw Ledger、Views、Policy。它们分别类似于操作系统里的原始日志、索引与缓存、调度规则。</p>
+<p><img src="/img/ai-memory-system-architecture/03.png" alt="Raw Ledger、Views、Policy 三层抽象" loading="lazy" decoding="async"></p>
+<h4 id="命题-A：Memory-不是“存储”，而是可被决策利用的外部状态（external-state）"><a href="#命题-A：Memory-不是“存储”，而是可被决策利用的外部状态（external-state）" class="headerlink" title="命题 A：Memory 不是“存储”，而是可被决策利用的外部状态（external state）"></a>命题 A：Memory 不是“存储”，而是可被决策利用的外部状态（external state）</h4><p>如果把 Agent 看成一个从输入到输出的函数，仅仅“存了很多历史”并不构成能力；能力来自：在当前状态下，历史能否以某种形式影响决策分布。</p>
+<p>记忆系统负责从历史中提取当前可用的信息（证据、摘要、子图、可执行技能等），并把它提供给推理层，共同产生决策。Memory 的价值不在于“存了多少历史”，而在于这条<strong>从历史到当前决策的通道</strong>是否有效。</p>
+<p><img src="/img/ai-memory-system-architecture/04.png" alt="Memory 作为外部状态影响决策" loading="lazy" decoding="async"></p>
+<p>Memory 不等于历史本身，而是“把历史转成当前可用信息”的通道——它的输出要么进入上下文（证据&#x2F;摘要&#x2F;子图），要么直接参与决策（例如对输出分布做调制）。</p>
+<h4 id="命题-B：Memory-的最小闭包是-Ledger、Views、Policy"><a href="#命题-B：Memory-的最小闭包是-Ledger、Views、Policy" class="headerlink" title="命题 B：Memory 的最小闭包是 Ledger、Views、Policy"></a>命题 B：Memory 的最小闭包是 Ledger、Views、Policy</h4><p><img src="/img/ai-memory-system-architecture/05.png" alt="Ledger Views Policy 最小闭包示意" loading="lazy" decoding="async"></p>
+<ol>
+<li><strong>Raw Ledger（原始账本）</strong>：它按发生顺序保留写入、修改、删除和反馈。Ledger 这个词本来就是账簿，前面加 Raw，是提醒我们这里存的是未经美化的原始事实。用户哪天说了什么，系统何时改过哪条记忆，当时属于哪个会话和任务，都应该能查回来。</li>
+<li><strong>Derived Views（派生视图）</strong>：也就是从账本加工出的各种“便于查找的版本”。向量索引适合按意思找，全文索引适合查姓名和编号，知识图谱适合查人物关系，时间线适合回答去年发生了什么。View 可以压缩，也可以丢掉一部分细节，但需要能够顺藤摸瓜回到原始账本。</li>
+<li><strong>Policy（控制策略）</strong>：决定何时读、读多少、何时写、如何更新、如何遗忘。并且这些决策必须显式化为可记录&#x2F;可回放的 Action 序列（ADD &#x2F; UPDATE &#x2F; DELETE &#x2F; NONE…），而不是“靠 prompt 里一句话暗示”。</li>
+</ol>
+<p>Raw Ledger 像“账本&#x2F;黑匣子”，views 像“缓存 + 索引 + 物化视图”；policy 像“调度器&#x2F;控制回路”。三者缺一，系统要么不可治理（没有账本），要么不可用（没有索引&#x2F;抽象），要么不可持续迭代（没有可 A&#x2F;B 的控制点）。</p>
+<h4 id="命题-C：Memory-的基本单位是-event（事件）序列，但-event-流不等于可用系统"><a href="#命题-C：Memory-的基本单位是-event（事件）序列，但-event-流不等于可用系统" class="headerlink" title="命题 C：Memory 的基本单位是 event（事件）序列，但 event 流不等于可用系统"></a>命题 C：Memory 的基本单位是 event（事件）序列，但 event 流不等于可用系统</h4><p>把 Raw Ledger 建模成 event 序列是合理的，因为协议里所有可审计性都依赖“事件闭包”。</p>
+<p><img src="/img/ai-memory-system-architecture/06.png" alt="Ledger 事件应包含的核心要素" loading="lazy" decoding="async"></p>
+<p>一个最通用的 ledger 事件应当包含以下要素：</p>
+<ul>
+<li><strong>作用域（scope）</strong>：这条事件属于哪个用户、哪个会话、哪个任务</li>
+<li><strong>时间戳</strong>：事件发生的时刻</li>
+<li><strong>输入观测</strong>：当时的 messages &#x2F; 环境状态片段</li>
+<li><strong>系统动作</strong>：包括对外输出，也包括 Memory Tool 的动作</li>
+<li><strong>记忆变更</strong>：对记忆状态的变更（ADD&#x2F;UPDATE&#x2F;DELETE&#x2F;NONE）</li>
+<li><strong>反馈信号</strong>（可选）：reward &#x2F; 用户评分 &#x2F; 任务成败等</li>
+<li><strong>决策元数据</strong>（可选）：候选集合 candidate_set、命中证据 provenance、early stop 阈值等</li>
+</ul>
+<p>event 序列是“真相来源”，但<strong>它太底层</strong>。如果只存 event，你得到的是可审计的历史，不是可用的记忆能力；真正把历史变成能力的是 views（对 event 的重组织&#x2F;压缩&#x2F;索引&#x2F;时序化&#x2F;技能化）和 policy（决定什么时候触发哪些 view、怎么更新 view）。</p>
+<p>换句话说：<strong>event 是 Ledger 的数据形态；views&#x2F;policy 是能力形态</strong>。</p>
+<h3 id="小结：为什么-Raw-Ledger-views-policy-是自然解"><a href="#小结：为什么-Raw-Ledger-views-policy-是自然解" class="headerlink" title="小结：为什么 Raw Ledger + views + policy 是自然解"></a>小结：为什么 Raw Ledger + views + policy 是自然解</h3><p>三个命题可以补全成一个更明确的结论链：</p>
+<ol>
+<li><strong>Memory 需要以 event&#x2F;Action 序列为第一性对象</strong>：否则 Provenance（可回放）无从谈起。</li>
+<li><strong>单一 event 流不可用</strong>：因为推理需要高密度信息、需要索引、需要时序化、需要技能化；这些都要求 views。</li>
+<li><strong>views 不可能“自洽地产生”</strong>：它们是派生状态，派生就意味着近似与冲突；因此必须有 policy 来决定写入&#x2F;更新&#x2F;检索&#x2F;淘汰，并且决策过程必须被记录下来，否则系统不可治理、不可 A&#x2F;B。</li>
+</ol>
+<p><img src="/img/ai-memory-system-architecture/07.png" alt="Memory 闭环从账本到可回放" loading="lazy" decoding="async"></p>
+<p><strong>因此，Memory 的本质不是一个组件，而是一个闭环系统</strong>：Raw Ledger（权威）→ Views（可用）→ Policy（控制）→ Commit（回写）→ Provenance（可回放）。</p>
+<h2 id="二、System-1-System-2-的设计"><a href="#二、System-1-System-2-的设计" class="headerlink" title="二、System 1 + System 2 的设计"></a>二、System 1 + System 2 的设计</h2><p><img src="/img/ai-memory-system-architecture/08.png" alt="System 1 与 System 2 分工框架" loading="lazy" decoding="async"></p>
+<h3 id="为什么需要一个“非空”的-System-2"><a href="#为什么需要一个“非空”的-System-2" class="headerlink" title="为什么需要一个“非空”的 System 2"></a>为什么需要一个“非空”的 System 2</h3><p>这里借用认知科学里的两个名字，但不讨论心理学争论。</p>
+<p><strong>System 1 是快速工作的通用 Agent</strong>，也就是我们平时接触的大模型加工具：读懂问题、制定计划、写代码、调用搜索、生成回答。</p>
+<p><strong>System 2 是较慢的外部记忆回路</strong>，负责保存、检索、更新、压缩和遗忘。它像操作系统内核与后台服务，平时不抢镜，少了它，应用每次重启都像第一次安装。</p>
+<p><img src="/img/ai-memory-system-architecture/09.png" alt="System 2 外部记忆回路示意" loading="lazy" decoding="async"></p>
+<p>如果 System 2 不发挥作用，那么记忆能力只能通过 RL post-training 等方式固化到 System 1（LLM 权重）中。在这种设定下，很难保证记忆特化训练后仍保持通用泛化能力，因此需要一个非空的 System 2，承担记忆的写入、检索与更新，并把相关决策显式化为可观测、可回放的过程。</p>
+<p>并且，我们还注意到，记忆能力和 LLM 本身的其他 Agent 能力是“相对”正交的。因此，我们可以靠只牺牲一丢丢 Memory System 的上限，来获得大量的好处（这种好处很多，比如，不影响 System 1 的 Agent 性能，记忆可插拔、可迁移、更易归因）。</p>
+<p><img src="/img/ai-memory-system-architecture/10.png" alt="外部记忆与能力内化的对比" loading="lazy" decoding="async"></p>
+<p>另外，做个不严谨地类比：从生物进化的角度上来说，让 Agent 学会使用外部系统，要比直接把能力内化在 LLM 里更符合人类的认知规律和进化速度。毕竟，我们人类也是通过工具来大幅度地、迅速地扩展自己的能力的。</p>
+<h3 id="为什么说“记忆能力”和-Agent-通用能力是“相对正交”的"><a href="#为什么说“记忆能力”和-Agent-通用能力是“相对正交”的" class="headerlink" title="为什么说“记忆能力”和 Agent 通用能力是“相对正交”的"></a>为什么说“记忆能力”和 Agent 通用能力是“相对正交”的</h3><p>先澄清这里的“相对正交”不是指严格独立，而是指：在工程上可以把系统拆成两块“低耦合”的模块&#x2F;参数块（System 1 的通用 Agent 能力 vs System 2 的记忆读写与检索），并且分别优化时不会经常出现大规模的互相干扰与能力退化。</p>
+<p>从经验现象看：同一个 base model 在不做记忆特化训练时，接入不同的 RAG &#x2F; 长期记忆策略就能显著改变长程任务表现；而同一套记忆 infra（raw_ledger + views + 检索策略）也往往能服务多种不同的 base model（可迁移、可插拔）。这种“跨模型可复用”通常意味着能力更多绑定在接口与外部状态上，而非某个特定模型权重上。</p>
+<p>非正交的边界：检索噪声、错检、时序冲突会直接破坏推理（导致推理偏离并引发幻觉）；同时，何时检索&#x2F;检索多少&#x2F;何时写入更新等策略也依赖 Agent 的自我评估与规划能力。因此更准确的说法是“相对正交 + 存在可控交叉项”，而 System 2 的 observability &#x2F; provenance &#x2F; sandbox A&#x2F;B 的意义就在于把交叉项显式化、可诊断、可迭代。</p>
+<p><img src="/img/ai-memory-system-architecture/11.png" alt="记忆能力与 Agent 能力相对正交" loading="lazy" decoding="async"></p>
+<p>在平衡挑战和上限的前提下，System 2 是必须要的（不为空）。既然有 System 2，我们完全可能把记忆的更新和召回完全脱离 LLM（System 1）来看。那么接下来的问题是，如何用一套统一的建模理论来建模这个 System 2 呢？让我们回到 Agentic Memory (AgeMem[1]) 这个概念，它非常有启发性。Agentic Memory 本质上就是一个独立的系统，并且最核心且本质的是：拥有主动控制的回路。</p>
+<p>至此，System 2 的构型大致想好了，我们绘制了下图：</p>
+<p><img src="/img/ai-memory-system-architecture/12.png" alt="Agentic Memory 主动控制回路构型" loading="lazy" decoding="async"></p>
+<p>有了 System 1 + System 2 的分工框架，接下来要回答的核心问题是：“非参数化的 System 2 能做到多好？”——这就引出参数化 vs 非参数化的讨论，以及非参数化方案的效果上限分析。</p>
+<h3 id="非参数化逼近参数化-Memory"><a href="#非参数化逼近参数化-Memory" class="headerlink" title="非参数化逼近参数化 Memory"></a>非参数化逼近参数化 Memory</h3><h4 id="参数化与非参数化：在线适应的两种载体"><a href="#参数化与非参数化：在线适应的两种载体" class="headerlink" title="参数化与非参数化：在线适应的两种载体"></a>参数化与非参数化：在线适应的两种载体</h4><p>把“学到的东西”抽象成一个对输出分布有影响的对象，它有两种经典承载方式：</p>
+<ul>
+<li><strong>参数化记忆（parametric memory）</strong>：经验被写进模型权重。训练 &#x2F; 微调就是把历史数据编译进权重的过程，推理时直接用更新后的模型，不需要额外检索。</li>
+<li><strong>非参数化记忆（non-parametric memory）</strong>：经验被写在外部状态里（ledger + views + skill pool + 索引结构）。写入由 policy 决定写哪些、怎么写；推理时通过检索、汇聚、注入等环节让外部状态影响输出。</li>
+</ul>
+<p>两者的差别不在“有没有存储”，而在<strong>适应算子写在哪里</strong>。参数化把“写入成本”前置在训练阶段；非参数化把“写入成本”分摊到在线（commit）与推理（retrieve + inject）阶段。</p>
+<p><img src="/img/ai-memory-system-architecture/13.png" alt="参数化与非参数化记忆载体对比" loading="lazy" decoding="async"></p>
+<p>前文讨论 System 2 的意义，其实就是：把在线适应的主战场从模型权重挪到外部记忆状态与控制策略上，并让它可观测、可回放、可 A&#x2F;B。</p>
+<p><img src="/img/ai-memory-system-architecture/14.png" alt="在线适应主战场外置到记忆状态" loading="lazy" decoding="async"></p>
+<h4 id="记忆如何调制决策：修正项-Δ"><a href="#记忆如何调制决策：修正项-Δ" class="headerlink" title="记忆如何调制决策：修正项 Δ"></a>记忆如何调制决策：修正项 Δ</h4><p>如果把 LLM&#x2F;Agent 的一步决策写成 logits（或 action distribution），最通用的“记忆影响决策”的表达方式是：<strong>外部记忆对模型输出施加一个可控的修正项 Δ</strong>。System 1 的权重提供基线能力（通用性），而 Δ 来自外部记忆，负责个性化、任务特化、时序修正、经验复用。</p>
+<p><img src="/img/ai-memory-system-architecture/15.png" alt="外部记忆对决策的修正项 Delta" loading="lazy" decoding="async"></p>
+<p>我们可以把一次决策写成一句很朴素的话：</p>
+<blockquote>
+<p>新的动作倾向 &#x3D; 模型原本的判断 + 记忆带来的修正 Δ</p>
+</blockquote>
+<p>Δ 读作 Delta，这里只是一个“修正量”。可以把 Δ 看成“外置的可控偏置”——它不需要改模型权重，但能改变决策分布。比如小新明确说过讨厌青椒，点餐 Agent 就该把“青椒炒肉”往候选队伍末尾请；过去的部署记录显示某个命令会破坏数据，系统就该压低它的优先级。</p>
+<p>这也解释了为什么我们前文强调 policy 的工具化：如果 Δ 的来源不可审计（比如隐式写在 prompt 里），那么系统无法做到 provenance &#x2F; rollback &#x2F; sandbox；而协议要求的正是把 Δ 的来源（命中证据、候选集合、写入动作）显式化。</p>
+<h4 id="JitRL-2-与-UMEM-3-：外部经验怎样产生迁移"><a href="#JitRL-2-与-UMEM-3-：外部经验怎样产生迁移" class="headerlink" title="JitRL[2] 与 UMEM[3]：外部经验怎样产生迁移"></a>JitRL[2] 与 UMEM[3]：外部经验怎样产生迁移</h4><p><img src="/img/ai-memory-system-architecture/16.png" alt="JitRL 与 UMEM 外部经验迁移" loading="lazy" decoding="async"></p>
+<p>不重新训练模型，Agent 能不能在做决定时立刻用上过去的成败经验？有一类研究会在每步行动前检索相似轨迹，用过去的结果估计当前动作值不值得做，再调整动作优先级。任务结束后，新轨迹和结果继续写回经验库，JitRL 就是这条路线的代表工作。</p>
+<p>RL 是 Reinforcement Learning，也就是强化学习。可以把它理解成“行动以后看结果，再调整下次选择”。这种方法不一定改模型参数，外部经验库也能参与调整，尝试逼近一次及时微调带来的变化。</p>
+<p>仅仅找到一条相似案例还不够。今天记住“这个报错要检查连接池”，明天错误信息换了几个词，系统可能就认不出来。</p>
+<p>更难的是让一次经验帮到一类问题。现在有研究会按语义相似度建立邻域，把意思接近的问题放到一起，再评估某条记忆对整个邻域带来了多少帮助。这样保存下来的不只是某道题的答案，还可能是一类故障的处理原则，UMEM 研究的正是这个问题。</p>
+<p>“语义相似”指的是文字不同，意思仍然接近。向量检索常用一串数字表示这层意思，再计算两串数字之间的距离。读者不需要记公式，只要知道它让“数据库连不上”和“服务无法建立连接”有机会被当成近亲。</p>
+<h4 id="非参数化-Memory-的上限由什么决定"><a href="#非参数化-Memory-的上限由什么决定" class="headerlink" title="非参数化 Memory 的上限由什么决定"></a>非参数化 Memory 的上限由什么决定</h4><p>库里存一亿条记录，不代表 Agent 能在眼前这件事上用好一亿条。非参数化记忆要追赶的，是有效微调对决策产生的影响，不是硬盘容量。</p>
+<p><img src="/img/ai-memory-system-architecture/17.png" alt="非参数化记忆三类上限瓶颈" loading="lazy" decoding="async"></p>
+<h5 id="1-接口带宽（Memory-→-System-1-的注入容量）"><a href="#1-接口带宽（Memory-→-System-1-的注入容量）" class="headerlink" title="1. 接口带宽（Memory → System 1 的注入容量）"></a>1. <strong>接口带宽（Memory → System 1 的注入容量）</strong></h5><p>无论是 passage、graph、skill，还是 tool using description，最终都要通过某种“Context Bridge”让 System 1 用上它。</p>
+<p>最朴素的桥是“拼 prompt”，更激进的是 latent &#x2F; KV 注入（后文整合层会展开），但不管哪种，带宽都有限：token 预算、注意力容量、或者注入的 KV 长度。</p>
+<p>换言之，注入通道存在预算约束——你能往 System 1 塞进去的“可消费证据&#x2F;表示”是有上限的，受限于 token 数、延迟、显存、注意力长度等。外部记忆再大也没用，真正起作用的是每一步你能注入多少“有效信息”。记忆固化&#x2F;压缩、分层记忆、以及 latent token 的动机，本质都是在提高单位预算的信息密度。</p>
+<h5 id="2-检索与聚合误差"><a href="#2-检索与聚合误差" class="headerlink" title="2. 检索与聚合误差"></a>2. <strong>检索与聚合误差</strong></h5><p>views 是从 Raw Ledger 派生出来的近似结构——通过索引、固化、时序化、技能抽取等操作构建，再经由召回、重排、聚合、early stop 等环节产出最终的检索结果。</p>
+<p>只要你不是直接把 ledger 全量塞进模型，views 就一定是近似。近似会带来错检、漏检、时序冲突、语义漂移，这些都会直接污染修正项 Δ（检索噪声会直接破坏推理）。因此，上限不仅取决于“存了多少”，更取决于 views 的误差是否被治理住：可观测、可溯源、可回放，才能迭代降低误差。</p>
+<h5 id="3-Policy-的学习与控制"><a href="#3-Policy-的学习与控制" class="headerlink" title="3. Policy 的学习与控制"></a>3. <strong>Policy 的学习与控制</strong></h5><p>决定读写是否靠谱。存太多会污染，存太少又学不到；召回太多挤占上下文，召回太少缺证据；错删一条长期偏好，后面的个性化会一路歪下去。</p>
+<p>Memory Algorithm Protocol 把 policy 的输出强约束成 Action 序列，并且要求 UPDATE &#x2F; DELETE 必须受候选集合约束、召回必须带 provenance。也就是说，控制策略接收当前输入、检索结果和记忆状态，输出一系列 Action，然后通过 Commit 把这些 Action 落盘。</p>
+<p>非参数化 Memory 的真正“上限瓶颈”往往不是存储后端，而是 policy：</p>
+<ul>
+<li>写多了污染、写少了学不到；</li>
+<li>召回多了噪声、召回少了信息不够；</li>
+<li>UPDATE &#x2F; DELETE 做错一次，长期就会滚雪球。</li>
+</ul>
+<p>所以 policy 必须既能学习（RL 训练范式），又能治理（protocol 的候选集合约束 + provenance 闭包 + sandbox 回放 A&#x2F;B）。这也是为什么本文一直强调“rubrics based 的 policy 不可持续”，必须把控制回路显式化为可训练对象。</p>
+<h2 id="三、Memory-的核心模块设计"><a href="#三、Memory-的核心模块设计" class="headerlink" title="三、Memory 的核心模块设计"></a>三、Memory 的核心模块设计</h2><p><img src="/img/ai-memory-system-architecture/18.png" alt="Memory 核心模块整体设计总览" loading="lazy" decoding="async"></p>
+<h3 id="Memory-System-控制层-策略层（policy）"><a href="#Memory-System-控制层-策略层（policy）" class="headerlink" title="Memory System 控制层&#x2F;策略层（policy）"></a>Memory System 控制层&#x2F;策略层（policy）</h3><p>首先，我们必须打破传统工程师的思想禁锢——rubrics based 的 policy，即，基于预定义的规则（rubrics）来控制记忆的读写更新。因此我们必须得用一个 model 来处理这件事。有两种方案：一，训练一个外部的神经网络；二，Prompt&#x2F;SFT&#x2F;RL 一个语言模型来做这个事。无论哪种方案，我们都要让这个 model 具备“记忆操作工具化”的能力，即，能够像控制手臂一样控制记忆的读写更新，而非被动接收上下文。</p>
+<p>第一种方案的难度比较大，目前学术界也是探索为主，而且如果我们在面对任何参数化问题上，都选择训练一个外部的神经网络，那么我们就会陷入“每个问题都要找到正确的训练方法，并成功训练”的困境，显然这是不可持续的。（至少 GRPO 训练方法是大家公认的，要比自己重新训练一个神经网络要简单太多）</p>
+<p>因此，我们尝试第二种方案。不妨提出 Agentic Memory 这个概念，它将记忆操作彻底工具化，整合进 Agent 的动作空间。这是逼近参数化上限的关键一步——让模型像控制手臂一样控制记忆，而非被动接收上下文。因此，这个步骤的参数就落在底层 LLM Agent 上了（让我来解释下这种偏好：因为我们还是更加相信 LLM 的泛化能力和迁移能力，并且 LLM 自身迭代速度也极快）。</p>
+<table>
+<thead>
+<tr>
+<th>记忆工具分类</th>
+<th>具体操作</th>
+<th>功能描述</th>
+<th>对应参数化行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>长期记忆 (LTM)</td>
+<td>ADD</td>
+<td>存储新知识</td>
+<td>梯度更新 (Training)</td>
+</tr>
+<tr>
+<td>长期记忆 (LTM)</td>
+<td>UPDATE</td>
+<td>修正旧知识</td>
+<td>权重调整 (Fine-tuning)</td>
+</tr>
+<tr>
+<td>长期记忆 (LTM)</td>
+<td>DELETE</td>
+<td>移除过时信息</td>
+<td>灾难性遗忘管理 &#x2F; 剪枝</td>
+</tr>
+<tr>
+<td>短期记忆 (STM)</td>
+<td>RETRIEVE</td>
+<td>语义搜索并注入</td>
+<td>激活相关神经元</td>
+</tr>
+<tr>
+<td>短期记忆 (STM)</td>
+<td>SUMMARY</td>
+<td>压缩对话历史</td>
+<td>抽象表征形成</td>
+</tr>
+<tr>
+<td>短期记忆 (STM)</td>
+<td>FILTER</td>
+<td>移除无关 Context</td>
+<td>注意力机制 (Attention Masking)</td>
+</tr>
+</tbody></table>
+<p><img src="/img/ai-memory-system-architecture/19.png" alt="记忆工具操作与参数化行为对照" loading="lazy" decoding="async"></p>
+<p><strong>以下，我列举一些 2026 年，新出现的参数化 Memory 工作：</strong></p>
+<h4 id="AgeMem-RL-训练"><a href="#AgeMem-RL-训练" class="headerlink" title="AgeMem RL 训练"></a>AgeMem RL 训练</h4><p>Agent 同时面对长期记忆和眼前上下文时，很难一上来就用好整套记忆工具。一种训练思路是把能力拆开来练，再逐步放进复杂任务，AgeMem 采用的就是这种分阶段强化学习。</p>
+<p>第一阶段练长期记忆，Agent 在日常对话里判断什么值得新增，什么是在修正旧信息。第二阶段练短期管理，系统故意塞入干扰内容，让它学会过滤和摘要。第三阶段才把长期检索与短期整理放进复杂任务。</p>
+<p>这个训练顺序很像新员工入职：先学会归档，再学会清桌面，最后才把人放进真实项目。第一天就让他同时接客户、管资料、写复盘、修线上故障，培训效果通常只剩一张疲惫的脸。</p>
+<h4 id="InfMem-4-：PreThink-Retrieve-Write-协议"><a href="#InfMem-4-：PreThink-Retrieve-Write-协议" class="headerlink" title="InfMem[4]：PreThink-Retrieve-Write 协议"></a>InfMem[4]：PreThink-Retrieve-Write 协议</h4><p>除了工具化训练，System 2 中的主动控制回路还可以通过更精细的检索策略来实现。InfMem 这篇工作为了解决长文档推理中的“迷失中间”（Lost-in-the-Middle）问题，引入了 PreThink-Retrieve-Write 协议，显式模拟了慢思考过程，本质上是一种 policy 机制：</p>
+<ul>
+<li>PreThink（预思考）：在检索前，Agent 先评估当前内部权重知识是否足以回答问题。这有效减少了不必要的外部检索，降低了延迟。</li>
+<li>Adaptive Early Stopping（自适应早停）：传统 RAG 往往检索固定数量的块（Top-K），而 InfMem 训练了一个策略网络，当累积证据置信度达到阈值时立即停止检索。实验显示，这一机制将推理速度提升了 3.9 倍，极大地逼近了参数化模型的即时响应速度。</li>
+<li>训练范式（SFT-to-RL）：InfMem 通过从监督微调（SFT）过渡到强化学习（RL），直接优化检索和记忆更新决策，确保每一次外部交互都是为了最大化最终答案的准确率。</li>
+</ul>
+<p><img src="/img/ai-memory-system-architecture/20.png" alt="InfMem 预思考检索写入协议" loading="lazy" decoding="async"></p>
+<p>Policy 决定“写什么、读什么”，而“写什么”取决于记忆单元本身的结构与压缩方式。</p>
+<p>接下来，我们讨论具体的记忆单元设计。</p>
+<h3 id="Memory-单元的结构、时序和压缩"><a href="#Memory-单元的结构、时序和压缩" class="headerlink" title="Memory 单元的结构、时序和压缩"></a>Memory 单元的结构、时序和压缩</h3><p>现在，我们选择了 Agentic Memory 的设计，并且大致想好了 System 2 的构型，那么接下来，我们还需要考虑具体的记忆单元的结构、时序和压缩。</p>
+<p>借鉴 SimpleMem[5] 的思路，它针对长期交互中的“语境通胀”（Context Inflation）问题，提出了一套模拟生物记忆固化（Consolidation）的机制。</p>
+<p>SimpleMem 不存储原始文本，而是存储压缩后的“记忆单元”。它定义了记忆单元间的亲和力评分（Affinity Score）：</p>
+<p>其中嵌入向量表示各记忆单元。</p>
+<p>基于该评分，SimpleMem 会在后台异步执行递归固化（Recursive Consolidation），将高亲和力的记忆单元合并为更高层级的抽象表征。这个过程很像参数化模型训练中的“层级抽象”：通过多层结构把具体样本逐步提炼为更通用的特征表示，从而在不丢失关键信息的前提下显著提升存储效率。</p>
+<p>实验表明，SimpleMem 在其报告的长时序多轮对话任务上，以更低的 Token 消耗击败了全量上下文模型，说明固化的效果还算不错。</p>
+<p>参数化记忆的一个重大缺陷是“静态世界观”——一旦训练完成，权重就趋于固化，难以自然地表达随时间变化的事实。LLM 天生对于时间不敏感，这导致我们的生活世界和 Memory 想要承载的世界是有着同步化的问题。关于时序化这个方向，相关工作——Zep[6] 及其引擎 Graphiti[7] 引入了时序知识图谱（Temporal Knowledge Graph, TKG）来缓解这一问题。</p>
+<p>具体来说，Zep 会对图谱中的边（Edge）加入时间标注（Temporal Validity）。例如“拜登是美国总统”不再是一个静态事实，而是带有一个有效时间窗口，用来区分“曾经为真”和“当前为真”。</p>
+<p>在检索阶段，Zep 会结合查询的时间语境动态合成“当前时刻”的真值图谱。直观上，这让 Memory OS 能模拟参数化模型在经历“遗忘学习”（Unlearning）后的状态：能更精确地区分历史事实与当前事实；据称在其报告的长时序记忆评测上，相比传统 RAG 可提升 18.5% 的准确率。</p>
+<p><img src="/img/ai-memory-system-architecture/21.png" alt="SimpleMem 固化与时序知识图谱" loading="lazy" decoding="async"></p>
+<blockquote>
+<p>上面的内容相对比较深，所以这里再多做一个容易被大家理解的小总结：</p>
+<p>完整对话信息最全，也最占上下文；一句极短摘要很省地方，细节和来源可能一起被省掉。长期系统需要同时保留原始证据与高密度抽象。</p>
+<p>交互时间越长，上下文就越容易膨胀。一种处理办法是把历史压成记忆单元，再根据语义亲和度，在后台递归合并相近内容，慢慢形成更高一层的抽象。SimpleMem 采用的就是这条路线。</p>
+<p>可以把它想成照片整理。底层留着原片，上面有按旅行生成的相册，再往上可能是一份年度回顾。平时先看概览，需要确认“那天到底是谁说的”时，再回到底片。压缩不是越狠越好。摘要必须保留来源指针，系统才有机会在细节被压错时回去核对。</p>
+</blockquote>
+<h4 id="时序记忆（Temporal-Memory）：从“发生过什么”到“何时为真、何时被相信”"><a href="#时序记忆（Temporal-Memory）：从“发生过什么”到“何时为真、何时被相信”" class="headerlink" title="时序记忆（Temporal Memory）：从“发生过什么”到“何时为真、何时被相信”"></a>时序记忆（Temporal Memory）：从“发生过什么”到“何时为真、何时被相信”</h4><p>“拜登是美国总统”这句话在 2024 年可能没什么问题，2026 年可能就不对了。语义相似度只知道两句话谈的是同一件事，不会自动判断哪条现在有效。</p>
+<p>在 Memory OS 的三件套 <strong>(Raw Ledger, Views, Policy)</strong> 中，“时间”并不是附加字段，而是会改变三层的语义边界：</p>
+<ul>
+<li><strong>Raw Ledger</strong>：append-only 记录“发生了什么写入动作”。加入时序后，Ledger 不仅要能回答“系统何时写入&#x2F;更正”（transaction time），还要能表达“该事实在世界中何时为真”（valid time）。这两者不等价：你可以在今天纠正上周发生的事实。</li>
+<li><strong>Views</strong>：检索不是“相关即可”，而是“在某个查询时间语境下成立”。没有时间切片（time slice），语义相似检索会把旧事实当作当前事实。</li>
+<li><strong>Policy</strong>：默认 time_scope&#x3D;current 意味着“宁可漏，不可错”。但这要求 policy 在需要历史时能显式触发 historical&#x2F;all，并让 EvidencePack 承载“冲突并存”的证据结构，让 System 1 决策，而不是 Memory OS 私自裁决。</li>
+</ul>
+<p><img src="/img/ai-memory-system-architecture/22.png" alt="时序如何改写 Ledger Views Policy" loading="lazy" decoding="async"></p>
+<p>推演链条（为什么必须把时序提升到架构骨架层）：</p>
+<ol>
+<li>LLM 对时间天然不敏感（尤其是隐含时间、相对时间、跨时区）</li>
+<li>纯语义检索会把“过去的高相似事实”错当成“现在仍为真”</li>
+<li>决策层出现“过时事实复活”、以及“被纠正的事实仍反复召回”</li>
+<li>解决方案不是更强 prompt，而是：<strong>以 bi-temporal + time-sliced recall</strong> 把“何时为真”变成检索与聚合的硬约束，并让 policy 可控、可回放。</li>
+</ol>
+<h4 id="分层记忆：同一段历史需要不同抽象"><a href="#分层记忆：同一段历史需要不同抽象" class="headerlink" title="分层记忆：同一段历史需要不同抽象"></a>分层记忆：同一段历史需要不同抽象</h4><p>一种存储形态，很难同时满足关系推理、经验迁移和证据核对。为了让三类任务各有合适的记忆形态，可以把记忆分成图记忆、经验记忆和片段记忆，MemWeaver[8] 就是这种分层思路的代表。</p>
+<p>图记忆保存实体关系，适合回答谁和谁有关；经验记忆从多次交互中抽象处理模式，适合遇到类似问题时借鉴；片段记忆保留原文，负责核对和溯源。</p>
+<p>这很像同一套项目资料同时有架构图、复盘笔记和会议原文。它们都来自同一段历史，却服务于不同问题。强行只留一种，阅读体验可能整齐，工作起来就没那么体面了。</p>
+<p>到这里为止，我们讨论的“记忆单元”更多还是 Declarative Memory（事实&#x2F;证据&#x2F;关系）：能回答“是什么&#x2F;发生过什么”。接下来，我们从“存什么”过渡到“存怎么做”——也就是程序性记忆。</p>
+<h3 id="程序性层（The-Procedural-Layer）：从“知识”到“技能”"><a href="#程序性层（The-Procedural-Layer）：从“知识”到“技能”" class="headerlink" title="程序性层（The Procedural Layer）：从“知识”到“技能”"></a>程序性层（The Procedural Layer）：从“知识”到“技能”</h3><p>事实记忆回答“是什么”和“发生过什么”，长程任务还需要“接下来怎么做”。</p>
+<p>Agent 成功完成一次数据库迁移，如果只保存聊天片段，下次仍得重新规划、试错和验证。程序性记忆要保存的是可复用过程，像操作系统里的可执行文件：满足什么条件时启动，依次执行哪些动作，什么时候算结束。</p>
+<p>现在已经有研究专门讨论，怎样让 Agent 从多次尝试中学出可复用技能，同时避免越改越离谱。技能可以用 Skill-MDP 描述，简单理解，就是明确什么时候启动、执行哪些动作、什么时候结束，ProcMEM[9] 就是这一方向的代表工作之一。</p>
+<p>一项技能包含触发条件、动作序列和终止条件。系统先回看成功与失败轨迹，用自然语言分析技能哪里该改，这被称为语义梯度。模型参数不会因此改变，修改意见写在技能文本上。</p>
+<p>候选技能不会写完就直接上岗。ProcMEM 用 PPO 风格的门控做反事实验证，检查新技能是否更偏向历史中的好动作，同时又没有偏离旧技能太远。PPO 是一种常见强化学习算法，这里借用的是它“每次改一点，别突然性情大变”的思想。</p>
+<p>技能上线后还要看真实回报。长期没有贡献的技能退出，语义重复的技能合并，环境变化后太久没验证的技能重新试跑。收藏了一百份“高效工作法”不叫程序性记忆，能在合适时机执行，并用结果证明有效，才算技能。</p>
+<p><img src="/img/ai-memory-system-architecture/23.png" alt="程序性记忆技能蒸馏与验证" loading="lazy" decoding="async"></p>
+<h3 id="Memory-整合层（The-Integration-Layer）：潜层融合与零样本对齐（Memory-Tokens）"><a href="#Memory-整合层（The-Integration-Layer）：潜层融合与零样本对齐（Memory-Tokens）" class="headerlink" title="Memory 整合层（The Integration Layer）：潜层融合与零样本对齐（Memory Tokens）"></a>Memory 整合层（The Integration Layer）：潜层融合与零样本对齐（Memory Tokens）</h3><p>文本、图谱、时间边和技能最后都要送进大模型。最常见的办法，是把它们转成文字，拼到上下文里，再由模型重新编码。这个过程直观、可读，也会消耗 Token 和时间。</p>
+<p>Memory Token 探索另一条路线。这里的 Token 可以理解成模型处理信息的基本单位；Memory Token 则希望把外部记忆压成更接近模型内部表示的形态，减少来回翻译。</p>
+<p><img src="/img/ai-memory-system-architecture/24.png" alt="Memory Token 潜层融合路线示意" loading="lazy" decoding="async"></p>
+<h4 id="LycheeMemory-10-：潜层压缩与-KV-Cache-注入"><a href="#LycheeMemory-10-：潜层压缩与-KV-Cache-注入" class="headerlink" title="LycheeMemory[10]：潜层压缩与 KV-Cache 注入"></a>LycheeMemory[10]：潜层压缩与 KV-Cache 注入</h4><p>外部文本每次送进模型都要重新编码，会增加计算和显存开销。有研究训练压缩器，把内容变成潜层 Token，再以接近 KV-Cache 的形式注入注意力计算。LycheeMemory 探索的就是这种潜层压缩路线。</p>
+<p>KV-Cache 是模型推理时保存中间计算结果的缓存，避免每生成一个字都从头计算。把记忆做成类似形态，有机会减少文本编解码。</p>
+<p><img src="/img/ai-memory-system-architecture/25.png" alt="LycheeMemory 潜层压缩与 KV 注入" loading="lazy" decoding="async"></p>
+<p>代价也很直观：人越来越看不懂这段记忆。潜层表示如果影响了错误答案，系统必须能追到原始证据，否则排障人员面对的会是一串很有数学气质、但拒绝作证的数字。</p>
+<h4 id="MemAdapter-11-：异构记忆的对齐器"><a href="#MemAdapter-11-：异构记忆的对齐器" class="headerlink" title="MemAdapter[11]：异构记忆的对齐器"></a>MemAdapter[11]：异构记忆的对齐器</h4><p>文本、图谱和技能各有自己的表示方式，同一个模型未必能直接读懂。一种思路是先从图谱中取出与问题相关的局部子图，再把结构化信息对齐到模型的语义空间，这样不用微调主模型也能融合异构记忆。MemAdapter 研究的就是这类零样本对齐方法。</p>
+<p>Adapter 就是适配器，类似出国时带的转换插头。插得上只是第一步，电压是否匹配、接错后能否定位，同样重要。对齐层需要支持来源追踪、回滚和沙箱对比。沙箱指隔离出来的试验环境，可以让几种策略在不影响真实记忆的情况下跑同一批任务。</p>
+<p><img src="/img/ai-memory-system-architecture/26.png" alt="MemAdapter 异构记忆零样本对齐" loading="lazy" decoding="async"></p>
+<h4 id="Memory-Token-容易被忽略的控制与治理"><a href="#Memory-Token-容易被忽略的控制与治理" class="headerlink" title="Memory Token 容易被忽略的控制与治理"></a>Memory Token 容易被忽略的控制与治理</h4><p>潜层注入也没有取消注意力上限。系统仍要决定注入哪些内容、给多少预算、什么时候停。表示、对齐、选择、治理和溯源需要一起设计，单独追求压缩率，很容易把可读性压没了，问题还在。</p>
+<h3 id="Memory-System-架构总结"><a href="#Memory-System-架构总结" class="headerlink" title="Memory System 架构总结"></a>Memory System 架构总结</h3><p>不知不觉，我们就讲了很多很多……</p>
+<p>很多时候我也是在写作的过程中，不断重塑我对 Memory System 的构想。整篇文章，我还是倾向于用“内核&#x2F;文件系统&#x2F;可执行文件”这种 linux 味道满满的笔触来写，因为我觉得一个好的系统最后应该能沉淀成一组<strong>不绑定具体实现与细节</strong>的抽象：它描述的是“我心里认为必须存在的模块与接口”，而不是“教别人怎么拼装某某方案”。</p>
+<p><img src="/img/ai-memory-system-architecture/27.png" alt="Memory OS 五件套架构抽象图" loading="lazy" decoding="async"></p>
+<ul>
+<li><strong>内核（Kernel &#x2F; Control Plane）</strong>：System 2 的慢回路与调度器。它决定何时检索、检索多少、何时写入、何时更新、何时遗忘，并把这些决策显式化为可训练&#x2F;可评估的策略（这类想法可参考 AgeMem、InfMem 的控制协议与训练范式，但抽象本身不依赖某一篇论文）。比如，其中一个子模块是规划器&#x2F;路由器（Planner &#x2F; Router）：可类比为内核里的 scheduler + syscall dispatcher，把一次输入&#x2F;查询编译成一份可执行的读写计划（可理解为一串 Memory“系统调用”的调用序列），包括：查哪些 views、每个 view 取多少证据、是否需要闭环检索以及何时停止；以及哪些记忆单元（units）值得写入、写到哪类 view、UPDATE&#x2F;DELETE 必须引用的候选集合约束。实现上它可以是 rule-based router，也可以是 LLM-as-planner 或 learned controller；但无论实现形态如何，都应当让决策可记录、可回放、可对比，避免“policy 只存在于描述里”。</li>
+<li><strong>文件系统（File System &#x2F; Storage Plane）</strong>：以“权威记录（Raw Ledger，记忆原始数据&#x2F;raw 账本）+ 派生视图（views）”为核心的数据层。底层需要承载时序一致性与冲突消解（事实在时间上何时为真），上层需要做语义压缩与分层固化（把大量事件&#x2F;片段逐步抽象成更高层的表征），并且始终保留可溯源链路（这类方向可分别类比时序 KG 与递归固化&#x2F;分层记忆）。</li>
+<li><strong>可执行文件（Executable &#x2F; Skill Plane）</strong>：把经验固化成可执行、可复用的程序性单元（skill&#x2F;macro&#x2F;workflow），让系统复用“怎么做”，而不仅是复用“是什么”。关键不是技能形式本身，而是它必须满足可执行、可验证、可治理，才能长期演化且不发生系统性退化。</li>
+<li><strong>总线接口（Interface &#x2F; Context Bridge）</strong>：记忆与推理之间的接口层。它负责把外部状态以尽量低开销、低失真、可控的方式注入到计算核心中，并支持可观测与溯源（部分工作用 latent token &#x2F; memory token 作为桥接手段）。</li>
+<li><strong>学习引擎（Learning Engine &#x2F; Online Adaptation）</strong>：在不必频繁更新权重的前提下，持续把交互反馈转化为可用的改进信号。它可以体现在推理端的优势调制、技能层的演化算子、检索策略的分块优化等。关键是让“学习”发生在外部状态与策略上，从而保持可插拔、可回滚、可 A&#x2F;B 的工程属性（JitRL&#x2F;优势调制是其中一种实现方式）。</li>
+</ul>
+<h2 id="四、上文回顾"><a href="#四、上文回顾" class="headerlink" title="四、上文回顾"></a>四、上文回顾</h2><p>回顾全文，从命题 A&#x2F;B&#x2F;C 出发，经过层层论证，我们最终可以得到以下核心结论：</p>
+<ol>
+<li><strong>Memory 不是存储，而是闭环系统</strong>：它的本质是 Raw Ledger（权威记录）→ Views（可用能力）→ Policy（控制层）→ Commit（回写）→ Provenance（可回放）的完整闭环。三者缺一，系统要么不可治理，要么不可用，要么不可持续迭代。</li>
+<li><strong>System 2 是必要的</strong>：记忆能力与 LLM 通用 Agent 能力相对正交，外置化的 System 2 在可插拔、可迁移、可归因方面带来大量工程好处，值得牺牲一定的理论上限。</li>
+<li><strong>非参数化 Memory 的上限由三类瓶颈决定</strong>：接口带宽（注入容量）、检索与聚合误差（views 近似）、以及 policy 的可学习性与可控性。其中 policy 往往是最被低估的瓶颈。</li>
+<li><strong>时序是架构的结构维度，而非 metadata</strong>：bi-temporal + time-sliced recall 是区分“曾经为真”与“当前为真”的硬约束，不能交给 LLM 自洽猜测。</li>
+<li><strong>架构五件套</strong>（内核&#x2F;文件系统&#x2F;可执行文件&#x2F;总线接口&#x2F;学习引擎）是不绑定具体实现的抽象，它描述的是“必须存在的模块与接口”，而不是“教别人怎么拼装某某方案”。</li>
+</ol>
+<p><img src="/img/ai-memory-system-architecture/28.png" alt="全文核心结论回顾示意图" loading="lazy" decoding="async"></p>
+<h2 id="五、从架构构想到工程实现：PowerMem-12-前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的-AI-Memory-系统。"><a href="#五、从架构构想到工程实现：PowerMem-12-前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的-AI-Memory-系统。" class="headerlink" title="五、从架构构想到工程实现：PowerMem[12] 前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的 AI Memory 系统。"></a>五、从架构构想到工程实现：PowerMem[12] 前面花了这么多篇幅讲账本、内核、文件系统和可执行文件，但理论真正有用的时候，是它能变成一套可运行、可接入、能持续积累的 AI Memory 系统。</h2><p>一个开源项目 PowerMem（项目地址：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">https://github.com/oceanbase/powermem</a> 可以看作这套 Memory OS 的开源工程落点。它面向 AI Agent 提供持久化、自演化的记忆能力，把对话、行动与反馈整理成长期可用的状态。前文那些看起来略有距离的抽象，在这里能找到具体位置。</p>
+<p><img src="/img/ai-memory-system-architecture/29.png" alt="PowerMem 作为 Memory OS 工程落点" loading="lazy" decoding="async"></p>
+<h3 id="会话结束了，状态还在"><a href="#会话结束了，状态还在" class="headerlink" title="会话结束了，状态还在"></a>会话结束了，状态还在</h3><p>System 2 的第一件工作，是把长期状态从模型和单次会话里拿出来。PowerMem 提供持久化记忆、用户画像和作用域管理，让记忆可以按用户与 Agent 隔离，也能在需要时共享。</p>
+<p>这意味着模型可以换、会话可以重开，用户偏好和任务进度不用陪着上下文一起下班。多 Agent 协作时，各自该记什么、能够看到什么，也有明确边界。</p>
+<p><img src="/img/ai-memory-system-architecture/30.png" alt="PowerMem 持久化记忆与作用域隔离" loading="lazy" decoding="async"></p>
+<h3 id="同一份历史，要有不同的查法"><a href="#同一份历史，要有不同的查法" class="headerlink" title="同一份历史，要有不同的查法"></a>同一份历史，要有不同的查法</h3><p>向量检索擅长找意思相近的内容，全文检索擅长名字和编号，图检索擅长关系，新近度信号负责提醒系统别忽略刚发生的变化。PowerMem 让这些方式参与混合检索，对应的正是前文 Views 的设计。</p>
+<p>用户问“上次那个类似故障”，语义检索可以帮忙；用户问“订单 OB-20260716”，关键词更可靠；用户问“这个客户和哪个项目有关”，关系图更顺手。把所有问题都交给一种检索方式，像拿着一把螺丝刀装修整套房，认真是很认真，效率另说。</p>
+<p><img src="/img/ai-memory-system-architecture/31.png" alt="PowerMem 混合检索的多种查法" loading="lazy" decoding="async"></p>
+<h3 id="记忆库也得有人定期收拾"><a href="#记忆库也得有人定期收拾" class="headerlink" title="记忆库也得有人定期收拾"></a>记忆库也得有人定期收拾</h3><p><img src="/img/ai-memory-system-architecture/32.png" alt="PowerMem 记忆抽取更新与时间衰减" loading="lazy" decoding="async"></p>
+<p>PowerMem 用大模型参与记忆抽取、更新和合并，并结合艾宾浩斯式时间衰减调整记忆优先级。艾宾浩斯遗忘曲线原本描述人类记忆随时间减弱，这里借用的是“越久未被使用，默认权重越低”的思路。</p>
+<p>新地址可以更新旧地址，反复出现的稳定偏好可以获得更高权重，长期没有用过的零碎信息逐渐退到后排。记忆库由此不再是只进不出的聊天仓库，Policy 的生命周期管理开始真正工作。</p>
+<p>时间衰减并不等于粗暴删除。明确过期、仍然有效、只是很久没用，是三种不同状态。前文谈到的有效期、撤回记录和软排序，仍然是理解长期治理的关键。</p>
+<h3 id="经验留下来，还要变成会做的事"><a href="#经验留下来，还要变成会做的事" class="headerlink" title="经验留下来，还要变成会做的事"></a>经验留下来，还要变成会做的事</h3><p>PowerMem 提供 Experience + Skill 两层蒸馏。Experience 保存从交互中提炼出的经验，Skill 再把反复验证的经验整理成更可复用的做法。</p>
+<p><img src="/img/ai-memory-system-architecture/33.png" alt="Experience 与 Skill 两层蒸馏" loading="lazy" decoding="async"></p>
+<p>这对应程序性记忆：Agent 除了知道“上次迁移成功了”，还要能留下当时的前置检查、执行步骤和验证方式。下一次面对相似任务，历史不只是几段可供怀旧的聊天记录，而能成为行动参考。</p>
+<h3 id="应用可以换，记忆不用反复搬家"><a href="#应用可以换，记忆不用反复搬家" class="headerlink" title="应用可以换，记忆不用反复搬家"></a>应用可以换，记忆不用反复搬家</h3><p>Context Bridge 最怕每个应用都发明一种私有记忆格式。PowerMem 提供 Python SDK、HTTP 服务、MCP 和 CLI，让聊天助手、开发工具和 Agent 通过不同入口访问同一套后端。</p>
+<p>MCP 是 Model Context Protocol，也就是模型上下文协议，用统一方式把工具和数据源提供给 Agent。CLI 则是命令行接口，方便开发者在终端调用。这些入口负责让不同应用稳定接上 Memory OS，记忆内容仍由后端统一管理。</p>
+<p><img src="/img/ai-memory-system-architecture/34.png" alt="PowerMem 多入口接入同一后端" loading="lazy" decoding="async"></p>
+<h3 id="先在电脑上跑起来，再考虑更大的场面"><a href="#先在电脑上跑起来，再考虑更大的场面" class="headerlink" title="先在电脑上跑起来，再考虑更大的场面"></a>先在电脑上跑起来，再考虑更大的场面</h3><p>存储层也保留了伸缩空间。PowerMem 支持 OceanBase、嵌入式 seekdb、PostgreSQL 和 SQLite 等主流数据库。本地实验可以从轻量后端开始，长期服务再选择更适合持续运行的数据库，Memory OS 上层的抽象不用跟着全部推倒重来。</p>
+<p>一个长期运行的 Agent，可以顺着几个问题检查自己的记忆系统：会话结束后状态还在不在；历史是否只有向量这一种查法；旧事实能否更新，低价值内容会不会退场；成功经验能否沉淀成技能；多个应用能不能共用同一套记忆底座；本地原型走向长期服务时，存储是否留有余地。</p>
+<p><img src="/img/ai-memory-system-architecture/35.png" alt="PowerMem 多数据库后端伸缩示意" loading="lazy" decoding="async"></p>
+<p>PowerMem 已经把这些关键能力放进一套开源系统。它适合用来搭建长期助手、个性化应用、Copilot 和多 Agent 工作流，也适合作为理解 Memory OS 的一份可运行样本。读完前面的理论再看它，会更容易明白每个模块为什么存在；先把系统跑起来再回看理论，也能看到这些抽象都来自长期运行后迟早会遇到的真实问题。</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>AI Memory 系统的下一步演进仍然值得期待：更细的 Ledger 回放与来源追踪，更自然的双时态查询，能从真实反馈中持续调整的 Policy，以及更高效的潜层记忆注入。</p>
+<p>方向变得更远，但是内核、文件系统、技能平面、总线与学习引擎这套骨架仍然适用。</p>
+<p><img src="/img/ai-memory-system-architecture/36.png" alt="AI Memory 下一步演进方向示意" loading="lazy" decoding="async"></p>
+<p>如果大家想继续看工程细节，可以从 PowerMem GitHub 仓库[13] 和它的 PowerMem 架构说明[14] 开始。一个 Agent 真正记住你，靠的不会是一句“请记住以上内容”，而是背后这套持续工作的系统。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>[1] AgeMem: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2601.01885">https://arxiv.org/abs/2601.01885</a></p>
+<p>[2] JitRL: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2601.18510">https://arxiv.org/abs/2601.18510</a></p>
+<p>[3] UMEM: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2602.10652">https://arxiv.org/abs/2602.10652</a></p>
+<p>[4] InfMem: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2602.02704">https://arxiv.org/abs/2602.02704</a></p>
+<p>[5] SimpleMem: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2601.02553">https://arxiv.org/abs/2601.02553</a></p>
+<p>[6] Zep: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2501.13956">https://arxiv.org/abs/2501.13956</a></p>
+<p>[7] Graphiti: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/getzep/graphiti">https://github.com/getzep/graphiti</a></p>
+<p>[8] MemWeaver: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2601.18204">https://arxiv.org/abs/2601.18204</a></p>
+<p>[9] ProcMEM: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2602.01869">https://arxiv.org/abs/2602.01869</a></p>
+<p>[10] LycheeMemory: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2602.08382">https://arxiv.org/abs/2602.08382</a></p>
+<p>[11] MemAdapter: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://arxiv.org/abs/2602.08369">https://arxiv.org/abs/2602.08369</a></p>
+<p>[12] PowerMem: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">https://github.com/oceanbase/powermem</a></p>
+<p>[13] PowerMem GitHub 仓库: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem">https://github.com/oceanbase/powermem</a></p>
+<p>[14] PowerMem 架构说明: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powermem/blob/main/docs/architecture/overview.md">https://github.com/oceanbase/powermem/blob/main/docs/architecture/overview.md</a></p>
+<p><img src="/img/ai-memory-system-architecture/37.png" alt="AI Memory 文章标题横幅配图" loading="lazy" decoding="async"></p>
+<h2 id="文末福利环节"><a href="#文末福利环节" class="headerlink" title="文末福利环节"></a>文末福利环节</h2><p>今天阿里云百炼为我们 DataWhale x OceanBase 联合开发的《Easy Data x AI》课程 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/datawhalechina/easy-data-x-ai">https://github.com/datawhalechina/easy-data-x-ai</a> 的社区共建和实验内容，提供了专属的模型算力福利（这篇公众号文章，就出自该课程的社区共建章节）~</p>
+<p><img src="/img/ai-memory-system-architecture/38.png" alt="Easy Data x AI 课程算力福利说明" loading="lazy" decoding="async"></p>
+<p>社区课程学习者和共建者，均可通过阿里云百炼 × OceanBase 专属福利页面 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://opc.aliyun.com/oceanbase?utm_content=g_1000415375">https://opc.aliyun.com/oceanbase?utm_content&#x3D;g\_1000415375</a> 领取模型算力支持，可获得 1 亿 Token 的免费额度（实测新、老用户均可获得）。</p>
+<p><img src="/img/ai-memory-system-architecture/39.png" alt="阿里云百炼专属福利领取页面" loading="lazy" decoding="async"></p>
+<p>除此以外，百炼新老用户及个人、企业均可参与无门槛 Token 满返补贴；还有最高 100 万元等额 Token 的 OPC 创新助力，以及高校学生模型通兑补贴等课程共建、学习的专属福利。这些权益和福利将为本课程的共建和实验实践提供专属模型算力支持，欢迎大家领取百炼的模型算力福利，积极参与课程的学习和共建~</p>
+<p>课程链接：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/datawhalechina/easy-data-x-ai">https://github.com/datawhalechina/easy-data-x-ai</a></p>
+<p>福利链接：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://opc.aliyun.com/oceanbase?utm_content=g_1000415375">https://opc.aliyun.com/oceanbase?utm_content&#x3D;g\_1000415375</a></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/ai-memory-system-architecture/42.png" alt="往期内容推荐配图一" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/43.png" alt="往期内容推荐配图二" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/44.png" alt="往期内容推荐配图三" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/45.png" alt="往期内容推荐配图四" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/46.png" alt="往期内容推荐配图五" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/40.gif" alt="OceanBase 开源社区欢迎加入交流" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-memory-system-architecture/41.png" alt="OceanBase 社区资料入口" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/ai-memory-system-architecture/47.png" alt="添加社区小助手加入微信交流群" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/RAG/" rel="tag"># RAG</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/PowerMem/" rel="tag"># PowerMem</a>
+              <a href="/tags/AI-Memory/" rel="tag"># AI Memory</a>
+              <a href="/tags/Memory-OS/" rel="tag"># Memory OS</a>
+              <a href="/tags/%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/" rel="tag"># 长期记忆</a>
+              <a href="/tags/System-2/" rel="tag"># System 2</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-15-dewu-oceanbase-sql-hint-tuning/" rel="prev" title="复杂SQL优化200倍的背后：得物OceanBase执行计划与Hint调优实战">
+                  <i class="fa fa-angle-left"></i> 复杂SQL优化200倍的背后：得物OceanBase执行计划与Hint调优实战
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-07-23-why-we-build-lakebase/" rel="next" title="我们为什么要做 Lakebase？">
+                  我们为什么要做 Lakebase？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">747k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">45:16</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

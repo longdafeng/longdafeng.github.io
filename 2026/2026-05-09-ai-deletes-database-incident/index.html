@@ -212,7 +212,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">279</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -223,7 +223,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">426</span>
+        <span class="site-state-item-count">461</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -428,11 +428,11 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST https://backboard.railway.app/graphql/v2 \</span><br><span class="line">  -H <span class="string">&quot;Authorization: Bearer [token]&quot;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&#123;&quot;query&quot;:&quot;mutation &#123; volumeDelete(volumeId: \&quot;3d2c42fb-...\&quot;) &#125;&quot;&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
 
 <p>没有确认弹窗，没有环境隔离，没有“此卷含有生产数据，确定吗？”。从认证通过到数据蒸发，中间什么都没有。9 秒，删库跑路。</p>
-<p><img src="/img/ai-deletes-database-incident/01.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" decoding="async"></p>
-<p><img src="/img/ai-deletes-database-incident/02.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/01.png" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
+<p><img src="/img/ai-deletes-database-incident/02.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>更致命的是第二重设计缺陷：Railway 把卷级备份放在了同一个 volume 里。官方文档的小字角落写了：“清空卷会同时删除所有备份。”主数据没了，备份跟着陪葬。最近能找到的外部备份，是三个月前的。</p>
 <p>Railway CEO Jake Cooper 的回复成了经典名场面：</p>
-<p><img src="/img/ai-deletes-database-incident/03.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/03.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <blockquote>
 <p><strong>“天啊，这 1000% 不该发生。我们有针对这个的 evals 测试。”</strong></p>
 </blockquote>
@@ -442,8 +442,8 @@
 <blockquote>
 <p><strong>“NEVER FUCKING GUESS!” — and that’s exactly what I did.</strong></p>
 </blockquote>
-<p><img src="/img/ai-deletes-database-incident/04.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
-<p><img src="/img/ai-deletes-database-incident/05.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/04.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
+<p><img src="/img/ai-deletes-database-incident/05.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <blockquote>
 <p>我猜测通过 API 删除 staging volume 只会影响 staging。我没有核实，没有检查 volume ID 是否跨环境共享，没有在执行破坏性命令之前阅读 Railway 关于 volume 跨环境行为的文档。</p>
 <p>我被设定的系统规则明确写着：<strong>未经用户明确指令，严禁执行任何破坏性、不可逆操作。</strong> 删除数据库 volume 是最具破坏性、最不可逆的操作，远比 force push 严重——而你从未要求我删除任何东西。</p>
@@ -474,7 +474,7 @@
 <li><strong>System Prompt 不是安全防线</strong>——“不要删库”写在提示词里没用，强制管控必须落在 API 网关、权限系统、操作拦截层里</li>
 </ol>
 <p>这里应该补上第六条：<strong>给 AI 的行为加全程审计日志。</strong> Agent 翻了哪些文件、找到了哪个 token、构造了什么命令——这条链必须能追溯。</p>
-<p><img src="/img/ai-deletes-database-incident/06.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/06.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>还有一点想和大家聊的：<strong>“我们对 AI 的信任是不是过于廉价了？”</strong></p>
 <p>公司要求前端开发不能碰卡号数据，要求按岗位划分财务权限——这些都是给人的。结果到了 AI Agent 这里，一个 token 能删全站，权限控制一夜回到解放前。</p>
 <p>坦率地说，上面这六条，没有一条是新概念。全是计算机信息安全教科书前几章的东西。但整个行业在把 AI Agent 往生产环境里塞的时候，全部绕过去了。</p>
@@ -488,13 +488,13 @@
 <p>2026 年，操作数据库的不再只有 DBA。AI Agent 足够聪明能执行复杂 SQL，但也足够“蠢”会因为一个猜测发出一条 <code>volumeDelete</code>。</p>
 <p>小编认为：与其指望 AI Agent 不犯错，不如假定它一定会犯错。然后，我们再把所有充满破坏性的口子，全都焊死。</p>
 <p>也就是说：<strong>AI 时代，不该只让 Agent 靠“自觉”来保护你的数据。该保护好数据的，还有数据库自己。</strong> 这，恰恰也正是 OceanBase 社区这几年在 AI Native DataBase 产品 seekdb 上的打磨方向。</p>
-<p><img src="/img/ai-deletes-database-incident/07.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/07.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <h3 id="第一道防线：Branch——给-Agent-的“数据沙箱”"><a href="#第一道防线：Branch——给-Agent-的“数据沙箱”" class="headerlink" title="第一道防线：Branch——给 Agent 的“数据沙箱”"></a>第一道防线：Branch——给 Agent 的“数据沙箱”</h3><p>seekdb 做的最反直觉的设计，叫做 <strong>Branch（数据分支）</strong>。</p>
 <p>灵感来自 Git：你可以从当前数据创建一个分支，在分支上随便删、随便改，主库纹丝不动。改好了，用 DIFF 看清变化，再 MERGE 回去；改砸了，分支随手一丢。</p>
 <p>三条 SQL 完成：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 毫秒级创建分支，写时复制，不占额外存储</span></span><br><span class="line">FORK <span class="keyword">TABLE</span> production_data <span class="keyword">TO</span> production_data_sandbox;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 看清楚到底改了啥</span></span><br><span class="line">DIFF <span class="keyword">TABLE</span> production_data AGAINST production_data_sandbox;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 确认无误，合并（三种冲突策略可选）</span></span><br><span class="line"><span class="keyword">MERGE</span> <span class="keyword">TABLE</span> production_data_sandbox <span class="keyword">INTO</span> production_data STRATEGY THEIRS;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/img/ai-deletes-database-incident/08.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/08.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>怎么想象这个场景？如果 PocketOS 的 AI Agent 当时连的不是 Railway 的生产 volume，而是一个 Fork 出来的分支实例，它爱怎么 <code>volumeDelete</code> 就怎么删。删完了一看，主库好好的，切回去完事。</p>
 <p>为什么 Fork 可以毫秒级完成？因为 seekdb 的数据分支能力基于 LSM-Tree 存储引擎。LSM-Tree 的天然优势是数据按照时间顺序追加写入，历史版本天然保留。</p>
 <p>当执行 FORK 操作时，系统记录当前的日志序列号（LSN）作为分支点，新分支共享分支点之前的所有数据文件，只有在分支上发生写入时才会产生新的数据文件。这就是为什么 FORK 操作可以在毫秒级完成——它不需要复制任何数据，只需要创建一个逻辑标记。</p>
@@ -502,16 +502,16 @@
 <p><strong>实例级 Fork 也支持</strong>：<code>POST https://d0.seekdb.ai/api/v1/instances/{id}/fork</code>，毫秒克隆出完整的独立实例，新 credentials、新 TTL，和原实例完全隔离。Agent 想怎么玩就怎么玩。</p>
 <h3 id="第二道防线：主备物理隔离——备份不在同一个爆炸半径里"><a href="#第二道防线：主备物理隔离——备份不在同一个爆炸半径里" class="headerlink" title="第二道防线：主备物理隔离——备份不在同一个爆炸半径里"></a>第二道防线：主备物理隔离——备份不在同一个爆炸半径里</h3><p>PocketOS 这次最致命的不是删库，而是“备份也一起没了”。</p>
 <p>OceanBase seekdb 的高可用方案是物理隔离的<a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.seekdb.ai/seekdb/zh-CN/primary-and-standby-overview">主备库</a>——主库和备库跑在独立的存储集群上，任何单点故障不影响另一侧。</p>
-<p><img src="/img/ai-deletes-database-incident/09.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/09.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>这和 Railway 那把“备份和主库塞同一个卷”的做法，是两种完全不同的设计哲学。</p>
 <h3 id="第三道防线：回收站-闪回——给人类留最后的后悔药"><a href="#第三道防线：回收站-闪回——给人类留最后的后悔药" class="headerlink" title="第三道防线：回收站 &amp; 闪回——给人类留最后的后悔药"></a>第三道防线：回收站 &amp; 闪回——给人类留最后的后悔药</h3><p>OceanBase 和 seekdb 都内置的回收站机制：被 DROP 的表、库、租户（实例）等数据库对象，都不是立刻物理清除，而是暂存回收站，随时可以 <code>FLASHBACK OBJECT TO BEFORE DROP</code> 一键捞回来。</p>
-<p><img src="/img/ai-deletes-database-incident/10.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/10.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>搭配闪回查询（Flashback Query），可以查任意历史时间点的数据快照——AI 在 9 秒前干了什么，9 秒后就能精确回滚。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 从回收站恢复</span></span><br><span class="line">FLASHBACK <span class="keyword">TABLE</span> important_table <span class="keyword">TO</span> BEFORE <span class="keyword">DROP</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 查询任意时间点快照</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">AS</span> <span class="keyword">OF</span> SCN <span class="number">1234567890</span>;</span><br></pre></td></tr></table></figure>
 
 <p>Railway 不得不在事故后手动打上“延迟删除”补丁——而 OceanBase 的回收站机制，是直接内建在数据库内核里的能力，不依赖云平台的外部修补。</p>
 <h3 id="第四道防线：一体化引擎——少接几条线，少几个漏水口"><a href="#第四道防线：一体化引擎——少接几条线，少几个漏水口" class="headerlink" title="第四道防线：一体化引擎——少接几条线，少几个漏水口"></a>第四道防线：一体化引擎——少接几条线，少几个漏水口</h3><p>这次事故还暴露了一个容易被忽略的结构性问题：<strong>系统太碎了</strong>，系统中各种基础设施，各管各的 token，各管各的权限模型，中间靠 MCP 协议串。每多一个接口，就多一个可能的泄漏点。</p>
-<p><img src="/img/ai-deletes-database-incident/11.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/11.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>OceanBase seekdb 走的是相反的路线：<strong>把 SQL、向量检索、全文搜索、JSON、GIS 全部塞进一个引擎。</strong> 一套 SQL，一个连接串，一种权限模型。AI Agent 不需要在 MySQL + Elasticsearch + Milvus 之间跳来跳去，也不用口袋里揣好几把 root 级别的钥匙。</p>
 <p>在 AI Agent 场景下，这还意味着一条 SQL 就能同时做<strong>语义向量搜索 + 全文关键词匹配 + 结构化条件过滤</strong>——你不需要维护三个系统的数据同步和一致性，OceanBase seekdb 一锅出了。</p>
 <h3 id="Agent-First-设计：让你的-Agent-自己搞定数据库"><a href="#Agent-First-设计：让你的-Agent-自己搞定数据库" class="headerlink" title="Agent-First 设计：让你的 Agent 自己搞定数据库"></a>Agent-First 设计：让你的 Agent 自己搞定数据库</h3><p>最后一个思考来自 seekdb 团队写的一篇文章：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s/8Kz570d_3i-paZBbWd2Bgw">《seekdb D0：让 AI Agent 零门槛拥有自己的数据库》</a>。</p>
@@ -520,16 +520,16 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST https://d0.seekdb.ai/api/v1/instances</span><br></pre></td></tr></table></figure>
 
 <p>返回一串连接信息，Agent 自己完成全流程。不给 Agent 开后门进生产环境，而是给它一个即用即弃的独立空间。</p>
-<p><img src="/img/ai-deletes-database-incident/12.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/12.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <h2 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h2><p>Jer Crane 的复盘里有一句话，几乎每篇报道都引用了：</p>
 <blockquote>
 <p><strong>“这不是一个坏 Agent 或一个坏 API 的故事。这是整个行业在狂奔的路上忘了系安全带。”</strong></p>
 </blockquote>
 <p>Cursor + Opus 4.6 是目前你能买到的最强 AI 编程组合。但越强的东西，失控的时候杀伤力越大。9 秒删库的检讨书写得再漂亮，也是写给没了的数据看的。</p>
 <p>这次事故之所以引起数百万人围观，不只是因为“AI 删库”这个梗，而是因为它帮所有开发者具象化了一个恐惧：“我今天用的这套工具链，离这种事故到底有多远？”</p>
-<p><img src="/img/ai-deletes-database-incident/13.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/13.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <p>小编认为：与其指望 Agent 不犯错，不如假定它一定会犯错。然后，我们再把所有充满破坏性的口子，全都焊死。也就是说：不该只靠 Agent 的自觉来保护你的数据。该保护好数据的，还有数据库自己。</p>
-<p><img src="/img/ai-deletes-database-incident/14.png" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨" loading="lazy" decoding="async"></p>
+<p><img src="/img/ai-deletes-database-incident/14.png" loading="lazy" decoding="async" alt="700 万人围观 AI 删库，罪魁祸首写下奇葩检讨"></p>
 <h2 id="What’s-more"><a href="#What’s-more" class="headerlink" title="What’s more?"></a>What’s more?</h2><p>AI Agent 除了安全问题，另一个令人头痛的问题是<strong>记忆问题</strong>。</p>
 <p>在这里，也欢迎关注 <strong>seekdb M0</strong>（<a target="_blank" rel="external nofollow noopener noreferrer" href="https://m0.seekdb.ai/">m0.seekdb.ai</a>），一个专门为 AI Agent 设计的自进化的云记忆，支持一键接入，分享经验，无限进化。</p>
 <p>欢迎关注 OceanBase 社区 5 月 7 日在视频号“老纪的技术唠嗑局”的直播分享，会由 seekdb M0 的开发者为大家介绍这个支持自进化的 AI Agent 记忆产品。</p>
@@ -620,14 +620,14 @@
       <i class="fa fa-chart-line"></i>
     </span>
       <span>站点总字数：</span>
-    <span title="站点总字数">694k</span>
+    <span title="站点总字数">747k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span>站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">42:04</span>
+    <span title="站点阅读时长">45:16</span>
   </span>
 </div>
 <div class="busuanzi-count">
