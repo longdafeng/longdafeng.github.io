@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PowerContext 1.0.0 正式发布：前事有据，后事可续">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/01.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/02.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/03.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/04.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/05.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/06.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/07.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/08.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/09.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/10.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/11.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/12.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/13.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/14.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/15.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/16.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/17.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/18.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/19.gif">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/20.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/21.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/22.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/23.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/24.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/25.png">
+<meta property="og:image" content="https://ilongda.com/img/powercontext-1-0-release/26.png">
+<meta property="article:published_time" content="2026-09-14T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:49:07.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="上下文管理">
+<meta property="article:tag" content="协作">
+<meta property="article:tag" content="知识管理">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/powercontext-1-0-release/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/","path":"2026/2026-09-15-powercontext-1-0-release/","title":"PowerContext 1.0.0 正式发布：前事有据，后事可续"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>PowerContext 1.0.0 正式发布：前事有据，后事可续 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-Native-%E7%BB%84%E7%BB%87%E5%9B%B0%E5%B1%80"><span class="nav-number">1.</span> <span class="nav-text">AI Native 组织困局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B0%E5%85%B1%E8%AF%86%EF%BC%9AAI-Agent-%E7%93%B6%E9%A2%88%E6%AD%A3%E5%9C%A8%E4%BB%8E%E6%89%A7%E8%A1%8C%E8%BD%AC%E5%90%91%E5%8D%8F%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">新共识：AI Agent 瓶颈正在从执行转向协作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A0%B4%E5%B1%80%E4%B9%8B%E6%B3%95%EF%BC%9A%E5%8D%8F%E4%BD%9C%E7%9A%84%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%8C%E6%98%AF%E8%AE%A9%E5%B7%A5%E4%BD%9C%E5%8F%AF%E7%A6%BB%E5%BC%80%E4%BC%9A%E8%AF%9D"><span class="nav-number">3.</span> <span class="nav-text">破局之法：协作的第一步，是让工作可离开会话</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%9E%E5%85%B1%E8%AF%86%EF%BC%9APowerContext-%E4%B8%89%E4%B8%AA%E9%80%89%E6%8B%A9"><span class="nav-number">4.</span> <span class="nav-text">非共识：PowerContext 三个选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerContext-%E7%9A%84%E7%AD%94%E5%8D%B7%EF%BC%9A%E6%8E%A5%E5%BE%97%E4%BD%8F%E3%80%81%E4%BF%A1%E5%BE%97%E8%BF%87%E3%80%81%E5%B8%A6%E5%BE%97%E8%B5%B0"><span class="nav-number">5.</span> <span class="nav-text">PowerContext 的答卷：接得住、信得过、带得走</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E5%BE%97%E4%BD%8F%EF%BC%9A%E8%AE%A9-Handoff-%E6%89%BF%E8%BD%BD%E6%9C%AA%E5%AE%8C%E6%88%90%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">5.1.</span> <span class="nav-text">接得住：让 Handoff 承载未完成的工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%A1%E5%BE%97%E8%BF%87%EF%BC%9A%E8%AE%A9%E4%B8%8A%E4%B8%8B%E6%96%87%E6%9C%89%E6%9D%A5%E6%BA%90%E3%80%81%E6%9C%89%E8%BE%B9%E7%95%8C"><span class="nav-number">5.2.</span> <span class="nav-text">信得过：让上下文有来源、有边界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E5%BE%97%E8%B5%B0%EF%BC%9AAgent-%E5%8F%AF%E4%BB%A5%E6%8D%A2%EF%BC%8C%E9%A1%B9%E7%9B%AE%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8D%E5%BF%85%E9%87%8D%E6%9D%A5"><span class="nav-number">5.3.</span> <span class="nav-text">带得走：Agent 可以换，项目上下文不必重来</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E6%AE%B5%E5%B7%A5%E4%BD%9C%E5%A6%82%E4%BD%95%E7%A9%BF%E8%BF%87-PowerContext"><span class="nav-number">6.</span> <span class="nav-text">一段工作如何穿过 PowerContext</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%83%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E6%94%B9%E5%96%84%E7%BB%93%E6%9E%9C%EF%BC%9A%E6%8A%8A%E7%AD%94%E6%A1%88%E4%BA%A4%E7%BB%99%E5%85%AC%E5%BC%80%E8%AF%84%E6%B5%8B"><span class="nav-number">7.</span> <span class="nav-text">它是否真的改善结果：把答案交给公开评测</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LoCoMo%EF%BC%9A%E4%B8%8D%E6%98%AF%E6%8A%8A%E5%8E%86%E5%8F%B2%E5%85%A8%E5%A1%9E%E8%BF%9B%E5%8E%BB%EF%BC%8C%E8%80%8C%E6%98%AF%E6%89%BE%E5%AF%B9%E3%80%81%E6%89%BE%E5%BF%AB%E3%80%81%E7%BB%99%E5%BE%97%E5%88%9A%E5%A5%BD"><span class="nav-number">7.1.</span> <span class="nav-text">LoCoMo：不是把历史全塞进去，而是找对、找快、给得刚好</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SWE-bench-Pro-public-v2%EF%BC%9A%E4%B8%8A%E4%B8%8B%E6%96%87%E6%9C%80%E7%BB%88%E8%A6%81%E8%90%BD%E5%AE%9E%E5%88%B0%E4%BB%BB%E5%8A%A1%E7%BB%93%E6%9E%9C"><span class="nav-number">7.2.</span> <span class="nav-text">SWE-bench Pro public v2：上下文最终要落实到任务结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E8%AF%95%E7%89%9B%E5%88%80%EF%BC%9A%E7%94%A8-3-%E5%88%86%E9%92%9F%E5%BC%80%E5%A7%8B%E4%B8%80%E6%AC%A1%E7%9C%9F%E5%AE%9E%E4%BD%93%E9%AA%8C"><span class="nav-number">8.</span> <span class="nav-text">小试牛刀：用 3 分钟开始一次真实体验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9D%9A%E5%AE%9A%E5%BC%80%E6%BA%90%EF%BC%8C%E4%B8%8A%E4%B8%8B%E6%96%87%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD%E5%BF%85%E9%A1%BB%E5%8F%AF%E6%A3%80%E6%9F%A5%E3%80%81%E5%8F%AF%E6%89%A9%E5%B1%95%E3%80%81%E5%8F%AF%E5%B8%A6%E8%B5%B0"><span class="nav-number">9.</span> <span class="nav-text">坚定开源，上下文基础设施必须可检查、可扩展、可带走</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E6%9C%80%E7%A8%80%E7%BC%BA%E7%9A%84%EF%BC%8C%E4%B8%8D%E6%98%AF%E6%9B%B4%E4%BC%9A%E5%9B%9E%E7%AD%94%E7%9A%84-Agent%EF%BC%8C%E8%80%8C%E6%98%AF%E4%B8%8D%E4%BC%9A%E8%AE%A9%E5%B7%A5%E4%BD%9C%E4%B8%A2%E5%A4%B1%E7%9A%84%E7%B3%BB%E7%BB%9F"><span class="nav-number">10.</span> <span class="nav-text">未来最稀缺的，不是更会回答的 Agent，而是不会让工作丢失的系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E8%A7%84%E5%88%92"><span class="nav-number">10.1.</span> <span class="nav-text">未来规划</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">10.2.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">11.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-14</time>
+        <br>
+      GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-15-minimax-code-powercontext-project-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-15</time>
+        <br>
+      构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-23-powercontext-agent-handoff-workshop/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-23</time>
+        <br>
+      清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-16-ai-concepts-relationship-diagram/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-16</time>
+        <br>
+      Token、Harness、OpenClaw、RAG、MCP、Agent到底啥关系？看完这张图全明白
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="PowerContext 1.0.0 正式发布：前事有据，后事可续 | Longda's Interesting World">
+      <meta itemprop="description" content="PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PowerContext 1.0.0 正式发布：前事有据，后事可续
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-15 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-15T07:30:00+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">靖顺</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>20 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"PowerContext 1.0.0 正式发布：前事有据，后事可续","description":"PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。","image":"https://ilongda.com/img/powercontext-1-0-release/01.png","wordCount":5235,"datePublished":"2026-09-14T23:30:00.000Z","dateModified":"2026-09-17T18:49:07.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/"},"url":"https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/","inLanguage":"zh-CN","keywords":["MCP","Agent","知识管理","上下文管理","PowerContext","协作"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"PowerContext 1.0.0 正式发布：前事有据，后事可续","item":"https://ilongda.com/2026/2026-09-15-powercontext-1-0-release/"}]}</script>
+<p>PowerContext 1.0.0 将目标、判断依据、验证进度与下一步沉淀为独立工作上下文，支持跨会话、工具与参与者接续，本文介绍其设计思路、知识组织和Agent协作方式。</p>
+<blockquote>
+<p>I am a part of all that I have met.</p>
+<p>一路所遇，皆融于我。</p>
+<p>—— Alfred, Lord Tennyson，《尤利西斯》[1]</p>
+</blockquote>
+<h2 id="AI-Native-组织困局"><a href="#AI-Native-组织困局" class="headerlink" title="AI Native 组织困局"></a>AI Native 组织困局</h2><p>AI 时代中，一个屡见不鲜的场景就是：Agent 已经把一个难查的重复提交问题推进了一半，代码改过，测试跑过，两条不合适的路也排除了。第二天，后续的工作被交接到另一位同事，或者换到另一个 Agent，一切又从“先介绍一下项目背景”开始。</p>
+<span id="more"></span>
+
+<p>代码在仓库里，日志也还在。最要紧的几句话却留在昨天的会话里：为什么选这条路，哪些约束不能碰，哪一步只是猜测。后来者看得见结果，却看不见来路。很多工作没有失败，只是断在了交接处。</p>
+<p><img src="/img/powercontext-1-0-release/01.png" alt="AI Native 组织困局讲解图1" decoding="async"></p>
+<p>这篇文章想和大家讨论的，就是这个“断点”：当工作跨过会话、工具和参与者，怎样让已经完成的思考和验证被下一位接着使用？</p>
+<p>PowerContext 就正在尝试把这件事做成一层独立的工作上下文。它把当前目标、判断依据、已验证进度和下一步留在工作旁边，让新来的人或 Agent 不必从整段聊天记录里重新拼出前因后果。</p>
+<h2 id="新共识：AI-Agent-瓶颈正在从执行转向协作"><a href="#新共识：AI-Agent-瓶颈正在从执行转向协作" class="headerlink" title="新共识：AI Agent 瓶颈正在从执行转向协作"></a>新共识：AI Agent 瓶颈正在从执行转向协作</h2><p>2026 年公开的多项实践，虽然没有给出同一套答案，却把一个共同的麻烦摆到了台面上：Agent 接受的任务越来越长，一项工作开始跨过更多会话、工具和参与者。</p>
+<p>任务一长，运行环境就需要记住上一步发生了什么。</p>
+<p><img src="/img/powercontext-1-0-release/02.png" alt="新共识：AI Agent 瓶颈正在从执行转向协作讲解图2" loading="lazy" decoding="async"></p>
+<p><strong>1 月，组织背景成为 Agent 能力的一部分[2]。</strong> OpenAI 的内部数据 Agent 把表结构、人类标注、代码、组织知识、记忆和运行时状态放在一起使用。模型知道怎样写 SQL，还需要知道公司究竟怎样定义一个指标、哪些数据可以一起算。</p>
+<p><strong>2 月，状态开始跨越单次请求。</strong> AWS 与 OpenAI 公布了带状态的 Agent 运行环境[3]，让运行环境承接跨步骤、工具、审批和系统状态的生产任务。</p>
+<p><strong>3 月，跨会话的进度记录成为长任务的必需品。</strong> Anthropic 在持续科研工作[4]中专门维护进度文件，记录当前状态、验证结果和失败路线，让后续会话不用再试一次已经走不通的路。</p>
+<p><strong>4 月，人的上下文切换成为瓶颈。</strong> 参与者多起来后，协调成本也跟着上升。OpenAI 在 Symphony[5] 的实践中观察到，工程师通常只能舒适地同时管理三到五个会话。这只是一个团队的观察，并非所有人的固定上限。</p>
+<p><strong>5 ~ 6 月，上下文开始被独立管理。</strong> LangChain 发布了 Context Hub[6]，用来存储、版本化、协作和发布上下文文件。Google Cloud 则在生产级 Agent 指南[7]中，把检查点、恢复与人工审批放进长任务的运行机制。Microsoft 同期在 Build 2026[8] 上推出连接人员、邮件、文档、会议和业务数据的上下文能力。</p>
+<p>7 ~  8 月，Anthropic 公布的多 Agent 协作实验[9]已经观察到代码合并冲突、彼此隔离的工作方式，以及多个 Agent 趋同决策造成的集体错误。</p>
+<p>这些实践，分别处理运行状态、上下文内容和多人协作，但指出了一个共同问题：执行越来越便宜，协调和核验的成本开始显眼。放在一起看，聊天窗口已经很难独自承担一项长期工作的全部来路。</p>
+<p>多开几个 Agent，可以增加执行能力。可这个结果属于哪个任务、基于哪版代码、下一位能不能直接用，仍然需要明确的记录和检查。</p>
+<p><img src="/img/powercontext-1-0-release/03.png" alt="新共识：AI Agent 瓶颈正在从执行转向协作讲解图3" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="破局之法：协作的第一步，是让工作可离开会话"><a href="#破局之法：协作的第一步，是让工作可离开会话" class="headerlink" title="破局之法：协作的第一步，是让工作可离开会话"></a>破局之法：协作的第一步，是让工作可离开会话</h2><p>复杂任务经常跨过多个边界：对话窗口会满，模型会换，工程师会下班，工作也会从研发转到测试、售前或值班。每跨一次边界，接手者都要重新确认几件事：</p>
+<ul>
+<li>现在要完成什么？</li>
+<li>哪些结果已经验证，证据在哪里？</li>
+<li>哪些方案试过但被放弃，原因是什么？</li>
+<li>哪些问题还没有答案，接手者先做什么？</li>
+</ul>
+<p>聊天记录、Memory 和 Handoff 都和上下文有关，但各自承担的职责不同。</p>
+<p><img src="/img/powercontext-1-0-release/04.png" alt="破局之法：协作的第一步，是让工作可离开会话讲解图4" loading="lazy" decoding="async"></p>
+<p><strong>运行连续性</strong>，处理同一个会话怎样接着跑。<code>resume</code>、checkpoint 或 transcript 能让同一个 Agent Host 找回先前状态，这些状态通常仍然依赖原来的工具和会话格式。</p>
+<p><strong>知识连续性</strong>，保存以后还会用到的事实、约束和决策。Memory 和 RAG 可以找回“目标环境没有 Redis”或“本期不做历史补偿”这类信息，却不一定说明眼前的工作进行到了哪里。</p>
+<p><strong>工作连续性</strong>，告诉下一位参与者现在怎样继续。Handoff 组织当前目标、已验证进度、阻塞、下一步和证据。接手者可以是新会话、新模型、另一个 Agent Host，也可以是人。</p>
+<p>运行状态留给 Agent Host，跨任务仍有价值的判断进入 Memory，正在推进的工作通过 Handoff 交给下一位。混在一起保存，只会让记录越来越长。</p>
+<blockquote>
+<p>Memory 回答“以后还应该记住什么”。</p>
+<p>Handoff 回答“下一棒现在怎样接着做”。</p>
+</blockquote>
+<p>MCP 负责连接工具和数据，A2A 让 Agent 发现并调用其他 Agent，checkpoint 恢复一次运行。未完成的工作离开原会话时，还需要一份独立于单个 Agent Host 的交接状态。</p>
+<h2 id="非共识：PowerContext-三个选择"><a href="#非共识：PowerContext-三个选择" class="headerlink" title="非共识：PowerContext 三个选择"></a>非共识：PowerContext 三个选择</h2><p>PowerMem 解决长期记忆之后，我们遇到一个更具体的问题：一项尚未完成的工作，怎样交到下一位手上？这个问题促成了 PowerContext。</p>
+<p>PowerContext 是面向人机协作的上下文运行层。它从知识库、工单、代码仓库和可观测系统中引用与当前工作有关的材料，再把目标、证据、判断、进度和下一步组织成可以继续使用的项目上下文。</p>
+<blockquote>
+<p><strong>Memory 让事实不被忘记，Handoff 让工作不必重来。</strong></p>
+</blockquote>
+<p><img src="/img/powercontext-1-0-release/05.png" alt="非共识：PowerContext 三个选择讲解图5" loading="lazy" decoding="async"></p>
+<p>PowerContext 把三个约束写进产品设计。上下文围绕正在推进的工作组织，保留信息之间的关系；交接内容以接手者能否继续行动为准，不把全量日志重新塞进窗口。</p>
+<p>接手者既可以是 Agent，也可以是人。Anthropic 在可信 Agent 实践中同样强调人类控制、透明度，以及在合适的时候把决定交还给人。Trustworthy agents in practice[10]</p>
+<p>后面的设计围绕三个问题展开：工作能否顺利交接，交接内容是否可信，以及它能否跟随项目进入另一个 Agent 环境。</p>
+<h2 id="PowerContext-的答卷：接得住、信得过、带得走"><a href="#PowerContext-的答卷：接得住、信得过、带得走" class="headerlink" title="PowerContext 的答卷：接得住、信得过、带得走"></a>PowerContext 的答卷：接得住、信得过、带得走</h2><h3 id="接得住：让-Handoff-承载未完成的工作"><a href="#接得住：让-Handoff-承载未完成的工作" class="headerlink" title="接得住：让 Handoff 承载未完成的工作"></a>接得住：让 Handoff 承载未完成的工作</h3><p>Handoff 面向一项尚未结束的工作。它要让接手者知道怎样行动，也知道哪些地方应该先停下来确认。开头那个组合场景，可以整理成下面这份工作包：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>项目</td>
+<td>内容</td>
+</tr>
+<tr>
+<td>目标</td>
+<td>在下一个灰度窗口前修复重复提交</td>
+</tr>
+<tr>
+<td>范围</td>
+<td>本次只处理重复写入，历史补偿另行评估</td>
+</tr>
+<tr>
+<td>已验证</td>
+<td>使用同一个请求标识回放，可以稳定复现问题</td>
+</tr>
+<tr>
+<td>已放弃</td>
+<td>分布式锁方案会显著增加对账链路延迟</td>
+</tr>
+<tr>
+<td>环境约束</td>
+<td>目标环境没有缓存集群，方案需适用于现有数据库环境</td>
+</tr>
+<tr>
+<td>待核实</td>
+<td>数据库改动对现网的影响、旧客户端的兼容性</td>
+</tr>
+<tr>
+<td>下一步</td>
+<td>完成数据库风险审查和兼容性验证，再由人决定是否灰度</td>
+</tr>
+<tr>
+<td>证据</td>
+<td>复现日志、环境说明、对应的代码版本及测试条件</td>
+</tr>
+</tbody></table>
+<p>“待核实”需要和“已验证”一样显眼。只留下好消息，接手者很容易把尚未验证的部分也当成结论。这份工作包同时给出下一步和继续之前还欠下的证据。</p>
+<p><img src="/img/powercontext-1-0-release/06.png" alt="接得住：让 Handoff 承载未完成的工作讲解图6" loading="lazy" decoding="async"></p>
+<p>委托时先写清目标和完成边界，再由人或 Agent 整理进度、阻塞、下一步及其证据。需要保留里程碑时，将工作包提交为可追溯版本；任务结束、受阻或中断时，再记录结果和检查证据。</p>
+<p>接收方对照当前仓库、当前指令、自己的能力和权限，选择接受、请求澄清或拒绝接手。</p>
+<p>交接发出、确认接手和任务完成分别记录，团队可以据此判断工作停在哪一步。接手确认本身不增加操作权限，发布仍须满足当前授权要求。</p>
+<p>交接默认服务于当前任务，不会自动成为长期 Memory。某个方案为何被否，先跟着本次问题处理；长期有效的环境约束，再单独写入 Memory。人和 Agent 可以阅读同一版本的不同视图：人先看业务影响、取舍和待决定的问题，Agent 再展开执行细节与检查步骤，引用仍落在同一组可核对的材料上。</p>
+<h3 id="信得过：让上下文有来源、有边界"><a href="#信得过：让上下文有来源、有边界" class="headerlink" title="信得过：让上下文有来源、有边界"></a>信得过：让上下文有来源、有边界</h3><p>模型拿到更多历史时，过期判断、错误总结、恶意内容和无关噪声也可能一起进入窗口。群里的猜测、环境说明和测试日志，证据地位各不相同；某次测试只对一版代码和一组条件有效，某个环境约束也不能直接变成全产品规则。</p>
+<p><img src="/img/powercontext-1-0-release/07.png" alt="信得过：让上下文有来源、有边界讲解图7" loading="lazy" decoding="async"></p>
+<p>Source 记录来源与证据边界，捕获一段提示词不会让其中的每句话直接进入长期 Memory。经过筛选的内容进入 Memory &#x2F; Artifact，修订和停用保留历史，每次变化都能追溯到来源。</p>
+<p>Server 按当前 Scope、相关性和字节预算生成 PreparedContext，默认请求预算上限为 8,000 UTF-8 bytes；召回失败时采用降级策略，不阻断原本的工作。Agent 或调用方可以提交 Experience、Skill 候选，通过 Review 后再形成不可变资产。</p>
+<p>企业项目中的范围变化、接口约束、历史承诺和未决事项，常常散落在 CRM、工单、邮件和会议记录里。检索命中只说明它可能有关，Scope、<code>revision</code> 和 <code>citation</code> 还要回答它属于哪个项目、出自哪次判断、依据在哪里。</p>
+<p>一次成功不会直接成为团队规则。在一个仓库成立的命令，换个环境可能造成破坏。做法需要连同证据进入 Review，再决定是否沉淀为 Experience 或 Skill。</p>
+<h3 id="带得走：Agent-可以换，项目上下文不必重来"><a href="#带得走：Agent-可以换，项目上下文不必重来" class="headerlink" title="带得走：Agent 可以换，项目上下文不必重来"></a>带得走：Agent 可以换，项目上下文不必重来</h3><p>团队往往会同时使用不同模型、框架、IDE 和 Agent。今天在 Codex 里调试，明天可能在 Claude Code 里 Review；一支团队用 LangChain 构建业务 Agent，另一支团队用 LangGraph 编排流程。</p>
+<p>PowerContext 把 Server 作为独立运行层：</p>
+<ul>
+<li>本地开发可直接使用 OceanBase seekdb 作为底层数据存储，团队部署可选 OceanBase 集群；</li>
+<li>通过 HTTP&#x2F;OpenAPI 与 Streamable HTTP MCP 暴露统一能力；</li>
+<li>项目 Scope、保留历史的 <code>revision</code>、<code>citation</code>、Handoff 与 Review 契约由 Runtime 维护；</li>
+<li>Agent 集成负责在合适的时机采集、召回和呈现，共享同一套上下文契约。</li>
+</ul>
+<p><img src="/img/powercontext-1-0-release/08.png" alt="带得走：Agent 可以换，项目上下文不必重来讲解图8" loading="lazy" decoding="async"></p>
+<p>当前项目已经提供 Codex、Claude Code、DeepSeek Harness、Hermes Agent、Pi Coding Agent、OpenClaw、OpenCode、WorkBuddy、Bub、Pydantic AI、LangChain 和 LangGraph 共 12 个集成。参与者连接同一服务、选择同一项目 Scope，并接收明确版本的 Handoff 后，可以从当前状态继续工作。</p>
+<h2 id="一段工作如何穿过-PowerContext"><a href="#一段工作如何穿过-PowerContext" class="headerlink" title="一段工作如何穿过 PowerContext"></a>一段工作如何穿过 PowerContext</h2><p>PowerContext 的主路径可以压缩为五步。它不是把所有信息搬进一个新系统，而是在现有系统之上建立证据与工作状态的连接。</p>
+<p><img src="/img/powercontext-1-0-release/09.png" alt="一段工作如何穿过 PowerContext讲解图9" loading="lazy" decoding="async"></p>
+<ul>
+<li><strong>第一步，把证据接进来。</strong> 代码、文档、工单、trace、Agent 轨迹和人工输入都可以成为 Source。PowerContext 关心来源引用与证据关系，不取代用户已有的数据系统。</li>
+<li><strong>第二步，沉淀值得复用的判断。</strong> 决策、约束、结果和状态可以被显式记录；配置生成模型后，也可以从 Source 中抽取候选信息。每条 Memory 保留来源，后续修订与停用不抹掉历史。</li>
+<li><strong>第三步，在需要时组装有界上下文。</strong> Agent 收到请求前，Runtime 按项目 Scope、相关性与预算生成 <code>PreparedContext</code>，并附上 <code>citation</code>。目标不是交付“所有可能相关的内容”，而是“完成下一步所需的最小充分上下文”。这与 Anthropic 提倡的 just-in-time context 和 progressive disclosure 方向一致：保留轻量引用，在运行时按需展开，而不是预先塞满窗口。</li>
+<li><strong>第四步，在参与者切换前形成 Handoff。</strong> 目标、已验证进度、阻塞、下一步和证据被整理为工作包，交给新会话、新任务、新模型、新 Agent Host，或者下一位人。</li>
+<li><strong>第五步，让复用产生反馈，但不绕过治理。</strong> 经过多次任务验证的做法进入 Experience &#x2F; Skill Candidate 与 Review 流程；真正被批准的资产再服务未来工作，形成一个由人类控制的复用闭环。</li>
+</ul>
+<p>这五步连成一条可追溯的工作链路。它是否真的减少重来、改善任务结果，还要由评测回答。</p>
+<h2 id="它是否真的改善结果：把答案交给公开评测"><a href="#它是否真的改善结果：把答案交给公开评测" class="headerlink" title="它是否真的改善结果：把答案交给公开评测"></a>它是否真的改善结果：把答案交给公开评测</h2><p>上下文产品很容易用一段聪明的 Demo，或者几条召回结果证明自己。PowerContext 同时观察两件事：长程记忆问答的准确率与成本，以及 Coding Agent 的任务完成率。</p>
+<h3 id="LoCoMo：不是把历史全塞进去，而是找对、找快、给得刚好"><a href="#LoCoMo：不是把历史全塞进去，而是找对、找快、给得刚好" class="headerlink" title="LoCoMo：不是把历史全塞进去，而是找对、找快、给得刚好"></a>LoCoMo：不是把历史全塞进去，而是找对、找快、给得刚好</h3><p>LoCoMo 是长对话记忆公开数据集。PowerContext 的端到端评测包含 10 段对话、272 个会话、5,882 个对话轮次和 1,986 个问题，其中类别 1～4 共 1,540 题进入计分。</p>
+<p><img src="/img/powercontext-1-0-release/10.png" alt="PowerContext Agent内容讲解图10" loading="lazy" decoding="async"></p>
+<p>与 full-context baseline（全量上下文基线）相比，PowerContext 的准确率高 37.88 个百分点，搜索 p95 低约 91.9%，单题回答 token 少约 93.7%。与 PowerMem 相比，准确率提高 2.99 个百分点，搜索 p95 略低，回答 token 则高于 PowerMem。</p>
+<p><img src="/img/powercontext-1-0-release/11.png" alt="PowerContext Agent内容讲解图11" loading="lazy" decoding="async"></p>
+<h3 id="SWE-bench-Pro-public-v2：上下文最终要落实到任务结果"><a href="#SWE-bench-Pro-public-v2：上下文最终要落实到任务结果" class="headerlink" title="SWE-bench Pro public v2：上下文最终要落实到任务结果"></a>SWE-bench Pro public v2：上下文最终要落实到任务结果</h3><p>记忆问答测量信息能否被找回，Coding Agent 评测更接近任务能否完成。PowerContext 在 Codex 环境中对 SWE-bench Pro public v2 的 731 个任务做了 OFF &#x2F; ON 对照，两组均使用 <code>gpt-5.6-sol</code>，推理等级为 <code>medium</code>：</p>
+<p><img src="/img/powercontext-1-0-release/12.png" alt="PowerContext Agent内容讲解图12" loading="lazy" decoding="async"></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>配置</td>
+<td>完成任务</td>
+<td>任务解决率</td>
+</tr>
+<tr>
+<td>PowerContext OFF</td>
+<td>602 &#x2F; 731</td>
+<td><strong>82.35%</strong></td>
+</tr>
+<tr>
+<td>PowerContext ON</td>
+<td>634 &#x2F; 731</td>
+<td><strong>86.73%</strong></td>
+</tr>
+<tr>
+<td>差异</td>
+<td><strong>+32</strong></td>
+<td><strong>+4.38 个百分点</strong></td>
+</tr>
+</tbody></table>
+<p><img src="/img/powercontext-1-0-release/13.png" alt="PowerContext Agent内容讲解图13" loading="lazy" decoding="async"></p>
+<p>在这组任务和配置下，结果给出了一个积极信号：<strong>PowerContext 的效果可以放到真实 Agent 任务的完成率上进行检验。</strong></p>
+<h2 id="小试牛刀：用-3-分钟开始一次真实体验"><a href="#小试牛刀：用-3-分钟开始一次真实体验" class="headerlink" title="小试牛刀：用 3 分钟开始一次真实体验"></a>小试牛刀：用 3 分钟开始一次真实体验</h2><p>以下以 macOS 或 Linux 上的本机 Codex CLI、PowerContext 1.0.0 为例。先准备 Python 3.11+、Git、uv 和已安装的 Codex CLI。</p>
+<p>安装并启动服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">uv tool install &quot;powercontext[cli,server]==1.0.0&quot;</span><br><span class="line"></span><br><span class="line">powercontext server run</span><br></pre></td></tr></table></figure>
+
+<p>在没有自定义配置时，Server 监听 <code>127.0.0.1:8000</code>，使用本地持久化 SQLite。保持这个终端运行。</p>
+<p>另开终端，进入要体验的项目，安装匹配版本的集成并检查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">powercontext setup codex --ref powercontext-v1.0.0</span><br><span class="line"></span><br><span class="line">powercontext doctor</span><br><span class="line"></span><br><span class="line">powercontext doctor codex</span><br><span class="line"></span><br><span class="line">codex</span><br></pre></td></tr></table></figure>
+
+<p>确认新会话加载了 PowerContext Hook 和 MCP，并核对 Server 地址、认证配置及 Scope。多个项目需要隔离时，应显式配置 Scope，不能只靠切换目录。完整步骤见 Agent 接入指南[11]。随后可以做三次检查：</p>
+<p><img src="/img/powercontext-1-0-release/14.png" alt="小试牛刀：用 3 分钟开始一次真实体验讲解图14" loading="lazy" decoding="async"></p>
+<ol>
+<li><strong>保存一条约束。</strong> 明确要求把一条后续仍然有效的项目判断保存到 PowerContext，检查保存结果及来源引用。</li>
+<li><strong>换会话取回。</strong> 在同一 Scope 的新会话里询问这条判断，检查内容是否正确、引用是否可核对。复述成功不代表结论仍然有效，还要结合当前环境判断。</li>
+<li><strong>交出未完成的工作。</strong> 要求使用 PowerContext 交接当前工作，检查实际状态，提交 Handoff，并给出精确版本。把该版本交给接收方，让他先核对代码、证据和权限，再确认是否接手。</li>
+</ol>
+<p><code>doctor</code> 通过只说明相应诊断检查通过，不能代替这三次业务验收。</p>
+<p>显式 Memory 操作和手工整理、提交 Handoff，不要求预先配置 PowerContext 服务端的生成模型。自动提取记忆、向量搜索等能力则需要相应的生成和 Embedding 配置。Agent 的订阅登录不会自动为 Server 提供模型 API。</p>
+<blockquote>
+<p>说明：</p>
+<p>本地默认使用数据库保存上下文，并提供看板。涉及跨工具交接时，让双方连接同一服务，并明确选择同一个项目 Scope。连接到同一个服务，不代表已经选中了同一份项目上下文。</p>
+</blockquote>
+<h2 id="坚定开源，上下文基础设施必须可检查、可扩展、可带走"><a href="#坚定开源，上下文基础设施必须可检查、可扩展、可带走" class="headerlink" title="坚定开源，上下文基础设施必须可检查、可扩展、可带走"></a>坚定开源，上下文基础设施必须可检查、可扩展、可带走</h2><p>项目上下文会参与 Agent 的判断，也承载团队的工作历史。存了什么、为什么召回、谁改过、如何迁移，这些问题都应该能被检查。</p>
+<p><img src="/img/powercontext-1-0-release/15.png" alt="PowerContext Agent内容讲解图15" loading="lazy" decoding="async"></p>
+<p>PowerContext 采用 Apache License 2.0 开源，仓库公开运行时、Server、OpenAPI 契约、集成、设计文档和评测工具。团队可以检查这些机制，也可以把自己的失败案例和验收方式补进来。</p>
+<p><img src="/img/powercontext-1-0-release/16.png" alt="PowerContext Agent内容讲解图16" loading="lazy" decoding="async"></p>
+<p>PowerContext 开源仓库：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></p>
+<p>在这里，也想认真感谢每一位参与 PowerMem 与 PowerContext 建设的开源贡献者。代码实现、Agent 集成、测试与评测、文档完善，以及 Issue 里的问题复现和设计讨论，都是这个项目向前推进的每一步。也感谢愿意把他用进真实工作的用户。</p>
+<p><img src="/img/powercontext-1-0-release/17.png" alt="PowerContext Agent内容讲解图17" loading="lazy" decoding="async"></p>
+<h2 id="未来最稀缺的，不是更会回答的-Agent，而是不会让工作丢失的系统"><a href="#未来最稀缺的，不是更会回答的-Agent，而是不会让工作丢失的系统" class="headerlink" title="未来最稀缺的，不是更会回答的 Agent，而是不会让工作丢失的系统"></a>未来最稀缺的，不是更会回答的 Agent，而是不会让工作丢失的系统</h2><h3 id="未来规划"><a href="#未来规划" class="headerlink" title="未来规划"></a>未来规划</h3><p>接下来，我们计划沿着三个方向继续推进：</p>
+<ul>
+<li>提升效果：完善采集、检索、使用过程的可观测性，持续跟踪质量、耗时和成本。</li>
+<li>增强易用性：改进交接与恢复体验，深化宿主集成，完善共享、权限、审计和运维能力。</li>
+<li>加强可靠性：加强冲突与过期处理，让任务结果和用户反馈进入可验证、可审核的 Experience 与 Skill 演进流程。</li>
+</ul>
+<p>这些方向还需要真实工作来检验。一个能复现的失败案例、一份暴露遗漏的交接单，都会帮助我们看清哪里还没做好。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>一项工作跨过会话、模型和参与者时，需要带上已经验证的判断、仍未解决的问题，以及各自的证据。</p>
+<p><strong>PowerContext 保存这条来路，也把未完成的部分整理给下一位。</strong></p>
+<p>会话结束时，下一位接手者不必再从“先介绍一下项目背景”开始。他应该先看到当前目标、走过的路、仍需核实的地方，以及证据在哪里，然后从那里继续。</p>
+<p><img src="/img/powercontext-1-0-release/18.png" alt="总结讲解图18" loading="lazy" decoding="async"></p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>Alfred, Lord Tennyson，《尤利西斯》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.poetryfoundation.org/poems/45392/ulysses">https:&#x2F;&#x2F;www.poetryfoundation.org&#x2F;poems&#x2F;45392&#x2F;ulysses</a></p>
+<p>[2] </p>
+<p>组织背景成为 Agent 能力的一部分: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://openai.com/zh-Hans-CN/index/inside-our-in-house-data-agent/">https:&#x2F;&#x2F;openai.com&#x2F;zh-Hans-CN&#x2F;index&#x2F;inside-our-in-house-data-agent&#x2F;</a></p>
+<p>[3] </p>
+<p>带状态的 Agent 运行环境: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://openai.com/index/introducing-the-stateful-runtime-environment-for-agents-in-amazon-bedrock/">https:&#x2F;&#x2F;openai.com&#x2F;index&#x2F;introducing-the-stateful-runtime-environment-for-agents-in-amazon-bedrock&#x2F;</a></p>
+<p>[4] </p>
+<p>持续科研工作: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.anthropic.com/research/long-running-Claude">https:&#x2F;&#x2F;www.anthropic.com&#x2F;research&#x2F;long-running-Claude</a></p>
+<p>[5] </p>
+<p>Symphony: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://openai.com/index/open-source-codex-orchestration-symphony/">https:&#x2F;&#x2F;openai.com&#x2F;index&#x2F;open-source-codex-orchestration-symphony&#x2F;</a></p>
+<p>[6] </p>
+<p>Context Hub: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.langchain.com/blog/introducing-context-hub">https:&#x2F;&#x2F;www.langchain.com&#x2F;blog&#x2F;introducing-context-hub</a></p>
+<p>[7] </p>
+<p>生产级 Agent 指南: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://cloud.google.com/blog/topics/developers-practitioners/five-guides-to-building-and-scaling-production-ready-ai-agents">https:&#x2F;&#x2F;cloud.google.com&#x2F;blog&#x2F;topics&#x2F;developers-practitioners&#x2F;five-guides-to-building-and-scaling-production-ready-ai-agents</a></p>
+<p>[8] </p>
+<p>Build 2026: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://blogs.microsoft.com/blog/2026/06/02/microsoft-build-2026-be-yourself-at-work/">https:&#x2F;&#x2F;blogs.microsoft.com&#x2F;blog&#x2F;2026&#x2F;06&#x2F;02&#x2F;microsoft-build-2026-be-yourself-at-work&#x2F;</a></p>
+<p>[9] </p>
+<p>多 Agent 协作实验: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.anthropic.com/research/multiagent-systems">https:&#x2F;&#x2F;www.anthropic.com&#x2F;research&#x2F;multiagent-systems</a></p>
+<p>[10] </p>
+<p>Trustworthy agents in practice: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.anthropic.com/research/trustworthy-agents">https:&#x2F;&#x2F;www.anthropic.com&#x2F;research&#x2F;trustworthy-agents</a></p>
+<p>[11] </p>
+<p>Agent 接入指南: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/zh/docs/tutorials/agent-quickstart/">https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;zh&#x2F;docs&#x2F;tutorials&#x2F;agent-quickstart&#x2F;</a></p>
+<p><img src="/img/powercontext-1-0-release/19.gif" alt="总结讲解图19" loading="lazy" decoding="async"></p>
+<p><img src="/img/powercontext-1-0-release/20.png" alt="总结讲解图20" loading="lazy" decoding="async"></p>
+<p><img src="/img/powercontext-1-0-release/21.png" alt="总结讲解图21" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/powercontext-1-0-release/22.png" alt="往期内容推荐讲解图22" loading="lazy" decoding="async"></p>
+<p><img src="/img/powercontext-1-0-release/23.png" alt="往期内容推荐讲解图23" loading="lazy" decoding="async"></p>
+<p><img src="/img/powercontext-1-0-release/24.png" alt="往期内容推荐讲解图24" loading="lazy" decoding="async"></p>
+<p><img src="/img/powercontext-1-0-release/25.png" alt="往期内容推荐讲解图25" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/powercontext-1-0-release/26.png" alt="往期内容推荐讲解图26" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%AE%A1%E7%90%86/" rel="tag"># 知识管理</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/" rel="tag"># 上下文管理</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/%E5%8D%8F%E4%BD%9C/" rel="tag"># 协作</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="prev" title="GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？">
+                  <i class="fa fa-angle-left"></i> GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-16-minimax-code-multimodal-context/" rel="next" title="OceanBase MiniMax Code 多模数据治理与上下文管理实践">
+                  OceanBase MiniMax Code 多模数据治理与上下文管理实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

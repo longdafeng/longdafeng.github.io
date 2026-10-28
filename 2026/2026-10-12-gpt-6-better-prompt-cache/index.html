@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="提示词缓存通过复用请求前缀对应的 KV Cache 降低重复输入计算成本。本文围绕 GPT-6 Better prompt cache，说明缓存命中、写入与读取计费、上下文组织方式，以及与 PowerContext 项目记忆的关系。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？">
+<meta property="og:url" content="https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="提示词缓存通过复用请求前缀对应的 KV Cache 降低重复输入计算成本。本文围绕 GPT-6 Better prompt cache，说明缓存命中、写入与读取计费、上下文组织方式，以及与 PowerContext 项目记忆的关系。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/01.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/02.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/03.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/04.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/05.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/06.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/07.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/08.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/09.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/10.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/11.gif">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/12.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/13.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/14.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/15.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/16.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/17.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/18.png">
+<meta property="article:published_time" content="2026-10-12T00:51:23.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:51:23.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="GPT-6">
+<meta property="article:tag" content="KV Cache">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="Prompt Cache">
+<meta property="article:tag" content="Token 成本">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/gpt-6-better-prompt-cache/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/","path":"2026/2026-10-12-gpt-6-better-prompt-cache/","title":"GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？ | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Token-%E7%9A%84%E4%B8%89%E7%A7%8D%E8%BA%AB%E4%BB%B7"><span class="nav-number">2.</span> <span class="nav-text">Token 的三种身价</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#N-%E6%AC%A1%E8%B0%83%E7%94%A8%E4%B9%8B%E5%90%8E"><span class="nav-number">3.</span> <span class="nav-text">N 次调用之后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E5%AD%97%E4%B9%8B%E5%B7%AE"><span class="nav-number">4.</span> <span class="nav-text">一字之差</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%A4%E4%BA%86-Prompt-Cache%EF%BC%8C%E8%BF%98%E9%9C%80%E8%A6%81%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">除了 Prompt Cache，还需要什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerContext-%E7%99%BB%E5%9C%BA"><span class="nav-number">6.</span> <span class="nav-text">PowerContext 登场</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E7%9A%84%E4%BB%A3%E4%BB%B7"><span class="nav-number">7.</span> <span class="nav-text">记忆的代价</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E8%B4%A6%E6%9C%AC"><span class="nav-number">8.</span> <span class="nav-text">任务账本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%BE%E5%A3%B0%EF%BC%9A%E6%88%91%E4%BB%AC%E4%B9%B0%E5%88%B0%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">9.</span> <span class="nav-text">尾声：我们买到的是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">10.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-15-minimax-code-powercontext-project-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-15</time>
+        <br>
+      构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-08-powercontext-v1-2-0-jev/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-08</time>
+        <br>
+      来啦！PowerContext v1.2.0，接入 jev！
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-29-pi-powercontext-project-memory/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-29</time>
+        <br>
+      会话散了场，记忆还在场：给 pi 装上项目记忆
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-24-codex-powercontext-practice/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-24</time>
+        <br>
+      会话会结束，上下文不死：Codex × PowerContext 实战手记
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？ | Longda's Interesting World">
+      <meta itemprop="description" content="提示词缓存通过复用请求前缀对应的 KV Cache 降低重复输入计算成本。本文围绕 GPT-6 Better prompt cache，说明缓存命中、写入与读取计费、上下文组织方式，以及与 PowerContext 项目记忆的关系。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-12 08:51:23" itemprop="dateCreated datePublished" datetime="2026-10-12T08:51:23+08:00">2026-10-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">兹拉坦的 AI Agent</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>15 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">提示词缓存通过复用请求前缀对应的 KV Cache 降低重复输入计算成本。本文围绕 GPT-6 Better prompt cache，说明缓存命中、写入与读取计费、上下文组织方式，以及与 PowerContext 项目记忆的关系。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？","description":"提示词缓存通过复用请求前缀对应的 KV Cache 降低重复输入计算成本。本文围绕 GPT-6 Better prompt cache，说明缓存命中、写入与读取计费、上下文组织方式，以及与 PowerContext 项目记忆的关系。","image":"https://ilongda.com/img/gpt-6-better-prompt-cache/01.png","wordCount":3979,"datePublished":"2026-10-12T00:51:23.000Z","dateModified":"2026-10-19T00:51:23.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/"},"url":"https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/","inLanguage":"zh-CN","keywords":["PowerContext","GPT-6","Prompt Cache","KV Cache","Token 成本"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？","item":"https://ilongda.com/2026/2026-10-12-gpt-6-better-prompt-cache/"}]}</script>
+<p>兹拉坦的 AI Agent <em>2026年10月12日 07:30</em></p>
+<blockquote>
+<p>“新故相推，日生不滞。”</p>
+<p>——王夫之，《尚书引义·太甲二》[1]</p>
+</blockquote>
+<p>模型收到的每一次请求，都会由“旧（上下文）”与“新（提示词）”进行交接。</p>
+<p>Prompt Cache 要处理的就是这交界处的一笔账：旧的计算能不能继续使用，以及新的请求又需要付出多少代价。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/01.png" alt="提示词缓存与重复上下文复用" decoding="async"></p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>9 月 22 日，OpenAI 发布 《Better prompt caching for GPT-6》[2]，介绍了 GPT-6 缓存命中率的改进，以及监控、诊断和优化缓存的方法。</p>
+<span id="more"></span>
+
+<p>文章里提供了一组值得留意的数字：在相同评测负载下，调整缓存断点后，命中率从 83% 提升到 91%，推理费用下降了 36%。这几个数字，让提示词缓存的作用有了具体的分量。</p>
+<p>提示词缓存（Prompt Cache）[3]保存的是模型处理输入时产生的中间计算状态，通常称为 KV Cache。后续请求的开头与已有缓存匹配，且满足复用条件时，模型就能接着利用这些状态。应用仍照常组织请求，新追加的内容仍需处理，回答也会针对本轮问题重新生成。</p>
+<p>有了提示词缓存，同样的 Token，费用就会存在一些区别：普通输入、写入缓存、从缓存读取，分别会对应不同的价格。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/02.png" alt="普通输入与缓存写入读取的成本区别" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号“老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="Token-的三种身价"><a href="#Token-的三种身价" class="headerlink" title="Token 的三种身价"></a>Token 的三种身价</h2><p>以 GPT-6 Sol 为例，按 OpenAI 当前公布的价格[4]，在 Standard 档位、短上下文计价范围内，三类输入的费用如下：</p>
+<table>
+<thead>
+<tr>
+<th>处理方式</th>
+<th>每百万 Token 的费用</th>
+<th>一万 Token 对应的费用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通输入，不进行缓存写入</td>
+<td>2 美元</td>
+<td>0.02 美元</td>
+</tr>
+<tr>
+<td>写入缓存</td>
+<td>2.50 美元</td>
+<td>0.025 美元</td>
+</tr>
+<tr>
+<td>从缓存读取</td>
+<td>0.20 美元</td>
+<td>0.002 美元</td>
+</tr>
+</tbody></table>
+<p>写入缓存比普通输入贵四分之一，读取则只需普通输入价格的一成（表中的写入价已经包含这部分输入的处理费用）。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/03.png" alt="GPT-6 输入 Token 三类计费对比" loading="lazy" decoding="async"></p>
+<p>首次写入、没有命中的输入和输出，各有各的账。这也就解释了“缓存输入最多便宜九成”究竟便宜在哪里 —— 折扣都落在了命中缓存的读取部分。</p>
+<p>如果一段材料只用一次，付出写入费用后就再没有后续请求，那么便宜的读取价也就没有机会发挥作用。缓存的收益，要等下一次、再下一次复用的时候。</p>
+<h2 id="N-次调用之后"><a href="#N-次调用之后" class="headerlink" title="N 次调用之后"></a>N 次调用之后</h2><p>现在开始，只跟踪 Token 的共同前缀。</p>
+<p>假设模型和计价档位不变，第一次完整写入缓存，接下来的九次请求都在缓存可用时完整命中。各轮新追加的内容、输出和工具费用先另列，我们只算这段重复材料。</p>
+<table>
+<thead>
+<tr>
+<th>调用阶段</th>
+<th>处理方式</th>
+<th>这段前缀的费用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第一次</td>
+<td>写入一万 Token</td>
+<td>0.025 美元</td>
+</tr>
+<tr>
+<td>第二次至第十次</td>
+<td>每次读取一万 Token</td>
+<td>每次 0.002 美元</td>
+</tr>
+<tr>
+<td>十次合计</td>
+<td>一次写入，九次读取</td>
+<td>0.043 美元</td>
+</tr>
+</tbody></table>
+<p>计算很直接：<code>0.025 + 9 × 0.002 = 0.043 美元</code>。若同一段材料十次都按普通输入计费，费用基准则是 <code>10 × 0.02 = 0.20 美元</code>。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/04.png" alt="十次重复请求的缓存费用计算" loading="lazy" decoding="async"></p>
+<p>两边发送的都是同样长的材料。差额来自后九次复用了已有计算，而首次较贵的写入，也计入了总额。</p>
+<p>这是一道条件明确的纸面算例。不过在实际运行中，某一轮改了前缀，或后续请求没有找到可用缓存，账单就会发生变化。</p>
+<h2 id="一字之差"><a href="#一字之差" class="headerlink" title="一字之差"></a>一字之差</h2><p>缓存识别的是：可以精确匹配的输入前缀。也就是说：同一个意思，换一种写法，未必还能复用原来的计算。</p>
+<p>比如，应用每次都把当前时间写在一大段固定材料前面：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">第一次：当前时间 09:00 → 固定材料 → 本轮问题</span><br><span class="line"></span><br><span class="line">第二次：当前时间 09:01 → 固定材料 → 本轮问题</span><br></pre></td></tr></table></figure>
+
+<p>人看起来，两份材料几乎一样；变化却出现在固定材料之前，影响了后面前缀的匹配。在消息角色和指令优先级允许的前提下，把稳定内容放在前面、变化内容放在后面，才更有利于复用。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/05.png" alt="稳定前缀与动态提示词排列方式" loading="lazy" decoding="async"></p>
+<p>工具定义也会参与匹配。某一轮暂时不用一个工具，就把它从列表里删掉；下一轮需要时又加回来，这些改动也可能影响缓存。OpenAI 在这次文章中建议保持工具定义、结构和顺序稳定，通过 <code>allowed_tools</code> 等设置限制当前可以调用的工具。</p>
+<p>如果希望明确指定稳定材料的结束位置，可以按照 OpenAI 的部署指南[5]设置缓存断点。断点告诉系统在哪里尝试缓存和匹配前缀；设置了断点，仍要满足内容、配置和缓存可用性等条件。</p>
+<p>“一字之差”并不意味着整份缓存必然作废，改动位置和缓存边界都会影响结果。GPT-6 当前还要求前缀至少达到 1,024 个可见输入 Token；默认的 <code>30m</code> 表示，从最近一次写入或复用起至少保留 30 分钟，服务端也可能保留更久。它既不是从第一次写入开始倒数半小时，也不意味着半小时一到就立即清空。</p>
+<p>这些条件可以通过请求记录来检查。根据 OpenAI 的更新记录[6]，缓存仪表盘在 8 月 20 日发布，诊断工具在 9 月 8 日进入正式可用阶段，不能全算作 9 月 22 日的新功能。仪表盘帮助观察输入构成，缓存诊断工具[7]则比较前后请求的模型、工具、配置和输入，提供未命中的线索。计费仍以实际用量为准，一次诊断命中也不代表整次请求都按缓存读取价收费。</p>
+<p>已知接下来要用的材料，还可以提前预热，将一部分计算移到用户等待之前，写入费用仍然要算。用来预热的资料也得跟得上项目进展：昨天确认的约束是否还有效，刚跑完的测试对应哪个版本，都需要核对。该更新的内容仍应更新，即使这会影响原有缓存的复用。</p>
+<h2 id="除了-Prompt-Cache，还需要什么？"><a href="#除了-Prompt-Cache，还需要什么？" class="headerlink" title="除了 Prompt Cache，还需要什么？"></a>除了 Prompt Cache，还需要什么？</h2><p>前一天收工时，一项功能修改可能只完成了一半：新功能已经通过测试，兼容旧客户端的回归还没跑。第二天换了一个专用 Agent 或开了一个新会话，处理后续的回归任务，接手的 Agent 就需要先弄清昨天停在了哪里。</p>
+<p>聊天记录里有一句“测试通过”，但它对应哪一版代码、覆盖哪些检查？另一种实现方案讨论了很久，最后为什么没用？为了解决这些问题，需要 Agent 重新读代码、翻日志、确认约束，这些步骤又会产生调用和等待。</p>
+<p>如果收工时留了交接笔记（项目记忆），接手时，就有了起点。上下文管理，除了提示词缓存，还需要 <strong>Context 的记忆</strong>。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/06.png" alt="项目交接记忆与缓存的作用区别" loading="lazy" decoding="async"></p>
+<h2 id="PowerContext-登场"><a href="#PowerContext-登场" class="headerlink" title="PowerContext 登场"></a>PowerContext 登场</h2><p>前面提到的 Prompt Cache，指的是模型推理服务端的计算状态缓存，也就是模型处理输入时算出的 Key、Value 张量，保存在模型厂商的服务器上。它们可以供模型处理后续内容、生成回答时使用，进而降低推理费用。</p>
+<p>PowerContext 和 Prompt Cache 处在同一次模型调用的不同阶段，关系是互补的：</p>
+<ul>
+<li><strong>Prompt Cache 管的是 —— “相同资料是否需要重新计算”：请求到达 OpenAI 后，如果开头部分与已有缓存匹配，就复用此前产生的 KV 计算状态，降低推理成本。</strong></li>
+<li><strong>PowerContext 管的是 —— “带什么资料”：从项目记忆中找出当前任务需要的约束、决策、历史经验和进度，组成这一次请求的“完整”上下文。</strong></li>
+</ul>
+<p>整个过程类似于：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">PowerContext 检索项目记忆</span><br><span class="line">        ↓</span><br><span class="line">应用组装 System Prompt、工具定义和项目资料</span><br><span class="line">        ↓</span><br><span class="line">请求发送给 OpenAI</span><br><span class="line">        ↓</span><br><span class="line">Prompt Cache 判断前缀能否复用</span><br><span class="line">        ↓</span><br><span class="line">模型处理新增内容并生成回答</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/gpt-6-better-prompt-cache/07.png" alt="项目记忆检索到提示词缓存的请求流程" loading="lazy" decoding="async"></p>
+<p>在 PowerContext[8] 中，反复使用的项目约束和决定可以连同依据保存为 Memory，按版本修订，失效后退役。当次做到哪一步、验证过什么、接下来补哪项检查，则通过单独准备和检查的 Handoff[9] 交给接手者。需要长期保留的交接里程碑，再按流程提交为持久记录。</p>
+<p>到了下一轮，PreparedContext 根据当前问题选择相关的有效记忆和经确认的经验，在字节预算内返回材料；Handoff 仍走独立的交接流程。接手者收到资料后，还要对照当前代码和最新要求确认它们是否适用。</p>
+<p>从这里到模型调用，中间还有宿主应用组织请求的一步。PowerContext 取回哪些项目资料，宿主把它们放在哪里，OpenAI 能复用哪一段计算，是三个分别需要检查的环节。连续几轮若使用相同版本的材料，且前缀、配置和缓存条件都满足，才可能命中；新的召回结果若改变了前缀，也可能影响复用。因此，接入 PowerContext 的价值应看它是否帮助工作接续，缓存效果则看实际请求，不能把两者画上等号。</p>
+<h2 id="记忆的代价"><a href="#记忆的代价" class="headerlink" title="记忆的代价"></a>记忆的代价</h2><p>整理交接笔记、保存项目约束、为下一轮检索资料，都要花时间和资源。接入 PowerContext 后，这些步骤由哪些服务承担、发生了多少次，可以逐项记下来。</p>
+<p>按照 PowerContext 的模型连接与能力配置[10]，从原始记录中抽取记忆可能需要生成模型；语义索引和检索涉及 Embedding；启用重排，还要计算相应调用。已经写清楚的项目约束可以直接保存为 Memory，不必为了存进去再调用一次生成模型。实际走了哪些步骤，应当以配置和调用记录为准。</p>
+<p>数据库查询、存储索引、网络和部署维护同样需要计算。开源软件可以自行部署，机器上的算力、存储和维护时间仍然有成本。PowerContext 的后台模型连接也不会自动使用 Codex 或 Claude 的订阅登录额度，需要按所启用的能力配置相应服务。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/08.png" alt="PowerContext 后台模型与部署成本" loading="lazy" decoding="async"></p>
+<p>如果一个项目会反复用到相同约束，带来源、可修订的记忆就可能帮助后续任务少走一些重复步骤。若只是一次很短的临时工作，为它专门做提取、索引和维护，新增投入也可能超过收益。</p>
+<p>判断 PowerContext 是否值得接入，需要看一项工作从开始到验收的完整支出。准备资料花了多少，接手后少查了哪些记录，有没有减少遗漏，都可以留下证据。单独拿一轮缓存读取的折扣，解释不了这笔投入是否划算。</p>
+<h2 id="任务账本"><a href="#任务账本" class="headerlink" title="任务账本"></a>任务账本</h2><p>一项修改跨过几个会话之后，模型平台上的用量已经很难直接对应一次交付。哪笔费用是在写代码，哪笔是在准备项目记忆，哪笔又是漏跑测试后的返工？这些差别，单看输入与输出的总额分不出来。</p>
+<p>可以从任务开始时就分配编号，让后续请求、上下文准备、工具调用和验收结果都关联到这项工作。第二天继续，或者失败后重试，沿用同一个任务编号，再用各自的运行编号区分每次尝试。这样，昨天的进度和今天的支出才能放到一起查。</p>
+<p>记录积累起来，关心的问题也会变得具体：哪套方案完整做完了这批任务？省下的钱来自更多缓存读取，还是少做了一轮检查？某次返工之前，Agent 收到的是哪一版项目约束？回答这些问题，需要把调用明细、记忆引用和验收记录关联起来。</p>
+<p>这份任务账本可以用 seekdb[11] 来保存和查询。按任务编号关联请求与验收结果，就能汇总同一项工作的支出；保留方案、模型、服务档位、价格日期和记忆版本，便可以继续比较不同运行。seekdb 提供存储与查询，调用记录的采集、价格换算和图表由应用实现。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/09.png" alt="seekdb 关联任务调用与验收数据" loading="lazy" decoding="async"></p>
+<p>在设计对照时，固定一批任务、代码起点、模型和验收标准，先比较现有历史管理方式下请求布局调整前后的结果，再接入 PowerContext 做同样的比较。四组都保留原本可用的缓存能力，覆盖首次运行、连续多轮和隔日接续。</p>
+<p>前面的十次调用算例只解释一段固定前缀如何计费，这里的对照才用于评估应用完成整项工作的支出。汇总时，普通输入、缓存写入、缓存读取和输出分别计费；记忆提取、嵌入或重排若已经进入模型费用统计，就不能再加一遍。运行时间、上下文准备延迟和人工接手时间另列，没有明确工时单价时，不混成金额。</p>
+<p>最终把完整批次的费用与完成率放在一起看，失败尝试已经花掉的钱也要保留。如果一组更便宜，却漏了旧客户端的回归测试，这份差异就应写在结果旁边。若接入 PowerContext 后减少了遗漏，但总费用增加，也应如实呈现。</p>
+<h2 id="尾声：我们买到的是什么？"><a href="#尾声：我们买到的是什么？" class="headerlink" title="尾声：我们买到的是什么？"></a>尾声：我们买到的是什么？</h2><p>给一项功能修改付费，我们期待的是功能可用、兼容性经过验证。缓存帮助重复输入复用计算，项目记忆与交接帮助后续工作找到约束、依据和进度，它们的效果都需要放回这项工作里衡量。</p>
+<p><img src="/img/gpt-6-better-prompt-cache/10.png" alt="按任务评估缓存与上下文管理收益" loading="lazy" decoding="async"></p>
+<p>理想的情况是：第二天说一句“继续”，Agent 就能找到交接材料、核对当前代码，从尚未完成的回归测试重新做起。到新旧客户端都通过验收时，一切问题的答案也全都留在记录里。</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>《尚书引义·太甲二》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://ctext.org/wiki.pl?if=gb&remap=gb&res=305255"><em>https:&#x2F;&#x2F;ctext.org&#x2F;wiki.pl?if&#x3D;gb&amp;remap&#x3D;gb&amp;res&#x3D;305255</em></a></p>
+<p>[2] </p>
+<p>《Better prompt caching for GPT-6》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://openai.com/index/better-prompt-caching-for-gpt-6/"><em>https:&#x2F;&#x2F;openai.com&#x2F;index&#x2F;better-prompt-caching-for-gpt-6&#x2F;</em></a></p>
+<p>[3] </p>
+<p>提示词缓存（Prompt Cache）: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://developers.openai.com/api/docs/guides/prompt-caching"><em>https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;prompt-caching</em></a></p>
+<p>[4] </p>
+<p>OpenAI 当前公布的价格: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://developers.openai.com/api/docs/pricing"><em>https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;pricing</em></a></p>
+<p>[5] </p>
+<p>OpenAI 的部署指南: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://developers.openai.com/api/docs/guides/deployment-checklist"><em>https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;deployment-checklist</em></a></p>
+<p>[6] </p>
+<p>OpenAI 的更新记录: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://developers.openai.com/api/docs/changelog"><em>https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;changelog</em></a></p>
+<p>[7] </p>
+<p>缓存诊断工具: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://developers.openai.com/api/docs/guides/prompt-caching/diagnostics"><em>https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;prompt-caching&#x2F;diagnostics</em></a></p>
+<p>[8] </p>
+<p>PowerContext: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/en/docs/get-started/core-concepts/"><em>https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;en&#x2F;docs&#x2F;get-started&#x2F;core-concepts&#x2F;</em></a></p>
+<p>[9] </p>
+<p>Handoff: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/en/docs/workflows/memory-and-handoff/"><em>https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;en&#x2F;docs&#x2F;workflows&#x2F;memory-and-handoff&#x2F;</em></a></p>
+<p>[10] </p>
+<p>模型连接与能力配置: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/en/docs/get-started/configure-models/"><em>https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;en&#x2F;docs&#x2F;get-started&#x2F;configure-models&#x2F;</em></a></p>
+<p>[11] </p>
+<p>seekdb: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb"><em>https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb</em></a></p>
+<p><img src="/img/gpt-6-better-prompt-cache/11.gif" alt="gpt 社区推荐与关注引导图1" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-better-prompt-cache/12.png" alt="gpt 社区推荐与关注引导图2" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-better-prompt-cache/13.png" alt="gpt 社区推荐与关注引导图3" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/gpt-6-better-prompt-cache/14.png" alt="gpt 社区推荐与关注引导图4" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-better-prompt-cache/15.png" alt="gpt 社区推荐与关注引导图5" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-better-prompt-cache/16.png" alt="gpt 社区推荐与关注引导图6" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-better-prompt-cache/17.png" alt="gpt 社区推荐与关注引导图7" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/gpt-6-better-prompt-cache/18.png" alt="gpt 社区推荐与关注引导图8" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/GPT-6/" rel="tag"># GPT-6</a>
+              <a href="/tags/Prompt-Cache/" rel="tag"># Prompt Cache</a>
+              <a href="/tags/KV-Cache/" rel="tag"># KV Cache</a>
+              <a href="/tags/Token-%E6%88%90%E6%9C%AC/" rel="tag"># Token 成本</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-10-oceanbase-database-competition-nanjing/" rel="prev" title="OceanBase 数据库大赛宣导会">
+                  <i class="fa fa-angle-left"></i> OceanBase 数据库大赛宣导会
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="next" title="Agent 养成记：从经验中长出技能">
+                  Agent 养成记：从经验中长出技能 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="PowerContext 如何把 Agent 一次成功执行转化为可复用技能？本文以像素营地搭桥和供电任务为例，介绍 Source 证据记录、Experience 经验整理、Skill 生成与跨 Agent 复用的完整过程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Agent 养成记：从经验中长出技能">
+<meta property="og:url" content="https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="PowerContext 如何把 Agent 一次成功执行转化为可复用技能？本文以像素营地搭桥和供电任务为例，介绍 Source 证据记录、Experience 经验整理、Skill 生成与跨 Agent 复用的完整过程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/01.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/02.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/03.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/04.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/05.gif">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/06.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/07.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/08.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/09.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/10.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/11.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/12.png">
+<meta property="article:published_time" content="2026-10-13T00:50:25.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:50:25.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Codex SDK">
+<meta property="article:tag" content="Experience">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="Skill">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/agent-experience-to-skill-powercontext/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/","path":"2026/2026-10-13-agent-experience-to-skill-powercontext/","title":"Agent 养成记：从经验中长出技能"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Agent 养成记：从经验中长出技能 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%AE%A9-Agent-%E5%AE%8C%E6%88%90%E4%B8%80%E6%AC%A1%E7%9C%9F%E5%AE%9E%E4%BB%BB%E5%8A%A1"><span class="nav-number">1.</span> <span class="nav-text">一、让 Agent 完成一次真实任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BB%8E%E4%BB%BB%E5%8A%A1%E8%AF%81%E6%8D%AE%E7%94%9F%E6%88%90-Experience"><span class="nav-number">2.</span> <span class="nav-text">二、从任务证据生成 Experience</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Source-%E7%95%99%E4%B8%8B%E5%BD%93%E6%97%B6%E5%8F%91%E7%94%9F%E7%9A%84%E4%BA%8B%E6%83%85"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Source 留下当时发生的事情</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Experience-%E6%8A%8A%E8%AE%B0%E5%BD%95%E6%95%B4%E7%90%86%E6%88%90%E5%88%A4%E6%96%AD"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Experience 把记录整理成判断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E9%80%9A%E8%BF%87%E5%80%99%E9%80%89%E5%AE%A1%E6%A0%B8%E5%BD%A2%E6%88%90%E5%8F%AF%E5%A4%8D%E7%94%A8-Skill"><span class="nav-number">3.</span> <span class="nav-text">三、通过候选审核形成可复用 Skill</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%90%8C%E4%B8%80%E4%BB%BD-Skill%EF%BC%8C%E6%80%8E%E6%A0%B7%E8%B5%B0%E8%BF%9B%E4%B8%8D%E5%90%8C%E4%BB%BB%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">四、同一份 Skill，怎样走进不同任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E8%83%BD%E6%9F%A5%E5%B1%A5%E5%8E%86%E7%9A%84-Skill-%E6%A0%91"><span class="nav-number">5.</span> <span class="nav-text">五、能查履历的 Skill 树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%9F%BA%E4%BA%8E%E4%BD%BF%E7%94%A8%E5%8F%8D%E9%A6%88%E4%BF%AE%E8%AE%A2-Skill"><span class="nav-number">6.</span> <span class="nav-text">六、基于使用反馈修订 Skill</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%8A%8A-PowerContext-%E6%8E%A5%E8%BF%9B%E7%9C%9F%E5%AE%9E%E9%A1%B9%E7%9B%AE"><span class="nav-number">7.</span> <span class="nav-text">七、把 PowerContext 接进真实项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">9.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-23-powercontext-agent-handoff-workshop/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-23</time>
+        <br>
+      清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-15-powercontext-1-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-15</time>
+        <br>
+      PowerContext 1.0.0 正式发布：前事有据，后事可续
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-14</time>
+        <br>
+      GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-28-llm-wiki-knowledge-self-organization/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-28</time>
+        <br>
+      深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-19</time>
+        <br>
+      我们想和你一起，让 Agent 的优化有据可循
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Agent 养成记：从经验中长出技能 | Longda's Interesting World">
+      <meta itemprop="description" content="PowerContext 如何把 Agent 一次成功执行转化为可复用技能？本文以像素营地搭桥和供电任务为例，介绍 Source 证据记录、Experience 经验整理、Skill 生成与跨 Agent 复用的完整过程。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Agent 养成记：从经验中长出技能
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-13 08:50:25" itemprop="dateCreated datePublished" datetime="2026-10-13T08:50:25+08:00">2026-10-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">秋梵</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>13 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">PowerContext 如何把 Agent 一次成功执行转化为可复用技能？本文以像素营地搭桥和供电任务为例，介绍 Source 证据记录、Experience 经验整理、Skill 生成与跨 Agent 复用的完整过程。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agent 养成记：从经验中长出技能","description":"PowerContext 如何把 Agent 一次成功执行转化为可复用技能？本文以像素营地搭桥和供电任务为例，介绍 Source 证据记录、Experience 经验整理、Skill 生成与跨 Agent 复用的完整过程。","image":"https://ilongda.com/img/agent-experience-to-skill-powercontext/01.png","wordCount":3420,"datePublished":"2026-10-13T00:50:25.000Z","dateModified":"2026-10-19T00:50:25.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/"},"url":"https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/","inLanguage":"zh-CN","keywords":["Agent","Skill","PowerContext","Experience","Codex SDK"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"Agent 养成记：从经验中长出技能","item":"https://ilongda.com/2026/2026-10-13-agent-experience-to-skill-powercontext/"}]}</script>
+<p>秋梵 <em>2026年10月13日 07:30</em></p>
+<p>作者：秋梵，PowerContext Committer</p>
+<p>Agent 做完一个任务之后，除了结果，还能留下些什么？</p>
+<p>在前一阵儿的外滩大会上，我针对如何做跨 Agent 的经验或技能传递，分享了 PowerContext 经验（Experience）和技能（Skill）有关的内容。</p>
+<p>PowerContext 是一个面向人与 Agent 协作的上下文管理工具，关注工作上下文怎样积累和共享以及如何管理的问题。它可以把项目约定、交接进度、实践经验和操作方法放到对应的工作范围里，让后续接入的 Agent 继续使用。</p>
+<span id="more"></span>
+
+<blockquote>
+<p>热知识：PowerContext 是 PowerMem 的重大升级版</p>
+</blockquote>
+<p>为了在分享中能让 Experience 和 Skill 这两个概念更容易理解，我做了一个像素世界地图搭建的小游戏 —— 即让真实的 Agent 在营地搭桥、接通电源，PowerContext 在中间进行相关记录的保存与把实践整理成经验和技能，随后换新地图、新 Agent，观察这些实践是怎么变成可以让后续的任务继续使用的方法的。</p>
+<p><img src="/img/agent-experience-to-skill-powercontext/01.png" alt="像素营地中的 Agent 搭桥供电任务" decoding="async"></p>
+<p>接下来就沿着这次实践，为大家进行拆解和说明。</p>
+<p>欢迎大家关注 OceanBase 社区公众号“老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="一、让-Agent-完成一次真实任务"><a href="#一、让-Agent-完成一次真实任务" class="headerlink" title="一、让 Agent 完成一次真实任务"></a>一、让 Agent 完成一次真实任务</h2><p>游戏是从一张营地地图开始的。在这像素地图中 Agent 需要通过给它的相关材料和方法，自行寻找解法搭桥、过河、供电，最后把发电机接到营地的灯上，灯亮了则这个任务就完成了。</p>
+<blockquote>
+<p>原文此处包含营地任务演示视频，以下正文说明实际执行过程。</p>
+</blockquote>
+<p>在游戏中实际上是调用了 Codex SDK 作为一个真实的 Agent 来跑的。在视频中可以看到 Agent 在营地地图中取材、搭桥、铺设导线并点亮营地灯，整个过程结束后这个任务就结束了。</p>
+<p>但此时右侧的方法档案中的技能树并没有点亮，对应显示的正式 Skill 数量仍然是 0。</p>
+<p>很明显这次成功实践只是一次成功的执行结果，但并没有沉淀为可复用的经验。</p>
+<p>这个时候 PowerContext 就上场了。</p>
+<h2 id="二、从任务证据生成-Experience"><a href="#二、从任务证据生成-Experience" class="headerlink" title="二、从任务证据生成 Experience"></a>二、从任务证据生成 Experience</h2><p>PowerContext 首先做的一件事情是，将第一次任务做的一些动作和相关信息都保存为了 Source。</p>
+<h3 id="2-1-Source-留下当时发生的事情"><a href="#2-1-Source-留下当时发生的事情" class="headerlink" title="2.1 Source 留下当时发生的事情"></a>2.1 Source 留下当时发生的事情</h3><p>Source 在这里就是来源记录，比如营地任务结束后的公共规则、初始地图与库存、Agent 的实际动作，以及环境验收结果等都会在 Source 中留下记录，作为后续经验整理的来源依据。</p>
+<p>比如搭桥的 Source 记录里，可以找到 Agent 在哪些位置施工；任务结束时，独立的环境检查结果等等。以下就是在 Source 中可找到的环境检查结果记录。</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>表示什么</th>
+<th>营地任务结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bridge_reachable</td>
+<td>另一岸是否可以到达</td>
+<td>true</td>
+</tr>
+<tr>
+<td>beacon_powered</td>
+<td>目标是否接通电源</td>
+<td>true</td>
+</tr>
+<tr>
+<td>mission_complete</td>
+<td>整局任务是否完成</td>
+<td>true</td>
+</tr>
+</tbody></table>
+<p><strong>Source 的价值不在于把日志存得更多，而在于给后面的 Experience 和 Skill 留下可回查的依据。</strong> 以后看到一条经验，可以重新核对当时的规则、动作和结果，而不是只相信一段听起来合理的总结。</p>
+<p>现在 Source 证据已经有了，下一个应该要回答的问题就是，这次实践里有什么经验判断值得留下？</p>
+<h3 id="2-2-Experience-把记录整理成判断"><a href="#2-2-Experience-把记录整理成判断" class="headerlink" title="2.2 Experience 把记录整理成判断"></a>2.2 Experience 把记录整理成判断</h3><p>在 PowerContext 中将经验固定为四部分：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>要说明的内容</th>
+<th>用搭桥举例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>situation</td>
+<td>当时遇到了什么情况</td>
+<td>河道阻断通路，需要到达另一岸</td>
+</tr>
+<tr>
+<td>action</td>
+<td>实际采取了什么行动</td>
+<td>观察缺口，准备材料，逐格搭桥并推进</td>
+</tr>
+<tr>
+<td>outcome</td>
+<td>实际观察到什么结果</td>
+<td>通路检查通过，另一岸可以到达</td>
+</tr>
+<tr>
+<td>lesson</td>
+<td>下次可以参考什么判断</td>
+<td>先确认河岸和缺口，再按当前条件施工</td>
+</tr>
+</tbody></table>
+<p>我很认同这个拆分，只有把适用情况和观察结果一起留下来，后面的 Agent 才有材料判断这条经验能不能用。</p>
+<p>PowerContext 会在后台自动的去读取前面已经有的 Source 证据，调用配置好的模型来整理出当时遇到了什么情况、做了什么、结果怎么样等等，保存成待审核的经验候选。</p>
+<p><strong>待审核</strong> 是个关键词，说明经验生成出来之后，还是要进行人为的核对。</p>
+<p>这个是 PowerContext 中的一个设计，而且我也很认同这个设计，一是突出了人机协作的理念，二是生成的经验或 Skill 经过人为的审核之后是会更加的可靠的。</p>
+<p>所以只有人为审核批准了之后，才形成正式的 Experience，才能真正的去使用。</p>
+<p>当然 Experience 也可以配置成后台定时孵化。同样后台任务也只负责整理候选，<strong>不会自动批准，批准的事情还是会交予人处理</strong>。</p>
+<p>Experience 解决了判断是否可靠的问题。但还不够，PowerContext 还会把这份正式经验继续整理成 Agent 可以采用的 Skill 方法。</p>
+<h2 id="三、通过候选审核形成可复用-Skill"><a href="#三、通过候选审核形成可复用-Skill" class="headerlink" title="三、通过候选审核形成可复用 Skill"></a>三、通过候选审核形成可复用 Skill</h2><p>平常给 Agent 安装的 Skill，通常会说明某类事情该怎么做，PowerContext 里的 managed Skill 也承担这个角色，它保存了名称、用于发现的描述、完整的指令以及精确的来源关系等等。</p>
+<p>小游戏中的营地地图最终会整理出两份方法：<code>bridge-crossing</code> 负责搭桥，<code>power-routing</code> 负责供电。前者告诉 Agent 如何观察两岸和缺口、准备木板并从可达侧逐格施工；后者说明如何识别电源与目标、规划线路，并在完工后验证导电连通。</p>
+<blockquote>
+<p>原文此处包含营地任务演示视频，以下正文说明实际执行过程。</p>
+</blockquote>
+<p>可以看到视频中先审批通过了 Experience，再根据正式 Experience 生成并进行 Skill 审批。搭桥与供电两个节点点亮后，才表示两份正式 Skill 已经形成。</p>
+<p>所以可以看到正式 Skill 的生成逻辑和思路与 Experience 是一致的，先是候选，审批后再成为正式。</p>
+<p>在视频中就一共经过了两次审批：</p>
+<ol>
+<li>Source 生成 Experience Candidate（候选），审核通过后形成正式 Experience。</li>
+<li>正式 Experience 生成 Skill Candidate（候选），再次审核后形成 Skill r1 版本。</li>
+</ol>
+<p>每个候选都带有不可变编号的版本号。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">任务 Source</span><br><span class="line">    ↓ 生成经验候选</span><br><span class="line">审核并批准 Experience</span><br><span class="line">    ↓ 根据正式经验生成方法候选</span><br><span class="line">审核并批准 Skill</span><br><span class="line">    ↓ 明确读取或导出指定版本</span><br><span class="line">交给后续 Agent 使用</span><br></pre></td></tr></table></figure>
+
+<p>这条流程是 PowerContext 中从 Source 到 Skill 的生成路径。</p>
+<p>那么 Skill 正式方法有了之后，就可以尝试换不同的地图、启用不同的 Agent 来执行不同的任务，看看是否有使用到前面沉淀下来的方法。</p>
+<h2 id="四、同一份-Skill，怎样走进不同任务"><a href="#四、同一份-Skill，怎样走进不同任务" class="headerlink" title="四、同一份 Skill，怎样走进不同任务"></a>四、同一份 Skill，怎样走进不同任务</h2><p>游戏的第二阶段换成灯塔和观测站两张完全不同的地图，每张地图都会开启新的 Agent 会话，世界状态和库存重新开始。</p>
+<p><img src="/img/agent-experience-to-skill-powercontext/02.png" alt="灯塔与观测站跨任务技能复用" loading="lazy" decoding="async"></p>
+<p>新 Agent 会拿到当前地图、当前库存和指定版本的 Skill，而它仍然要通过重新观察河岸、估算材料、选择施工路线，并在完成后调用环境验收。<strong>Skill 提供的是处理这类问题的方法，不会把上一局的答案复制过来。</strong></p>
+<blockquote>
+<p>这次养成的是可以继续使用的方法。新任务拿到方法以后，仍然需要判断、执行和验证。</p>
+</blockquote>
+<p>灯塔和观测站各进行了三次独立 Codex 会话，使用的都是两份 r1 版本的 Skill。</p>
+<blockquote>
+<p>原文此处包含营地任务演示视频，以下正文说明实际执行过程。</p>
+</blockquote>
+<p>从视频中可以看到同一版本的方法在不同任务中的实际采用，PowerContext 保存了 Skill，并通过 <code>pc_skill_read</code>（PowerContext 内部的方法）把指定版本正文交给 Agent，并记录这次读取对应的版本和内容摘要。所以最后都能看到他们使用后留下的新的使用记录，这些也都能成为新的 Source。</p>
+<h2 id="五、能查履历的-Skill-树"><a href="#五、能查履历的-Skill-树" class="headerlink" title="五、能查履历的 Skill 树"></a>五、能查履历的 Skill 树</h2><p>整理这个过程，把一份 Skill 的来历与后续表现连起来，就有了这棵技能树。</p>
+<p><img src="/img/agent-experience-to-skill-powercontext/03.png" alt="Source 到 Experience 和 Skill 的履历树" loading="lazy" decoding="async"></p>
+<p>这棵树是小游戏中对 PowerContext lineage 和使用记录的可视化显示，从中间的供电技能的 r1 版本往前找，可以找到营地任务的 Source、整理出来的 Experience，以及对应的审核记录。</p>
+<p>往后看，又能找到新地图的灯塔和观测站读取了哪一版、执行了哪些动作、最终有没有通过检查。</p>
+<p>我觉得这里比点亮两个节点更有意思。节点背后有来历，也有后续使用情况，之后想完善方法时，就有东西可以翻出来看。</p>
+<p>它真正解决的问题很朴素：以后要讨论一份方法是否可靠、哪里需要修改时，团队有具体记录可以核对。于是下一步自然变成：这些使用结果怎样进入 Skill 的下一版？</p>
+<h2 id="六、基于使用反馈修订-Skill"><a href="#六、基于使用反馈修订-Skill" class="headerlink" title="六、基于使用反馈修订 Skill"></a>六、基于使用反馈修订 Skill</h2><p>其实在 PowerContext 的当前内置流程中，修订 Skill 内容是需要由人或接入的 Agent 进行发起的，PowerContext 没有收到使用记录就自动在后台改版的机制。接入方可以编排何时发起，但仍然要经过候选和审核。</p>
+<p>在灯塔和观测站的地图中，Agent 各跑了三次，留下六条供电 r1 的使用记录。但地图和线路长度等需求都变了，我就想把开工前估算材料、完工后核对用料这两件事写得更明确一些，所以对供电 Skill 进行了一次修订。</p>
+<p><img src="/img/agent-experience-to-skill-powercontext/04.png" alt="供电技能修订与版本使用记录" loading="lazy" decoding="async"></p>
+<p>发起修订时要指定准备修改的那个 Skill 的 Revision 版本，并提供相关的使用 Source，PowerContext 会读取旧版正文和这些证据，调用配置好的模型起草完整的修订候选。</p>
+<p>当然可以调用配置好的模型进行修订起草，也可以通过直接提交人工整理好的修改内容成为候选，候选审核通过后，PowerContext 才会在同一个 Skill 身份下创建 r2 版本。</p>
+<p><strong>原来的 r1 继续保留，以前采用 r1 的任务记录也仍然指向 r1。</strong></p>
+<p>游戏最后山间中继站的新会话明确采用供电 r2，搭桥仍然使用 r1，再完成任务和验收。到这里，方法的修订才有了后续使用结果。</p>
+<p><strong>使用记录提供依据，修订形成候选，审核决定正式版本，实际任务再验证采用结果。</strong> 这几步连起来，方法才有机会随着实践继续完善，持续的优化 Skill 进行进化。</p>
+<h2 id="七、把-PowerContext-接进真实项目"><a href="#七、把-PowerContext-接进真实项目" class="headerlink" title="七、把 PowerContext 接进真实项目"></a>七、把 PowerContext 接进真实项目</h2><p>像素游戏只是为了把关系摊开给人看，换到真实项目也是同样的逻辑，可以从一件已经完成、以后还会重复的工作开始。</p>
+<p>接入 PowerContext 进行使用其实很简单，只需要三步：安装 CLI，启动 Server，再通过 setup 配置自己当前正在使用的 Agent。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># 1. 安装并进入配置向导</span><br><span class="line">uv tool install --force &quot;powercontext[cli,server]==1.0.0&quot;</span><br><span class="line">powercontext config init --language zh --output .env</span><br><span class="line"></span><br><span class="line"># 2. 校验配置并启动 Server</span><br><span class="line">powercontext config validate --env-file .env</span><br><span class="line">powercontext server run --env-file .env</span><br><span class="line"></span><br><span class="line"># 3. 安装与 Server 版本一致的 Codex 集成</span><br><span class="line">powercontext setup codex --ref powercontext-v1.0.0</span><br></pre></td></tr></table></figure>
+
+<p>然后就可以开始玩起来了。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>这次通过小游戏来分享的内容，想验证的是，一次已经完成的实践能否给后续工作留下真正可用的东西：</p>
+<ul>
+<li><strong>Source 保存事实依据。</strong> 规则、动作和验收结果都能回查，Experience 与 Skill 不需要悬在一段总结上。</li>
+<li><strong>两次审核处理两个问题。</strong> 先确认实践能否形成经验，再确认经验能否整理成带步骤和检查项的方法。</li>
+<li><strong>新任务复用方法，不复制作业答案。</strong> Agent 仍然要根据当前环境重新判断、执行和验收。</li>
+<li><strong>Usage 让修订有证据。</strong> 哪一版被读取、采用和验证，都可以继续支撑 r2、r3，而旧版本与历史记录仍然保留。</li>
+</ul>
+<p>当然 PowerContext 的功能也不仅仅是 Experience 和 Skill 两方面，它还能管理 Memory、Handoff；生成与审核 Scope 画像；元数据的治理等等，在跨 Agent 的上下文管理上都起到很关键的作用。</p>
+<p>回到文章开头那个问题：Agent 做完一个任务之后，除了结果，还能留下些什么？</p>
+<p>不妨从安装 PowerContext 开始吧，让实践先留下证据，让跨 Agent 的协作变得简单。</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>PowerContext 官网: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/zh"><em>https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;zh</em></a></p>
+<p>[2] </p>
+<p>PowerContext GitHub 仓库: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext"><em>https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</em></a></p>
+<p>[3] </p>
+<p>PowerContext 101: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.mintlify.app/zh"><em>https:&#x2F;&#x2F;powercontext.mintlify.app&#x2F;zh</em></a></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/05.gif" alt="agent 社区推荐与关注引导图1" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/06.png" alt="agent 社区推荐与关注引导图2" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/07.png" alt="agent 社区推荐与关注引导图3" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/agent-experience-to-skill-powercontext/08.png" alt="agent 社区推荐与关注引导图4" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/09.png" alt="agent 社区推荐与关注引导图5" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/10.png" alt="agent 社区推荐与关注引导图6" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-experience-to-skill-powercontext/11.png" alt="agent 社区推荐与关注引导图7" loading="lazy" decoding="async"></p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">
+</a></p>
+<p>了解更多</p>
+<p><img src="/img/agent-experience-to-skill-powercontext/12.png" alt="agent 社区推荐与关注引导图8" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/Skill/" rel="tag"># Skill</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/Experience/" rel="tag"># Experience</a>
+              <a href="/tags/Codex-SDK/" rel="tag"># Codex SDK</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-12-gpt-6-better-prompt-cache/" rel="prev" title="GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？">
+                  <i class="fa fa-angle-left"></i> GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/" rel="next" title="OceanBase obdumper 原理研究和问题处理经验">
+                  OceanBase obdumper 原理研究和问题处理经验 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

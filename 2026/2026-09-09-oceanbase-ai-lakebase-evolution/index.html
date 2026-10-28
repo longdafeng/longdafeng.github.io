@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/01.gif">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/02.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/03.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/04.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/05.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/06.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/07.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/08.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/09.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/10.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/11.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/12.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/13.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/14.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/15.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/16.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/17.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/18.gif">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/19.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/20.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/21.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/22.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/23.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/24.png">
+<meta property="article:published_time" content="2026-09-08T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:54:25.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI湖库">
+<meta property="article:tag" content="Lakebase">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="分布式数据库">
+<meta property="article:tag" content="多模态数据">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-ai-lakebase-evolution/01.gif">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/","path":"2026/2026-09-09-oceanbase-ai-lakebase-evolution/","title":"从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-08-lakebase-ai-database-design/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-08</time>
+        <br>
+      湖库一体 AI 数据库的设计理念
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-06-ai-agent-database-evolution/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-06</time>
+        <br>
+      AI Agent 要用数据库了：Lakebase、seekdb 与 PowerMem 怎么理解
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-21-oceanbase-session-id-mystery/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-21</time>
+        <br>
+      OceanBase Session ID 之谜
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-11-14-oceanbase-partition-basics/" rel="bookmark">
+        <time class="popular-posts-time">2025-11-14</time>
+        <br>
+      OceanBase 分区基础知识
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-08-11-oceanbase-auto-partition-split/" rel="bookmark">
+        <time class="popular-posts-time">2025-08-11</time>
+        <br>
+      自动分区分裂 —— OceanBase 易用性史诗级增强
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-09 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-09T07:30:00+08:00">2026-09-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">竹翁</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>21 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考","description":"OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。","image":"https://ilongda.com/img/oceanbase-ai-lakebase-evolution/01.gif","wordCount":5472,"datePublished":"2026-09-08T23:30:00.000Z","dateModified":"2026-09-17T18:54:25.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/"},"url":"https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/","inLanguage":"zh-CN","keywords":["OceanBase","分布式数据库","Lakebase","AI湖库","多模态数据"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考","item":"https://ilongda.com/2026/2026-09-09-oceanbase-ai-lakebase-evolution/"}]}</script>
+<p>OceanBase 从分布式数据库向AI湖库演进，在一体化架构上统一管理结构化与多模态数据，结合数据处理、语义理解和Agent使用需求，探索非结构化数据的资产化路径。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/01.gif" alt="OceanBase AI湖库内容讲解图1" decoding="async"></p>
+<p><strong>编者按</strong></p>
+<p><strong>OceanBase AI 湖库负责人竹翁，会在这篇文章里，为大家介绍 OceanBase 为什么要在一体化产品架构之上，衍生出一个全新的产品家族——AI 湖库，以及它如何让企业中占比 80%-90% 的非结构化数据，从“成本”变成“资产”。他表示，AI 让非结构化数据第一次可以被系统地处理、管理和理解。</strong></p>
+<span id="more"></span>
+
+<p><strong>正如结构化数据时代需要“湖仓一体”，多模态数据的管理也需要一个新的架构——湖库（Lakebase）：用一套引擎统一管理结构化与多模态数据，并让数据具备可被 Agent 理解和使用的业务语义。</strong></p>
+<p>在完成一体化架构的变革之后，OceanBase 又一次在技术上做了全新的扩展。这一次扩展的幅度之大，甚至会让人产生疑问：这还算是在做数据库吗？本次分享要回答的，正是 OceanBase 如何从一个分布式数据库引擎，逐步演进为一个面向 AI 的全新产品家族的。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/02.png" alt="OceanBase AI湖库内容讲解图2" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/03.png" alt="OceanBase AI湖库内容讲解图3" loading="lazy" decoding="async"></p>
+<p>先回顾 OceanBase 的技术发展历程。OceanBase 从 2010 年开始研发分布式数据库，最初可以认为是一个 NoSQL 数据库，后来逐渐演变为完整的关系型数据库，并不断增强对 MySQL、Oracle 的兼容性。从 3.x 开始，OceanBase 着手增强 TP 和 AP 混合负载的能力——因为在真正关键的核心业务系统里，其实很难严格区分哪些是 TP 场景、哪些是 AP 场景。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/04.png" alt="OceanBase AI湖库内容讲解图4" loading="lazy" decoding="async"></p>
+<p>沿着这条路径继续演进，OceanBase 在分布式架构的基础上进一步增强了单机性能，在同一套代码体系中兼顾分布式技术与集中式技术，使得在单机分布式一体化架构下，单机性能能够达到与传统集中式数据库相当的效率，从而带来一体化的使用体验。  </p>
+<p>而这一次真正的变化在于：在 OceanBase 一体化产品架构之上，衍生出了一个全新的产品家族——AI 湖库。这件事情从 OceanBase 4.5 版本开始酝酿，如今正式对外呈现。这一变化背后的主要推动力，当然是 AI。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/05.jpg" alt="OceanBase AI湖库内容讲解图5" loading="lazy" decoding="async"></p>
+<p>湖库的核心是一个存储与计算引擎，围绕这个引擎，OceanBase 构建了一套完整的生态体系加以配套：</p>
+<ul>
+<li>包括专门用于数据开发治理的平台 OceanBase DataStudio；</li>
+<li>面向数据开发与分析场景、以 Agent 方式提供服务的 OceanBase DataPilot；</li>
+<li>专门用于 Agent 记忆管理的 AI 智能记忆体 OceanBase PowerMem；</li>
+<li>以及专门用于文档知识库管理的企业级知识库组件 PowerRAG。</li>
+</ul>
+<p>这些产品，都是围绕 OceanBase AI 湖库构建而成的。  </p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/06.png" alt="OceanBase AI湖库内容讲解图6" loading="lazy" decoding="async"></p>
+<p>接下来进入主题：OceanBase 为什么要做一个全新的产品——AI 湖库？</p>
+<p>这里的关键问题是，OceanBase 所讲的 AI 湖库，与业界已有的相关概念到底有什么区别。过去很多数据库的演变，更多是在拼性能、拼成本这类话题。而 AI 时代给数据库领域的参与者带来了一个全新的机会，即重新审视数据库对于应用和业务的价值应该如何构建。</p>
+<p>过去，中国的数据库企业更多是在国外厂商定义的标准之下，跟随其接口和产品方向；而如今，中国的 AI 发展走在了世界前沿，已经没有一个可以直接跟随的先行者，这也给数据库提出了一个全新的课题：作为存储与计算的基础设施，应当如何帮助应用和业务解决实际问题。  </p>
+<p>这个逻辑其实很简单：AI 使得非结构化数据可以被系统地处理、管理和理解，这是一个关键的观察。此前的机器学习浪潮已经让这件事初现可能，而这一轮大模型和生成式 AI 的爆发，则使它变得更贴近每一家企业的实际需求。  </p>
+<p>非结构化数据的管理，很多企业早已在做。过去的做法是搭建内容管理系统，把数据存下来，但存下来之后往往就被遗忘，只有其中一小部分能够被偶尔调用。因此，从企业数据资产的角度看，这些非结构化数据实际上是一种成本。真正值得思考的是，如何用 AI 技术把这部分成本，转化为像结构化数据一样的高价值资产。  </p>
+<p>从存储容量来看，企业中 80%-90% 的数据都是非结构化数据。这些数据如何变成可以被计算、被更好地管理和利用的资产？  </p>
+<p>OceanBase 给出的答案很简单：正如结构化数据时代需要“湖仓一体（Lakehouse）”这样的架构，非结构化、多模态数据的管理也需要一个全新的架构——AI 湖库（Lakebase）。</p>
+<p>OceanBase AI 湖库这一产品家族，正是希望通过这样的全新架构，让结构化数据与非结构化数据能够被统一管理和治理。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/07.jpg" alt="OceanBase AI湖库内容讲解图7" loading="lazy" decoding="async"></p>
+<p>这套架构可以支持私有化部署，也可以在云上提供服务。</p>
+<p>整个 OceanBase 湖库引擎可以分为几层：</p>
+<ul>
+<li>最底层基于对象存储这类开放式存储架构，用于存储结构化、半结构化和非结构化数据；</li>
+<li>第二层要把这些数据有效地组织起来，需要借助数据库技术构建索引，在多模态统一数据管理这一层，把结构化表、半结构化数据，以及一个要重点介绍的概念——多模表——统一融合在一起；</li>
+<li>计算层以 OceanBase 的 SQL 引擎为核心进行扩展，支持多模态数据的管理、计算与处理能力，同时兼容 Spark、Ray 等开放计算引擎；</li>
+<li>再上一层，从用户应用侧来看，主要以 SQL 为主，结合 Python 完成数据开发的闭环。</li>
+</ul>
+<p>在这层引擎之上，为了实现 OceanBase 内外、库与库之间的数据融合，OceanBase 做了较大的改造，使内部的元数据可以被湖上的开放计算引擎无缝使用，反之，引擎内部也可以无缝访问湖上各种格式的开放式存储。  </p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/08.png" alt="OceanBase AI湖库内容讲解图8" loading="lazy" decoding="async"></p>
+<p>下面是处理层面几个比较关键的技术点。  </p>
+<p>OceanBase 湖库最核心的部分，依然是依托多年积累的 OceanBase 引擎进行的重构与扩展。最核心的变化在于存储架构：由于需要与湖上数据充分融合，OceanBase 引擎的核心变为基于对象存储，作为所有数据最终存储和持久化的位置，同时配套日志服务完成事务的持久化。</p>
+<p>在此基础上，系统依然保持分布式特性，通过存算分离实现存储和计算各自的弹性伸缩，支持多种模态数据的存储。  </p>
+<p>存算分离  </p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/09.jpg" alt="OceanBase AI湖库内容讲解图9" loading="lazy" decoding="async"></p>
+<p>第一个关键点是存算分离。</p>
+<p>这一架构从 OceanBase 4.4 版本开始筹备，前年启动、去年完成首次发布，目前进一步演进为支持湖库融合的架构。其核心在于，存储不再需要像传统数据库那样保存多份副本，整个系统只需以对象存储为核心保存一份数据，并将对象存储视为一种可以随时获取的存储资源，在此基础上进行各种设计。同时，系统保留了此前积累的高可用能力，能够保证数据具备很短的 RTO。  </p>
+<p>有了存算分离之后，第一个容易获得的好处是：AI 时代很多数据的价值密度，一定低于以前账务系统中存储的数据。例如大量聊天记录被存入系统后，可能并没有很高的处理价值。因此，存算分离带来的第一个好处，就是可以让数据的冷热分层实现自动化。</p>
+<p>在此基础上，OceanBase 进一步设计了策略控制能力，把数据分为三类：</p>
+<ul>
+<li>标注为冷（COLD）的部分不会放入缓存，始终保留在对象存储上；</li>
+<li>完全的热（HOT）数据会保留在本地化服务中；</li>
+<li>中间状态（AUTO）的数据则由系统根据访问情况自动控制冷热淘汰。</li>
+</ul>
+<p>无论是向量数据，还是像聊天记录这样的文本数据，都以这一能力为基础进行管理。  </p>
+<p>混合搜索  </p>
+<p>第二个核心能力是混合搜索。</p>
+<p>Agent 对数据库提出的第一个改变，就是数据库需要具备良好的搜索能力——这一能力此前并非必须在数据库内部实现，但在新的应用场景下，首先要解决向量、文本、标量这三类数据类型的混合高效检索。  </p>
+<p>在这方面 OceanBase 持续增强：</p>
+<ul>
+<li>从基础类型上，支持稠密向量和稀疏向量；</li>
+<li>在索引结构上，自研了基于内存的向量索引，也自研了基于磁盘存储的高性价比索引，为客户提供综合选择。</li>
+<li>在查询路径上，与传统数据库不同，需要以多路召回的方式同时检索向量和文本数据，并进行高效过滤——因为向量检索的计算成本相对更高，因此在查询优化目标上会尽量控制检索区域。</li>
+</ul>
+<p>OceanBase 较早就支持了高性能的向量搜索，与一些专门做向量搜索的开源引擎相比，在多个维度上的性能表现都比较出色。  </p>
+<p>精简技术栈  </p>
+<p>以这些基础能力为核心，再来看湖库引擎架构相对于原有引擎的核心提升。</p>
+<p>一般基于开源技术搭建的数据平台，如果自建，往往需要以复杂的引擎组合才能完成数据管理，而这还只是结构化数据管理部分。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/10.jpg" alt="OceanBase AI湖库内容讲解图10" loading="lazy" decoding="async"></p>
+<p>通常分为三部分：</p>
+<ul>
+<li>第一部分是离线加工，采用 T+1 方式，引入 Hadoop 等大数据技术；</li>
+<li>第二部分是实时系统，引入以 Flink 为代表的流式处理技术；</li>
+<li>第三部分是数据服务层或数据分析层，面向 BI 应用或其他业务直接提供数据。</li>
+</ul>
+<p>这就需要把湖上的数据导入各种引擎：</p>
+<ul>
+<li>比如较早引入 ClickHouse 做实时分析，但它只能做单表查询、难以支持多表关联，又需要引入其他支持多表关联的数据库；</li>
+<li>这些数据库通常点查性能不佳，因此又要引入 HBase 这类 NoSQL 系统做点查；</li>
+<li>进入 AI 时代后，数据中又多了向量这一类型，还要引入向量数据库；</li>
+<li>对于记忆存储和文本检索，则需要引入 Elasticsearch 等系统。</li>
+</ul>
+<p>这样一来，就会在原有基础上不断“拼积木”式地引入新引擎——架构因此越来越复杂、越来越难以维护。</p>
+<p>因此，第一个要解决的问题，是通过更简洁的架构，以 OceanBase 引擎为核心，用更精简的组件完成结构化数据与非结构化、多模态数据的加工处理。对于实时加工链路，核心技术是增量实时物化视图。</p>
+<p>通过增量物化视图的方式，数据的实时处理无需引入数据库外部引擎，即可高效完成绝大多数复杂的加工与预处理。在这一架构下，整体计算量不会额外增加，管理员只需描述“加工要做什么”，而不需要描述“加工如何完成”——这就是通过增量物化技术实现分层加工的核心逻辑，可以避免维护复杂外部链路带来的问题。  </p>
+<p>多模表  </p>
+<p>接下来重点介绍一个关键的产品级技术——多模表。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/11.jpg" alt="OceanBase AI湖库内容讲解图11" loading="lazy" decoding="async"></p>
+<p>多模表的核心思路，是在传统关系型表的基础上进行扩展。</p>
+<p>在与很多客户交流多模态数据管理与治理需求时会发现，其核心目的都是要对企业中的文本、图片、音频或摄像头视频等数据进行解析和理解，并将其转化为结构化或半结构化数据加以管理和使用。</p>
+<p>由此自然产生一个思路：能否在同一张表中把这些信息全部对齐管理？基于这一观察，OceanBase 提供了多模表能力，主要包含以下几方面：  </p>
+<ul>
+<li>第一，具备良好的搜索能力，能够为多模态数据提供高效的混合查询；</li>
+<li>第二，支持对 JSON 等半结构化数据的高效查询与检索——因为多模态数据在打标之后往往会生成半结构化数据，如何高效查询是需要解决的核心问题；</li>
+<li>第三，也是最重要的一点，是针对大对象（LOB）进行了全新设计。</li>
+</ul>
+<p>OceanBase 重新设计了湖库中大对象类型的实现方式，以此改变数据库圈子里“数据库不适合存储大对象”这一传统认知。在这一设计中，即便在一列里存储一个几十 GB 的视频，其读写开销也不会比存储为独立文件产生更多额外成本。</p>
+<p>具体形态上，原始文件体量较小时以 InRow 方式直接存进数据库，体量很大时以 OutRow 方式在表中保存定位符、数据实际托管在对象存储上，由数据库统一管理元数据，用户不需要自己去维护对象与元数据之间的映射关系。  </p>
+<p>数据可分叉（Fork Database）  </p>
+<p>在此基础上，还有一个关键能力：数据库中的数据可以低成本地进行分叉（Fork Database）。</p>
+<p>这一能力依托于 OceanBase 的存储架构以及多模表能力，可以在毫秒级完成表的复制。复制产生的新表并不会进行真正的数据拷贝，但可以在新表上执行所有增删改查操作，如同操作一张完全独立的表。  </p>
+<p>这一能力对于 Agent 评测场景意义重大。此前在应用测试领域，这一能力也曾被提及，但传统认知中测试环境与生产环境是分离的。到了 Agent 时代，情况发生了变化：Agent 的评测究竟应该基于离线数据，还是在线数据？</p>
+<p>从实践来看，最好的解法是利用线上数据对 Agent 进行评测，这就要求 Fork 操作足够轻量——以极低成本完成 Agent 测评过程中数据沙箱的构建与快速释放。  </p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/12.png" alt="OceanBase AI湖库内容讲解图12" loading="lazy" decoding="async"></p>
+<p>综合来看，面向企业内部在线场景的 Agent，需要一种全新的架构。</p>
+<p>基于湖库，可以总结出这样一种解决方案：Agent 需要能够存储其完整的上下文，这一点相对容易理解；同时，还需要存储 Agent 运行过程中产生的复杂数据，这些数据量往往很大；而 Agent 若要实现自我进化，也需要高效管理这类数据。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/13.jpg" alt="OceanBase AI湖库内容讲解图13" loading="lazy" decoding="async"></p>
+<p>这些数据通过前面提到的 LOB 等结构来承载。运行过程中产生的所有数据，是否能够被实时、在线地分析？例如实时拦截风险、进行实时分析，并以低成本方式存储，实现在线一体化分析。</p>
+<p>借助多模表能力，湖上的表数据可以被离线和近线引擎无缝访问，这中间需要解决数据传输的问题，这是一项关键能力。  </p>
+<p>还有一个值得提出的观点：上述内容讲的是 Agent 运行时状态与业务数据相互分离的情形。但如果 Agent 需要处理业务数据——例如面向电商商家的智能体，或类似需要处理用户健康数据的智能应用——业务数据与 Agent 运行时数据就必须打通。</p>
+<p>因此，OceanBase 构建的整体方案，目标是让 Agent 的业务数据与运行时数据实现统一管理与交互，这也是未来 Agent 在架构和数据组织上演进的一个方向。  </p>
+<p>同时，如果数据中既包含结构化数据、也包含非结构化数据，Agent 在理解这些数据的过程中，就需要具备 Agent-Ready 的能力——也就是说，所有结构化和非结构化数据都需要具备可被 Agent 理解的业务语义。  </p>
+<p>多模态数据加工流水线  </p>
+<p>以上讲的是湖库面向在线场景的部分；而面向离线场景的工作，核心是多模态数据的加工。类似于结构化数据以分层方式加工，多模态数据也应以类似的分层方式完成加工全流程。</p>
+<p>整体流程是：从文件或文件服务器开始，以大对象方式或文件目录方式，将数据以数据集形式管理起来，进入湖库引擎。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/14.jpg" alt="OceanBase AI湖库内容讲解图14" loading="lazy" decoding="async"></p>
+<p>下一步，利用前面提到的各种加工能力，并引入专门的多模态数据计算引擎，结合大小模型能力对非结构化数据进行信息抽取，例如从图片中抽取信息、从文件中提取内容，完成初加工。在初加工基础上，再进行向量化（Embedding）等操作，为下一步的加工和检索使用提供支持。</p>
+<p>最终，在数据形态上直接提供类似 Data API 的服务——可以直接查询加工好的数据，而不需要额外构建后端应用；对于文本数据，则可以直接以混合搜索方式提供查询服务。  </p>
+<p>将上述技术应用于大模型或小模型的训练，可以围绕多模表构建一套加工流程：一张大表中，一部分数据是原始待加工样本，以 LOB 列形式存储在表中；加工清洗过程，则是通过 CPU 或 GPU 等方式，对这些数据不断提取特征，形成多模表中各种类型的新增列。</p>
+<p>在此基础上进行清洗、加工、标注（包括人工标注和自动化标注）。</p>
+<p>标注完成后，对整个多模表执行一次 Fork 操作，完成数据快照；快照完成后再进行版本管理，之后数据即可推送到训练集群进行训练。</p>
+<p>由于所有多模态数据都具备版本可追溯性，当需要分析 V1 版本模型与 V2 版本模型效果提升或下降的原因时，可以准确追溯到具体的数据变化。  </p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/15.png" alt="OceanBase AI湖库内容讲解图15" loading="lazy" decoding="async"></p>
+<p>最后，基于湖库引擎，在更上层还构建了一个平台级产品——OceanBase DataStudio。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/16.jpg" alt="OceanBase AI湖库内容讲解图16" loading="lazy" decoding="async"></p>
+<p>对于独立的数据开发从业者而言，这一产品应该比较容易理解。</p>
+<p>它面向多模态数据，涵盖从数据集成开始，如何通过工具完成数据加工，如何对多模态数据进行数据血缘的追踪与管理，以及在构建出高质量数据集之后，如何在企业内部进行推广、共享和使用，完成数据资产管理、数据质量管理，以及加工过程中的运维等诸多工作。  </p>
+<p>从架构上看，DataStudio 兼顾结构化数据和非结构化数据的处理。通过多模表技术，结构化数据与非结构化数据在用户的开发和使用概念中不需要分别学习两套知识体系，只需掌握约 1.2 倍的知识量，就能从原本只做结构化数据管理和开发的数据开发人员，升级为能够高效为企业构建高质量数据集的、能力更强的角色。  </p>
+<p>此外，整个平台提供了一整套数据 Agent 能力，使开发人员可以在企业内部直接调用最适合自身研发流程的技能与工具。对于企业内部所有数据资产的选择、ETL 开发，也比以往更加简便，同时降低了对具体开发语言的依赖，这也是一个关键变化。</p>
+<p>在企业构建起数据语义体系之后，还可以以“智能问数”的方式对已加工好的数据直接生成应用，实现数据价值的进一步释放。  </p>
+<p>对于长期关注 OceanBase 的人来说，这确实是一次比较大的变化。但回看过去十余年，它又是自然的：OceanBase 始终以企业的实际问题为驱动，一步步走到今天。</p>
+<p>从分布式数据库到 AI 湖库，变的是能装下的数据类型和能支撑的业务场景，不变的是“用一套一体化的引擎，为企业提供高性价比的数据底座”这件事本身。</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/17.png" alt="OceanBase AI湖库内容讲解图17" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/18.gif" alt="OceanBase AI湖库内容讲解图18" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/19.png" alt="OceanBase AI湖库内容讲解图19" loading="lazy" decoding="async"></p>
+<p>往期内容推荐</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/20.png" alt="OceanBase AI湖库内容讲解图20" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/21.png" alt="OceanBase AI湖库内容讲解图21" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/22.png" alt="OceanBase AI湖库内容讲解图22" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/23.png" alt="OceanBase AI湖库内容讲解图23" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/oceanbase-ai-lakebase-evolution/24.png" alt="OceanBase AI湖库内容讲解图24" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式数据库</a>
+              <a href="/tags/Lakebase/" rel="tag"># Lakebase</a>
+              <a href="/tags/AI%E6%B9%96%E5%BA%93/" rel="tag"># AI湖库</a>
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%95%B0%E6%8D%AE/" rel="tag"># 多模态数据</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-07-seekdb-ai-native-architecture/" rel="prev" title="深度拆解 seekdb：AI Native Database 的技术架构与核心能力">
+                  <i class="fa fa-angle-left"></i> 深度拆解 seekdb：AI Native Database 的技术架构与核心能力
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-10-obcp-v4-development-optimization/" rel="next" title="OBCP V4 实验模拟题详解 —— 数据库开发设计与优化">
+                  OBCP V4 实验模拟题详解 —— 数据库开发设计与优化 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

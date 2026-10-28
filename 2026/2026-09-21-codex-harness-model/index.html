@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Codex 负责人 Tibo 讨论 Harness 与模型的协同演进，介绍 Rust 选型、云端执行、开源协作和代码评审，并解释如何在模型持续进步时保持清晰的工程边界。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tibo 谈 Codex：harness 总比模型快一步">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-21-codex-harness-model/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Codex 负责人 Tibo 讨论 Harness 与模型的协同演进，介绍 Rust 选型、云端执行、开源协作和代码评审，并解释如何在模型持续进步时保持清晰的工程边界。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/01.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/02.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/03.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/04.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/05.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/06.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/07.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/08.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/09.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/10.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/11.gif">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/12.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/13.png">
+<meta property="og:image" content="https://ilongda.com/img/9-21-codex-harness-model/14.png">
+<meta property="article:published_time" content="2026-09-21T00:49:46.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:49:46.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="Codex">
+<meta property="article:tag" content="Harness">
+<meta property="article:tag" content="OpenAI">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/9-21-codex-harness-model/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-21-codex-harness-model/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-21-codex-harness-model/","path":"2026/2026-09-21-codex-harness-model/","title":"Tibo 谈 Codex：harness 总比模型快一步"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Tibo 谈 Codex：harness 总比模型快一步 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-21-codex-harness-model/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B-Harness"><span class="nav-number">2.</span> <span class="nav-text">模型 &amp; Harness</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%88%E4%B8%8D%E4%B8%8A%E7%9B%96%E5%84%BF%E7%9A%84%E7%AC%94%E8%AE%B0%E6%9C%AC"><span class="nav-number">3.</span> <span class="nav-text">合不上盖儿的笔记本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Rust-%E7%9A%84%E8%BE%B9%E7%95%8C%EF%BC%8C%E5%92%8C%E6%9D%A5%E4%B8%8D%E5%8F%8A%E9%95%BF%E5%A4%A7%E7%9A%84%E9%A1%B9%E7%9B%AE"><span class="nav-number">4.</span> <span class="nav-text">Rust 的边界，和来不及长大的项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E6%BA%90%EF%BC%8C%E5%81%B6%E5%B0%94%E4%BC%9A%E5%BE%88%E6%89%8E%E5%BF%83"><span class="nav-number">5.</span> <span class="nav-text">开源，偶尔会很扎心</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%BE%E8%B0%81%E6%9D%A5%E5%85%9C%E5%BA%95%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">找谁来兜底？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%9C%E4%BD%A0%E9%97%AE%E8%BF%87-Codex-%E5%90%97%EF%BC%9F%E2%80%9D"><span class="nav-number">7.</span> <span class="nav-text">“你问过 Codex 吗？”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BC%96%E8%AF%84%E6%B3%A8"><span class="nav-number">8.</span> <span class="nav-text">小编评注</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#What%E2%80%99s-more"><span class="nav-number">9.</span> <span class="nav-text">What’s more ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">10.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-27-graph-engineering-agent/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-27</time>
+        <br>
+      聊聊 Graph Engineering —— 别让一个 Agent 既当运动员又当裁判
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-29-pi-powercontext-project-memory/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-29</time>
+        <br>
+      会话散了场，记忆还在场：给 pi 装上项目记忆
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-24-codex-powercontext-practice/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-24</time>
+        <br>
+      会话会结束，上下文不死：Codex × PowerContext 实战手记
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-14</time>
+        <br>
+      GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-08-03-multi-agent-memory-isolation-game/" rel="bookmark">
+        <time class="popular-posts-time">2026-08-03</time>
+        <br>
+      从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-21-codex-harness-model/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Tibo 谈 Codex：harness 总比模型快一步 | Longda's Interesting World">
+      <meta itemprop="description" content="Codex 负责人 Tibo 讨论 Harness 与模型的协同演进，介绍 Rust 选型、云端执行、开源协作和代码评审，并解释如何在模型持续进步时保持清晰的工程边界。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Tibo 谈 Codex：harness 总比模型快一步
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-21 08:49:46" itemprop="dateCreated datePublished" datetime="2026-09-21T08:49:46+08:00">2026-09-21</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">兹拉坦的 AI Agent</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>17 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">Codex 负责人 Tibo 讨论 Harness 与模型的协同演进，介绍 Rust 选型、云端执行、开源协作和代码评审，并解释如何在模型持续进步时保持清晰的工程边界。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Tibo 谈 Codex：harness 总比模型快一步","description":"Codex 负责人 Tibo 讨论 Harness 与模型的协同演进，介绍 Rust 选型、云端执行、开源协作和代码评审，并解释如何在模型持续进步时保持清晰的工程边界。","image":"https://ilongda.com/img/9-21-codex-harness-model/01.png","wordCount":4529,"datePublished":"2026-09-21T00:49:46.000Z","dateModified":"2026-10-19T00:49:46.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-21-codex-harness-model/"},"url":"https://ilongda.com/2026/2026-09-21-codex-harness-model/","inLanguage":"zh-CN","keywords":["AI Agent","Rust","Harness","Codex","OpenAI"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"Tibo 谈 Codex：harness 总比模型快一步","item":"https://ilongda.com/2026/2026-09-21-codex-harness-model/"}]}</script>
+<blockquote>
+<p>The old order changeth, yielding place to new,</p>
+<p>旧序更迭，让位于新。</p>
+<p>—— 丁尼生，《国王叙事诗·亚瑟之逝》[1]</p>
+</blockquote>
+<h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>程序员对自己的作品多少有些感情。Tibo 也一样，他怀念深夜用 Vim 写代码、喝着无糖可乐、只管眼前 bugs 的日子；当然，他也记得重构了三个小时才发现走进死胡同，必须从头再来的悲情时刻。</p>
+<p>如今，连那些做对了的工作，也可能很快过时。</p>
+<p>既然如此，那么围绕模型搭建的这套 Harness 系统，究竟该怎么做？</p>
+<span id="more"></span>
+
+<blockquote>
+<p>这篇文章的内容来自于：9 月初，The Pragmatic Engineer 访谈[2]中，主持人 Gergely 和 Codex 负责人 Tibo 聊的关于模型和 Harness 的相关内容（文章据访谈内容进行整理，对赞助商的广告和 Tibo 个人的背景介绍部分进行了一些删减）。</p>
+<p>本文会聊聊 Codex 如何诞生？为何用 Rust 语言来开发？Tibo 对开源和 code review 的看法。以及在 OpenAI，Harness（Codex）和模型（GPT）的融合过程是怎样的？</p>
+</blockquote>
+<p><img src="/img/9-21-codex-harness-model/01.png" alt="Tibo 谈 Codex 与 Harness 文章封面" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="模型-Harness"><a href="#模型-Harness" class="headerlink" title="模型 &amp; Harness"></a>模型 &amp; Harness</h2><p>主持人 Gergely 用自己的经历问过 Tibo：早期 Codex 会按要求修改代码，但不晓得要去跑仓库里已有的单元测试。但过了几个月，Codex 很快就会自己跑测试了。Codex 团队究竟改了什么，是运行脚本里的指令，还是模型？</p>
+<p><img src="/img/9-21-codex-harness-model/02.png" alt="Harness 与模型能力共同演进" loading="lazy" decoding="async"></p>
+<p>Tibo 说，这些表现来自 Harness 与模型的共同作用。Harness 把指令、工具、执行环境和权限组织起来，也给模型配上几根“拐杖”，让它做得可靠、高效，行为符合用户的预期。每轮开始时注入的开发者消息，就是其中一种办法：暂时想不到跑测试，那就提醒它。</p>
+<p>等模型更能理解用户要求背后的意思，这句提醒就可以省掉。按 Tibo 的观察，随着模型进步，开发者消息会变短，Harness 也会缩小。他用了这样一句话来描述两者的关系：</p>
+<blockquote>
+<p>“从某种意义上说，Harness 总是比模型稍微领先一点。”</p>
+</blockquote>
+<p>工程团队既要照顾眼下的模型，也需要知道下一代模型可能可以走到哪里。为此，Codex 的研究团队与工程团队一起做设计：发现一种失败，或者想增加一项能力，先商量该改 Harness，还是该改模型。Tibo 会把这件事问到月份：</p>
+<blockquote>
+<p>“如果要改模型，需要多久？一个月能做到吗？三个月呢？六个月呢？”</p>
+</blockquote>
+<p>如果训练很快能解决，有时团队会决定 Harness 这边干脆先不做。Agent 也参与这个过程：分析用户反馈，归纳问题，帮助团队确定优先级。工程师的工作清单里，由此多了一类决定：这段代码，值得现在写吗？</p>
+<p>Tibo 给团队的提醒是：为了绕过模型缺陷，写出一根一万行代码的拐杖，那么，你多半走错了方向。他用这个夸张的例子提醒大家，关心用户、关心产品，也要关心模型的发展方向。代码写得越多，并不一定离目标越近。</p>
+<p>他还提到 <code>/goal</code>。过去需要它帮助模型长时间守着一个目标，持续跑几天、几周；而在他们观察的新一代模型上，直接交代长期目标，已经能做到原先需要额外机制维持的事。</p>
+<h2 id="合不上盖儿的笔记本"><a href="#合不上盖儿的笔记本" class="headerlink" title="合不上盖儿的笔记本"></a>合不上盖儿的笔记本</h2><p>Gergely 去过一家 AI 公司的办公室，桌子上的笔记本一直都不关机，电脑上有他员工的数据库，有开发工具，有用顺手的一整套环境配置。因为模型已经能接手工作了，所以笔记本就得陪模型一起一直干活，Agent 一天 24 个小时都在被他的主人剥削。</p>
+<p>Tibo 介绍的 Codex 默认在本地沙盒执行工具，需要越过沙盒边界的命令，会向用户申请额外权限。选择云端运行时，任务则进入托管虚拟机，本地主要负责输入和接收结果。</p>
+<p>他看好云开发环境再次流行起来。过去，小团队要自己承担配置与维护成本；如果 Agent 能按本地的 SQLite、服务器、MCP 等配置，把云端环境搭起来，再帮忙维护，两边的取舍就会变化。他还在考虑，未来能否一部分任务在笔记本上执行，另一部分放到云端，逐渐用上单台电脑容纳不下的算力和资源。</p>
+<p><img src="/img/9-21-codex-harness-model/03.png" alt="Codex 本地执行与云端环境协作" loading="lazy" decoding="async"></p>
+<p>把 Codex 带进 ChatGPT，团队实际做过的事情更具体：把完整的 Harness 放到一台云端电脑上，还得做得足够高效，才能包含在 Plus 套餐里。Tibo 提到，用户已经能让它安装 Blender，做 3D 建模；团队自己则靠 Codex 帮忙构建基础设施、整合插件架构和库。</p>
+<p>从外面看，不过只是应用里多了一个入口。里面却要接通两套技术栈，处理原本在本地运行的 Agent，怎样使用云端资源，以及面向更多人提供相近的能力。</p>
+<h2 id="Rust-的边界，和来不及长大的项目"><a href="#Rust-的边界，和来不及长大的项目" class="headerlink" title="Rust 的边界，和来不及长大的项目"></a>Rust 的边界，和来不及长大的项目</h2><p>Tibo 最早在 OpenAI 搭的小型 Agent，专攻内部 Python 代码库，目的是帮助研究人员更快地写基础设施。后来，这条研究线与 ASWE（自主软件工程师）项目合并，做成了最初的云端 Codex。Tibo 坦言，当时使用阻力仍然较大，没有找到产品与市场的契合点。团队也发布了 CLI，继续尝试怎样让模型帮上用户的忙。</p>
+<p>Gergely 对另一件事颇有疑问：模型当时更擅长 Python、TypeScript，为什么做 Codex，偏偏选了 Rust？</p>
+<p>Tibo 的考虑从核心 Agent 开始。它要稳健、安全，运行高效，还要能扩展到很大的规模。团队恰好有优秀的 Rust 开发者，内部模型写 Rust 也不差，编译时的静态检查又能帮助人和 Agent 发现问题。他以前参与过一些项目，起初只是觉得好玩，后来却得扩展到数据中心的规模，因此愿意提前想这些事情，前提是别牺牲太多推进速度。</p>
+<p>他也承认，用 TypeScript，甚至 Python，可能一样能做成，将来再重写。更令他在意的是这条原则：</p>
+<blockquote>
+<p>“Agent 本身可以独立于产品存在，把它和产品非常清楚地分开，是一条很重要的原则。”</p>
+</blockquote>
+<p>所有东西放在同一个仓库、用同一种语言，开发时很容易顺手多连一根线，逐渐纠缠在一起。Tibo 认为，Rust 划出的边界，对维持这种分离很有帮助。产品入口可以变化，Agent 核心也有自己的演进空间。</p>
+<p>如果重写越来越容易，提前做这些安排还有多大必要？谈到维护时，Tibo 举了升级第三方依赖的例子。有清楚的更新日志，代码文档也写得好，模型就能沿着代码库推理，在几个小时里完成过去常被拖延的工作。再大一些的改动，比如为了新功能、工作负载或新的取舍重做架构，以前可能花上好几年，他认为现在也在大幅加速。</p>
+<p>但一个模块会不会牵连其他服务，依然取决于它怎样设计。Tibo 用的是一个带有不变量约束的“盒子”：先约定哪些条件必须始终成立，把边界划对，盒子内部就能快得多地变化，而不影响外部。</p>
+<p><img src="/img/9-21-codex-harness-model/04.png" alt="Rust 划分 Agent 核心与产品边界" loading="lazy" decoding="async"></p>
+<p>他还举了一个颇能说明当下节奏的情景。以前，项目从几个人长到五十人、一百人，也许需要一年，文档和协作方式还有时间慢慢补。现在，可能一个周末，就有一百个 Agent 开始贡献代码。</p>
+<p>他设想的这个周末，把软件原本漫长的生长过程压在了一起。拿一个公共接口来说，它被改动以后，哪些调用方得跟着动、哪些兼容条件必须保留，都要及时让其他贡献者知道。原来还能随着招人慢慢补上的约定，现在可能等不起了。</p>
+<p>聊到架构意识时，Gergely 还问，每个工程师是不是都得懂这些、提前规划？Tibo 接着说，GPT 模型也越来越擅长考虑长期维护和好的架构。它要判断的，还包括怎样减少日后的维护负担，为下一次产品变化留出空间。</p>
+<h2 id="开源，偶尔会很扎心"><a href="#开源，偶尔会很扎心" class="headerlink" title="开源，偶尔会很扎心"></a>开源，偶尔会很扎心</h2><p>还有一种失落，来得比模型换代更快。</p>
+<p>Tibo 在访谈中说，团队有时正在公开开发一个令人兴奋的功能，还没来得及发布，别人就已经提前 Copy 过去了。Gergely 在节目结尾也提到这种情形：竞争者可能赶在你前面推出你开发出的功能。</p>
+<blockquote>
+<p>“你在公开开发，相当于已经同意了这样一种约定：别人可以复制。”</p>
+</blockquote>
+<p>许可证很宽松，因为这项权利本来就在里面。与此同时，公开仓库与内部代码之间要协调，维护者还会被大量随意提交的 PR 贡献淹没。</p>
+<p>可 Tibo 仍然愿意付这笔成本。一个编程 Agent，天然会被用户拿来修改它自己。团队可以从这些改动中学习，也能直接碰到社区正在经历的问题。新同事还没入职，就已经看过仓库、读过 PR；入职以后，让 Codex 陪着读一遍代码，再问些问题，就能开始工作。</p>
+<p>说到多模型支持，他用了另一个很具体的例子：用户只想改十行左右的代码，接入另一家模型，却因此要维护一整个 fork，这件事有什么必要？既然代码已经开放，不如直接给用户选择。</p>
+<p><img src="/img/9-21-codex-harness-model/05.png" alt="Codex 开源协作与多模型选择" loading="lazy" decoding="async"></p>
+<p>明天有个新模型发布，用户可以在熟悉的环境里试，团队也能知道它哪里好、哪里不好。Codex 团队自己就在同一个 Harness 里试其他模型。模型可选，并没有降低他们对模型的要求，Tibo 说：</p>
+<blockquote>
+<p>“我希望我们靠最好的模型、最高效的模型、最好的产品赢得用户。”</p>
+</blockquote>
+<h2 id="找谁来兜底？"><a href="#找谁来兜底？" class="headerlink" title="找谁来兜底？"></a>找谁来兜底？</h2><p>把代码合进去以前，依然要有人类来审核。</p>
+<p>以前，开发者突然被同事拉住，被要求帮忙 review 代码。小编也对这种切换很有体会：一边开发着数据库内核的代码，另一边不得不停下手头的事，重新进入别人 review 链接的新上下文。</p>
+<p>Tibo 早期和研究团队做过代码审查模型，专门追那些不好找的问题。它可能要沿依赖深入三四层，才发现文档说的与第三方库实际做的不同，导致上层代码依赖的条件并不成立。对不熟悉这个库的人来说，光发现问题就可能要花几个小时。</p>
+<p>按他的介绍，这类深入验证的能力已经进入主线模型；在 OpenAI 内部，PR 被标记出安全问题，会被自动阻止合并。</p>
+<p>但 review 还兼着另一份工作：交换信息、让大家对齐，顺便问清楚“你到底想做什么，这是不是该尝试做的事”。过去，这些讨论常常等到代码写完才发生。Tibo 希望把它们往前移，也可以在 PR 之外一起做设计、确认意图。</p>
+<p><img src="/img/9-21-codex-harness-model/06.png" alt="代码评审从意图讨论到自动检查" loading="lazy" decoding="async"></p>
+<p>正确性与网络安全检查会更多地自动化，这是他的判断。团队仍然需要有机会讨论，某个功能值不值得做，与产品的其他部分合不合得来，后面准备怎样维护。否则，审查者面对的就不只是眼前几百行代码，还有此前未曾说清的一整段来龙去脉。</p>
+<h2 id="“你问过-Codex-吗？”"><a href="#“你问过-Codex-吗？”" class="headerlink" title="“你问过 Codex 吗？”"></a>“你问过 Codex 吗？”</h2><p>如果这些讨论不围着 PR 发生，人该到哪里找？Gergely 问过 Tibo，一个新人加入 Codex 团队，会怎样熟悉这里的工作方式。Tibo 说，当然先介绍一些很棒的同事；此后，新人有问题，听到最多的一句话大概是：</p>
+<blockquote>
+<p>“你问过 Codex 吗？”</p>
+</blockquote>
+<p>项目现在怎么样，谁在做什么，当初为什么作出那个决定，都可以问。在 Tibo 描述的内部环境中，Codex 接入了 Slack、文档和代码。团队也有意识地把大量工作放在可访问的频道里讨论，把文档开放给较广泛的成员，Agent 才有材料查阅。</p>
+<p>整合 Codex 与 ChatGPT 时，它甚至当起了项目记者。团队争论怎样合、叫什么、什么时候推出，连 Work 切换开关本身都讨论过很多轮，Codex 一路记下这些过程。一个后来者看到的，因而可以包括方案被怎样选择，以及中间走过哪些岔路。</p>
+<p><img src="/img/9-21-codex-harness-model/07.png" alt="Codex 留存团队讨论与决策过程" loading="lazy" decoding="async"></p>
+<p>Gergely 对此也留了一点犹疑。他在节目结尾说，AI 仿佛一直在看着，有种“老大哥”的感觉，自己还没想好该怎样看待。</p>
+<p>至于 Tibo，他已经习惯在会议之间对着手机口述问题，让 Codex 查项目、看使用情况、准备报告。有些大一点的问题来不及白天看，就派它夜里去研究。他说，自己会很期待第二天早上醒来，看看结果。</p>
+<p>用来提醒模型跑测试的那句话可以删，暂时用不上的补偿代码可以不写。一个团队为什么选择这个架构，哪些讨论已经有结论，哪些事情还没验证，仍得留下可供下一次工作查阅的依据。</p>
+<p>（访谈主体内容结束）</p>
+<h2 id="小编评注"><a href="#小编评注" class="headerlink" title="小编评注"></a>小编评注</h2><p>Tibo 在这场访谈里，为大家介绍了把 Codex 团队的工作：<strong>先用 Harness 补上模型的短板，等模型赶上来，再把多余的“拐杖”撤掉。</strong></p>
+<p>沿着这个思路，还有一个值得思考的问题：模型升级了，项目里已经作出的判断、验证过的结果，以及没做完的工作，都要放在哪里？</p>
+<p>比如，同一次排查，代码改动在 Git 里，复现条件在日志里，为什么放弃某个方案，又可能只留在 Agent 的会话里。今天在 Codex 里推进，明天交给另一位同事或另一个 Agent，接手者得重新把这些材料拼起来。材料都还在，工作却未必接得上。</p>
+<p>尤其麻烦的是，记录有新旧，结论有适用条件。“测试通过”对应哪版代码？那条环境约束后来改了没有？一份摘要只写“问题已解决”，就可能把尚未完成的检查一并略过；把整段聊天和日志原样交过去，接手者又得重新找出哪些结论仍然有效。<strong>上下文的保存、核验和交接，也需要被当作 Harness 的工程问题来处理。</strong></p>
+<p><img src="/img/9-21-codex-harness-model/08.png" alt="跨会话工作上下文核验与交接" loading="lazy" decoding="async"></p>
+<p>访谈里已经有一个很具体的例子。Tibo 介绍，Codex 能够查阅团队的 Slack、文档和代码，还记录了产品整合过程中的争论与取舍。团队把这些过程留下来，后来者才有机会追问一个决定是怎样作出的。沿着这个做法再往前想：如果接手的换成另一个工具、另一个会话，这份工作的当前状态和判断依据，能不能也一起交出去？</p>
+<p>对于要跨会话、跨工具推进的项目，值得单独建设的，就是这部分上下文管理与交接能力。哪些判断已经验证，哪些问题仍然悬着，下一步从哪里继续，都应连同来源和适用条件一起保存、检索和修订。这样，一次排查留下的记录，才能在下一次工作里用得上。</p>
+<h2 id="What’s-more"><a href="#What’s-more" class="headerlink" title="What’s more ?"></a>What’s more ?</h2><p>OceanBase 开源项目 PowerContext[3]（项目地址：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext%EF%BC%89%E5%B0%B1%E6%98%AF%E4%B8%BA%E8%BF%99%E6%A0%B7%E7%9A%84%E4%BA%A4%E6%8E%A5%E5%81%9A%E7%9A%84%EF%BC%9A%E6%97%A2%E4%BF%9D%E5%AD%98%E4%BB%A5%E5%90%8E%E8%BF%98%E8%A6%81%E7%94%A8%E7%9A%84%E9%A1%B9%E7%9B%AE%E8%AE%B0%E5%BF%86%EF%BC%8C%E4%B9%9F%E4%BC%9A%E6%95%B4%E7%90%86%E7%9C%BC%E5%89%8D%E5%B0%9A%E6%9C%AA%E5%AE%8C%E6%88%90%E7%9A%84%E5%B7%A5%E4%BD%9C%E3%80%82">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext）就是为这样的交接做的：既保存以后还要用的项目记忆，也会整理眼前尚未完成的工作。</a></p>
+<p>拿前面那次排查来说，已经确认的环境约束、放弃某个方案的原因，可以连同依据留在项目记忆里；代码改到了哪里、哪些测试还没跑，则整理进交接记录。下一位接手时，先看这次工作走到了哪一步，再对照当前代码继续检查。相关做法在<a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247492894&idx=1&sn=7507538477d9c72da6893cc8b9872531&scene=21#wechat_redirect">《PowerContext 1.0.0 正式发布：前事有据，后事可续》</a>里有更完整的介绍。</p>
+<p>PowerContext 已提供 Codex、Claude Code 等集成，上下文由独立服务管理，可选 seekdb 或 OceanBase 存储。双方接入同一服务、选定同一项目范围并具备相应访问权限，就可以复用已保存的项目记忆，再把整理好的交接内容交给接手者核对。来源和历史版本也会保留，方便回查当时的依据。</p>
+<p><img src="/img/9-21-codex-harness-model/09.png" alt="PowerContext 共享项目记忆与交接记录" loading="lazy" decoding="async"></p>
+<p>PowerContext 项目的代码、接入文档和示例都已开放，欢迎试用，也欢迎大家来 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a> 和我们交流在使用过程中的经验以及遇到的问题~</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>丁尼生，《国王叙事诗·亚瑟之逝》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.gutenberg.org/cache/epub/610/pg610-images.html#link2H_4_0013">https:&#x2F;&#x2F;www.gutenberg.org&#x2F;cache&#x2F;epub&#x2F;610&#x2F;pg610-images.html#link2H_4_0013</a></p>
+<p>[2] </p>
+<p>The Pragmatic Engineer 访谈: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://newsletter.pragmaticengineer.com/p/building-codex-with-tibo-sottiaux">https:&#x2F;&#x2F;newsletter.pragmaticengineer.com&#x2F;p&#x2F;building-codex-with-tibo-sottiaux</a></p>
+<p>[3] </p>
+<p>PowerContext: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></p>
+<p><img src="/img/9-21-codex-harness-model/10.png" alt="Tibo 谈 Harness 横版文章海报" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-21-codex-harness-model/11.gif" alt="OceanBase 社区品牌片尾动效" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-21-codex-harness-model/12.png" alt="OceanBase 社区内容分隔装饰" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/9-21-codex-harness-model/13.png" alt="PowerContext 人与 Agent 协作文章" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/9-21-codex-harness-model/14.png" alt="OceanBase 社区小助手交流二维码" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/Harness/" rel="tag"># Harness</a>
+              <a href="/tags/Codex/" rel="tag"># Codex</a>
+              <a href="/tags/OpenAI/" rel="tag"># OpenAI</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-17-production-agent-context-engineering/" rel="prev" title="OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践">
+                  <i class="fa fa-angle-left"></i> OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-22-seekdb-asynchronous-index/" rel="next" title="异步索引特性解析：OceanBase 如何提升持续写入场景下的索引检索性能">
+                  异步索引特性解析：OceanBase 如何提升持续写入场景下的索引检索性能 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

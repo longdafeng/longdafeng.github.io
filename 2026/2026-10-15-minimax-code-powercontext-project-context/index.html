@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="MiniMax Code 与 PowerContext 的接入实践，覆盖插件安装、本地上下文服务启动、Scope 隔离和检索调优，并记录 MCP 鉴权、重定向等排障经验，让项目决策和工作进度跨会话延续。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext">
+<meta property="og:url" content="https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="MiniMax Code 与 PowerContext 的接入实践，覆盖插件安装、本地上下文服务启动、Scope 隔离和检索调优，并记录 MCP 鉴权、重定向等排障经验，让项目决策和工作进度跨会话延续。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/01.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/02.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/03.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/04.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/05.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/06.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/07.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/08.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/09.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/10.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/11.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/12.gif">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/13.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/14.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/15.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/16.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/17.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/18.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/19.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/20.png">
+<meta property="article:published_time" content="2026-10-15T00:48:05.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:48:05.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MCP">
+<meta property="article:tag" content="MiniMax Code">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="Scope">
+<meta property="article:tag" content="项目上下文">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/minimax-code-powercontext-project-context/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/","path":"2026/2026-10-15-minimax-code-powercontext-project-context/","title":"构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%89%E6%AD%A5%E8%B7%91%E9%80%9A%EF%BC%9A%E6%8A%8A-MiniMax-Code-%E6%8E%A5%E4%B8%8A%E6%9C%AC%E5%9C%B0%E4%B8%8A%E4%B8%8B%E6%96%87%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.</span> <span class="nav-text">一、三步跑通：把 MiniMax Code 接上本地上下文服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%AE%89%E8%A3%85-PowerContext-%E6%8F%92%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 安装 PowerContext 插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%90%AF%E5%8A%A8%E6%9C%AC%E5%9C%B0%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 启动本地服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%AF%B9%E8%AF%9D%EF%BC%9A%E8%AE%B0%E5%BD%95%E7%BA%A6%E5%AE%9A%E3%80%81%E6%A3%80%E7%B4%A2%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8E%E4%BB%BB%E5%8A%A1%E4%BA%A4%E6%8E%A5"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 第一次对话：记录约定、检索上下文与任务交接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A3%85%E4%BA%86%E6%8F%92%E4%BB%B6%E8%BF%98%E8%A6%81%E5%8D%95%E8%B5%B7%E4%B8%80%E4%B8%AA%E6%9C%AC%E5%9C%B0-Server%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">二、为什么装了插件还要单起一个本地 Server？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E6%8F%92%E4%BB%B6%E7%9B%AE%E5%BD%95"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 插件目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E6%8F%92%E4%BB%B6%E7%9A%84%E7%9C%9F%E5%AE%9E%E4%BD%9C%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 插件的真实作用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%AE%9E%E9%99%85%E8%90%BD%E5%9C%B0%E5%8F%AF%E8%83%BD%E4%BC%9A%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">三、实际落地可能会遇到的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%BC%BA%E9%89%B4%E6%9D%83%E4%B8%8B%E7%9A%84-401-%E6%8B%A6%E6%88%AA%E4%B8%8E%E8%AE%A4%E8%AF%81%E5%A4%B4%E9%85%8D%E7%BD%AE"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 强鉴权下的 401 拦截与认证头配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%81%BF%E5%85%8D%E5%A4%9A%E9%A1%B9%E7%9B%AE%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%B2%E5%91%B3%EF%BC%9AMiniMax-Code-%E9%87%8C%E7%9A%84-Scope-%E5%AE%9E%E8%B7%B5"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 避免多项目上下文串味：MiniMax Code 里的 Scope 实践</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E7%AB%AF%E5%88%B0%E7%AB%AF%E5%85%A8%E6%99%AF%EF%BC%9A%E4%B8%80%E6%9D%A1%E4%B8%8A%E4%B8%8B%E6%96%87%E6%98%AF%E5%A6%82%E4%BD%95%E5%AD%98%E5%82%A8%E4%B8%8E%E5%8F%AC%E5%9B%9E%E7%9A%84"><span class="nav-number">4.</span> <span class="nav-text">四、端到端全景：一条上下文是如何存储与召回的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E8%BF%9B%E9%98%B6%E8%B0%83%E4%BC%98%EF%BC%9A%E8%AE%A9%E4%B8%8A%E4%B8%8B%E6%96%87%E6%A3%80%E7%B4%A2%E4%B8%8E%E5%AD%98%E5%82%A8%E6%9B%B4%E9%AB%98%E6%95%88"><span class="nav-number">5.</span> <span class="nav-text">五、进阶调优：让上下文检索与存储更高效</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E6%8D%A2%E7%94%A8%E5%B5%8C%E5%85%A5%E5%BC%8F-seekdb-%E6%8F%90%E5%8D%87%E5%A4%8D%E6%9D%82%E6%95%B0%E6%8D%AE%E6%A3%80%E7%B4%A2%E8%83%BD%E5%8A%9B"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 换用嵌入式 seekdb 提升复杂数据检索能力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E8%A1%A5%E9%BD%90-Embedding-%E4%B8%8E%E7%94%9F%E6%88%90%E6%A8%A1%E5%9E%8B%EF%BC%8C%E5%91%8A%E5%88%AB%E7%BA%AF%E5%AD%97%E9%9D%A2%E5%8C%B9%E9%85%8D"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 补齐 Embedding 与生成模型，告别纯字面匹配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%BC%80%E5%90%AF-Rerank-%E9%87%8D%E6%8E%92%E4%B8%8E%E5%8F%AC%E5%9B%9E%E5%85%85%E5%88%86%E6%80%A7%E9%97%A8%E6%8E%A7"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 开启 Rerank 重排与召回充分性门控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E5%90%AF%E7%94%A8%E5%90%8E%E5%8F%B0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%EF%BC%8C%E8%87%AA%E5%8A%A8%E5%BD%92%E7%BA%B3%E5%AE%8F%E8%A7%82%E4%B8%93%E9%A2%98%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 启用后台定时任务，自动归纳宏观专题上下文</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">六、总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99%EF%BC%9A"><span class="nav-number">7.</span> <span class="nav-text">参考资料：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">8.</span> <span class="nav-text">相关内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-15-powercontext-1-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-15</time>
+        <br>
+      PowerContext 1.0.0 正式发布：前事有据，后事可续
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-16-minimax-code-multimodal-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-16</time>
+        <br>
+      OceanBase MiniMax Code 多模数据治理与上下文管理实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-12-gpt-6-better-prompt-cache/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-12</time>
+        <br>
+      GPT-6 发布“Better prompt cache”，提示词缓存，带来了什么？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-08-powercontext-v1-2-0-jev/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-08</time>
+        <br>
+      来啦！PowerContext v1.2.0，接入 jev！
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext | Longda's Interesting World">
+      <meta itemprop="description" content="MiniMax Code 与 PowerContext 的接入实践，覆盖插件安装、本地上下文服务启动、Scope 隔离和检索调优，并记录 MCP 鉴权、重定向等排障经验，让项目决策和工作进度跨会话延续。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-15 08:48:05" itemprop="dateCreated datePublished" datetime="2026-10-15T08:48:05+08:00">2026-10-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">秋梵</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>24 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">MiniMax Code 与 PowerContext 的接入实践，覆盖插件安装、本地上下文服务启动、Scope 隔离和检索调优，并记录 MCP 鉴权、重定向等排障经验，让项目决策和工作进度跨会话延续。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext","description":"MiniMax Code 与 PowerContext 的接入实践，覆盖插件安装、本地上下文服务启动、Scope 隔离和检索调优，并记录 MCP 鉴权、重定向等排障经验，让项目决策和工作进度跨会话延续。","image":"https://ilongda.com/img/minimax-code-powercontext-project-context/01.png","wordCount":6420,"datePublished":"2026-10-15T00:48:05.000Z","dateModified":"2026-10-19T00:48:05.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/"},"url":"https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/","inLanguage":"zh-CN","keywords":["MCP","PowerContext","MiniMax Code","Scope","项目上下文"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext","item":"https://ilongda.com/2026/2026-10-15-minimax-code-powercontext-project-context/"}]}</script>
+<p>秋梵 <em>2026年10月15日 07:30</em></p>
+<blockquote>
+<p>本文从插件安装、本地服务启动到 Scope 隔离与检索调优，介绍如何跑通 Coding Agent 与 PowerContext 的连接，让项目决策和任务进度，实现跨会话的延续。</p>
+</blockquote>
+<p>随着 Agent 工具生态的演进，大家手头的选择越来越多，从早期的 Claude Code、Codex，到现在的 DeepSeek Harness、MiniMax Code 等等。</p>
+<p>我最近在使用 MiniMax Code 来处理一些数据清洗与日常工作和学习的任务，作为一款桌面端 Agent，它在 Harness 架构、插件市场、Skills 以及 MCP 扩展支持上做得很扎实，在写代码还是调用外部工具执行日常任务能力都很出色。</p>
+<span id="more"></span>
+
+<p>但它也面临大多数 Agent 都共通的结构性难题：<strong>会话天然是隔离且无状态的</strong>。在单次会话里教给它的所有规则、业务约束与执行决策，只要会话一关，就只能留在聊天记录里，无法跨越会话边界自动沉淀为项目的长期资产。</p>
+<p>无论是软件开发还是日常的复杂项目协作，本质上都是长周期、多阶段的连续工程，而如果使用多 Agent 进行交叉交互机工作，会将这个连续工程切断。</p>
+<p>针对这种断层，<strong>PowerContext</strong> 给出了很清晰的解法：把技术决策、代码规范、业务约束、系统现状和交接检查点专门抽离出来，作为结构化的上下文资产独立管理。服务端在本地常驻运行，任何新开的会话、甚至是不同的 Agent，都能随时按需调取同一套上下文进行工作。</p>
+<p><img src="/img/minimax-code-powercontext-project-context/01.png" alt="MiniMax Code 跨会话项目上下文底座" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号“老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<p>我把 MiniMax Code 与 PowerContext 连通之后，体验变化还是很明显的。在进行 Agent 工作交接或者重新开新会话时，不再需要大费周章地重新交代背景。跟 Agent 说一句接着上次的项目继续做，它就会自动从后台检索出之前的架构决策与上下文记录，丝滑接上工作节奏。不管是写代码还是推进日常研究，体验都很顺畅。</p>
+<p>但我从安装接入到真正跑通，中间实际上还是遇到了几个问题的，比如 MCP 鉴权引发的 401 假象、307 重定向丢请求头、以及 MiniMax Code 缺少原生 Scope 绑定钩子导致记忆混乱等，为此我将这个经验记录下来，给大家做参考。</p>
+<p><img src="/img/minimax-code-powercontext-project-context/02.png" alt="接入 PowerContext 的排障与实践流程" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="一、三步跑通：把-MiniMax-Code-接上本地上下文服务"><a href="#一、三步跑通：把-MiniMax-Code-接上本地上下文服务" class="headerlink" title="一、三步跑通：把 MiniMax Code 接上本地上下文服务"></a>一、三步跑通：把 MiniMax Code 接上本地上下文服务</h2><p>在 MiniMax Code 中将 PowerContext 跑起来的过程并不繁琐，核心逻辑分为三步：安装客户端插件、启动本地上下文服务、在会话中直接交互。</p>
+<h3 id="1-1-安装-PowerContext-插件"><a href="#1-1-安装-PowerContext-插件" class="headerlink" title="1.1 安装 PowerContext 插件"></a>1.1 安装 PowerContext 插件</h3><p>MiniMax Code 官方已经内置了 PowerContext 插件支持。安装非常简单，打开 MiniMax Code 客户端，进入插件市场，在搜索框中输入 <code>powercontext</code>，点击安装即可完成装载：</p>
+<p><img src="/img/minimax-code-powercontext-project-context/03.png" alt="MiniMax Code 插件市场安装界面" loading="lazy" decoding="async"></p>
+<p>安装完成后，插件会自动向 MiniMax Code 注册一个名为 <code>powercontext-project-context</code> 的 Skill 规约，以及一个名为 <code>powercontext</code> 的 MCP 连接声明。</p>
+<h3 id="1-2-启动本地服务"><a href="#1-2-启动本地服务" class="headerlink" title="1.2 启动本地服务"></a>1.2 启动本地服务</h3><p>仅仅在客户端安装插件还不够，此时 MCP 还没有实际的服务端可以连接，还需要在本地机器上运行起 PowerContext Server 服务作为真实的 Agent 上下文管理底座。</p>
+<p>安装 PowerContext 服务端需要 Python 3.11+ 环境与 <code>uv</code> 工具，直接通过命令行安装：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv tool install --force &quot;powercontext[cli,server]==1.1.0&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果习惯从源码构建安装也可以执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv tool install --force &quot;powercontext[cli,server] @ git+https://github.com/oceanbase/powercontext.git@powercontext-v1.1.0&quot;</span><br></pre></td></tr></table></figure>
+
+<h4 id="体验交互式配置向导"><a href="#体验交互式配置向导" class="headerlink" title="体验交互式配置向导"></a>体验交互式配置向导</h4><p>安装完成后，PowerContext 贴心地提供了一套开箱即用的<strong>终端交互式配置向导</strong>，不必一开始就手动编写复杂的环境变量。在终端当前工作目录下执行命令即可进入中文引导向导（提示：执行命令所在的当前目录就是后续生成 <code>.env</code> 的位置）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">powercontext config init --language zh --output .env</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/minimax-code-powercontext-project-context/04.png" alt="PowerContext 中文交互式配置向导" loading="lazy" decoding="async"></p>
+<p>向导会以问答的方式一步步引导你完成关键初始配置：</p>
+<ul>
+<li><strong>存储后端选择</strong>：初次上手可直接选用开箱即用的 SQLite，也可以选择性能更强的嵌入式 SeekDB（向导支持自动在后台拉取依赖）；</li>
+<li><strong>运行场景划分</strong>：单机本地开发选择仅在当前机器运行即可；</li>
+<li><strong>记忆能力级别</strong>：如果暂时没有准备好模型 API，可以直接选择基础记忆，无需任何外部大模型凭据就能体验显式的记忆存取；若想体验自动抽取与语义向量检索，则选择完整记忆并填入 Generation 与 Embedding 模型的连接信息；</li>
+<li><strong>Dashboard 与服务端口</strong>：可指定服务监听端口（默认为 8000）并决定是否启用可视化面板。</li>
+</ul>
+<p>配置完成后，向导不仅会输出规范的 <code>.env</code> 配置文件，还会同步生成一份专属的 <code>.env.next-steps.md</code> 引导文件，清晰列出后续启动与连接说明。</p>
+<h4 id="校验配置并启动服务端"><a href="#校验配置并启动服务端" class="headerlink" title="校验配置并启动服务端"></a>校验配置并启动服务端</h4><p>生成配置文件后，建议养成先校验后启动的习惯，执行以下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">powercontext config validate --env-file .env</span><br><span class="line">powercontext server run --env-file .env</span><br></pre></td></tr></table></figure>
+
+<p>服务启动后，终端会输出日志，默认监听在 <code>http://127.0.0.1:8000</code>，并在 <code>/mcp</code> 路径开启 Streamable HTTP MCP 协议支持。</p>
+<p>在默认无鉴权模式下，它会自动在本地数据目录初始化一个 SQLite 数据库（路径为 <code>%LOCALAPPDATA%\powercontext\powercontext.db</code>），无需任何外部大模型配置即可直接提供基础记忆持久化能力。</p>
+<h3 id="1-3-第一次对话：记录约定、检索上下文与任务交接"><a href="#1-3-第一次对话：记录约定、检索上下文与任务交接" class="headerlink" title="1.3 第一次对话：记录约定、检索上下文与任务交接"></a>1.3 第一次对话：记录约定、检索上下文与任务交接</h3><p>当本地服务端正常运行后，重启 MiniMax Code 后插件与本地 Server 就会自动完成 MCP 握手，整套上下文共享链路就此打通，日常交互中直接用自然语言直接与 Agent 对话就行，无需记忆复杂的专业命令。</p>
+<p>比如可以使用以下这么使用：</p>
+<h4 id="1-显式要求-Agent-记住规范或决策"><a href="#1-显式要求-Agent-记住规范或决策" class="headerlink" title="1. 显式要求 Agent 记住规范或决策"></a>1. 显式要求 Agent 记住规范或决策</h4><p>当在会话中敲定了一项技术规范、业务边界或关键结论，又或者就是要让 Agent 记住每一句对话时，可以直接要求 Agent 比如：</p>
+<blockquote>
+<p>创建一个项目空间，接下来的每次对话互动都要记录下来。全面查看和深入分析这个项目，告诉我这个项目是个什么项目，做什么的，能做什么事情？</p>
+</blockquote>
+<p>MiniMax Code 接收到指令后会命中插件中的提示词规约，在后台自动调用 <code>remember_memory</code> 工具，将其作为一条 <code>constraint</code> 或 <code>decision</code> 类型的记忆持久化到服务中。Agent 随后会回复确认已成功写入项目记忆。</p>
+<p><img src="/img/minimax-code-powercontext-project-context/05.png" alt="remember_memory 写入项目约定示例" loading="lazy" decoding="async"></p>
+<h4 id="2-通过自然语言提问无感召回历史上下文"><a href="#2-通过自然语言提问无感召回历史上下文" class="headerlink" title="2. 通过自然语言提问无感召回历史上下文"></a>2. 通过自然语言提问无感召回历史上下文</h4><p>重新新开一个完全干净的独立会话，聊天窗口里没有任何历史对话记录。此时直接向 Agent 提出一个问题比如：</p>
+<blockquote>
+<p>查看一下当前项目，并解释 ACP 与 A2A 的区别？</p>
+</blockquote>
+<p>此时注意观察 MiniMax Code 的工具调用链：Agent 会在后台静默调用 <code>search_memory</code> 工具检索到存入的条目再进行作答：</p>
+<p><img src="/img/minimax-code-powercontext-project-context/06.png" alt="search_memory 跨会话召回项目背景" loading="lazy" decoding="async"></p>
+<h4 id="3-工作暂存与长程任务交接"><a href="#3-工作暂存与长程任务交接" class="headerlink" title="3. 工作暂存与长程任务交接"></a>3. 工作暂存与长程任务交接</h4><p>当跑一项长程任务进行到一半需要打断时，还可以直接下达交接指令：</p>
+<blockquote>
+<p>我现在需要暂停，请把目前完成的表结构设计进度和下一步待处理的迁移脚本暂存下来。</p>
+</blockquote>
+<p>Agent 会在后台调用 <code>handoff_current_work</code> 生成临时工作交接点，后续新开会话只需一句接着上次的进度继续，Agent 便能自动调阅检查点无缝续接。</p>
+<hr>
+<h2 id="二、为什么装了插件还要单起一个本地-Server？"><a href="#二、为什么装了插件还要单起一个本地-Server？" class="headerlink" title="二、为什么装了插件还要单起一个本地 Server？"></a>二、为什么装了插件还要单起一个本地 Server？</h2><p>说完 MiniMax Code 在实际场景下怎么使用 PowerContext 这部分，我觉得还需要再回过头来理清楚其中涉及到的三个东西：</p>
+<table>
+<thead>
+<tr>
+<th>核心组件</th>
+<th>物理形态</th>
+<th>核心职责</th>
+<th>是否包含业务执行代码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MiniMax Code</td>
+<td>桌面端应用</td>
+<td>宿主 Agent，负责交互渲染、模型推理、上下文组装与工具分发</td>
+<td>是（客户端运行时）</td>
+</tr>
+<tr>
+<td>PowerContext Server</td>
+<td>独立本地后台进程</td>
+<td>记忆服务端，负责持久化存储、向量计算、记忆衰减、生命周期与检索</td>
+<td>是（Python 核心服务端）</td>
+</tr>
+<tr>
+<td>PowerContext 插件</td>
+<td>配置文件目录</td>
+<td>宿主与服务端之间的连接契约与 Agent 行为指引规范</td>
+<td>否（纯规范与元数据）</td>
+</tr>
+</tbody></table>
+<h3 id="2-1-插件目录"><a href="#2-1-插件目录" class="headerlink" title="2.1 插件目录"></a>2.1 插件目录</h3><p>如果去翻看 MiniMax Code 官方插件的物理安装目录（位于 <code>C:\Users\用户名\.minimax\v2\plugin-cache\official\</code> 目录下），展开看一眼文件清单其实还蛮有意思的，整个插件包总共只有 6 个文件：</p>
+<ul>
+<li>只有 8 行内容的连接描述文件 <code>powercontext.mcp.json</code>；</li>
+<li>描述插件名称、版本和提供方的元数据清单 <code>manifest.json</code>；</li>
+<li>一份规范 Agent 行为的提示词指南 <code>SKILL.md</code>；</li>
+<li>五份细分场景的引用规则说明文件（位于 <code>references/</code> 目录）；</li>
+<li>加上常规的 README 文档和图标图片。</li>
+</ul>
+<p><strong>整套插件里实际上没有一句可执行代码。</strong></p>
+<h3 id="2-2-插件的真实作用"><a href="#2-2-插件的真实作用" class="headerlink" title="2.2 插件的真实作用"></a>2.2 插件的真实作用</h3><p>既然没有可执行代码，插件做了什么呢？它实际上只承担了两项不可或缺的桥梁作用：</p>
+<ol>
+<li><strong>为宿主提供标准 MCP 挂载声明</strong>：通过 <code>powercontext.mcp.json</code> 告诉 MiniMax Code，在本地 <code>http://127.0.0.1:8000/mcp</code> 地址上存在一个兼容 Streamable HTTP 协议的 MCP 服务，MiniMax Code 启动时据此去连接并枚举工具。</li>
+<li><strong>给 Agent 灌输操作手册（Prompt &#x2F; Skill 引导）</strong>：在系统级提示词中注入规则，明确告知大模型：当用户意图涉及查阅历史项目背景、检索决策时，严禁自己盲目翻查本地文件，必须主动发起 <code>search_memory</code> 工具调用；当用户要求记录重要事项时，必须主动调用 <code>remember_memory</code>。</li>
+</ol>
+<p><strong>真正的记忆向量化运算、文本嵌入模型加载、分层记忆衰减、多项目空间隔离以及 SQLite &#x2F; SeekDB 的持久化落盘，全部由后端的 PowerContext Server 独立承担。</strong></p>
+<p><img src="/img/minimax-code-powercontext-project-context/07.png" alt="客户端插件与服务端职责划分" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="三、实际落地可能会遇到的问题"><a href="#三、实际落地可能会遇到的问题" class="headerlink" title="三、实际落地可能会遇到的问题"></a>三、实际落地可能会遇到的问题</h2><p>其实按照前面的步骤逐步操作，整套流程下来是非常丝滑的，但在我在实际安装使用的时候还是遇到了一些问题，进行了一番排查之后才正常的运行起来，所以在此记录一些需要注意的点。</p>
+<h3 id="3-1-强鉴权下的-401-拦截与认证头配置"><a href="#3-1-强鉴权下的-401-拦截与认证头配置" class="headerlink" title="3.1 强鉴权下的 401 拦截与认证头配置"></a>3.1 强鉴权下的 401 拦截与认证头配置</h3><p>从零开始部署时 PowerContext 默认处于 <code>ACCESS_MODE = disabled</code>（无鉴权模式），此时单机本地调用没有任何门槛，按照步骤逐步完成会很丝滑的安装上。</p>
+<p>但如果像我一样在此之前已经部署并使用过一段时间的 PowerContext，且为了安全开启了强鉴权；或者希望在多设备之间共享服务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POWERCONTEXT_SERVER_ACCESS_MODE = enforced</span><br><span class="line">POWERCONTEXT_SERVER_AUTH_TOKEN  = your-secure-token</span><br></pre></td></tr></table></figure>
+
+<p>此时会发现 MiniMax Code 无法连上 PowerContext Server。</p>
+<p>这是因为 MiniMax Code 官方插件自带的连接配置默认是不带任何认证头的。当处于 <code>enforced</code> 模式时，服务端中间件 <code>AuthenticationMiddleware</code> 会强制校验请求头中的 <code>Authorization: Bearer &lt;token&gt;</code>。由于官方插件请求头为空，所有 MCP 工具枚举请求会直接被拦截，则会返回 401 Unauthorized。</p>
+<h4 id="解决方案：在私有配置中注入认证头"><a href="#解决方案：在私有配置中注入认证头" class="headerlink" title="解决方案：在私有配置中注入认证头"></a>解决方案：在私有配置中注入认证头</h4><p>如果遇到这种问题，解决方式就需要用户动一动小手，在 MiniMax Code 的私有配置文件 <code>C:\Users\Administrator\.minimax\v2\plugin-cache\official\</code> 下的 PowerContext 插件目录中修改 <code>powercontext.mcp.json</code> 文件，显式为该服务注入认证凭据：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;schemaVersion&quot;: 1,</span><br><span class="line">  &quot;mcpServers&quot;: &#123;</span><br><span class="line">    &quot;powercontext&quot;: &#123;</span><br><span class="line">      &quot;type&quot;: &quot;streamable-http&quot;,</span><br><span class="line">      &quot;url&quot;: &quot;http://127.0.0.1:8000/mcp&quot;,</span><br><span class="line">      &quot;headers&quot;: &#123;</span><br><span class="line">        &quot;Authorization&quot;: &quot;Bearer your-secure-token&quot;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>顺便说明关于 PowerContext 的一个冷知识：</p>
+<p>无鉴权模式下浏览器访问 <code>http://127.0.0.1:8000/dashboard/home</code> PowerContext 自带的 Dashboard 网页会提示未挂载，这是因为 Web Dashboard 本身没有独立用户库，必须复用 Server 的静态 Token 生成 Cookie 进行认证。若想使用 Dashboard 查看可视化界面，就必须开启强鉴权模式。</p>
+</blockquote>
+<h3 id="3-2-避免多项目上下文串味：MiniMax-Code-里的-Scope-实践"><a href="#3-2-避免多项目上下文串味：MiniMax-Code-里的-Scope-实践" class="headerlink" title="3.2 避免多项目上下文串味：MiniMax Code 里的 Scope 实践"></a>3.2 避免多项目上下文串味：MiniMax Code 里的 Scope 实践</h3><p>在日常使用 Agent 时，关于 Memory 的可能会出现一个让人头疼的问题是<strong>记忆串味</strong>。比如你在 A 项目里交代了使用 PostgreSQL，在 B 项目里交代了使用 MongoDB，结果在 B 项目会话中问起数据库设计，Agent 搬出了 A 项目的 PostgreSQL 规范。</p>
+<h4 id="Scope-在-PowerContext-中的核心作用"><a href="#Scope-在-PowerContext-中的核心作用" class="headerlink" title="Scope 在 PowerContext 中的核心作用"></a>Scope 在 PowerContext 中的核心作用</h4><p>所以在 PowerContext 的架构中 Scope 就是为了解决这个问题。<strong>Scope（上下文空间）是实现多租户与多项目物理隔离的基石</strong>。每一个 Scope 拥有全局唯一的标识符（形如 <code>scp_</code> 开头的字符串），相当于给每个独立的项目或专项长程任务划分了一个封闭的虚拟沙箱。上下文和记忆的写入、衰减、检索均严格局限在当前的 Scope 内部。</p>
+<p>PowerContext 中对于 Scope 的绑定有四级策略：</p>
+<ol>
+<li>第一级：显式传入的 <code>explicit_scope_id</code>（Scope 全局唯一标识符）；</li>
+<li>第二级：宿主环境变量绑定（如 <code>POWERCONTEXT_CODEX_SCOPE_ID</code> 等）；</li>
+<li>第三级：严格非空校验（若未指定且不允许默认则抛错）；</li>
+<li>第四级：降级回退至服务端全局默认的 <code>Default</code> Scope。</li>
+</ol>
+<p>在使用 PowerContext 时，例如在 Codex 等宿主适配器中宿主插件包含 <code>PreToolUse</code> 强制钩子，会在 Agent 调用工具前自动劫持并锁定当前目录绑定的 <code>explicit_scope_id</code>，这是可以正常使用的。</p>
+<p>但在 MiniMax Code 中，PowerContext 的插件目录下没有完全没有原生自动化钩子脚本，且 PowerContext 服务端白名单中也没有定义 MiniMax 的专属环境变量，所以如果不做任何显式指定，所有的记忆存取都会直接跌落到第四级，全部混杂在全局公共的 Default Scope 里。用的时间长了之后就有可能会产生<strong>记忆串味</strong>。</p>
+<h4 id="解决方案：在对话中显式创建并锁定专属-Scope"><a href="#解决方案：在对话中显式创建并锁定专属-Scope" class="headerlink" title="解决方案：在对话中显式创建并锁定专属 Scope"></a>解决方案：在对话中显式创建并锁定专属 Scope</h4><p>为了彻底实现多项目隔离，我一般在新项目开工或启动一项长程专项任务时，首要步骤就是在 MiniMax Code 中通过对话明确创建专属 Scope，比如：</p>
+<blockquote>
+<p>创建一个 raven 的 scope 空间，接下来的每次对话互动都要记录下来。全面查看和深入分析这个项目，告诉我这个项目： - 是个什么项目，做什么的，能做什么事情？ - 整体技术架构是什么，用了哪些技术 - 本地源码运行如何运行使用？要做哪些配置？如何二开？</p>
+</blockquote>
+<p>Agent 会在后台调用 <code>create_scope</code> 工具：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;title&quot;: &quot;Raven&quot;,</span><br><span class="line">&quot;summary&quot;: &quot;EverMind-AI/Raven 项目的专用工作空间:多 Agent 编排 + 自进化 harness 生态。记录该项目下的架构分析、源码运行/二开、代码改动等全部交互与决策。&quot;,</span><br><span class="line">&quot;parent_scope_id&quot;: &quot;scp_7y1xwv72dw0brntk89fqrta1ps&quot;,</span><br><span class="line">&quot;idempotency_key&quot;: &quot;raven-scope-create-2026-09-28&quot;,</span><br><span class="line">&quot;external_references&quot;: [</span><br><span class="line">    &#123;</span><br><span class="line">      &quot;kind&quot;: &quot;repository&quot;,</span><br><span class="line">      &quot;value&quot;: &quot;https://github.com/EverMind-AI/Raven&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      &quot;kind&quot;: &quot;local_path&quot;,</span><br><span class="line">      &quot;value&quot;: &quot;D:\\code\\git-project\\Raven&quot;</span><br><span class="line">    &#125;</span><br><span class="line">  ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/img/minimax-code-powercontext-project-context/08.png" alt="创建工作范围 Scope 的返回结果" loading="lazy" decoding="async"></p>
+<p>这里要重点关注 <code>idempotency_key</code>（幂等键）的设计。只要幂等键相同、内容一致，无论调用多少次，服务端都只会返回已有的唯一 <code>scope_id</code>，而不会泛滥生成重复的无用空间。</p>
+<p><strong>创建完成后，将返回的 <strong><code>scope_id</code></strong> 记录下来写入项目根目录的 README 与 Agent Profile 或 AGENTS.md 中，在新开会话接续工作时，就能确保多项目并行时记忆边界井水不犯河水。</strong></p>
+<p><img src="/img/minimax-code-powercontext-project-context/09.png" alt="项目 Scope 绑定与隔离配置示例" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="四、端到端全景：一条上下文是如何存储与召回的"><a href="#四、端到端全景：一条上下文是如何存储与召回的" class="headerlink" title="四、端到端全景：一条上下文是如何存储与召回的"></a>四、端到端全景：一条上下文是如何存储与召回的</h2><p>现在把前面的使用与机制串联起来，我们可以清晰勾勒出一条信息从 MiniMax Code 输入到最终在 PowerContext 中落库检索的端到端生命周期全景：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">[ 用户输入 ] </span><br><span class="line">    │ 自然语言下达指令（如：“记住本项目接口一律使用 Pydantic v2 校验”）</span><br><span class="line">    ▼</span><br><span class="line">[ MiniMax Code 宿主 + 插件 ]</span><br><span class="line">    │ 命中 SKILL.md 行为规范，识别出上下文记忆持久化意图</span><br><span class="line">    │ 将自然语言解析为标准的 MCP 工具调用参数（包含条目内容、分类、Scope ID）</span><br><span class="line">    ▼</span><br><span class="line">[ MCP 传输层 ]</span><br><span class="line">    │ 基于 Streamable HTTP 协议发起 POST 请求至 http://127.0.0.1:8000/mcp/</span><br><span class="line">    │ 携带 Authorization Bearer 凭据（若开启鉴权）</span><br><span class="line">    ▼</span><br><span class="line">[ PowerContext Server 核心 ]</span><br><span class="line">    │ 1. 中间件安全与鉴权校验（常量时间比对）</span><br><span class="line">    │ 2. Scope 空间解析与上下文绑定确认</span><br><span class="line">    │ 3. 记忆评估与分类管道：</span><br><span class="line">    │    - 提取关联度、重要性打分</span><br><span class="line">    │    - 划分为 working / short_term / long_term 层级</span><br><span class="line">    │    - 计算文本嵌入向量（若已启用 Embedding 模型）</span><br><span class="line">    ▼</span><br><span class="line">[ 持久化存储层 ]</span><br><span class="line">    │ 写入本地存储引擎（SQLite / SeekDB），更新条目清单与版本索引</span><br><span class="line">    ▼</span><br><span class="line">[ 结果反馈回路 ]</span><br><span class="line">    │ 服务端返回确认结果 -&gt; MiniMax Code 组织自然语言向用户反馈完成</span><br></pre></td></tr></table></figure>
+
+<p>当后续会话发起检索时，流程反向展开：自然语言提问触发 <code>search_memory</code>，服务端通过关键词词法匹配或混合向量相似度检索定位候选集，结合重要性权重与时间衰减曲线重排打分，最终将最贴切的前序决策作为上下文提供给大模型参考。</p>
+<p><img src="/img/minimax-code-powercontext-project-context/10.png" alt="项目记忆持久化与检索反馈流程" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="五、进阶调优：让上下文检索与存储更高效"><a href="#五、进阶调优：让上下文检索与存储更高效" class="headerlink" title="五、进阶调优：让上下文检索与存储更高效"></a>五、进阶调优：让上下文检索与存储更高效</h2><p>前面跑通的都是开箱即用的基础功能。如果想让 PowerContext 的检索召回率、语义理解精度与长程任务处理能力更上一层楼，可以通过调整服务端配置进行几项关键的架构调优。</p>
+<p>相关的运行参数默认保存在当前执行目录下的 <code>.env</code> 文件中，启动时服务会自动加载（也可以通过 <code>--env-file  </code> 显式指定路径）。当然实际上最方便的方式是再次运行 <code>powercontext config init --language zh --output .env</code> 通过交互向导更新配置，或者直接通过系统环境变量（以 <code>POWERCONTEXT_SERVER_</code> 为前缀）与 CLI 启动参数（如 <code>--host</code>、<code>--port</code>）进行动态覆盖。</p>
+<blockquote>
+<p><code>.env</code> 文件默认是存放在最初执行 <code>powercontext config init</code> 的终端所处当前目录下。为了方便长期维护，可以将 <code>.env</code> 文件放在一个固定的专门目录中，后续启动 PowerContext Server 通过参数显示加载例如：</p>
+<p><code>powercontext server run --env-file /path/to/.env</code></p>
+</blockquote>
+<p>下面挑几个对实际体验提升最明显的进阶项展开说明。</p>
+<h3 id="5-1-换用嵌入式-seekdb-提升复杂数据检索能力"><a href="#5-1-换用嵌入式-seekdb-提升复杂数据检索能力" class="headerlink" title="5.1 换用嵌入式 seekdb 提升复杂数据检索能力"></a>5.1 换用嵌入式 seekdb 提升复杂数据检索能力</h3><p>在默认情况下，PowerContext 使用轻量级 SQLite 作为存储介质。当然 SQLite 在单机标量查询上足够敏捷，但在高维向量索引与大规模混合检索上还有会有一些上限存在。</p>
+<p>PowerContext 实际上深度集成了 <strong>seekdb</strong>（嵌入式 AI 原生向量与关系混合数据库）。它的核心优势在于：</p>
+<ul>
+<li><strong>零独立运维</strong>：与 SQLite 类似，由 Python 运行时本地直接托管内嵌进程，无需单独搭建和维护繁重的外部数据库服务；</li>
+<li><strong>AI 原生混合检索</strong>：底层天然原生支持向量索引、全文本检索与标量过滤的高性能混合查询，大幅提升 Agent 检索复杂长程记忆时的命中精度。</li>
+</ul>
+<p>在 Linux 或 macOS 平台下，体验 seekdb 是很方便省心的，直接借助配置向导，执行 <code>powercontext config init</code> 时<strong>存储选项</strong>选择 seekdb，向导就会在后台<strong>自动拉取并安装所需的依赖包</strong>（检测到国内环境还会自动通过镜像加速），无需手动执行额外的安装命令就可以直接安装上。</p>
+<p>当然如果习惯通过纯命令行安装，也可以在最初安装 PowerContext 时直接带上对应的 extra：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv tool install --force &quot;powercontext[cli,server,seekdb]==1.1.0&quot;</span><br></pre></td></tr></table></figure>
+
+<p>服务端在 <code>.env</code> 中指定的配置项非常简单：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POWERCONTEXT_SERVER_DATABASE_KIND = seekdb</span><br><span class="line">POWERCONTEXT_SERVER_DATABASE_PATH = /Users/yourname/.powercontext/seekdb</span><br></pre></td></tr></table></figure>
+
+<p>启动时，服务端会自动加载 <code>src/powercontext/builtin/persistence/seekdb/profile.py</code> 驱动，并在本地数据目录下自动初始化混合存储引擎。</p>
+<blockquote>
+<p>在 Windows 环境下，由于嵌入式 SeekDB 暂未发布对应的原生二进制包，则可继续稳定使用 SQLite 或连接外部独立的 OceanBase 实例。</p>
+</blockquote>
+<h3 id="5-2-补齐-Embedding-与生成模型，告别纯字面匹配"><a href="#5-2-补齐-Embedding-与生成模型，告别纯字面匹配" class="headerlink" title="5.2 补齐 Embedding 与生成模型，告别纯字面匹配"></a>5.2 补齐 Embedding 与生成模型，告别纯字面匹配</h3><p>如果只使用最基础版本，记忆的存储与召回主要依赖字面词法规则。要解锁语义级的模糊匹配与自动归纳，必须在 <code>.env</code> 中补齐模型配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># 配置 Embedding 模型（以 OpenAI 兼容协议或第三方 API 为例）</span><br><span class="line">OPENAI_API_KEY = sk-your-api-key</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_EMBEDDING_PROVIDER = openai</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_EMBEDDING_MODEL = text-embedding-3-small</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_EMBEDDING_DIMS = 1536</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_EMBEDDING_BASE_URL = https://api.openai.com/v1</span><br><span class="line"></span><br><span class="line"># 配置后台提炼与归纳使用的生成模型</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_GENERATION_PROVIDER = openai</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_GENERATION_MODEL = gpt-4o-mini</span><br><span class="line">POWERCONTEXT_SERVER_INFERENCE_GENERATION_BASE_URL = https://api.openai.com/v1</span><br></pre></td></tr></table></figure>
+
+<p>参数配置要点：</p>
+<ul>
+<li><strong>向量维度强校验</strong>：<code>EMBEDDING_DIMS</code> 必须与所选向量模型实际输出的维度严格一致（例如 <code>text-embedding-3-small</code> 为 1536，<code>BAAI/bge-m3</code> 为 1024），一旦写入数据，后续切勿随意改动维度；</li>
+<li><strong>模型分工解耦</strong>：Generation 模型用于后台将流水账日志提炼为结构化记忆，Embedding 模型专职负责向量索引构建。</li>
+</ul>
+<h3 id="5-3-开启-Rerank-重排与召回充分性门控"><a href="#5-3-开启-Rerank-重排与召回充分性门控" class="headerlink" title="5.3 开启 Rerank 重排与召回充分性门控"></a>5.3 开启 Rerank 重排与召回充分性门控</h3><p>在 PowerContext 中其实内建了多项提高检索召回质量的高级算法门控，可以按需开启，比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 启用记忆候选重排，在初步召回后使用模型进行精细化排序，过滤无关噪音</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_MEMORY_RERANK_ENABLED = true</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_MEMORY_RERANK_CANDIDATE_LIMIT = 30</span><br><span class="line"></span><br><span class="line"># 启用召回充分性门控</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_RECALL_GATE_ENABLED = true</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_RECALL_GATE_MAX_ROUNDS = 2</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_RECALL_GATE_MIN_TOP_SCORE = 0.35</span><br></pre></td></tr></table></figure>
+
+<p>当开启召回门控后，如果系统判定初次召回的结果候选质量不足或置信度偏低，后台会自动启动第二轮甚至多轮自适应补充搜索，防止 Agent 因为漏搜历史信息而产生幻觉。</p>
+<h3 id="5-4-启用后台定时任务，自动归纳宏观专题上下文"><a href="#5-4-启用后台定时任务，自动归纳宏观专题上下文" class="headerlink" title="5.4 启用后台定时任务，自动归纳宏观专题上下文"></a>5.4 启用后台定时任务，自动归纳宏观专题上下文</h3><p>在进行复杂的长期项目时，零碎的记忆条目会越堆越多。通过开启专题记忆（Topic Memory）自动调度，服务端 Worker 会在后台周期性归纳提炼：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># 启用 Topic Memory 自动提炼周期（单位：秒）</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_TOPIC_MEMORY_SCHEDULE_SECONDS = 3600</span><br><span class="line">POWERCONTEXT_SERVER_RUNTIME_TOPIC_MEMORY_SOURCE_WINDOW_LIMIT = 20</span><br></pre></td></tr></table></figure>
+
+<p><strong>每隔指定时间，后台调度器会自动扫描当前 Scope 中新产生的记忆片段，自动聚合归纳出高密度的宏观专题摘要。</strong> 新会话接入时，可以直接先阅读专题摘要建立全局视野，再按需钻取具体细节。</p>
+<p><img src="/img/minimax-code-powercontext-project-context/11.png" alt="后台专题记忆调度与摘要配置" loading="lazy" decoding="async"></p>
+<hr>
+<h2 id="六、总结"><a href="#六、总结" class="headerlink" title="六、总结"></a>六、总结</h2><p>将 MiniMax Code 与 PowerContext 相结合，本质上是一次极具实用价值的现代化 Agent 工程实践：</p>
+<ul>
+<li><strong>从原始交互到多层资产演化</strong>：用户与 Agent 的交互不再随会话关闭而湮灭，而是作为事实源头被持续沉淀，进一步提炼出决策约束，并在复杂任务中演化出高阶的结构化经验与可复用技能；</li>
+<li><strong>跨越会话与跨越 Agent 的叙事接力</strong>：一个长程项目可能跨越数天、经历多次中断，甚至由不同的 Agent 分工推进，通过 Handoff 工作交接与 Scope 空间隔离，接棒的 Agent 能够完整继承前序的世界线，而不是重新盲人摸象；</li>
+<li><strong>意图驱动的按需调阅</strong>：新任务开启时，不再需要开发者每次人肉复制粘贴冗长的背景，Agent 能够根据意图自主调阅前序项目的来龙去脉，自然接续工作。</li>
+</ul>
+<p>如果把 Agent 比作一台具备强劲计算能力的计算机 CPU，那么单次会话窗口仅仅相当于容量有限的高速缓存，而以 PowerContext 为代表的外部长期记忆底座，正是这台计算机不可或缺的持久化外存。配置好这套底座，AI 助手的协同体验才能真正实现质的飞跃。</p>
+<p>如果把 Agent 比作一台计算性能强大的 CPU，单次对话窗口仅仅相当于容量极为有限的高速缓存。而 PowerContext 作为上下文底座提供的正是这台计算机不可或缺的持久化外存与上下文管理总线。它不再让每次会话都变成无根之木，而是把每一次思考、每一个决策和每一项阶段成果都串连成一部完整的项目演进故事。</p>
+<p>就像 PowerContext 的 Slogan 说的那样：<strong>Not only memory but a full story</strong>。</p>
+<h2 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h2><ol>
+<li>PowerContext 官方文档：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/">https:&#x2F;&#x2F;powercontext.oceanbase.io</a></li>
+<li>PowerContext 源码仓库：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></li>
+<li>MiniMax Code 下载：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://agent.minimax.cn/download">https:&#x2F;&#x2F;agent.minimax.cn&#x2F;download</a></li>
+</ol>
+<p>作者：秋梵，PowerContext Committer</p>
+<p><img src="/img/minimax-code-powercontext-project-context/12.gif" alt="minimax 社区推荐与关注引导图1" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/13.png" alt="minimax 社区推荐与关注引导图2" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/14.png" alt="minimax 社区推荐与关注引导图3" loading="lazy" decoding="async"></p>
+<h2 id="相关内容推荐"><a href="#相关内容推荐" class="headerlink" title="相关内容推荐"></a>相关内容推荐</h2><p><img src="/img/minimax-code-powercontext-project-context/15.png" alt="minimax 社区推荐与关注引导图4" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/16.png" alt="minimax 社区推荐与关注引导图5" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/17.png" alt="minimax 社区推荐与关注引导图6" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/18.png" alt="minimax 社区推荐与关注引导图7" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-powercontext-project-context/19.png" alt="minimax 社区推荐与关注引导图8" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/minimax-code-powercontext-project-context/20.png" alt="minimax 社区推荐与关注引导图9" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/MCP/" rel="tag"># MCP</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/MiniMax-Code/" rel="tag"># MiniMax Code</a>
+              <a href="/tags/Scope/" rel="tag"># Scope</a>
+              <a href="/tags/%E9%A1%B9%E7%9B%AE%E4%B8%8A%E4%B8%8B%E6%96%87/" rel="tag"># 项目上下文</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/" rel="prev" title="OceanBase obdumper 原理研究和问题处理经验">
+                  <i class="fa fa-angle-left"></i> OceanBase obdumper 原理研究和问题处理经验
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/" rel="next" title="我们想和你一起，让 Agent 的优化有据可循">
+                  我们想和你一起，让 Agent 的优化有据可循 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

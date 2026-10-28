@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="pi 的 PowerContext 插件通过扩展事件实现项目上下文召回、证据采集和会话交接，说明压缩与退出时的记忆保存、服务故障时的工作流保障，以及不可信历史和写入确认的边界。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="会话散了场，记忆还在场：给 pi 装上项目记忆">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="pi 的 PowerContext 插件通过扩展事件实现项目上下文召回、证据采集和会话交接，说明压缩与退出时的记忆保存、服务故障时的工作流保障，以及不可信历史和写入确认的边界。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/01.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/02.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/03.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/04.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/05.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/06.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/07.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/08.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/09.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/10.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/11.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/12.png">
+<meta property="og:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/13.png">
+<meta property="article:published_time" content="2026-09-29T00:46:08.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:46:08.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="pi">
+<meta property="article:tag" content="上下文工程">
+<meta property="article:tag" content="项目记忆">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/9-29-pi-powercontext-project-memory/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/","path":"2026/2026-09-29-pi-powercontext-project-memory/","title":"会话散了场，记忆还在场：给 pi 装上项目记忆"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>会话散了场，记忆还在场：给 pi 装上项目记忆 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E8%AE%B2%E4%B8%AA%E4%BA%8B%E6%95%85"><span class="nav-number">1.</span> <span class="nav-text">先讲个事故</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E5%9C%A8-pi-%E9%87%8C%E6%AD%BB%E5%9C%A8%E5%93%AA%E4%BA%9B%E6%97%B6%E5%88%BB"><span class="nav-number">2.</span> <span class="nav-text">一、上下文在 pi 里死在哪些时刻</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E8%AF%A5-PowerContext-%E5%87%BA%E5%9C%BA%E4%BA%86"><span class="nav-number">3.</span> <span class="nav-text">二、该 PowerContext 出场了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%B8%89%E4%B8%AA%E8%AE%BE%E8%AE%A1%E5%86%B3%E5%AE%9A"><span class="nav-number">4.</span> <span class="nav-text">三、三个设计决定</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%B3%E5%AE%9A%E4%B8%80%EF%BC%9AServer-%E4%B8%8D%E5%9C%A8%E5%9C%BA%EF%BC%8C%E4%B8%80%E5%88%87%E7%85%A7%E6%97%A7%E3%80%82"><span class="nav-number">4.1.</span> <span class="nav-text">决定一：Server 不在场，一切照旧。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%B3%E5%AE%9A%E4%BA%8C%EF%BC%9A%E5%8F%AC%E5%9B%9E%E7%9A%84%E5%86%85%E5%AE%B9%EF%BC%8C%E6%98%AF%E2%80%9C%E4%B8%8D%E5%8F%AF%E4%BF%A1%E5%8E%86%E5%8F%B2%E8%AF%81%E6%8D%AE%E2%80%9D%E3%80%82"><span class="nav-number">4.2.</span> <span class="nav-text">决定二：召回的内容，是“不可信历史证据”。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%B3%E5%AE%9A%E4%B8%89%EF%BC%9A%E5%86%99%E8%BF%9B%E8%AE%B0%E5%BF%86%E7%9A%84%E4%BA%8B%EF%BC%8C%E4%BD%A0%E5%BE%97%E7%82%B9%E5%A4%B4%E3%80%82"><span class="nav-number">4.3.</span> <span class="nav-text">决定三：写进记忆的事，你得点头。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E4%B8%8A%E6%89%8B"><span class="nav-number">5.</span> <span class="nav-text">四、上手</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%A3%E5%9C%BA%E4%B9%8B%E5%90%8E"><span class="nav-number">6.</span> <span class="nav-text">散场之后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">7.</span> <span class="nav-text">参考链接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">8.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-24-codex-powercontext-practice/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-24</time>
+        <br>
+      会话会结束，上下文不死：Codex × PowerContext 实战手记
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-08-powercontext-v1-2-0-jev/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-08</time>
+        <br>
+      来啦！PowerContext v1.2.0，接入 jev！
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-23-powercontext-agent-handoff-workshop/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-23</time>
+        <br>
+      清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-08-03-multi-agent-memory-isolation-game/" rel="bookmark">
+        <time class="popular-posts-time">2026-08-03</time>
+        <br>
+      从耳语到公告板：在游戏中观察多 Agent 的记忆管理与隔离
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-17-production-agent-context-engineering/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-17</time>
+        <br>
+      OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="会话散了场，记忆还在场：给 pi 装上项目记忆 | Longda's Interesting World">
+      <meta itemprop="description" content="pi 的 PowerContext 插件通过扩展事件实现项目上下文召回、证据采集和会话交接，说明压缩与退出时的记忆保存、服务故障时的工作流保障，以及不可信历史和写入确认的边界。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          会话散了场，记忆还在场：给 pi 装上项目记忆
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-29 08:46:08" itemprop="dateCreated datePublished" datetime="2026-09-29T08:46:08+08:00">2026-09-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>11 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">pi 的 PowerContext 插件通过扩展事件实现项目上下文召回、证据采集和会话交接，说明压缩与退出时的记忆保存、服务故障时的工作流保障，以及不可信历史和写入确认的边界。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"会话散了场，记忆还在场：给 pi 装上项目记忆","description":"pi 的 PowerContext 插件通过扩展事件实现项目上下文召回、证据采集和会话交接，说明压缩与退出时的记忆保存、服务故障时的工作流保障，以及不可信历史和写入确认的边界。","image":"https://ilongda.com/img/9-29-pi-powercontext-project-memory/01.png","wordCount":2886,"datePublished":"2026-09-29T00:46:08.000Z","dateModified":"2026-10-19T00:46:08.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/"},"url":"https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/","inLanguage":"zh-CN","keywords":["AI Agent","上下文工程","PowerContext","项目记忆","pi"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"会话散了场，记忆还在场：给 pi 装上项目记忆","item":"https://ilongda.com/2026/2026-09-29-pi-powercontext-project-memory/"}]}</script>
+<h2 id="先讲个事故"><a href="#先讲个事故" class="headerlink" title="先讲个事故"></a>先讲个事故</h2><p>我的 CatsCo 体系里有三个项目：cats-company 是主产品，catslog 在后台收运行证据，xiaoba-cli 负责把 XiaoBa runtime 部署到一台台主机上。平时它们各干各的，相安无事。</p>
+<p>前几天，它们仨在我面前吵起来了。</p>
+<p>catslog 的上报一直 fetch failed；xiaoba-cli 在部署主机上拉取也超时。我先怀疑 CatsLog——服务挂了？翻了日志，进程活得好好的。再怀疑 XiaoBa——新版本有 bug？回滚了一个版本，症状依旧。最后连 cats-company 的接口都查了一遍，接口根本没变。</p>
+<span id="more"></span>
+
+<p>三个方向，全错。</p>
+<p>最后的答案躲在网络层里。那台部署主机的出站被防火墙策略拦住了。到 CatsLog 端点的 TCP 连接，7 秒超时；到 github.com 的 TLS，也超时。一个原因，解释了所有症状。而服务进程、握手、设备注册，一切正常。这也是它最难抓的地方。<strong>坏的是“路”，不是“人”。</strong></p>
+<p>排查完，我把结论存进了当时的会话：这种症状组合，第一步先查主机的出站 443&#x2F;8000 网络路径，别上来就翻服务代码。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/01.png" alt="部署主机出站受阻导致多个服务超时" decoding="async"></p>
+<p>后来类似的问题又冒出来。我打开一个新会话，问了差不多的问题。</p>
+<p>它礼貌地把我当成了第一次见面的陌生人。我把当时踩坑的前因后果讲了一遍，它答得头头是道——全是通用知识。唯独那条用一晚上换来的结论，它无从知晓。</p>
+<p>它随着九月的会话，一起散场了。</p>
+<p>这也不只发生在 pi 身上。会话可以很聪明，但会话终究会结束。</p>
+<p>这篇文章讲的就是我为 pi 写的 PowerContext 插件，它把项目级的上下文存在会话外面。散场的是会话，留在场上的，是记忆。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/02.png" alt="pi 接入项目记忆文章封面" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="一、上下文在-pi-里死在哪些时刻"><a href="#一、上下文在-pi-里死在哪些时刻" class="headerlink" title="一、上下文在 pi 里死在哪些时刻"></a>一、上下文在 pi 里死在哪些时刻</h2><p>这篇文章的另一位主角是 pi，一个极简的终端 coding agent，TypeScript 写的，扩展生态是一等公民。装一个插件，只需要在配置里加一行 <code>npm:xxx</code>，重启即生效。</p>
+<p>不过它的会话，就是本地的一份记录文件，进来什么记什么，结束什么都不带走。轻量是轻量，但记忆这块，天然留白。</p>
+<p>留白到什么程度？pi 的会话生命周期里，上下文至少死四次——或者说，细节死四次：</p>
+<ol>
+<li><strong>compaction</strong>。对话太长时，pi 会把旧消息压缩成一份摘要来腾窗口。压缩必然有损：那个“为什么改这三行”的完整推理，到摘要里可能只剩“调整了初始化逻辑”八个字。</li>
+<li><strong>新开会话</strong>。最常见的一种。<code>pi</code> 一敲，新会话干干净净。旧会话确实躺在本地文件里，但新会话不会主动去读它——文件躺在那，和你能接着用，是两回事。</li>
+<li><strong>会话切换</strong>。pi 支持恢复和切换历史会话，但切过去的那个会话，并不知道你中间在别处干了什么。</li>
+<li><strong>退出</strong>。终端一关，这一轮工作的“现场”就永远停在了那里。</li>
+</ol>
+<p>四个时刻，同一个病根。<strong>pi 的会话是个孤立系统</strong>，边界一关，里面的上下文出不去，外面的经验也进不来。</p>
+<p>好消息是，pi 把这些边界全都暴露成了扩展事件，等于把孤立系统改成了开放系统。<strong>在事件发生的地方，把该存的存出去，把该拿的拿回来</strong>。powercontext 插件的全部挂载点就这五个：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pi.on(&#x27;before_agent_start&#x27;, ...)     // 开工前：召回项目上下文</span><br><span class="line">pi.on(&#x27;agent_end&#x27;, ...)              // 每轮结束：把证据存出去</span><br><span class="line">pi.on(&#x27;session_before_compact&#x27;, ...) // 压缩前：抢救完整证据</span><br><span class="line">pi.on(&#x27;session_before_switch&#x27;, ...)  // 切会话前：结账</span><br><span class="line">pi.on(&#x27;session_shutdown&#x27;, ...)       // 退出前：兜底</span><br></pre></td></tr></table></figure>
+
+<p>五个回调，就是集成的全部——没有一行代码碰 pi 的核心逻辑。说实话这让我有点意外：原以为要写不少 hack，实际上 pi 把边界划得足够清楚，插件想不克制都难。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/03.png" alt="压缩切会话退出时保存项目上下文" loading="lazy" decoding="async"></p>
+<h2 id="二、该-PowerContext-出场了"><a href="#二、该-PowerContext-出场了" class="headerlink" title="二、该 PowerContext 出场了"></a>二、该 PowerContext 出场了</h2><p>它是 OceanBase 开源的上下文运行时（PowerMem 2.0）。本地起一个 Server，数据落在 SQLite，把项目里值得留下的事存成 Memory，把“现在做到哪了”存成 Handoff，中间还有一层 Source 专门留原文证据。跨会话、跨 agent，谁来接手都能接着干。</p>
+<p>原理在官方文档里写得很全，这篇不展开——主角是它在 pi 上的形态。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/04.png" alt="pi 通过本地服务保存证据记忆与进度" loading="lazy" decoding="async"></p>
+<h2 id="三、三个设计决定"><a href="#三、三个设计决定" class="headerlink" title="三、三个设计决定"></a>三、三个设计决定</h2><p>插件在 pi 侧只做三类事：召回、采集、看门。记忆从哪来？你在 pi 里说过的、符合条件的话，会作为 Source 证据存进 Server，再由它提炼成 Memory。这条自动提炼的路，闸门在 Server 端的生成模型。决定三要讲的显式写入走另一条路，闸门是我本人的确认。两条路，各过各的闸。</p>
+<p>有两类 prompt 永远不存——看着像带密钥的，和超过 20 万字节的长文本。插件也不同步完整对话记录，只留“说过什么”的原文证据。</p>
+<p>而整个开发过程里，最让我纠结的，是三处“不做什么”。它们比“做什么”更能说明这个插件的性格。</p>
+<h3 id="决定一：Server-不在场，一切照旧。"><a href="#决定一：Server-不在场，一切照旧。" class="headerlink" title="决定一：Server 不在场，一切照旧。"></a>决定一：Server 不在场，一切照旧。</h3><p>举个具体的场景。你正改到一半，手滑把 Server 进程关了。下一轮对话，插件照常尝试召回，超时，放弃——pi 拿到的 prompt 和没装插件时一模一样，你甚至不会有任何感知。等 Server 重新起来，下下轮自动恢复。唯一的痕迹，是终端角落里一行诊断输出，提示刚才有一次冲刷没成功、可以用 <code>powercontext doctor</code> 排查——录 demo 的当天我就撞上过一回，工作流零中断。</p>
+<p>召回、采集、冲刷，全部如此：fail-open。代价当然也要认。Server 长时间不在场的那段日子，采集会错过，记忆会缺一角。我接受这个交换，宁可缺一段记忆，不让工作流断一次。记忆系统是给工作加 buff 的，不是在工作路径上加锁的。没有比“为了保存记忆而丢掉一次工作流”更本末倒置的事。</p>
+<h3 id="决定二：召回的内容，是“不可信历史证据”。"><a href="#决定二：召回的内容，是“不可信历史证据”。" class="headerlink" title="决定二：召回的内容，是“不可信历史证据”。"></a>决定二：召回的内容，是“不可信历史证据”。</h3><p>每个 turn 开始前，插件向 Server 请求一份带预算的上下文——默认 8000 字节。这个数字是刻意的小：装不下一个项目的历史，只装得下“现在需要知道的事”，预算逼着系统做选择，而不是把仓库历史一股脑塞进窗口。</p>
+<p>注入时这份内容还被明确标注：这是历史证据，不是指令。当前的用户请求、system prompt、仓库规范，永远压过召回内容。这是在防一个真实的风险——一周前存下的“先别升级依赖”，不该变成今天一条必须执行的命令。顺带一个自然会冒出来的问题：它和 compaction 的摘要有什么区别？究其根本，摘要是压缩后的转述，证据是可溯源的原文——记忆里的任何一句话，都能追到出自哪次对话。</p>
+<h3 id="决定三：写进记忆的事，你得点头。"><a href="#决定三：写进记忆的事，你得点头。" class="headerlink" title="决定三：写进记忆的事，你得点头。"></a>决定三：写进记忆的事，你得点头。</h3><p>读取可以随时发生（<code>pc_search</code>、<code>pc_memory_list</code>），但凡是持久化写入——<code>pc_remember</code>、修订、退休——在交互会话里都要过一道确认；没有交互 UI 时，宁可拒绝，绝不静默落盘。无人值守的 CI agent 就是典型：它提议的记忆，一律不入库。</p>
+<p>记忆的价值在于“真的发生过”，所以写入必须是真的。agent 可以提议，人类才能拍板。</p>
+<p>这三条归到底是同一种性格：**插件对 pi 的工作流保持谦逊。**只在边界上工作，不占领主干道。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/05.png" alt="故障继续工作历史核验与写入确认" loading="lazy" decoding="async"></p>
+<h2 id="四、上手"><a href="#四、上手" class="headerlink" title="四、上手"></a>四、上手</h2><p>三条命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 1. 安装 PowerContext CLI 与本地 Server（uv 管理，不污染系统 Python）</span><br><span class="line">uv tool install &quot;powercontext[cli,server]==0.2.0&quot;</span><br><span class="line"></span><br><span class="line"># 2. 起 Server：默认 127.0.0.1:8000，数据落本地 SQLite</span><br><span class="line">powercontext server run</span><br><span class="line"></span><br><span class="line"># 3. 给 pi 装上插件（注意和 CLI 保持同一个 ref）</span><br><span class="line">powercontext setup pi --ref powercontext-v0.2.0</span><br></pre></td></tr></table></figure>
+
+<p>插件按项目目录自动绑定 Scope，同一个项目的会话共享一份记忆，不同项目互不串台。采集来的证据由 Server 端提炼成 Memory，这步需要一个配置好的生成模型；没配也不用慌，手动记录和召回照常工作，只是自动提炼这一环先空着。</p>
+<p>之后在项目里开新的 pi 会话，正常提需求、正常改代码——采集在幕后发生，你什么都看不到。直到哪天隔了一周回来，新会话里随口问一句“上次这个为什么这么改”，它答得上来。</p>
+<p>想自己动手时，<code>/pc</code> 命令族是入口：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/pc search &quot;三方连调&quot;   # 搜项目记忆</span><br><span class="line">/pc stats               # 看存了多少</span><br><span class="line">/pc doctor              # 体检：连接、Scope、配置</span><br></pre></td></tr></table></figure>
+
+<p>要换机器、换 agent 接手，<code>pc_handoff_*</code> 会把“现在做到哪了”打包成一份交接单。上下文跟着项目走，不跟着终端走。</p>
+<p>效果是最好的说明书。把那次排查的结论存进 PowerContext 之后，我在一个全新的 pi 会话里，把开头的问题原样又问了一遍：“catslog 上报一直 fetch failed，xiaoba-cli 那边拉取也超时，这种三方连调问题怎么排查？”</p>
+<p>存这一笔，受益的不只是下一个自己。接手的同事换台机器、开个新会话，问的仍然可以是同一个问题。</p>
+<p>这一次，PowerContext 把两段真实排查史放进了上下文：九月那次 XiaoBa 主机出站被拦的结论（一个原因同时解释两个症状，且别误判为服务故障），和三个项目的联调拓扑。于是它没有上来就看代码，先翻出旧结论。旧结论在它手里是要重新检验的证据，不是免检的定理。然后它设计了一套“三点定位法”，同一条 curl 从 CatsLog 服务器、XiaoBa 主机、任意第三台国内机器各跑一遍，结果组合直接定位故障点。判读规则里甚至直接引用旧结论：“①②通③不通，就是 9&#x2F;6 那个结论，查 XiaoBa 主机出站。”</p>
+<p>末尾还有一句让我会心一笑的叮嘱：“根因确认后告诉我，我把这两轮诊断的对比存进 memory，避免下次再被旧结论带偏。”——你看，它把记忆当证据用，而不是当答案抄。</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/06.png" alt="召回证据后重新核验并记录结论" loading="lazy" decoding="async"></p>
+<h2 id="散场之后"><a href="#散场之后" class="headerlink" title="散场之后"></a>散场之后</h2><p>回到开头那个事故。出站拦截后来解除了，但那条排查结论，曾经只活在九月的那个会话里。</p>
+<p>现在不会了。曲终人不见，江上数峰青——散场难免，散场之后留下什么，是可以设计的。</p>
+<p><strong>上下文死在哪里，就在哪里留下坐标。</strong></p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li>PowerContext：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></li>
+<li>pi 插件配置文档：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/en/docs/how-to/configure-pi/">https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;en&#x2F;docs&#x2F;how-to&#x2F;configure-pi&#x2F;</a></li>
+<li>pi coding agent：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/earendil-works/pi-mono">https:&#x2F;&#x2F;github.com&#x2F;earendil-works&#x2F;pi-mono</a></li>
+</ul>
+<p><img src="/img/9-29-pi-powercontext-project-memory/07.png" alt="pi 接入 PowerContext 横版文章海报" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/08.png" alt="OceanBase 社区内容分隔装饰" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/9-29-pi-powercontext-project-memory/09.png" alt="PowerContext 人与 Agent 协作文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/10.png" alt="Tibo 谈 Codex 与 Harness 文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/11.png" alt="MiniMax Code 多模态项目上下文文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/12.png" alt="GPT-6 Astra 与 Codex 上下文文章" loading="lazy" decoding="async"></p>
+<p>了解更多</p>
+<p><img src="/img/9-29-pi-powercontext-project-memory/13.png" alt="OceanBase 社区小助手交流二维码" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/AI-Agent/" rel="tag"># AI Agent</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/%E9%A1%B9%E7%9B%AE%E8%AE%B0%E5%BF%86/" rel="tag"># 项目记忆</a>
+              <a href="/tags/pi/" rel="tag"># pi</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-28-seekdb-macos-27-native-build/" rel="prev" title="macOS 27 发布，seekdb 实现原生编译适配">
+                  <i class="fa fa-angle-left"></i> macOS 27 发布，seekdb 实现原生编译适配
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-08-powercontext-v1-2-0-jev/" rel="next" title="来啦！PowerContext v1.2.0，接入 jev！">
+                  来啦！PowerContext v1.2.0，接入 jev！ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

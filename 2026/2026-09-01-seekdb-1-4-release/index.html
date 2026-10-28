@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase seekdb 1.4 正式发布：更小、更轻、更强">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/01.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/02.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/03.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/04.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/05.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/06.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/07.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/08.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/09.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/10.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/11.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/12.gif">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/13.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/14.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/15.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/16.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/17.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-1-4-release/18.png">
+<meta property="article:published_time" content="2026-08-31T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:56:29.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI数据库">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="嵌入式数据库">
+<meta property="article:tag" content="轻量化">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-1-4-release/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/","path":"2026/2026-09-01-seekdb-1-4-release/","title":"OceanBase seekdb 1.4 正式发布：更小、更轻、更强"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase seekdb 1.4 正式发布：更小、更轻、更强 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#50-MiB%EF%BC%8C%E9%A6%96%E5%85%88%E6%94%B9%E5%8F%98%E7%9A%84%E6%98%AF%E4%BA%A4%E4%BB%98%E6%88%90%E6%9C%AC"><span class="nav-number">1.</span> <span class="nav-text">50 MiB，首先改变的是交付成本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%81%9A%E5%87%8F%E6%B3%95%EF%BC%8C%E4%B8%8D%E7%AD%89%E4%BA%8E%E7%AE%80%E5%8D%95%E8%A3%81%E5%89%AA"><span class="nav-number">2.</span> <span class="nav-text">做减法，不等于简单裁剪</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%93%E7%A7%AF%E5%92%8C%E5%86%85%E5%AD%98%EF%BC%8C%E6%98%AF%E6%80%8E%E6%A0%B7%E9%99%8D%E4%B8%8B%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">体积和内存，是怎样降下来的？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%EF%BC%8C%E6%B8%85%E7%90%86%E5%86%97%E4%BD%99%E4%BB%A3%E7%A0%81%E4%B8%8E%E4%BE%9D%E8%B5%96"><span class="nav-number">3.1.</span> <span class="nav-text">第一，清理冗余代码与依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%EF%BC%8C%E9%87%8D%E6%9E%84-PL-%E6%89%A7%E8%A1%8C%E6%A1%86%E6%9E%B6"><span class="nav-number">3.2.</span> <span class="nav-text">第二，重构 PL 执行框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%EF%BC%8C%E5%8E%8B%E7%BC%A9%E7%A9%BA%E8%BD%BD%E6%97%B6%E7%9A%84%E5%86%85%E5%AD%98%E5%92%8C-CPU-%E5%BC%80%E9%94%80"><span class="nav-number">3.3.</span> <span class="nav-text">第三，压缩空载时的内存和 CPU 开销</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B5%8C%E5%85%A5%E5%BC%8F%E8%83%BD%E5%8A%9B%E5%8D%87%E7%BA%A7%EF%BC%9A%E5%A4%9A%E4%B8%AA%E5%BA%94%E7%94%A8%E5%8F%AF%E4%BB%A5%E5%90%8C%E6%97%B6%E4%BD%BF%E7%94%A8%E5%90%8C%E4%B8%80%E4%BB%BD%E6%95%B0%E6%8D%AE"><span class="nav-number">4.</span> <span class="nav-text">嵌入式能力升级：多个应用可以同时使用同一份数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#macOS-%E6%9B%B4%E7%A8%B3%E5%AE%9A%EF%BC%8C%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E6%A0%88%E4%B9%9F%E5%9C%A8%E6%BC%94%E8%BF%9B"><span class="nav-number">5.</span> <span class="nav-text">macOS 更稳定，开发技术栈也在演进</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B7%91%E4%B8%80%E4%B8%AA%E6%9C%80%E5%B0%8F-Demo"><span class="nav-number">6.</span> <span class="nav-text">跑一个最小 Demo</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#seekdb-%E8%BD%BB%E9%87%8F%E5%8C%96%EF%BC%8C%E4%B8%8D%E6%AD%A2%E6%98%AF%E5%8C%85%E6%9B%B4%E5%B0%8F"><span class="nav-number">7.</span> <span class="nav-text">seekdb 轻量化，不止是包更小</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Agent-%E5%81%9A%E8%AF%95%E9%AA%8C%EF%BC%8C%E4%B8%8D%E5%BF%85%E5%85%88%E5%A4%8D%E5%88%B6%E6%95%B4%E5%BA%93"><span class="nav-number">7.1.</span> <span class="nav-text">Agent 做试验，不必先复制整库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8E%E6%9C%AC%E5%9C%B0%E5%B7%A5%E5%85%B7%E5%88%B0%E7%8B%AC%E7%AB%8B%E6%9C%8D%E5%8A%A1%EF%BC%8C%E6%8C%89%E9%9C%80%E8%A6%81%E9%80%89%E6%8B%A9%E5%BD%A2%E6%80%81"><span class="nav-number">7.2.</span> <span class="nav-text">从本地工具到独立服务，按需要选择形态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E5%8F%AA%E7%9C%8B%E7%A9%BA%E8%BD%BD%EF%BC%9A%E8%BE%B9%E5%86%99%E8%BE%B9%E6%9F%A5%E6%97%B6%EF%BC%8C%E6%A3%80%E7%B4%A2%E7%A8%B3%E4%B8%8D%E7%A8%B3%EF%BC%9F"><span class="nav-number">7.3.</span> <span class="nav-text">不只看空载：边写边查时，检索稳不稳？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">8.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E9%93%BE%E6%8E%A5-%E6%96%87%E6%A1%A3"><span class="nav-number">9.</span> <span class="nav-text">相关链接 &#x2F; 文档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">10.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-28-unified-ai-data-stack-part1/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-28</time>
+        <br>
+      告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（一）
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-09-seekdb-1-3-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-09</time>
+        <br>
+      OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-03-03-seekdb-ai-data-sandbox/" rel="bookmark">
+        <time class="popular-posts-time">2026-03-03</time>
+        <br>
+      从 Vibe Coding 到 AI Agent，OceanBase seekdb 打造 AI 时代毫秒级数据沙箱
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-29-unified-ai-data-stack-part2/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-29</time>
+        <br>
+      告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（二）
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-12-26-oceanbase-ai-products-developer-view/" rel="bookmark">
+        <time class="popular-posts-time">2025-12-26</time>
+        <br>
+      从开发者视角观察 OceanBase 开源的 AI 产品御三家
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase seekdb 1.4 正式发布：更小、更轻、更强 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase seekdb 1.4 正式发布：更小、更轻、更强
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-01 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-01T07:30:00+08:00">2026-09-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">嘉格</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BA%A7%E5%93%81%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">产品详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>14 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase seekdb 1.4 正式发布：更小、更轻、更强","description":"OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。","image":"https://ilongda.com/img/seekdb-1-4-release/01.png","wordCount":3579,"datePublished":"2026-08-31T23:30:00.000Z","dateModified":"2026-09-17T18:56:29.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/"},"url":"https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/","inLanguage":"zh-CN","keywords":["OceanBase","seekdb","AI数据库","嵌入式数据库","轻量化"],"articleSection":["产品详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"产品详解","item":"https://ilongda.com/categories/产品详解/"},{"@type":"ListItem","position":3,"name":"OceanBase seekdb 1.4 正式发布：更小、更轻、更强","item":"https://ilongda.com/2026/2026-09-01-seekdb-1-4-release/"}]}</script>
+<p>OceanBase seekdb 1.4 以轻量化为主线，将核心包从160 MiB缩减至50 MiB，降低空载资源开销，并完善嵌入式并发访问、macOS稳定性与开发工具链。</p>
+<blockquote>
+<p>2026 年 8 月 27 日，OceanBase seekdb 正式发布 1.4 版本。这是一次以轻量化为主线的版本更新：携带 seekdb 核心的 <code>pylibseekdb</code> 包从 160 MiB 缩减至 50 MiB，<strong>二进制体积缩小近 2&#x2F;3，空载内存和 CPU 开销下降超过 70%</strong>。</p>
+<p>与此同时，seekdb 进一步完善嵌入式多应用同时访问、macOS 稳定性与开发者工具链，并首次引入 Rust 技术栈和 Bazel 构建支持（Preview）。</p>
+<p>这篇文章不只是罗列更新项，我们还非常想和大家一起聊聊，一个已经具备完整数据库能力的产品，为什么还要主动做减法，以及这次减法为 AI 应用开发者带来了什么？</p>
+</blockquote>
+<p><img src="/img/seekdb-1-4-release/01.png" alt="OceanBase seekdb内容讲解图1" decoding="async"></p>
+<span id="more"></span>
+
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<p>数据库版本发布通常都在做加法，seekdb 1.4 则选择重新审视产品边界，围绕本地与端侧 AI 应用做一次有选择的减法。</p>
+<p>我们把 <code>pylibseekdb</code> 从 160 MiB 缩减至 50 MiB，同时保留 SQL、事务、混合检索和数据版本管理等 AI 应用需要的核心能力。这里的“完整”，不是覆盖所有数据库负载的功能全集，而是结构化数据管理、向量&#x2F;全文&#x2F;标量混合检索、事务持久化和 Fork、Diff &amp; Merge 共同构成的 AI 应用数据闭环。</p>
+<h2 id="50-MiB，首先改变的是交付成本"><a href="#50-MiB，首先改变的是交付成本" class="headerlink" title="50 MiB，首先改变的是交付成本"></a>50 MiB，首先改变的是交付成本</h2><p>与 1.3 相比，1.4 的基础资源变化如下：</p>
+<p>| 指标 | seekdb 1.3 | seekdb 1.4 | 变化 |<br>| <code>pylibseekdb</code> 包体积 | 160 MiB | 50 MiB | 下降 68.8% |<br>| seekdb 二进制 | 366.2 MiB | 132.4 MiB | 下降 63.9% |<br>| 空载稳态内存均值 | 630.6 MiB | 166.3 MiB | 下降 73.6% |<br>| 空载 CPU 均值 | 0.05 核 | 0.01 核 | 下降 70.3% |</p>
+<blockquote>
+<p><strong>测试口径</strong>：内存与 CPU 数据来自相同测试环境下的空载对比，用于衡量数据库自身的基础开销，不代表不同数据量和业务负载下的资源上限。表中降幅沿用发布说明，CPU 值仅展示两位小数。50 MiB 指 <code>pylibseekdb</code> 核心包，不包含 Python SDK 的其他依赖、Embedding 模型和用户数据。</p>
+</blockquote>
+<p>对于本地 AI 助手、桌面应用和端侧应用来说，数据库也是应用交付物的一部分。包体越小，下载和分发成本越低；基础资源开销越少，留给模型、数据和业务逻辑的空间就越多。</p>
+<p><img src="/img/seekdb-1-4-release/02.png" alt="MiB，首先改变的是交付成本讲解图2" loading="lazy" decoding="async"></p>
+<h2 id="做减法，不等于简单裁剪"><a href="#做减法，不等于简单裁剪" class="headerlink" title="做减法，不等于简单裁剪"></a>做减法，不等于简单裁剪</h2><p>seekdb 源自面向大型生产系统的数据库内核，拥有成熟的 SQL、事务与存储能力，也带着一些更适合传统服务端场景的模块和依赖。1.4 清理了与目标场景关联较弱的功能路径、冗余代码和依赖，把资源集中到：</p>
+<ul>
+<li>MySQL 兼容的 SQL 与事务处理；</li>
+<li>向量、全文和标量数据的混合检索；</li>
+<li>面向 Agent 持续写入与检索的索引能力；</li>
+<li>Fork、Diff &amp; Merge 数据版本管理；</li>
+<li>本地数据持久化与可靠性保障。</li>
+</ul>
+<p>这不是追求功能列表无限延展，而是<strong>让 AI 应用真正需要的能力更容易交付、更轻地运行</strong>。</p>
+<p><img src="/img/seekdb-1-4-release/03.png" alt="做减法，不等于简单裁剪讲解图3" loading="lazy" decoding="async"></p>
+<h2 id="体积和内存，是怎样降下来的？"><a href="#体积和内存，是怎样降下来的？" class="headerlink" title="体积和内存，是怎样降下来的？"></a>体积和内存，是怎样降下来的？</h2><p>这次轻量化不是某一个编译参数带来的，而是覆盖构建依赖、执行框架和运行时资源管理的一系列调整。</p>
+<h3 id="第一，清理冗余代码与依赖"><a href="#第一，清理冗余代码与依赖" class="headerlink" title="第一，清理冗余代码与依赖"></a>第一，清理冗余代码与依赖</h3><p>我们移除不再需要的代码路径和编译依赖，让二进制代码段明显收敛。更小的代码段不仅降低了二进制体积，也减少了运行时需要映射和驻留在内存中的代码页。</p>
+<h3 id="第二，重构-PL-执行框架"><a href="#第二，重构-PL-执行框架" class="headerlink" title="第二，重构 PL 执行框架"></a>第二，重构 PL 执行框架</h3><p>seekdb 1.4 将 PL 执行框架从基于 LLVM-JIT 的即时编译重构为 tree-walking 解释执行，减少构建依赖，让执行路径更轻、跨平台行为更一致；多数场景下的执行性能仍能得到保持。</p>
+<h3 id="第三，压缩空载时的内存和-CPU-开销"><a href="#第三，压缩空载时的内存和-CPU-开销" class="headerlink" title="第三，压缩空载时的内存和 CPU 开销"></a>第三，压缩空载时的内存和 CPU 开销</h3><p>数据库即使没有业务请求，缓存、线程和后台任务也会持续消耗内存与 CPU。1.4 对这些基础成本逐项收敛：</p>
+<ul>
+<li>集成 jemalloc，降低长期运行中的内存碎片；</li>
+<li>回收 memstore、plan cache、KV cache 等空闲态内存；</li>
+<li>精简冗余后台线程，并下调默认线程栈尺寸；</li>
+<li>减少不必要的预分配与常驻对象。</li>
+</ul>
+<p>这些优化使相同空载条件下的内存均值下降 73.6%，CPU 均值下降 70.3%。这不是业务负载资源上限的承诺，而是先降低数据库自身的固定成本。</p>
+<p><img src="/img/seekdb-1-4-release/04.png" alt="第三，压缩空载时的内存和 CPU 开销讲解图4" loading="lazy" decoding="async"></p>
+<h2 id="嵌入式能力升级：多个应用可以同时使用同一份数据"><a href="#嵌入式能力升级：多个应用可以同时使用同一份数据" class="headerlink" title="嵌入式能力升级：多个应用可以同时使用同一份数据"></a>嵌入式能力升级：多个应用可以同时使用同一份数据</h2><p>在此前的嵌入式模式下，同一份 seekdb 数据只能由一个应用打开；当一个应用正在使用数据库时，其他应用无法同时访问这份数据。</p>
+<p>seekdb 1.4 解除了这一限制，支持<strong>多个应用同时访问同一份 seekdb 数据</strong>。例如，桌面 AI 助手、知识库工具和开发者插件可以同时读取和更新同一份用户知识、Agent Memory 与业务状态，不再需要为每个应用各维护一份副本、额外同步。</p>
+<p>这背后也有一项架构变化：1.4 的嵌入式模式改为由独立后台进程运行数据库，通过 MySQL 协议与应用通信。“嵌入式”仍指随应用部署和使用，不再等同于数据库内核运行在宿主应用进程内。</p>
+<p><img src="/img/seekdb-1-4-release/05.png" alt="嵌入式能力升级：多个应用可以同时使用同一份数据讲解图5" loading="lazy" decoding="async"></p>
+<h2 id="macOS-更稳定，开发技术栈也在演进"><a href="#macOS-更稳定，开发技术栈也在演进" class="headerlink" title="macOS 更稳定，开发技术栈也在演进"></a>macOS 更稳定，开发技术栈也在演进</h2><p>1.4 系统修复了 macOS 上 GIS 计算、排序、数值转换、浮点运算和 PL 等关键路径的问题，让本地开发和运行更加稳定。</p>
+<p>seekdb 还首次引入 Rust 技术栈，使用 Rust 重写 MySQL 协议栈与网络 I&#x2F;O 层，为底层模块提供更稳健的演进基础。Bazel 原生模块 Bzlmod 也以 Preview 形式加入，带来增量编译、构建缓存和模块依赖分析能力。</p>
+<p>此外，本次版本还修复了向量索引、SQL 执行、事务、主备库以及 Windows 平台上的一系列问题。完整清单请参见文末 Release Note。</p>
+<p><img src="/img/seekdb-1-4-release/06.png" alt="macOS 更稳定，开发技术栈也在演进讲解图6" loading="lazy" decoding="async"></p>
+<h2 id="跑一个最小-Demo"><a href="#跑一个最小-Demo" class="headerlink" title="跑一个最小 Demo"></a>跑一个最小 Demo</h2><p>前面提到的 <code>pylibseekdb</code> 负责承载 seekdb 核心，<code>pyseekdb</code> 则提供面向应用开发者的 Python API。在受支持的平台上，安装 <code>pyseekdb</code> 时会自动安装对应的 <code>pylibseekdb</code>。</p>
+<p>准备 Python 3.11 或更高版本，然后安装 Python SDK：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -U pyseekdb</span><br></pre></td></tr></table></figure>
+
+<p>下面的示例请在新建的测试目录中运行，写入两条 Agent Memory，刷新索引后检索：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">import pyseekdb</span><br><span class="line"></span><br><span class="line">client = pyseekdb.Client(path=&quot;./seekdb.db&quot;)</span><br><span class="line">memory = client.get_or_create_collection(&quot;agent_memory&quot;)</span><br><span class="line"></span><br><span class="line">memory.add(</span><br><span class="line">    ids=[&quot;1&quot;, &quot;2&quot;],</span><br><span class="line">    documents=[</span><br><span class="line">        &quot;user prefers dark mode&quot;,</span><br><span class="line">        &quot;user usually communicates in Chinese&quot;,</span><br><span class="line">    ],</span><br><span class="line">)</span><br><span class="line">memory.refresh_index()</span><br><span class="line"></span><br><span class="line">result = memory.query(</span><br><span class="line">    query_texts=[&quot;dark mode preference&quot;],</span><br><span class="line">    n_results=1,</span><br><span class="line">)</span><br><span class="line">print(result[&quot;documents&quot;][0])</span><br></pre></td></tr></table></figure>
+
+<p><code>pyseekdb</code> 会自动为文档和查询生成 Embedding。首次运行时会下载默认 Embedding 模型，之后将直接复用本地缓存；你也可以替换为业务所用的其他 Embedding 模型。</p>
+<p><code>refresh_index()</code> 用于主动刷新索引，让后续检索能查到刚写入的数据。对于异步索引，基表事务提交和向量检索可见之间存在时间窗口，不能把两者当成同一时点。</p>
+<p><img src="/img/seekdb-1-4-release/07.png" alt="跑一个最小 Demo讲解图7" loading="lazy" decoding="async"></p>
+<blockquote>
+<p><strong>已有实例升级请注意</strong>：1.0.x、1.1.0、1.2.0、1.3.0 不支持原地升级到 1.4.0，需要使用 OBDUMPER&#x2F;OBLOADER 或 mysqldump 进行逻辑迁移。上面的安装命令用于准备 SDK，不等于完成旧数据库升级。</p>
+</blockquote>
+<h2 id="seekdb-轻量化，不止是包更小"><a href="#seekdb-轻量化，不止是包更小" class="headerlink" title="seekdb 轻量化，不止是包更小"></a>seekdb 轻量化，不止是包更小</h2><p>seekdb 是一款 MySQL 高度兼容、面向 AI 应用的数据库。它把关系数据、向量、全文和 JSON 放在同一套数据管理体系里，提供 SQL、事务、混合检索和数据分支能力。1.4 缩小了核心包和基础资源开销；放到完整的应用开发流程里，轻量化还有另外几层含义。</p>
+<h3 id="Agent-做试验，不必先复制整库"><a href="#Agent-做试验，不必先复制整库" class="headerlink" title="Agent 做试验，不必先复制整库"></a>Agent 做试验，不必先复制整库</h3><p>假设一个 Agent 要整理用户记忆：合并重复记录、调整标签，再生成后续计划。让它直接修改主数据，误写后不好收拾；每次试验都完整复制数据库，又要付出时间和存储成本。</p>
+<p>seekdb 提供原生的 Fork&#x2F;Diff&#x2F;Merge 工作流。<code>FORK DATABASE</code> 可以创建数据库分支，<code>FORK TABLE</code> 可以只针对一张表。底层采用写时复制（Copy-on-Write，COW），<strong>创建分支时共享已有数据，后续写入再形成独立增量</strong>，无需先复制一整份数据。</p>
+<p>Agent 可以在分支里多轮读写，再通过 <code>DIFF TABLE</code> 检查行级差异和冲突，由应用决定是否通过 <code>MERGE TABLE</code> 采纳结果。对于不需要保留的试验，可以清理对应分支。</p>
+<p>这里减掉的是试验前的全量复制，以及应用自己维护数据副本的负担。分支后续写入仍会消耗资源，应用也需要管理权限、合并前校验和分支生命周期。COW 让试验更轻，业务规则决定哪些结果可以进入主数据。</p>
+<p><img src="/img/seekdb-1-4-release/08.png" alt="Agent 做试验，不必先复制整库讲解图8" loading="lazy" decoding="async"></p>
+<h3 id="从本地工具到独立服务，按需要选择形态"><a href="#从本地工具到独立服务，按需要选择形态" class="headerlink" title="从本地工具到独立服务，按需要选择形态"></a>从本地工具到独立服务，按需要选择形态</h3><p>同样是保存记忆和做检索，个人桌面助手与团队共享知识库，对数据库的部署要求并不相同。seekdb 提供两种主要运行形态：</p>
+<ul>
+<li><strong>Embedded</strong>：通过 SDK 接入，随应用部署和交付，适合桌面 Agent、本地知识工具、边缘应用和开发测试；1.4 还支持多个应用共享同一实例。</li>
+<li><strong>Server</strong>：作为独立数据服务运行，通过 MySQL 协议、SQL 和标准驱动接入，适合跨主机访问、集中资源管理和统一运维。</li>
+</ul>
+<p><strong>两种形态共享数据模型、SQL 语义、索引和事务能力</strong>。应用可以从本地原型起步，再按协作范围和运维需要选择独立服务，不必一开始就搭建复杂的服务环境。</p>
+<p>在平台支持上，seekdb 覆盖 Linux 的 x86_64、ARM64，Apple Silicon macOS，以及 x64 Windows。开发者可以在个人电脑上验证数据模型和 AI 流程，再面向实际交付平台选择部署方式；具体系统版本与 SDK 支持范围，以官方文档为准。</p>
+<p>数据放在本地，也不意味着整条 AI 链路自动离线。若应用调用云端 Embedding、重排或生成模型，相应请求仍会访问外部服务，需要按实际数据边界配置。</p>
+<p><img src="/img/seekdb-1-4-release/09.png" alt="从本地工具到独立服务，按需要选择形态讲解图9" loading="lazy" decoding="async"></p>
+<h3 id="不只看空载：边写边查时，检索稳不稳？"><a href="#不只看空载：边写边查时，检索稳不稳？" class="headerlink" title="不只看空载：边写边查时，检索稳不稳？"></a>不只看空载：边写边查时，检索稳不稳？</h3><p>Agent 通常一边记录新观察，一边检索已有上下文。数据库除了待机时占用少，还要处理持续写入期间的查询。seekdb 的异步向量索引将事务写入与索引更新解耦，查询结合增量索引和稳定索引完成召回，以平衡写入与检索开销。</p>
+<p>在已有的流式向量检索参考测试中，以千万级目标数据规模为例，seekdb 的查询吞吐为 <strong>1,523 QPS</strong>，串行查询 P99 为 19.7 ms，并发写入下 P99 为 21.7 ms，约为前者的 1.1 倍；对应 Recall 为 0.7397。这组数据展示的是给定召回水平下的吞吐与尾延迟，不能脱离配置单看 QPS。</p>
+<p>测试采用 VDB StreamBench[1] 流式工作负载：Cohere 768 维数据集，16 vCPU、64 GiB 内存，持续写入 500 行&#x2F;秒；HNSW 参数为 <code>M=16</code>、<code>ef_construction=256</code>、<code>ef_search=200</code>，在写入到目标规模的 50% 和 80% 时进行查询测试，覆盖 5、10 两档查询并发，查询阶段在写入后继续运行 30 秒。</p>
+<p>这些是 seekdb 已有能力的参考结果，<strong>不是 1.4 相比 1.3 的新增性能对比</strong>，也不表示前文的 166.3 MiB 空载内存能够承载千万级向量。实际部署时，仍要结合数据规模、索引参数、召回率与读写负载评估资源。</p>
+<p><img src="/img/seekdb-1-4-release/10.png" alt="不只看空载：边写边查时，检索稳不稳？讲解图10" loading="lazy" decoding="async"></p>
+<p>包体更小，降低的是交付成本；分支和多形态运行，减少的是应用试验与部署的负担；写查性能，则决定它能否接住后续的业务负载。这几件事放在一起，才是 AI 应用真正用得上的轻量化。</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>50 MiB 不是最终目的，它代表一次更清晰的产品选择：减掉与目标场景关联较弱的负担，把资源集中到 AI 应用真正需要的数据能力上，把更多空间留给应用、数据和模型。</p>
+<p>从本地部署，到 Agent 隔离试验，再到持续写入与检索，seekdb 希望让开发者少花一些精力搬数据、维护副本和拼接数据服务，多花一些精力打磨应用本身。</p>
+<p><img src="/img/seekdb-1-4-release/11.png" alt="写在最后讲解图11" loading="lazy" decoding="async"></p>
+<p>如果你正在为本地 AI 助手、Agent Memory、知识库或桌面应用寻找数据底座，欢迎运行上面的 Demo 试试看~</p>
+<h2 id="相关链接-文档"><a href="#相关链接-文档" class="headerlink" title="相关链接 &#x2F; 文档"></a>相关链接 &#x2F; 文档</h2><ul>
+<li>seekdb GitHub[2]</li>
+<li>`pyseekdb` GitHub[3]</li>
+<li>Python SDK 文档[4]</li>
+<li>完整更新日志：GitHub Release v1.4.0[5]</li>
+</ul>
+<p>如果 seekdb 对你有帮助，欢迎点一个 Star；如果遇到问题，也欢迎通过 GitHub Issues 和 Discussions 告诉我们~</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>VDB StreamBench: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/vdb-streambench">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;vdb-streambench</a></p>
+<p>[2] </p>
+<p>seekdb GitHub: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb</a></p>
+<p>[3] </p>
+<p>pyseekdb GitHub: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/pyseekdb">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;pyseekdb</a></p>
+<p>[4] </p>
+<p>Python SDK 文档: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.seekdb.ai/seekdb/pyseekdb-sdk-get-started">https:&#x2F;&#x2F;docs.seekdb.ai&#x2F;seekdb&#x2F;pyseekdb-sdk-get-started</a></p>
+<p>[5] </p>
+<p>完整更新日志：GitHub Release v1.4.0: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.4.0">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb&#x2F;releases&#x2F;tag&#x2F;v1.4.0</a></p>
+<p><img src="/img/seekdb-1-4-release/12.gif" alt="相关链接 &#x2F; 文档讲解图12" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-4-release/13.png" alt="相关链接 &#x2F; 文档讲解图13" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/seekdb-1-4-release/14.png" alt="往期内容推荐讲解图14" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-4-release/15.png" alt="往期内容推荐讲解图15" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-4-release/16.png" alt="往期内容推荐讲解图16" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-1-4-release/17.png" alt="往期内容推荐讲解图17" loading="lazy" decoding="async"></p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">
+</a></p>
+<p>了解更多</p>
+<p><img src="/img/seekdb-1-4-release/18.png" alt="往期内容推荐讲解图18" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/AI%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># AI数据库</a>
+              <a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 嵌入式数据库</a>
+              <a href="/tags/%E8%BD%BB%E9%87%8F%E5%8C%96/" rel="tag"># 轻量化</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-08-31-agent-delete-database-git/" rel="prev" title="Agent 习惯性删库跑路，数据库纷纷学 Git 续命">
+                  <i class="fa fa-angle-left"></i> Agent 习惯性删库跑路，数据库纷纷学 Git 续命
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-02-oceanbase-inclusion-ai-event/" rel="next" title="码上报名！OceanBase 将携 AI 成果亮相外滩大会，上海见！">
+                  码上报名！OceanBase 将携 AI 成果亮相外滩大会，上海见！ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OBCP V4 实验模拟题详解 —— 数据库开发设计与优化">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/01.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/02.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/03.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/04.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/05.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/06.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/07.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/08.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/09.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/10.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/11.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/12.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/13.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/14.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/15.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/16.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/17.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/18.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/19.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/20.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/21.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/22.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/23.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/24.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/25.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/26.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/27.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/28.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/29.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/30.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/31.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/32.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/33.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/34.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/35.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/36.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/37.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/38.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/39.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/40.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/41.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/42.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/43.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/44.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/45.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/46.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/47.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/48.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/49.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/50.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/51.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/52.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/53.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/54.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/55.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/56.gif">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/57.png">
+<meta property="og:image" content="https://ilongda.com/img/obcp-v4-development-optimization/58.png">
+<meta property="article:published_time" content="2026-09-09T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:52:43.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OBCP">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="SPM">
+<meta property="article:tag" content="SQL优化">
+<meta property="article:tag" content="执行计划">
+<meta property="article:tag" content="统计信息">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/obcp-v4-development-optimization/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/","path":"2026/2026-09-10-obcp-v4-development-optimization/","title":"OBCP V4 实验模拟题详解 —— 数据库开发设计与优化"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OBCP V4 实验模拟题详解 —— 数据库开发设计与优化 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-OB-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.</span> <span class="nav-text">1. OB 环境准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 服务器准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-OBD-%E9%83%A8%E7%BD%B2%E4%BC%81%E4%B8%9A%E7%89%88"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 OBD 部署企业版</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%B3%E6%AD%A4%EF%BC%8C%E5%AE%9E%E9%AA%8C%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87%E5%A5%BD%E4%BA%86%E3%80%82"><span class="nav-number">2.</span> <span class="nav-text">至此，实验环境准备好了。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E9%AA%8C1%EF%BC%9A%E5%88%86%E5%B8%83%E5%BC%8F%E5%AF%B9%E8%B1%A1%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">2. 实验1：分布式对象设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%88%86%E5%8C%BA%E8%A1%A8%E4%B8%8E%E8%A1%A8%E7%BB%84"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 分区表与表组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E7%B4%A2%E5%BC%95%E5%AF%B9%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E5%BD%B1%E5%93%8D%E7%A0%94%E7%A9%B6"><span class="nav-number">3.2.</span> <span class="nav-text">2.2 索引对执行计划影响研究</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E4%B8%AA-SQL-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E4%B9%9F%E5%8F%98%E4%B8%BA%E8%B5%B0%E5%85%A8%E5%B1%80%E7%B4%A2%E5%BC%95%EF%BC%8C%E4%B9%9F%E7%94%A8%E4%BA%86-DAS%E3%80%82"><span class="nav-number">4.</span> <span class="nav-text">第三个 SQL 执行计划也变为走全局索引，也用了 DAS。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AE%9E%E9%AA%8C-2%EF%BC%9ASQL-%E6%89%A7%E8%A1%8C%E4%BC%98%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">3. 实验 2：SQL 执行优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E7%AE%A1%E7%90%86"><span class="nav-number">5.1.</span> <span class="nav-text">3.1 执行计划管理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SPM-%E6%8E%A5%E5%8F%97-BASELINE-%E5%90%8E%EF%BC%8C%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E8%A2%AB%E6%B8%85%E7%A9%BA%E4%BA%86%E3%80%82BASELINE-%E9%87%8C%E5%A4%9A%E4%BA%86%E4%B8%80%E7%AC%94%E8%AE%B0%E5%BD%95%E3%80%82"><span class="nav-number">6.</span> <span class="nav-text">SPM 接受 BASELINE 后，执行计划被清空了。BASELINE 里多了一笔记录。</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-07-15-dewu-oceanbase-sql-hint-tuning/" rel="bookmark">
+        <time class="popular-posts-time">2026-07-15</time>
+        <br>
+      复杂SQL优化200倍的背后：得物OceanBase执行计划与Hint调优实战
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-07-22-obcp-v4-mock-exam-analysis/" rel="bookmark">
+        <time class="popular-posts-time">2025-07-22</time>
+        <br>
+      OBCP V4 官网模拟题分析（含答案）
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-06-20-ai-agent-database-ops/" rel="bookmark">
+        <time class="popular-posts-time">2025-06-20</time>
+        <br>
+      大模型VS小模型：论国产数据库运维AI Agent的正确打开方式
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-14</time>
+        <br>
+      OceanBase obdumper 原理研究和问题处理经验
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-29</time>
+        <br>
+      GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OBCP V4 实验模拟题详解 —— 数据库开发设计与优化 | Longda's Interesting World">
+      <meta itemprop="description" content="OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OBCP V4 实验模拟题详解 —— 数据库开发设计与优化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-10 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-10T07:30:00+08:00">2026-09-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">庆涛</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>8.4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>31 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OBCP V4 实验模拟题详解 —— 数据库开发设计与优化","description":"OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。","image":"https://ilongda.com/img/obcp-v4-development-optimization/01.png","wordCount":8722,"datePublished":"2026-09-09T23:30:00.000Z","dateModified":"2026-09-17T18:52:43.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/"},"url":"https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/","inLanguage":"zh-CN","keywords":["OceanBase","SQL优化","OBCP","执行计划","SPM","统计信息"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OBCP V4 实验模拟题详解 —— 数据库开发设计与优化","item":"https://ilongda.com/2026/2026-09-10-obcp-v4-development-optimization/"}]}</script>
+<p>OBCP V4 数据库开发设计与优化实验详解，从OceanBase集群准备出发，分析分布式执行计划、索引与调优、OUTLINE、SPM和统计信息，并补充实验操作之外的实践经验。</p>
+<blockquote>
+<p>这篇文章中，庆涛大佬会为大家详细分析一批 OBCP V4 的实验模拟题目，他还贴心地增加了很多批注和实验手册里没有的内容，分享了大量在实验考试题目以外的 OceanBase 数据库开发设计与优化方面的经验与思考。</p>
+<p>希望大家都能把 OceanBase 数据库给运维的服服贴贴~ </p>
+</blockquote>
+<p><img src="/img/obcp-v4-development-optimization/01.png" alt="OceanBase OBCP内容讲解图1" decoding="async"></p>
+<span id="more"></span>
+
+<p>OBCP V4 考试有两场。第一场是在考点上机考理论题，第二场是在自己电脑上在线考实验题。OBCP V4 官方给出了 5 个 实验操作手册和实验环境。</p>
+<p><img src="/img/obcp-v4-development-optimization/02.png" alt="OceanBase OBCP内容讲解图2" loading="lazy" decoding="async"></p>
+<p>实验环境是利用了阿里云 ECS 资源，每个实验独立的一套实验环境，每个实验环境的有效期是 3~4 小时。一旦激活了实验环境，就要尽快用完，否则到期了自动被释放了。</p>
+<p>不过做这个五个实验，也不一定要用官方的实验环境。自己有 4C16G 的虚拟机 1-3 台 也可以做大部分实验。本文说的是其中的数据库开发设计与优化实验。是为了验证 OB 分布式特性、执行计划分析和调优、OUTLINE 和 SPM 技术、统计信息等技术。它只需要一个三节点的 OB 集群（2 节点其实也可以），不依赖 OCP。</p>
+<blockquote>
+<p>文中实验地址已替换为文档示例地址，密码已替换为占位符，请根据自己的实验环境修改。</p>
+</blockquote>
+<h2 id="1-OB-环境准备"><a href="#1-OB-环境准备" class="headerlink" title="1. OB 环境准备"></a>1. OB 环境准备</h2><h3 id="1-1-服务器准备"><a href="#1-1-服务器准备" class="headerlink" title="1.1 服务器准备"></a>1.1 服务器准备</h3><p>这里我不用 OCP 部署 OB 集群，3 台虚拟机 4C16G 200G 空间足够了。实验环境的 ECS 也差不多。</p>
+<p>注意：实验环境的 ECS 有公网和内网两个 IP， 部署 OB 集群用内网 IP。</p>
+<p>下面是命令行下做一些 SSH 打通操作。以及清理前面的 OB 环境。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IPS=<span class="string">&quot;192.0.2.11 192.0.2.12 192.0.2.13&quot;</span></span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> <span class="variable">$IPS</span>;<span class="keyword">do</span> <span class="built_in">echo</span> <span class="variable">$ip</span>; ssh-copy-id admin@<span class="variable">$ip</span>; <span class="keyword">done</span></span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> <span class="variable">$IPS</span>;<span class="keyword">do</span> <span class="built_in">echo</span> <span class="variable">$ip</span>; ssh admin@<span class="variable">$ip</span> <span class="string">&quot;/bin/rm -rf /data/&#123;1,log1&#125;/* ; /bin/rm -rf /home/admin/&#123;oceanbase,obproxy&#125;/*&quot;</span> ; <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p><code>1.1.1 OBD 安装</code></p>
+<p>不用 OCP，那么部署 OB 集群就用社区版工具 OBD。OB 单机版交付也依赖这个工具。下载地址在 OB 官网：</p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.oceanbase.com/softwarecenter">https://www.oceanbase.com/softwarecenter</a>  。</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="variable">@server64</span> soft]<span class="comment"># rpm -ivh ob-deploy-4.2.0-1.el7.x86_64.rpm Preparing...                          ################################# [100%]Updating / installing...   1:ob-deploy-4.2.0-1.el7            ################################# [100%]Installation of obd finished successfullyPlease source /etc/profile.d/obd.sh to enable it</span></span><br><span class="line">[root<span class="variable">@server64</span> soft]<span class="comment"># sh /etc/profile.d/obd.sh</span></span><br></pre></td></tr></table></figure>
+<h4 id="1-1-2-OBD-配置文件"><a href="#1-1-2-OBD-配置文件" class="headerlink" title="1.1.2 OBD 配置文件"></a>1.1.2 OBD 配置文件</h4><p>OBD 是自动化部署 OB 集群的软件，设计理念就是通过输入部署配置文件，自动化初始化相关服务器、部署目录和相关软件、初始化 OB 集群和相关参数等。下面这个参数文件是从 OBCP 实验环境复制出来的，稍微修改了一些。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">user:</span></span><br><span class="line">  <span class="attr">username:</span> <span class="string">admin</span></span><br><span class="line">  <span class="attr">password:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">22</span></span><br><span class="line"><span class="attr">oceanbase:</span></span><br><span class="line">  <span class="attr">servers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">server1</span></span><br><span class="line">      <span class="attr">ip:</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.11</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">server2</span></span><br><span class="line">      <span class="attr">ip:</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.12</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">server3</span></span><br><span class="line">      <span class="attr">ip:</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.13</span></span><br><span class="line">  <span class="attr">global:</span></span><br><span class="line">    <span class="attr">cluster_id:</span> <span class="number">1</span></span><br><span class="line">    <span class="attr">memory_limit:</span> <span class="string">14G</span></span><br><span class="line">    <span class="attr">system_memory:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">datafile_size:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">datafile_next:</span> <span class="string">2G</span></span><br><span class="line">    <span class="attr">datafile_maxsize:</span> <span class="string">20G</span></span><br><span class="line">    <span class="attr">log_disk_size:</span> <span class="string">30G</span></span><br><span class="line">    <span class="attr">cpu_count:</span> <span class="number">16</span></span><br><span class="line">    <span class="attr">production_mode:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">enable_syslog_wf:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">max_syslog_file_count:</span> <span class="number">4</span></span><br><span class="line">    <span class="attr">appname:</span> <span class="string">obcluster</span></span><br><span class="line">    <span class="attr">root_password:</span> <span class="string">&#x27;&lt;YOUR_PASSWORD&gt;&#x27;</span></span><br><span class="line">  <span class="attr">server1:</span></span><br><span class="line">    <span class="attr">mysql_port:</span> <span class="number">2881</span></span><br><span class="line">    <span class="attr">rpc_port:</span> <span class="number">2882</span></span><br><span class="line">    <span class="attr">obshell_port:</span> <span class="number">2886</span></span><br><span class="line">    <span class="attr">home_path:</span> <span class="string">/home/admin/oceanbase</span></span><br><span class="line">    <span class="attr">data_dir:</span> <span class="string">/data/1</span></span><br><span class="line">    <span class="attr">redo_dir:</span> <span class="string">/data/log1</span></span><br><span class="line">    <span class="attr">zone:</span> <span class="string">zone1</span></span><br><span class="line">  <span class="attr">server2:</span></span><br><span class="line">    <span class="attr">mysql_port:</span> <span class="number">2881</span></span><br><span class="line">    <span class="attr">rpc_port:</span> <span class="number">2882</span></span><br><span class="line">    <span class="attr">obshell_port:</span> <span class="number">2886</span></span><br><span class="line">    <span class="attr">home_path:</span> <span class="string">/home/admin/oceanbase</span></span><br><span class="line">    <span class="attr">data_dir:</span> <span class="string">/data/1</span></span><br><span class="line">    <span class="attr">redo_dir:</span> <span class="string">/data/log1</span></span><br><span class="line">    <span class="attr">zone:</span> <span class="string">zone2</span></span><br><span class="line">  <span class="attr">server3:</span></span><br><span class="line">    <span class="attr">mysql_port:</span> <span class="number">2881</span></span><br><span class="line">    <span class="attr">rpc_port:</span> <span class="number">2882</span></span><br><span class="line">    <span class="attr">obshell_port:</span> <span class="number">2886</span></span><br><span class="line">    <span class="attr">home_path:</span> <span class="string">/home/admin/oceanbase</span></span><br><span class="line">    <span class="attr">data_dir:</span> <span class="string">/data/1</span></span><br><span class="line">    <span class="attr">redo_dir:</span> <span class="string">/data/log1</span></span><br><span class="line">    <span class="attr">zone:</span> <span class="string">zone3</span></span><br><span class="line"><span class="attr">obproxy:</span></span><br><span class="line">  <span class="attr">depends:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">oceanbase</span></span><br><span class="line">  <span class="attr">servers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.11</span></span><br><span class="line">    <span class="bullet">-</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.12</span></span><br><span class="line">    <span class="bullet">-</span> <span class="number">192.0</span><span class="number">.2</span><span class="number">.13</span></span><br><span class="line">  <span class="attr">global:</span></span><br><span class="line">    <span class="attr">listen_port:</span> <span class="number">2883</span></span><br><span class="line">    <span class="attr">prometheus_listen_port:</span> <span class="number">2884</span></span><br><span class="line">    <span class="attr">home_path:</span> <span class="string">/home/admin/obproxy</span></span><br><span class="line">    <span class="attr">enable_cluster_checkout:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">skip_proxy_sys_private_check:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">enable_strict_kernel_release:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<p>参数文件修改点简要说明：<br>部署用户改到 admin 用户下，目录也调整了。我反对 OB 部署和运行在 root 用户下，不安全。</p>
+<p>相关参数基本不变，文件大小根据磁盘空间大小加大了一些。</p>
+<h3 id="1-2-OBD-部署企业版"><a href="#1-2-OBD-部署企业版" class="headerlink" title="1.2 OBD 部署企业版"></a>1.2 OBD 部署企业版</h3><p>1.2.1 配置 OBD 本地软件仓库</p>
+<ul>
+<li>OBD 支持企业版部署的关键就是要把企业版软件放到本地的 YUM 仓库里。</li>
+</ul>
+<p>obd mirror disable remote<br>obd mirror clone oceanbase-4.2.1.3-103030022024011313.el7.x86_64.rpm obproxy-4.3.1.0-602024090512.el7.x86_64.rpm<br>1.2.2 部署 OB 分布式目录</p>
+<p>这一步只是初始化相关软件目录。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">obd cluster deploy obcluster <span class="operator">-</span>c <span class="number">3</span>ecs<span class="operator">-</span>ob.yaml</span><br><span class="line"></span><br><span class="line">[root<span class="variable">@server64</span> soft]# obd cluster deploy obcluster <span class="operator">-</span>c <span class="number">3</span>ecs<span class="operator">-</span>ob.yaml                                                                                                                                              <span class="operator">+</span><span class="comment">----------------------------------------------------------------------------------------------+|                                           Packages                                           |+------------+-------------+------------------------+------------------------------------------+| Repository | Version/Tag | Release                | Hash                                     |+------------+-------------+------------------------+------------------------------------------+| oceanbase  | 4.2.1.3     | 103030022024011313.el7 | 4c82d4a4f2d824038ece244cccad493b626e6afa || obproxy    | 4.2.1.0     | 20231220145047.el7     | 9b4e22543962ec00bdb15f59c0b1a9b2fb689584 |+------------+-------------+------------------------+------------------------------------------+Repository integrity check okLoad param plugin okOpen ssh connection okInitializes observer work home okInitializes obproxy work home okParameter check okRemote oceanbase-4.2.1.3-103030022024011313.el7-4c82d4a4f2d824038ece244cccad493b626e6afa repository install okRemote oceanbase-4.2.1.3-103030022024011313.el7-4c82d4a4f2d824038ece244cccad493b626e6afa repository lib check okRemote obproxy-4.2.1.0-20231220145047.el7-9b4e22543962ec00bdb15f59c0b1a9b2fb689584 repository install okRemote obproxy-4.2.1.0-20231220145047.el7-9b4e22543962ec00bdb15f59c0b1a9b2fb689584 repository lib check okobcluster deployedPlease execute ` obd cluster start obcluster ` to startTrace ID: 2ba1b4d0-049d-11f1-a480-005056be5b54If you want to view detailed obd logs, please run: obd display-trace 2ba1b4d0-049d-11f1-a480-005056be5b54</span></span><br></pre></td></tr></table></figure>
+<p>1.2.3 初始化 OB 分布式集群<br>这一步初始化 OB 集群。包括安装软件、启动 OBSERVER 并初始化集群。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">obd cluster deploy obcluster -c 3ecs-ob.yaml</span><br><span class="line"></span><br><span class="line">[root@server64 soft]<span class="comment"># obd cluster deploy obcluster -c 3ecs-ob.yaml  +----------------------------------------------------------------------------------------------+|                                           Packages                                           |+------------+-------------+------------------------+------------------------------------------+| Repository | Version/Tag | Release                | Hash                                     |+------------+-------------+------------------------+------------------------------------------+| oceanbase  | 4.2.1.3     | 103030022024011313.el7 | 4c82d4a4f2d824038ece244cccad493b626e6afa || obproxy    | 4.2.1.0     | 20231220145047.el7     | 9b4e22543962ec00bdb15f59c0b1a9b2fb689584 |+------------+-------------+------------------------+------------------------------------------+Repository integrity check okLoad param plugin okOpen ssh connection okInitializes observer work home okInitializes obproxy work home okParameter check okRemote oceanbase-4.2.1.3-103030022024011313.el7-4c82d4a4f2d824038ece244cccad493b626e6afa repository install okRemote oceanbase-4.2.1.3-103030022024011313.el7-4c82d4a4f2d824038ece244cccad493b626e6afa repository lib check okRemote obproxy-4.2.1.0-20231220145047.el7-9b4e22543962ec00bdb15f59c0b1a9b2fb689584 repository install okRemote obproxy-4.2.1.0-20231220145047.el7-9b4e22543962ec00bdb15f59c0b1a9b2fb689584 repository lib check okobcluster deployedPlease execute ` obd cluster start obcluster ` to startTrace ID: 2ba1b4d0-049d-11f1-a480-005056be5b54If you want to view detailed obd logs, please run: obd display-trace 2ba1b4d0-049d-11f1-a480-005056be5b54</span></span><br><span class="line">[root@server64 soft]<span class="comment"># </span></span><br><span class="line">[root@server64 soft]<span class="comment"># </span></span><br><span class="line">[root@server64 soft]<span class="comment"># </span></span><br><span class="line">[root@server64 soft]<span class="comment"># obd cluster start obclusterGet local repositories okLoad cluster param plugin okOpen ssh connection ok[WARN] OBD-1007: (192.0.2.11) The recommended number of stack size is unlimited (Current value: 10240)[WARN] OBD-1007: (192.0.2.12) The recommended number of stack size is unlimited (Current value: 10240)[WARN] OBD-1007: (192.0.2.13) The recommended number of stack size is unlimited (Current value: 10240)[WARN] OBD-2000: (192.0.2.11) not enough memory. (Free: 13G, Need: 14G)[WARN] OBD-2000: (192.0.2.12) not enough memory. (Free: 13G, Need: 14G)cluster scenario: NoneStart observer okobserver program health check okConnect to observer 192.0.2.11:2881 okoceanbase bootstrap okstart obproxy okobproxy program health check okConnect to obproxy okConnect to observer 192.0.2.11:2881 okWait for observer init ok+---------------------------------------------+|                  oceanbase                  |+-----------+---------+------+-------+--------+| ip        | version | port | zone  | status |+-----------+---------+------+-------+--------+| 192.0.2.11 | 4.2.1.3 | 2881 | zone1 | ACTIVE || 192.0.2.12 | 4.2.1.3 | 2881 | zone2 | ACTIVE || 192.0.2.13 | 4.2.1.3 | 2881 | zone3 | ACTIVE |+-----------+---------+------+-------+--------+obclient -h192.0.2.11 -P2881 -uroot@sys -p&#x27;&lt;YOUR_PASSWORD&gt;&#x27; -Doceanbase -A</span></span><br><span class="line">cluster unique <span class="built_in">id</span>: d623521d-4f9b-5591-b7f4-77136d0f19b2-19c3b493cd1-03010204</span><br><span class="line">Connect to obproxy ok+---------------------------------------------+|                   obproxy                   |+-----------+------+-----------------+--------+| ip        | port | prometheus_port | status |+-----------+------+-----------------+--------+| 192.0.2.11 | 2883 | 2884            | active || 192.0.2.12 | 2883 | 2884            | active || 192.0.2.13 | 2883 | 2884            | active |+-----------+------+-----------------+--------+obclient -h192.0.2.11 -P2883 -uroot@proxysys -p<span class="string">&#x27;uYEWhByREG&#x27;</span> -Doceanbase -A </span><br><span class="line">obcluster runningTrace ID: c8e8669e-049d-11f1-a83b-005056be5b54If you want to view detailed obd logs, please run: obd display-trace c8e8669e-049d-11f1-a83b-005056be5b54</span><br></pre></td></tr></table></figure>
+<p>根据上面连接信息，连接集群 SYS 租户。查看相关资源。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.13 -P2883 -uroot@sys<span class="comment">#obcluster -p&#x27;&lt;YOUR_PASSWORD&gt;&#x27; -Doceanbase -c -A</span></span><br><span class="line">obclient [oceanbase]&gt; <span class="keyword">select</span> zone,svr_ip,status, build_version from __all_server;</span><br><span class="line">+-------+-----------+--------+-------------------------------------------------------------------------------------------+| zone  | svr_ip    | status | build_version                                                                             |+-------+-----------+--------+-------------------------------------------------------------------------------------------+| zone1 | 192.0.2.11 | ACTIVE | 4.2.1.3_103030022024011313-c6afef2be5748fc54b1b0159b5224ae288491424(Jan 13 2024 13:36:43) || zone2 | 192.0.2.12 | ACTIVE | 4.2.1.3_103030022024011313-c6afef2be5748fc54b1b0159b5224ae288491424(Jan 13 2024 13:36:43) || zone3 | 192.0.2.13 | ACTIVE | 4.2.1.3_103030022024011313-c6afef2be5748fc54b1b0159b5224ae288491424(Jan 13 2024 13:36:43) |+-------+-----------+--------+-------------------------------------------------------------------------------------------+3 rows <span class="keyword">in</span> <span class="built_in">set</span> (0.008 sec)</span><br><span class="line"></span><br><span class="line">SELECT SVR_IP, CPU_CAPACITY, CPU_CAPACITY_MAX, CONCAT(ROUND(MEMORY_LIMIT / 1024 / 1024 / 1024, 1), <span class="string">&#x27; GB&#x27;</span>) AS MEMORY_LIMIT , CONCAT(ROUND(MEM_CAPACITY / 1024 / 1024 / 1024, 1), <span class="string">&#x27; GB&#x27;</span> ) AS MEN_CAPACITYFROM GV<span class="variable">$OB_SERVERS</span>;</span><br><span class="line">+-----------+--------------+------------------+--------------+--------------+| SVR_IP    | CPU_CAPACITY | CPU_CAPACITY_MAX | MEMORY_LIMIT | MEN_CAPACITY |+-----------+--------------+------------------+--------------+--------------+| 192.0.2.11 |           16 |               16 | 14.0 GB      | 12.0 GB      || 192.0.2.12 |           16 |               16 | 14.0 GB      | 12.0 GB      || 192.0.2.13 |           16 |               16 | 14.0 GB      | 12.0 GB      |+-----------+--------------+------------------+--------------+--------------+3 rows <span class="keyword">in</span> <span class="built_in">set</span> (0.008 sec)</span><br></pre></td></tr></table></figure>
+<p>1.2.4 创建 OB 测试租户<br>手动创建业务租户。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#创建unit资源规格<span class="keyword">CREATE</span> RESOURCE UNIT unit1 MAX_CPU <span class="number">4</span>, MEMORY_SIZE <span class="string">&#x27;8G&#x27;</span>;</span><br><span class="line">#创建resource pool资源池<span class="keyword">CREATE</span> RESOURCE POOL pool1 UNIT<span class="operator">=</span><span class="string">&#x27;unit1&#x27;</span>, UNIT_NUM<span class="operator">=</span><span class="number">1</span>, ZONE_LIST<span class="operator">=</span>(<span class="string">&#x27;zone1&#x27;</span>,<span class="string">&#x27;zone2&#x27;</span>,<span class="string">&#x27;zone3&#x27;</span>);</span><br><span class="line">#创建test租户<span class="keyword">CREATE</span> TENANT test PRIMARY_ZONE<span class="operator">=</span><span class="string">&#x27;zone1,zone2,zone3&#x27;</span>, RESOURCE_POOL_LIST<span class="operator">=</span>(<span class="string">&#x27;pool1&#x27;</span>), CHARSET<span class="operator">=</span><span class="string">&#x27;utf8mb4&#x27;</span> <span class="keyword">SET</span> ob_tcp_invited_nodes <span class="keyword">TO</span> <span class="string">&#x27;%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>检查租户。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> tenant_id, tenant_name, tenant_type, primary_zone, status ,tenant_role,COMPATIBILITY_MODE <span class="keyword">FROM</span> dba_ob_tenants;</span><br><span class="line">obclient [oceanbase]<span class="operator">&gt;</span> <span class="keyword">SELECT</span> tenant_id, tenant_name, tenant_type, primary_zone, status ,tenant_role <span class="keyword">FROM</span> dba_ob_tenants;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+-------------+-------------+-------------------+--------+-------------+| tenant_id | tenant_name | tenant_type | primary_zone      | status | tenant_role |+-----------+-------------+-------------+-------------------+--------+-------------+|         1 | sys         | SYS         | RANDOM            | NORMAL | PRIMARY     ||      1003 | META$1004   | META        | zone1,zone2,zone3 | NORMAL | PRIMARY     ||      1004 | test        | USER        | zone1,zone2,zone3 | NORMAL | PRIMARY     |+-----------+-------------+-------------+-------------------+--------+-------------+3 rows in set (0.022 sec)</span></span><br></pre></td></tr></table></figure>
+<p>设置测试租户的 root 用户密码和测试账户信息。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.13 -P2883 -uroot@<span class="built_in">test</span><span class="comment">#obcluster -p -Doceanbase -c -AEnter password: Welcome to the OceanBase.  Commands end with ; or \g.Your OceanBase connection id is 816Server version: OceanBase 4.2.1.3 (r103030022024011313-c6afef2be5748fc54b1b0159b5224ae288491424) (Built Jan 13 2024 13:36:43)</span></span><br><span class="line">Copyright (c) 2000, 2018, OceanBase and/or its affiliates. All rights reserved.</span><br><span class="line">Type <span class="string">&#x27;help;</span></span><br><span class="line"><span class="string">&#x27;</span> or <span class="string">&#x27;\h&#x27;</span> <span class="keyword">for</span> <span class="built_in">help</span>. Type <span class="string">&#x27;\c&#x27;</span> to clear the current input statement.</span><br><span class="line">obclient [oceanbase]&gt; <span class="built_in">set</span> password=password(<span class="string">&#x27;&lt;YOUR_PASSWORD&gt;&#x27;</span>);</span><br><span class="line">Query OK, 0 rows affected (0.081 sec)</span><br><span class="line">obclient [oceanbase]&gt; create user tuser identified by <span class="string">&#x27;&lt;YOUR_PASSWORD&gt;&#x27;</span>;</span><br><span class="line">Query OK, 0 rows affected (0.064 sec)</span><br><span class="line">obclient [oceanbase]&gt; grant all privileges on *.* to tuser;</span><br><span class="line">Query OK, 0 rows affected (0.088 sec)</span><br></pre></td></tr></table></figure>
+<p>设置租户参数和变量。</p>
+<p>下面这些租户参数和变量的设置是实验手册里没有，设置这些参数是为了提升后面初始化数据性能，同时也增加执行计划实验时成功概率。参数和变量的作用在 OBCP V4 课程里有介绍。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> writing_throttling_trigger_percentage<span class="operator">=</span><span class="number">90</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> freeze_trigger_percentage<span class="operator">=</span><span class="number">50</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> ob_sql_audit_percentage<span class="operator">=</span><span class="number">10</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> ob_sql_work_area_percentage<span class="operator">=</span><span class="number">10</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> ob_plan_cache_percentage<span class="operator">=</span><span class="number">10</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> optimizer_dynamic_sampling<span class="operator">=</span><span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="至此，实验环境准备好了。"><a href="#至此，实验环境准备好了。" class="headerlink" title="至此，实验环境准备好了。"></a>至此，实验环境准备好了。</h2><h2 id="2-实验1：分布式对象设计"><a href="#2-实验1：分布式对象设计" class="headerlink" title="2. 实验1：分布式对象设计"></a>2. 实验1：分布式对象设计</h2><p>第一个实验是研究分区表和表组的作用以及索引设计的。</p>
+<h3 id="2-1-分区表与表组"><a href="#2-1-分区表与表组" class="headerlink" title="2.1 分区表与表组"></a>2.1 分区表与表组</h3><h4 id="2-1-1-初始化数据"><a href="#2-1-1-初始化数据" class="headerlink" title="2.1.1 初始化数据"></a>2.1.1 初始化数据</h4><p>首先用 sysbench 软件初始化 mysql 租户的测试数据。这跟 sysbench 测试 mysql 方法一样。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">sysbench oltp_read_write <span class="comment">--mysql-host=192.0.2.13 --mysql-port=2883 --mysql-user=tuser@test#obcluster --mysql-password=&lt;YOUR_PASSWORD&gt; --mysql-db=test --db-ps-mode=disable --report-interval=10 --mysql-ignore-errors=6002,6004,4012,2013,4016 --tables=3 --table_size=999999 --threads=10 --time=180 prepare</span></span><br><span class="line"></span><br><span class="line">[root<span class="variable">@server64</span> soft]# sysbench oltp_read_write <span class="comment">--mysql-host=192.0.2.13 --mysql-port=2883 --mysql-user=tuser@test#obcluster --mysql-password=&lt;YOUR_PASSWORD&gt; --mysql-db=test --db-ps-mode=disable --report-interval=10 --mysql-ignore-errors=6002,6004,4012,2013,4016 --tables=3 --table_size=999999 --threads=10 --time=180 preparesysbench 1.0.17 (using system LuaJIT 2.0.4)</span></span><br><span class="line">Initializing worker threads...</span><br><span class="line">Creating <span class="keyword">table</span> <span class="string">&#x27;sbtest1&#x27;</span>...Creating <span class="keyword">table</span> <span class="string">&#x27;sbtest2&#x27;</span>...Creating <span class="keyword">table</span> <span class="string">&#x27;sbtest3&#x27;</span>...Inserting <span class="number">999999</span> records <span class="keyword">into</span> <span class="string">&#x27;sbtest2&#x27;</span>Inserting <span class="number">999999</span> records <span class="keyword">into</span> <span class="string">&#x27;sbtest3&#x27;</span>Inserting <span class="number">999999</span> records <span class="keyword">into</span> <span class="string">&#x27;sbtest1&#x27;</span>Creating a secondary index <span class="keyword">on</span> <span class="string">&#x27;sbtest1&#x27;</span>...Creating a secondary index <span class="keyword">on</span> <span class="string">&#x27;sbtest3&#x27;</span>...Creating a secondary index <span class="keyword">on</span> <span class="string">&#x27;sbtest2&#x27;</span>...</span><br></pre></td></tr></table></figure>
+<p>查看测试表的位置分布。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.13 -P2883 -uroot@<span class="built_in">test</span><span class="comment">#obcluster -p&lt;YOUR_PASSWORD&gt; -Doceanbase -c -A</span></span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role from oceanbase.dba_ob_table_locations <span class="built_in">where</span> database_name=<span class="string">&#x27;test&#x27;</span> and table_name like <span class="string">&#x27;sbtest%&#x27;</span> and role=<span class="string">&#x27;leader&#x27;</span> order by 2,1;</span><br><span class="line">+------------+----------------+-----------+--------+| table_name | partition_name | svr_ip    | role   |+------------+----------------+-----------+--------+| sbtest1    | NULL           | 192.0.2.11 | LEADER || sbtest2    | NULL           | 192.0.2.12 | LEADER || sbtest3    | NULL           | 192.0.2.13 | LEADER |+------------+----------------+-----------+--------+3 rows <span class="keyword">in</span> <span class="built_in">set</span> (0.121 sec)</span><br></pre></td></tr></table></figure>
+<h4 id="2-1-2-研究执行计划"><a href="#2-1-2-研究执行计划" class="headerlink" title="2.1.2 研究执行计划"></a>2.1.2 研究执行计划</h4><p>查看分布式执行计划</p>
+<p>实验主要就是看下面这个三表连接的执行计划。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.13 -P2883 --utuser@<span class="built_in">test</span><span class="comment">#obcluster -p&lt;YOUR_PASSWORD&gt; -Dtest -c -A</span></span><br><span class="line">EXPLAIN EXTENDED <span class="keyword">select</span> count(*) from sbtest1 t1, sbtest2 t2, sbtest3 t3 <span class="built_in">where</span> t1.id=t2.id and t1.id=t3.id and t1.k&lt;&gt;t2.k and t1.k&lt;&gt;t3.k;</span><br></pre></td></tr></table></figure>
+<p>这三个表连接，且连接条件都是主键。默认情况下，其执行计划类型是分布式执行计划，关键字：<code>DISTRIBUTED</code> .<br><img src="/img/obcp-v4-development-optimization/03.png" alt="研究执行计划讲解图3" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/04.png" alt="研究执行计划讲解图4" loading="lazy" decoding="async"></p>
+<p>上面看的是解析执行计划，我们也可以看实际执行计划。这里用到一些诀窍。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="variable">@last_trace_id</span> <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> sbtest1 t1, sbtest2 t2, sbtest3 t3 <span class="keyword">where</span> t1.id<span class="operator">=</span>t2.id <span class="keyword">and</span> t1.id<span class="operator">=</span>t3.id <span class="keyword">and</span> t1.k<span class="operator">&lt;&gt;</span>t2.k <span class="keyword">and</span> t1.k<span class="operator">&lt;&gt;</span>t3.k;</span><br><span class="line"><span class="keyword">select</span> last_trace_id() <span class="keyword">into</span> <span class="variable">@last_trace_id</span> ;</span><br><span class="line"><span class="keyword">select</span> svr_ip,svr_port,sid,sql_id,plan_id,plan_type,elapsed_time,query_sql,trace_id <span class="keyword">from</span> oceanbase.GV$OB_SQL_AUDIT <span class="keyword">where</span> request_type <span class="keyword">in</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>) <span class="keyword">and</span> db_name <span class="operator">=</span> <span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> trace_id<span class="operator">=</span> <span class="variable">@last_trace_id</span> <span class="keyword">order</span> <span class="keyword">by</span> request_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p>输出如下图：<br><img src="/img/obcp-v4-development-optimization/05.png" alt="研究执行计划讲解图5" loading="lazy" decoding="async"></p>
+<p>第一次运行的输出会看到内部 SQL，后面反复运行时，输出结果就跟我这里一致。<br>2.1.3 配置负载均衡和表组</p>
+<ul>
+<li>这个执行计划是有优化空间的，因为三表连接字段都是主键 ID 。看是否能优化为本地执行计划。这里先用到表组技术。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#将负载均衡的调度时间间隔改为<span class="number">10</span>秒：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">system</span> <span class="keyword">set</span> partition_balance_schedule_interval<span class="operator">=</span><span class="string">&#x27;10s&#x27;</span>;</span><br><span class="line">#创建sharding<span class="operator">=</span><span class="string">&#x27;NONE&#x27;</span>的表组：</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span><span class="keyword">group</span> tbg1 sharding<span class="operator">=</span><span class="string">&#x27;NONE&#x27;</span>;</span><br><span class="line">#将sbtest1,sbtest2,sbtest3加入到表组中：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span><span class="keyword">group</span> tbg1 <span class="keyword">add</span> <span class="keyword">table</span> sbtest1,sbtest2,sbtest3;</span><br><span class="line">#等待<span class="number">20</span>秒，让自动负载均衡完成分区均衡：</span><br><span class="line"><span class="keyword">select</span> <span class="comment">/*+ query_timeout(60000000)*/</span> sleep(<span class="number">20</span>);</span><br><span class="line"><span class="keyword">SELECT</span> job_id, create_time, finish_time, balance_strategy, job_type, target_unit_num, target_primary_zone_num, status <span class="keyword">FROM</span> oceanbase.DBA_OB_BALANCE_JOB_HISTORY <span class="keyword">ORDER</span> <span class="keyword">BY</span> job_id <span class="keyword">DESC</span> LIMIT <span class="number">3</span>;</span><br><span class="line">#查看负载均衡的结果，三张表被放到了同一台OBServer上：</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span> <span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>这里将分区负载均衡调度间隔调小为 10 秒，所以等了 20 秒让租户内分区均衡发生。<br>再看 SQL 的执行计划。<br><img src="/img/obcp-v4-development-optimization/06.png" alt="研究执行计划讲解图6" loading="lazy" decoding="async"></p>
+<p>此时执行计划就变为本地执行计划。</p>
+<p>其原因是表组 SHARDING&#x3D;NONE 会尽可能把所有分区的主副本聚集在一个节点上，最终呈现一个本地执行计划。</p>
+<p><img src="/img/obcp-v4-development-optimization/07.png" alt="研究执行计划讲解图7" loading="lazy" decoding="async"></p>
+<p>具体执行计划是三个表在同一个节点上 先后 MERGE JOIN 。</p>
+<p>2.1.4 单表变分区表改造</p>
+<p>接下来让情况稍微负载一点，把三个表变为分区表，目前 OB 4.2 已经支持非分区表变更为分区表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#在改变分区规则前，先将sbtest1,sbtest2,sbtest3从原来的表组中删除：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line">#创建sharding<span class="operator">=</span><span class="string">&#x27;PARTITION&#x27;</span>的表组：</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span><span class="keyword">group</span> tbg2 sharding<span class="operator">=</span><span class="string">&#x27;PARTITION&#x27;</span>;</span><br><span class="line">#修改sbtest1,sbtest2,sbtest3为hash分区表：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">partition</span> <span class="keyword">by</span> hash(id) partitions <span class="number">9</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">partition</span> <span class="keyword">by</span> hash(id) partitions <span class="number">9</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">partition</span> <span class="keyword">by</span> hash(id) partitions <span class="number">9</span>;</span><br><span class="line">#将sbtest1,sbtest2,sbtest3加入到新的表组：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span><span class="keyword">group</span> tbg2 <span class="keyword">add</span> <span class="keyword">table</span> sbtest1,sbtest2,sbtest3;</span><br><span class="line">#等待<span class="number">20</span>秒，让自动负载均衡完成分区均衡：</span><br><span class="line"><span class="keyword">select</span> <span class="comment">/*+ query_timeout(60000000)*/</span> sleep(<span class="number">20</span>);</span><br><span class="line">#查看负载均衡的结果，三张表的相同分区汇聚在了一起，不同分区分散到<span class="number">3</span>台OBServer上：</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span><span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>再次看 SQL 的执行计划。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="variable">@last_trace_id</span> <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> sbtest1 t1, sbtest2 t2, sbtest3 t3 <span class="keyword">where</span> t1.id<span class="operator">=</span>t2.id <span class="keyword">and</span> t1.id<span class="operator">=</span>t3.id <span class="keyword">and</span> t1.k<span class="operator">&lt;&gt;</span>t2.k <span class="keyword">and</span> t1.k<span class="operator">&lt;&gt;</span>t3.k;</span><br><span class="line"><span class="keyword">select</span> last_trace_id() <span class="keyword">into</span> <span class="variable">@last_trace_id</span> ;</span><br><span class="line"><span class="keyword">select</span> svr_ip,svr_port,sid,sql_id,plan_id,plan_type,elapsed_time,query_sql,trace_id <span class="keyword">from</span> oceanbase.GV$OB_SQL_AUDIT <span class="keyword">where</span> request_type <span class="keyword">in</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>) <span class="keyword">and</span> db_name <span class="operator">=</span> <span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> trace_id<span class="operator">=</span> <span class="variable">@last_trace_id</span> <span class="keyword">order</span> <span class="keyword">by</span> request_time <span class="keyword">DESC</span> \G</span><br><span class="line"><span class="keyword">select</span> dbms_xplan.display_cursor(<span class="number">1224</span>,<span class="string">&#x27;typical&#x27;</span>,<span class="string">&#x27;192.0.2.13&#x27;</span>,<span class="number">2882</span>);</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/08.png" alt="研究执行计划讲解图8" loading="lazy" decoding="async"></p>
+<p>此时执行计划又变为分布式执行计划。具体执行计划如下。</p>
+<p><img src="/img/obcp-v4-development-optimization/09.png" alt="研究执行计划讲解图9" loading="lazy" decoding="async"></p>
+<p>不过跟之前不一样的是三个表的连接是在同一个节点上的，并且是分区间的并行连接，这是最好的执行计划，既规避了跨节点的 JOIN， 又发挥了分区表的分区并行能力。它有个名字叫： PARTITION WISE JOIN 。</p>
+<p>2.1.5 分区表策略变更： HASH 变 RANGE</p>
+<p>接下来要做的是将 HASH 分区表变更为 RANGE 分区表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#在改变分区规则前，先将sbtest1,sbtest2,sbtest3从表组tbg2中删除：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">set</span> tablegroup<span class="operator">=</span><span class="string">&#x27;&#x27;</span>;</span><br><span class="line">#修改sbtest1,sbtest2,sbtest3为<span class="keyword">range</span>分区表：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">partition</span> <span class="keyword">by</span> <span class="keyword">range</span>(id)(<span class="keyword">partition</span> p0 <span class="keyword">values</span> less than (<span class="number">100000</span>),<span class="keyword">partition</span> p1 <span class="keyword">values</span> less than (<span class="number">200000</span>),<span class="keyword">partition</span> p2 <span class="keyword">values</span> less than (<span class="number">300000</span>),<span class="keyword">partition</span> p3 <span class="keyword">values</span> less than (<span class="number">400000</span>),<span class="keyword">partition</span> p4 <span class="keyword">values</span> less than (<span class="number">500000</span>),<span class="keyword">partition</span> p5 <span class="keyword">values</span> less than (<span class="number">600000</span>),<span class="keyword">partition</span> p6 <span class="keyword">values</span> less than (<span class="number">700000</span>),<span class="keyword">partition</span> p7 <span class="keyword">values</span> less than (<span class="number">800000</span>),<span class="keyword">partition</span> p8 <span class="keyword">values</span> less than (<span class="number">900000</span>),<span class="keyword">partition</span> p9 <span class="keyword">values</span> less than (<span class="number">1000000</span>));</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">partition</span> <span class="keyword">by</span> <span class="keyword">range</span>(id)(<span class="keyword">partition</span> p0 <span class="keyword">values</span> less than (<span class="number">100000</span>),<span class="keyword">partition</span> p1 <span class="keyword">values</span> less than (<span class="number">200000</span>),<span class="keyword">partition</span> p2 <span class="keyword">values</span> less than (<span class="number">300000</span>),<span class="keyword">partition</span> p3 <span class="keyword">values</span> less than (<span class="number">400000</span>),<span class="keyword">partition</span> p4 <span class="keyword">values</span> less than (<span class="number">500000</span>),<span class="keyword">partition</span> p5 <span class="keyword">values</span> less than (<span class="number">600000</span>),<span class="keyword">partition</span> p6 <span class="keyword">values</span> less than (<span class="number">700000</span>),<span class="keyword">partition</span> p7 <span class="keyword">values</span> less than (<span class="number">800000</span>),<span class="keyword">partition</span> p8 <span class="keyword">values</span> less than (<span class="number">900000</span>),<span class="keyword">partition</span> p9 <span class="keyword">values</span> less than (<span class="number">1000000</span>));</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">partition</span> <span class="keyword">by</span> <span class="keyword">range</span>(id)(<span class="keyword">partition</span> p0 <span class="keyword">values</span> less than (<span class="number">100000</span>),<span class="keyword">partition</span> p1 <span class="keyword">values</span> less than (<span class="number">200000</span>),<span class="keyword">partition</span> p2 <span class="keyword">values</span> less than (<span class="number">300000</span>),<span class="keyword">partition</span> p3 <span class="keyword">values</span> less than (<span class="number">400000</span>),<span class="keyword">partition</span> p4 <span class="keyword">values</span> less than (<span class="number">500000</span>),<span class="keyword">partition</span> p5 <span class="keyword">values</span> less than (<span class="number">600000</span>),<span class="keyword">partition</span> p6 <span class="keyword">values</span> less than (<span class="number">700000</span>),<span class="keyword">partition</span> p7 <span class="keyword">values</span> less than (<span class="number">800000</span>),<span class="keyword">partition</span> p8 <span class="keyword">values</span> less than (<span class="number">900000</span>),<span class="keyword">partition</span> p9 <span class="keyword">values</span> less than (<span class="number">1000000</span>));</span><br><span class="line">#将sbtest1,sbtest2,sbtest3重新加回表组：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span><span class="keyword">group</span> tbg2 <span class="keyword">add</span> <span class="keyword">table</span> sbtest1,sbtest2,sbtest3;</span><br><span class="line">#等待<span class="number">20</span>秒，让自动负载均衡完成分区均衡：</span><br><span class="line"><span class="keyword">select</span> <span class="comment">/*+ query_timeout(60000000)*/</span> sleep(<span class="number">20</span>);</span><br><span class="line">#查看负载均衡的结果，三张表的相同分区汇聚在了一起，不同分区分散到<span class="number">3</span>台OBServer上：</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span><span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>同号分区的主副本分布在同一个节点上。只不过节点 65 上的 LEADER 分区数量会比 61 和 62 多 3 个。不算特别均衡，但符合预期（10 个均衡组，3个节点，自然无法均衡）。<br><img src="/img/obcp-v4-development-optimization/10.png" alt="研究执行计划讲解图10" loading="lazy" decoding="async"></p>
+<p>2.1.6 分区维护。先测试清理分区数据的方法，最快的是 truncate partition 。此外，测试删除和新增分区，人为导致 三个分区表的分区数量不一致。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">truncate</span> <span class="keyword">partition</span> p0;</span><br><span class="line">#在修改前，查看分区的位置分布：</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span><span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br><span class="line">#对sbtest1、sbtest2删除分区p0，对sbtest2、sbtest3增加分区p10：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">drop</span> <span class="keyword">partition</span> p0;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">drop</span> <span class="keyword">partition</span> p0;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest2 <span class="keyword">add</span> <span class="keyword">partition</span> (<span class="keyword">partition</span> p10 <span class="keyword">values</span> less than(<span class="number">1100000</span>));</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">add</span> <span class="keyword">partition</span> (<span class="keyword">partition</span> p10 <span class="keyword">values</span> less than(<span class="number">1100000</span>));</span><br><span class="line"><span class="keyword">select</span> <span class="comment">/*+ query_timeout(60000000)*/</span> sleep(<span class="number">20</span>);</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span><span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>此时三个分区表的分区数分别为 9，10，11 个。11 个均衡组三个节点分，最佳布局是 4-4-3 。<br><img src="/img/obcp-v4-development-optimization/11.png" alt="研究执行计划讲解图11" loading="lazy" decoding="async"></p>
+<p><code>观察三个节点上的 LEADER 副本数量和均衡组分布，61 62 65 分别有 4个、4个、5个。p10 所在的分区没有约束在一个节点内部。</code></p>
+<p>把表 sbtest1 补一个分区，表 sbtest3 删除一个分区后。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#对sbtest3删除分区p0，对sbtest1增加分区p10，让<span class="number">3</span>个表的分区定义再次一致：</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest3 <span class="keyword">drop</span> <span class="keyword">partition</span> p0;</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">add</span> <span class="keyword">partition</span> (<span class="keyword">partition</span> p10 <span class="keyword">values</span> less than(<span class="number">1100000</span>));</span><br><span class="line"><span class="keyword">select</span> <span class="comment">/*+ query_timeout(60000000)*/</span> sleep(<span class="number">20</span>);</span><br><span class="line"><span class="keyword">select</span> table_name, partition_name, svr_ip, role <span class="keyword">from</span> oceanbase.dba_ob_table_locations <span class="keyword">where</span> database_name<span class="operator">=</span><span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> table_name <span class="keyword">like</span><span class="string">&#x27;sbtest%&#x27;</span> <span class="keyword">and</span> role<span class="operator">=</span><span class="string">&#x27;leader&#x27;</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">2</span>,<span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>此时，3个分区表的同号分区再次在一个节点上，均衡组分布符合预期。</p>
+<p><img src="/img/obcp-v4-development-optimization/12.png" alt="研究执行计划讲解图12" loading="lazy" decoding="async"></p>
+<h3 id="2-2-索引对执行计划影响研究"><a href="#2-2-索引对执行计划影响研究" class="headerlink" title="2.2 索引对执行计划影响研究"></a>2.2 索引对执行计划影响研究</h3><p>2.2.1 初始化数据</p>
+<p>下面给表 sbtest1 在中间插入两列，并初始化数据。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> sbtest1 <span class="keyword">add</span> <span class="keyword">column</span> (name <span class="type">char</span>(<span class="number">30</span>) before k,age <span class="type">int</span> before k) ;</span><br><span class="line"><span class="keyword">show</span> <span class="keyword">create</span> <span class="keyword">table</span> sbtest1\G</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">PROCEDURE</span> IF <span class="keyword">EXISTS</span> UPDATE_NEW_COLUMNS ;</span><br><span class="line">DELIMITER <span class="operator">/</span><span class="operator">/</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">PROCEDURE</span> UPDATE_NEW_COLUMNS( <span class="keyword">IN</span> tableName <span class="type">VARCHAR</span>(<span class="number">255</span>) )BEGINDECLARE i <span class="type">INT</span> <span class="keyword">DEFAULT</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">DECLARE</span> name_value <span class="type">CHAR</span>(<span class="number">30</span>) <span class="keyword">DEFAULT</span> <span class="string">&#x27; &#x27;</span>;</span><br><span class="line"><span class="keyword">DECLARE</span> age_value <span class="type">INT</span> <span class="keyword">DEFAULT</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">DECLARE</span> names_array <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">DEFAULT</span><span class="string">&#x27;John,Mary,David,Linda,James,Susan,Robert,Karen,Michael,Lisa,William,Nancy,Richard,Betty,Charles,Margaret,Joseph,Dorothy,Thomas,Sandra&#x27;</span>;</span><br><span class="line"><span class="keyword">DECLARE</span> name_index <span class="type">INT</span>;</span><br><span class="line">WHILE i <span class="operator">&lt;=</span> <span class="number">40</span> DOSET name_index <span class="operator">=</span> <span class="built_in">FLOOR</span>(RAND() <span class="operator">*</span> <span class="number">20</span>) <span class="operator">+</span> <span class="number">1</span>; <span class="comment">-- 生成 1 到 20 之间的随机索引SET name_value = SUBSTRING_INDEX(SUBSTRING_INDEX(names_array, &#x27;,&#x27;,name_index), &#x27;,&#x27;, -1);</span></span><br><span class="line"><span class="keyword">SET</span> age_value <span class="operator">=</span> <span class="built_in">FLOOR</span>(RAND() <span class="operator">*</span> <span class="number">50</span>) <span class="operator">+</span> <span class="number">18</span>; <span class="comment">-- 生成 18 到 67 之间的随机年龄SET @sql = CONCAT(&#x27;UPDATE &#x27;, tableName, &#x27; SET name=&quot;&#x27;, name_value, &#x27;&quot;, age	= &#x27;, age_value, &#x27; WHERE id%40 = &#x27;, i-1);</span></span><br><span class="line"><span class="keyword">PREPARE</span> stmt <span class="keyword">FROM</span> <span class="variable">@sql</span>;</span><br><span class="line"><span class="keyword">EXECUTE</span> stmt;</span><br><span class="line"><span class="keyword">DEALLOCATE</span> <span class="keyword">PREPARE</span> stmt;</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"><span class="keyword">SET</span> i <span class="operator">=</span> i <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">END</span> WHILE;</span><br><span class="line"><span class="keyword">END</span> <span class="operator">/</span><span class="operator">/</span></span><br><span class="line">DELIMITER ;</span><br><span class="line"></span><br><span class="line">#调用存储过程，执行批量更新<span class="keyword">CALL</span> UPDATE_NEW_COLUMNS(<span class="string">&#x27;sbtest1&#x27;</span>);</span><br><span class="line"> <span class="keyword">SELECT</span> NAME,<span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> sbtest1 <span class="keyword">GROUP</span> <span class="keyword">BY</span> NAME;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+----------+| NAME     | COUNT(*) |+----------+----------+| Michael  |    22500 || William  |    67500 || Susan    |   112500 || Dorothy  |   112500 || Nancy    |    67500 || Betty    |    45000 || Thomas   |    45000 || Margaret |    22500 || Mary     |    67500 || Lisa     |    45000 || Linda    |    67500 || Karen    |    45000 || Robert   |    22500 || Joseph   |    45000 || Sandra   |    22500 || James    |    45000 || Richard  |    45000 |+----------+----------+17 rows in set (0.492 sec)</span></span><br><span class="line">EXPLAIN <span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line">EXPLAIN <span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line">EXPLAIN <span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>然后查看三个 SQL 的执行计划。三个 SQL 前两个 SQL 只是传值不同，第三个少一个 ID 条件。理论上前两个 SQL 解析后 SQL_ID 是一样的。</li>
+</ul>
+<p><img src="/img/obcp-v4-development-optimization/13.png" alt="索引对执行计划影响研究讲解图13" loading="lazy" decoding="async"></p>
+<p>第一个 SQL 居然是远程的执行计划，这跟当前会话的路由节点有关。退出重新登录再看看。</p>
+<p><img src="/img/obcp-v4-development-optimization/14.png" alt="索引对执行计划影响研究讲解图14" loading="lazy" decoding="async"></p>
+<p>果然此时变为本地执行计划，扫描一个分区。并且是主键扫描。</p>
+<p><img src="/img/obcp-v4-development-optimization/15.png" alt="索引对执行计划影响研究讲解图15" loading="lazy" decoding="async"></p>
+<p>第二个 SQL 是分布式执行计划，扫描的是 0 和 1 号分区。前面我们知道这两个分区在同一个节点，但这个执行计划依然是分布式执行计划，因为用了分区间的并行。</p>
+<p><img src="/img/obcp-v4-development-optimization/16.png" alt="索引对执行计划影响研究讲解图16" loading="lazy" decoding="async"></p>
+<p>第三个 SQL 没有做分区裁剪，也是分布式执行计划，扫描了所有分区。</p>
+<p>2.2.2 本地索引测试</p>
+<p>加三个本地索引，分别使用不同的前缀列。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index ix1 <span class="keyword">on</span> sbtest1 (name,age) <span class="keyword">LOCAL</span>;</span><br><span class="line"><span class="keyword">create</span> index ix2 <span class="keyword">on</span> sbtest1 (age,name) <span class="keyword">LOCAL</span>;</span><br><span class="line"><span class="keyword">create</span> index ix3 <span class="keyword">on</span> sbtest1 (id,name,age) <span class="keyword">LOCAL</span>;</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/17.png" alt="索引对执行计划影响研究讲解图17" loading="lazy" decoding="async"></p>
+<p>第一个 SQL 执行计划不变，依然走主键扫描。因为这个条件下去没有数据返回，主键扫描成本更低。</p>
+<p><img src="/img/obcp-v4-development-optimization/18.png" alt="索引对执行计划影响研究讲解图18" loading="lazy" decoding="async"></p>
+<p>第二个 SQL 执行计划也没变，这个跟实验材料有些区别。可能跟数据分布和统计信息有关。</p>
+<p><img src="/img/obcp-v4-development-optimization/19.png" alt="索引对执行计划影响研究讲解图19" loading="lazy" decoding="async"></p>
+<p>第三个 SQL 执行计划发生变化，选了本地索引。依然有并行，还是分布式执行计划。is_global_index&#x3D;false, 表示是本地索引；is_index_back&#x3D;false，表示没有索引回表，因为索引列包含了主键 id 列。</p>
+<p>2.2.3 全局索引测试</p>
+<p>再加一个全局索引。注意：MySQL 租户允许列上有重复的索引，ORACLE 租户不允许。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index ix1_g <span class="keyword">on</span> sbtest1 (name,age) <span class="keyword">GLOBAL</span>;</span><br></pre></td></tr></table></figure>
+<p>再看三个 SQL 的执行计划。<br><img src="/img/obcp-v4-development-optimization/20.png" alt="索引对执行计划影响研究讲解图20" loading="lazy" decoding="async"></p>
+<p>第一个 SQL 执行计划不变，因为有分区裁剪，且没有数据，所以不需要全局索引。</p>
+<p><img src="/img/obcp-v4-development-optimization/21.png" alt="索引对执行计划影响研究讲解图21" loading="lazy" decoding="async"></p>
+<p>第二个 SQL 执行计划变为走全局索引了，看起来是本地执行计划，实际上是用了 DAS ，此时屏蔽了存储层的取数据行为，所以看不出来是分布式执行计划了。is_global_index&#x3D;true 表示是全局索引，is_index_back&#x3D;false 表示没有索引回表。</p>
+<p><img src="/img/obcp-v4-development-optimization/22.png" alt="索引对执行计划影响研究讲解图22" loading="lazy" decoding="async"></p>
+<h2 id="第三个-SQL-执行计划也变为走全局索引，也用了-DAS。"><a href="#第三个-SQL-执行计划也变为走全局索引，也用了-DAS。" class="headerlink" title="第三个 SQL 执行计划也变为走全局索引，也用了 DAS。"></a>第三个 SQL 执行计划也变为走全局索引，也用了 DAS。</h2><h2 id="3-实验-2：SQL-执行优化"><a href="#3-实验-2：SQL-执行优化" class="headerlink" title="3. 实验 2：SQL 执行优化"></a>3. 实验 2：SQL 执行优化</h2><h3 id="3-1-执行计划管理"><a href="#3-1-执行计划管理" class="headerlink" title="3.1 执行计划管理"></a>3.1 执行计划管理</h3><h4 id="3-1-1-Outline-测试"><a href="#3-1-1-Outline-测试" class="headerlink" title="3.1.1 Outline 测试"></a>3.1.1 Outline 测试</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.11 -uroot@<span class="built_in">test</span><span class="comment">#obcluster -P2883 -p&lt;YOUR_PASSWORD&gt; -c -A test</span></span><br><span class="line">EXPLAIN EXTENDED <span class="keyword">select</span>/*+ index(sbtest1 ix1_g)*/ <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;100000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;EXPLAIN EXTENDED <span class="keyword">select</span>/*+ index(sbtest1 ix1_g)*/ <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;EXPLAIN EXTENDED <span class="keyword">select</span>/*+ index(sbtest1 ix1_g)*/ <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;</span><br></pre></td></tr></table></figure>
+<p>首先查看三个 SQL 的 Hint 执行计划中的 OUTLINE DATA 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">use <span class="built_in">test</span>;EXPLAIN EXTENDED <span class="keyword">select</span>/*+ index(sbtest1 ix1_g)*/ <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;</span><br><span class="line">Outline Data:                                                -------------------------------------                          /*+                                                              BEGIN_OUTLINE_DATA                                           INDEX(@<span class="string">&quot;SEL<span class="variable">$1</span>&quot;</span> <span class="string">&quot;test&quot;</span>.<span class="string">&quot;sbtest1&quot;</span>@<span class="string">&quot;SEL<span class="variable">$1</span>&quot;</span> <span class="string">&quot;ix1_g&quot;</span>)             USE_DAS(@<span class="string">&quot;SEL<span class="variable">$1</span>&quot;</span> <span class="string">&quot;test&quot;</span>.<span class="string">&quot;sbtest1&quot;</span>@<span class="string">&quot;SEL<span class="variable">$1</span>&quot;</span>)                   OPTIMIZER_FEATURES_ENABLE(<span class="string">&#x27;4.2.1.0&#x27;</span>)                         END_OUTLINE_DATA                                         */</span><br></pre></td></tr></table></figure>
+<p>然后根据 SQL 文本创建 OUTLINE 。注意，HINT 要紧跟在 SELECT 后面，不要有空格。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> outline otl1 <span class="keyword">on</span> <span class="keyword">select</span><span class="comment">/*+ index(sbtest1 ix1_g)*/</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> oceanbase.DBA_OB_OUTLINES <span class="keyword">where</span> outline_name <span class="operator">=</span> <span class="string">&#x27;otl1&#x27;</span>\G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/23.png" alt="Outline 测试讲解图23" loading="lazy" decoding="async"></p>
+<p>OUTLINE 创建成功后，再看看 SQL 是否使用到 OUTLINE 。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@sql1_host_id</span> :<span class="operator">=</span> host_ip(), <span class="variable">@sql1_trace_id</span> :<span class="operator">=</span> last_trace_id(),connection_id();</span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@sql2_host_id</span> :<span class="operator">=</span> host_ip(), <span class="variable">@sql2_trace_id</span> :<span class="operator">=</span> last_trace_id(),connection_id();</span><br><span class="line"><span class="keyword">select</span> USEC_TO_TIME(request_time) req_time, svr_ip,sid,sql_id,plan_id,plan_type,elapsed_time,query_sql <span class="keyword">from</span> oceanbase.GV$OB_SQL_AUDIT <span class="keyword">where</span> db_name <span class="operator">=</span> <span class="string">&#x27;test&#x27;</span> <span class="keyword">and</span> trace_id <span class="keyword">in</span>(<span class="variable">@sql1_trace_id</span>, <span class="variable">@sql2_trace_id</span>)<span class="keyword">order</span> <span class="keyword">by</span> request_time <span class="keyword">desc</span> limit <span class="number">50</span>;</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, SQL_ID, PLAN_ID, TYPE, STATEMENT, FIRST_LOAD_TIME, LAST_ACTIVE_TIME, OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, HINTS_ALL_WORKED <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> SVR_IP<span class="operator">=</span><span class="string">&#x27;192.0.2.11&#x27;</span> <span class="keyword">AND</span> PLAN_ID<span class="operator">=</span><span class="number">1824</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/24.png" alt="Outline 测试讲解图24" loading="lazy" decoding="async"></p>
+<p>查看 SQL 审计试图，两个 SQL 文本不一样，SQL_ID 一样，执行计划 PLAN_ID 也一样。</p>
+<p><img src="/img/obcp-v4-development-optimization/25.png" alt="Outline 测试讲解图25" loading="lazy" decoding="async"></p>
+<p>查看执行计划缓存统计信息，可以看到这个执行计划用到了 OUTLINE 。通过 SQL 文本创建 OUTLINE 成功概率不高，更多的时候是通过 SQL_ID 去创建 OUTLINE 。<br>接下来是演示当前这个版本的 OB 如何生成 SQL_ID 的。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># STATEMENT_DIGEST_TEXT获得参数化的文本，MD5生成SQL_ID，UPPER转化为大写<span class="keyword">select</span> <span class="built_in">UPPER</span>(MD5(STATEMENT_DIGEST_TEXT(&quot;select id,name,age from sbtest1 where name =&#x27;Margaret&#x27; and age&lt;18&quot;)));</span><br><span class="line"># <span class="keyword">or</span></span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@sql3_host_id</span> :<span class="operator">=</span> host_ip(), <span class="variable">@sql3_trace_id</span> :<span class="operator">=</span> last_trace_id(),connection_id();</span><br><span class="line"><span class="keyword">select</span> svr_ip,svr_port,sid,sql_id,plan_id,plan_type,elapsed_time,query_sql <span class="keyword">from</span> oceanbase.GV$OB_SQL_AUDIT <span class="keyword">where</span> trace_id<span class="operator">=</span> <span class="variable">@sql3_trace_id</span> ;</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/26.png" alt="Outline 测试讲解图26" loading="lazy" decoding="async"></p>
+<p>注：我这个图的 SQL 跟上面 SQL 不一致，所以结果跟实验材料不一致。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">如果你的结果显示两个值不一致，则可能跟 OB 版本有关。这个了解即可，我不建议通过 STATEMENT_DIGEST_TEXT 去生成 SQL_ID 。</span><br><span class="line">接下来演示通过 SQL_ID 和 OUTLINE_DATA 来创建 OUTLINE 。create outline otl2 on &quot;9D827857E23201D96198DB6944874F35&quot; using hint  /*+                                                              BEGIN_OUTLINE_DATA                                           INDEX(@&quot;SEL$1&quot; &quot;test&quot;.&quot;sbtest1&quot;@&quot;SEL$1&quot; &quot;ix1_g&quot;)             USE_DAS(@&quot;SEL$1&quot; &quot;test&quot;.&quot;sbtest1&quot;@&quot;SEL$1&quot;)                   OPTIMIZER_FEATURES_ENABLE(&#x27;4.2.1.0&#x27;)                         END_OUTLINE_DATA                                         */ ;select * from oceanbase.DBA_OB_OUTLINES where outline_name=&#x27;otl2&#x27;\G;</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/27.png" alt="Outline 测试讲解图27" loading="lazy" decoding="async"></p>
+<p>查看 SQL_ID 对应的执行计划缓存，也看到了使用了这个 OUTLINE_ID 。</p>
+<p><img src="/img/obcp-v4-development-optimization/28.png" alt="Outline 测试讲解图28" loading="lazy" decoding="async"></p>
+<p>实验做完后，清理相关索引和 OUTLINE 。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">drop</span> index ix1 <span class="keyword">on</span> sbtest1;</span><br><span class="line"><span class="keyword">drop</span> index ix2 <span class="keyword">on</span> sbtest1;</span><br><span class="line"><span class="keyword">drop</span> index ix3 <span class="keyword">on</span> sbtest1;</span><br><span class="line"><span class="keyword">drop</span> index ix1_g <span class="keyword">on</span> sbtest1;</span><br><span class="line"><span class="keyword">drop</span> outline otl1;</span><br><span class="line"><span class="keyword">drop</span> outline otl2;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> oceanbase.DBA_OB_OUTLINES;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> oceanbase.DBA_SQL_MANAGEMENT_CONFIG ;</span><br></pre></td></tr></table></figure>
+<h4 id="3-1-2-SPM-测试"><a href="#3-1-2-SPM-测试" class="headerlink" title="3.1.2 SPM 测试"></a>3.1.2 SPM 测试</h4><p><img src="/img/obcp-v4-development-optimization/29.png" alt="SPM 测试讲解图29" loading="lazy" decoding="async"></p>
+<p>在做 SPM 测试之前，再次清理之前的索引和 BASELINE （如果有的话）。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">obclient -h192.0.2.11 -uroot@<span class="built_in">test</span><span class="comment">#obcluster -P2883 -p&lt;YOUR_PASSWORD&gt; -c -A test</span></span><br><span class="line">alter table sbtest1 drop index ix1;</span><br><span class="line">alter system flush plan cache global;</span><br><span class="line"><span class="keyword">select</span> DBMS_SPM.DROP_SQL_PLAN_BASELINE(<span class="string">&#x27;test&#x27;</span>,<span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span>,<span class="string">&#x27;16326534133740390936&#x27;</span>);</span><br><span class="line"><span class="keyword">select</span> DBMS_SPM.DROP_SQL_PLAN_BASELINE(<span class="string">&#x27;test&#x27;</span>,<span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span>,<span class="string">&#x27;1645389932264426918&#x27;</span>);</span><br></pre></td></tr></table></figure>
+<p>不开 BASELINE，跑下面测试 SQL。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;%baseline%&#x27;</span>;</span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">SELECT</span> usec_to_time(request_time) req_time, svr_ip,sid, plan_hash, concat( plan_id, <span class="string">&#x27;:&#x27;</span>, plan_type) plan_id, elapsed_time ela_time, query_sql <span class="keyword">FROM</span> oceanbase.GV$OB_SQL_AUDITWHERE request_type <span class="keyword">IN</span> (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>) <span class="keyword">AND</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span><span class="keyword">AND</span> db_name <span class="operator">=</span> <span class="string">&#x27;test&#x27;</span> <span class="keyword">AND</span> request_time <span class="operator">&gt;=</span> time_to_usec(<span class="string">&#x27;2026-2-12 13:15:00&#x27;</span>)<span class="keyword">ORDER</span> <span class="keyword">BY</span> request_time <span class="keyword">DESC</span> ;</span><br><span class="line"><span class="keyword">SELECT</span> CREATED, CREATOR, ORIGIN, SQL_HANDLE,PLAN_NAME, SQL_TEXT,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTEDFROM oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span>\G</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, query_sql <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p>这个 SQL 会将每个 SQL 重跑两次，以消除第一次 SQL 解析时耗时偏大问题。此外，加上 SLEEP(1) 是为了将各个 SQL 执行时间错开。<br>多执行几次 SQL 1，平均耗时还会继续下降。</p>
+<p><img src="/img/obcp-v4-development-optimization/30.png" alt="SPM 测试讲解图30" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/31.png" alt="SPM 测试讲解图31" loading="lazy" decoding="async"></p>
+<p>BASELINE 视图是空的。</p>
+<p><img src="/img/obcp-v4-development-optimization/32.png" alt="SPM 测试讲解图32" loading="lazy" decoding="async"></p>
+<p>当 SQL 2 执行后，会多出一个执行计划，SQL_ID 是一样的。区别是一个是本地执行计划，一个是分布式执行计划。</p>
+<p>注意：PLAN_NAME 不一样，后面有用。PLAN_ID 也不一样，后面每次重新生成执行计划，这个 PLAN_ID 都会变，但是 PLAN_NAME 就这两个。</p>
+<p>会话级别打开 BASELINE 设置。</p>
+<ul>
+<li>optimizer_capture_sql_plan_baselines：表示当新的计划优于基线计划时，是否捕获新的计划作为基线，默认值为 false 。</li>
+<li>optimizer_use_sql_plan_baselines：表示当SQL生成新的计划时是否使用基线计划进行演进，默认值为 false 。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> optimizer_use_sql_plan_baselines <span class="operator">=</span> <span class="keyword">on</span>;</span><br><span class="line"><span class="keyword">SET</span> optimizer_capture_sql_plan_baselines <span class="operator">=</span> <span class="keyword">on</span>;</span><br><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;%baseline%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">SELECT</span> concat(CREATOR, <span class="string">&#x27; : &#x27;</span>, ORIGIN, <span class="string">&#x27; : &#x27;</span>, CREATED) CREATE_INFO,  SQL_HANDLE,PLAN_NAME,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTED, SQL_TEXT <span class="keyword">FROM</span> oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span> \G</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, QUERY_SQL <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/33.png" alt="SPM 测试讲解图33" loading="lazy" decoding="async"></p>
+<p>跑第一个 SQL，捕捉到执行计划存入 BASELINE ，PLAN_NAME 918 结尾，本地执行计划。</p>
+<p><img src="/img/obcp-v4-development-optimization/34.png" alt="SPM 测试讲解图34" loading="lazy" decoding="async"></p>
+<p><code>仔细看的话，开启 SPM 后，执行计划又重新生成了（PLAN_ID 变了）。</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;100000 and name =<span class="string">&#x27;margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/35.png" alt="SPM 测试讲解图35" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/36.png" alt="SPM 测试讲解图36" loading="lazy" decoding="async"></p>
+<p>SQL 重复跑，第二次直接使用缓存的执行计划，耗时更短。</p>
+<p><code>跑第二个 SQL，条件不一样，应该是分布式执行计划。</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);<span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/37.png" alt="SPM 测试讲解图37" loading="lazy" decoding="async"></p>
+<p> BASELINE 捕捉到新的执行计划，PLAN_NAME 936 结尾，分布式执行i计划。</p>
+<p><img src="/img/obcp-v4-development-optimization/38.png" alt="SPM 测试讲解图38" loading="lazy" decoding="async"></p>
+<p><code>此时，执行计划缓存里会有两个执行计划并存，一个本地，一个分布式。</code></p>
+<p>下面开始执行计划演进测试。</p>
+<p>回到原会话。新建索引，从而影响执行计划。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index ix1 <span class="keyword">on</span> sbtest1 (name,age) <span class="keyword">LOCAL</span>;</span><br></pre></td></tr></table></figure>
+<p>重跑第一个 SQL，根据前面经验，它不会用这个索引。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">100000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">SELECT</span> concat(CREATOR, <span class="string">&#x27; : &#x27;</span>, ORIGIN, <span class="string">&#x27; : &#x27;</span>, CREATED) CREATE_INFO,  SQL_HANDLE,PLAN_NAME,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTED, SQL_TEXT <span class="keyword">FROM</span> oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span> \G</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, QUERY_SQL <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/39.png" alt="SPM 测试讲解图39" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/40.png" alt="SPM 测试讲解图40" loading="lazy" decoding="async"></p>
+<p>BASELINE 视图不变，执行计划缓存被清空重新生成了。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;100000 and name =<span class="string">&#x27;margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/41.png" alt="SPM 测试讲解图41" loading="lazy" decoding="async"></p>
+<p>SQL 1 执行计划没有变。</p>
+<p>再跑第二个 SQL。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">SELECT</span> concat(CREATOR, <span class="string">&#x27; : &#x27;</span>, ORIGIN, <span class="string">&#x27; : &#x27;</span>, CREATED) CREATE_INFO,  SQL_HANDLE,PLAN_NAME,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTED, SQL_TEXT <span class="keyword">FROM</span> oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span> \G</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, QUERY_SQL <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/42.png" alt="SPM 测试讲解图42" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/43.png" alt="SPM 测试讲解图43" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/44.png" alt="SPM 测试讲解图44" loading="lazy" decoding="async"></p>
+<p>SQL 2 执行后，出现新的执行计划（PLAN_NAME 287 结尾），并且都在演进中。注意，这个新的执行计划不在 BASELINE 视图中。</p>
+<p>分别查看这三个执行计划的内容。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select dbms_xplan.display_cursor(4576, &#x27;typical&#x27;, &#x27;192.0.2.11&#x27;, 2882)\Gselect dbms_xplan.display_cursor(4584, &#x27;typical&#x27;, &#x27;192.0.2.11&#x27;, 2882)\Gselect dbms_xplan.display_cursor(4587, &#x27;typical&#x27;, &#x27;192.0.2.11&#x27;, 2882)\G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/45.png" alt="SPM 测试讲解图45" loading="lazy" decoding="async"></p>
+<p>计划 1 （对应 PLAN_NAME 936) 是主键扫描（也是全表扫描）。</p>
+<p><img src="/img/obcp-v4-development-optimization/46.png" alt="SPM 测试讲解图46" loading="lazy" decoding="async"></p>
+<p>计划 2 （对应 PLAN_NAME 287）是走了本地索引扫描。</p>
+<p><img src="/img/obcp-v4-development-optimization/47.png" alt="SPM 测试讲解图47" loading="lazy" decoding="async"></p>
+<p>计划 3 （对应PLAN_NAME 918）是主键扫描（也是全表扫描）</p>
+<p>再跑一次 SQL 2 。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id,name,age <span class="keyword">from</span> sbtest1 <span class="keyword">where</span> id<span class="operator">&lt;</span><span class="number">300000</span> <span class="keyword">and</span> name <span class="operator">=</span><span class="string">&#x27;Margaret&#x27;</span> <span class="keyword">and</span> age<span class="operator">&lt;</span><span class="number">18</span>;</span><br><span class="line"><span class="keyword">select</span> sleep(<span class="number">1</span>);</span><br><span class="line"><span class="keyword">SELECT</span> concat(CREATOR, <span class="string">&#x27; : &#x27;</span>, ORIGIN, <span class="string">&#x27; : &#x27;</span>, CREATED) CREATE_INFO,  SQL_HANDLE,PLAN_NAME,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTED, SQL_TEXT <span class="keyword">FROM</span> oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span> \G</span><br><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, QUERY_SQL <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/48.png" alt="SPM 测试讲解图48" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/49.png" alt="SPM 测试讲解图49" loading="lazy" decoding="async"></p>
+<p>看 LAST_ACTIVE_TIME， 知这次  SQL 又走了老的执行计划（计划 1 ）。</p>
+<p>再多跑几次 SQL 2 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);<span class="keyword">select</span> <span class="built_in">id</span>,name,age from sbtest1 <span class="built_in">where</span> <span class="built_in">id</span>&lt;300000 and name =<span class="string">&#x27;Margaret&#x27;</span> and age&lt;18;<span class="keyword">select</span> <span class="built_in">sleep</span>(1);</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/50.png" alt="SPM 测试讲解图50" loading="lazy" decoding="async"></p>
+<p>SQL2 又走了新的执行计划（计划 2 ） 。</p>
+<p>所以 SQL2 多次执行的时候，会出现 2 种执行计划在用。实际上新的执行计划用的次数更多。这就是执行计划演进机制。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT usec_to_time(request_time) req_time, svr_ip, plan_hash, concat( plan_id, &#x27;:&#x27;, plan_type) plan_id, elapsed_time ela_time, query_sql FROM oceanbase.GV$OB_SQL_AUDITWHERE request_type IN (1, 2, 3) AND sql_id=&#x27;9D827857E23201D96198DB6944874F35&#x27;AND db_name = &#x27;test&#x27; AND request_time &gt;= time_to_usec(&#x27;2026-2-12 13:15:00&#x27;)ORDER BY request_time DESC ;</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/51.png" alt="SPM 测试讲解图51" loading="lazy" decoding="async"></p>
+<p>通过 SQL 审计视图也能看出，两个执行计划都有使用<br>最后，接受这个新的执行计划到 BASELINE 。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CALL</span> DBMS_SPM.ACCEPT_SQL_PLAN_BASELINE(<span class="string">&#x27;test&#x27;</span>, <span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span>,<span class="string">&#x27;8344383507633235287&#x27;</span>);</span><br><span class="line"><span class="keyword">SELECT</span> concat(CREATOR, <span class="string">&#x27; : &#x27;</span>, ORIGIN, <span class="string">&#x27; : &#x27;</span>, CREATED) CREATE_INFO,  SQL_HANDLE,PLAN_NAME,  ENABLED, ACCEPTED, FIXED, REPRODUCED, AUTOPURGE, EXECUTIONS, ELAPSED_TIME, CPU_TIME ,scn_to_timestamp((<span class="number">1</span><span class="operator">+</span>last_executed)<span class="operator">*</span><span class="number">1000</span>) LAST_EXECUTED, SQL_TEXT , concat(<span class="string">&#x27;SELECT DBMS_SPM.DROP_SQL_PLAN_BASELINE(&#x27;&#x27;&#x27;</span>, creator, <span class="string">&#x27;&#x27;&#x27;, &#x27;&#x27;&#x27;</span>, sql_handle, <span class="string">&#x27;&#x27;&#x27;, &#x27;&#x27;&#x27;</span>, plan_name , <span class="string">&#x27;&#x27;&#x27;);</span></span><br><span class="line"><span class="string">&#x27;</span>) drop_spm_sqlFROM oceanbase.DBA_SQL_PLAN_BASELINES <span class="keyword">WHERE</span> SQL_TEXT <span class="keyword">LIKE</span> <span class="string">&#x27;select id,name,age from sbtest1%&#x27;</span><span class="keyword">ORDER</span> <span class="keyword">BY</span> created <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/52.png" alt="SPM 测试讲解图52" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/53.png" alt="SPM 测试讲解图53" loading="lazy" decoding="async"></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> SVR_IP, PLAN_ID, PLAN_HASH, TYPE, FIRST_LOAD_TIME, LAST_ACTIVE_TIME,concat(EXECUTIONS, <span class="string">&#x27; : &#x27;</span>, AVG_EXE_USEC, <span class="string">&#x27; us&#x27;</span>) EXEC_INFO,  OUTLINE_ID, OUTLINE_DATA, HINTS_INFO, EVOLUTION, EVO_CPU_TIME, EVO_EXECUTIONS, QUERY_SQL <span class="keyword">FROM</span> oceanbase.GV$OB_PLAN_CACHE_PLAN_STAT <span class="keyword">WHERE</span> sql_id<span class="operator">=</span><span class="string">&#x27;9D827857E23201D96198DB6944874F35&#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> first_load_time <span class="keyword">DESC</span> \G</span><br></pre></td></tr></table></figure>
+<p><img src="/img/obcp-v4-development-optimization/54.png" alt="SPM 测试讲解图54" loading="lazy" decoding="async"></p>
+<h2 id="SPM-接受-BASELINE-后，执行计划被清空了。BASELINE-里多了一笔记录。"><a href="#SPM-接受-BASELINE-后，执行计划被清空了。BASELINE-里多了一笔记录。" class="headerlink" title="SPM 接受 BASELINE 后，执行计划被清空了。BASELINE 里多了一笔记录。"></a>SPM 接受 BASELINE 后，执行计划被清空了。BASELINE 里多了一笔记录。</h2><p>总结</p>
+<p>当业务大量使用分区表并且租户的 PRIMARY_ZONE 是多 ZONE 或者 UNIT_NUM 大于 1 的时候，表组功能可以适当根据业务特点减少一些跨节点的表连接，从而提升性能。 4.2 版本的表组相比 V4 之前的版本更加的灵活，有多个 SHARDING MODE 可以设置。这个功能目前看比较稳定，也很容易掌握。</p>
+<p>SPM 是 4.2.1 新出的功能，是为了避免特殊的业务场景（如大小账户、分页查询）下出现的缓存的执行计划出现性能回退问题。这个实验测试的 SPM 还只是其中一部分场景，已经能看出开启 SPM 后，执行计划管理会变得更复杂一些。</p>
+<p>SPM 并不一定能消除执行计划反复横跳的现象。在 SPM 之前，OB 的 SQL 执行也有反馈机制，如果连续几次执行性能下降，就会重新生成一次执行i计划缓存。OCP 里经常有这种 SQL 执行性能衰退或者执行计划性能衰退的告警。SPM 目前看可能会让这个情形的分析更加复杂。4.2.5 版本的 SPM 在策略上又有所改进，还需要继续测试研究。此外，如果是会话级别的 SPM，会导致 SQL 执行计划被清空重新生成。如果是并行的会话，一个开启 SPM 一个不开启 SPM，都跑同样的 SQL，那么 SQL 的执行计划缓存很有可能会反复被清空并重新生成，即会有很多硬解析。本文还没有测试开启租户全局的 SPM 会怎么样，预计会有大量的 BASELINE 记录生成。分析起来更复杂了。所以，个人建议，除非客户业务正遭遇严重的大小账户带来的性能问题，否则不要无脑地去生产环境开启 SPM 。</p>
+<p><img src="/img/obcp-v4-development-optimization/55.png" alt="SPM 测试讲解图55" loading="lazy" decoding="async"></p>
+<hr>
+<p><img src="/img/obcp-v4-development-optimization/56.gif" alt="SPM 测试讲解图56" loading="lazy" decoding="async"></p>
+<p><img src="/img/obcp-v4-development-optimization/57.png" alt="SPM 测试讲解图57" loading="lazy" decoding="async"></p>
+<p>庆涛大佬干货推荐</p>
+<ul>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247486539&idx=1&sn=1cce16754b2d7809b1de182740498e77&scene=21#wechat_redirect">OBCP V4 官网模拟题分析（含答案）</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247492220&idx=1&sn=6664a82fa34de997a49dd9bddee463d0&scene=21#wechat_redirect">超级干货分享：中小企业使用 OceanBase 实践经验汇总</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247485570&idx=1&sn=8c4cec59ec3658ce1b47482d67861a3b&scene=21#wechat_redirect">OceanBase POC 经验总结</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247487263&idx=1&sn=37f2f0b0b77d66c16e298c9f0d38acc3&scene=21#wechat_redirect">经验分享 —— 在 Ubuntu 虚拟机中部署 OceanBase 数据库</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247487457&idx=1&sn=e78d237ab71140f430e0af8f635c0662&scene=21#wechat_redirect">数据库自动化运维产品 OCP 实践及思考</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247489117&idx=1&sn=d6b6db6663215edd3f33dd91b24bc59c&scene=21#wechat_redirect">深入解析 OceanBase 生态工具链 —— OAT &#x2F; obd &#x2F; OCP &#x2F; obshell</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247484433&idx=1&sn=1eb28dec653f3fb55c9de25768372337&scene=21#wechat_redirect">世事洞明皆学问 —— 如何理解 OB 4.x 版本中的日志流？</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491466&idx=1&sn=c99b53008dcd6b72aa2c9ed0c497c0e9&scene=21#wechat_redirect">OceanBase 奇案分享：是谁拉起了 observer 进程？</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491500&idx=1&sn=5539f981b2849f6552060d3f54cd3d72&scene=21#wechat_redirect">OceanBase 奇案分享：是谁清理了我的备份数据？</a><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect"></a>了解更多</p>
+</li>
+<li><p><img src="/img/obcp-v4-development-optimization/58.png" alt="SPM 测试讲解图58" loading="lazy" decoding="async">添加社区小助手，加入微信交流群~</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/SQL%E4%BC%98%E5%8C%96/" rel="tag"># SQL优化</a>
+              <a href="/tags/OBCP/" rel="tag"># OBCP</a>
+              <a href="/tags/%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" rel="tag"># 执行计划</a>
+              <a href="/tags/SPM/" rel="tag"># SPM</a>
+              <a href="/tags/%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF/" rel="tag"># 统计信息</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-09-oceanbase-ai-lakebase-evolution/" rel="prev" title="从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考">
+                  <i class="fa fa-angle-left"></i> 从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="next" title="GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？">
+                  GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？ <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

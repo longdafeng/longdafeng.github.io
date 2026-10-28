@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Data In The Loop 系列从 Agent 的错误回答出发，讨论观测、评测与运行数据怎样支持优化判断：先追踪检索结果、上下文和工具调用，再用证据评估修改效果，让经验能够用于下一次开发。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我们想和你一起，让 Agent 的优化有据可循">
+<meta property="og:url" content="https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="Data In The Loop 系列从 Agent 的错误回答出发，讨论观测、评测与运行数据怎样支持优化判断：先追踪检索结果、上下文和工具调用，再用证据评估修改效果，让经验能够用于下一次开发。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/01.jpg">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/02.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/03.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/04.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/05.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/06.jpg">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/07.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/08.gif">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/09.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/10.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/11.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/12.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/13.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/14.png">
+<meta property="og:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/15.png">
+<meta property="article:published_time" content="2026-10-19T00:46:28.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:46:28.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Data In The Loop">
+<meta property="article:tag" content="LangChain">
+<meta property="article:tag" content="可观测性">
+<meta property="article:tag" content="评测">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/01.jpg">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/","path":"2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/","title":"我们想和你一起，让 Agent 的优化有据可循"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>我们想和你一起，让 Agent 的优化有据可循 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E4%BB%8E-Agent-%E7%9A%84%E4%B8%80%E4%B8%AA%E9%94%99%E8%AF%AF%E7%9A%84%E5%9B%9E%E7%AD%94%E8%81%8A%E8%B5%B7"><span class="nav-number">2.</span> <span class="nav-text">先从 Agent 的一个错误的回答聊起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BD%95%E6%8A%8A-%E2%80%9CData%E2%80%9D-%E6%94%BE%E5%9C%A8%E4%B8%93%E9%A2%98%E7%9A%84%E5%90%8D%E5%AD%97%E9%87%8C%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">为何把 “Data” 放在专题的名字里？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A9%E8%BF%99%E4%B8%80%E8%BD%AE%E7%9A%84%E7%BB%8F%E9%AA%8C%EF%BC%8C%E8%9E%8D%E5%85%A5%E4%B8%8B%E4%B8%80%E8%BD%AE%E5%BC%80%E5%8F%91"><span class="nav-number">4.</span> <span class="nav-text">让这一轮的经验，融入下一轮开发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%BE%E5%A3%B0%EF%BC%9A%E6%88%91%E4%BB%AC%E6%83%B3%E6%8A%8A%E8%BF%99%E4%BA%9B%E9%97%AE%E9%A2%98%E6%8B%BF%E5%87%BA%E6%9D%A5%EF%BC%8C%E5%92%8C%E5%A4%A7%E5%AE%B6%E4%B8%80%E8%B5%B7%E5%81%9A"><span class="nav-number">5.</span> <span class="nav-text">尾声：我们想把这些问题拿出来，和大家一起做</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">6.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-02-oceanbase-langchain-agent-solution/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-02</time>
+        <br>
+      基于OceanBase&LangChain打造智能体系统解决方案，让Agent快速上生产
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-26-langchain-harness-allinone-data-base/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-26</time>
+        <br>
+      LangChain紧急补课？基于Harness讲清All-in-one数据底座价值与实践探索
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-03-shanghai-meetup-recap/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-03</time>
+        <br>
+      上海 Meetup 干货全集：信也降本、算秩未来混合检索，AgentSeek 智能体工程一站通关
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-18-langchain-builds-database/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-18</time>
+        <br>
+      LangChain "不务正业"，居然从零造了个数据库？
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="我们想和你一起，让 Agent 的优化有据可循 | Longda's Interesting World">
+      <meta itemprop="description" content="Data In The Loop 系列从 Agent 的错误回答出发，讨论观测、评测与运行数据怎样支持优化判断：先追踪检索结果、上下文和工具调用，再用证据评估修改效果，让经验能够用于下一次开发。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          我们想和你一起，让 Agent 的优化有据可循
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-19 08:46:28" itemprop="dateCreated datePublished" datetime="2026-10-19T08:46:28+08:00">2026-10-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">观测与评测小队</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">Data In The Loop 系列从 Agent 的错误回答出发，讨论观测、评测与运行数据怎样支持优化判断：先追踪检索结果、上下文和工具调用，再用证据评估修改效果，让经验能够用于下一次开发。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"我们想和你一起，让 Agent 的优化有据可循","description":"Data In The Loop 系列从 Agent 的错误回答出发，讨论观测、评测与运行数据怎样支持优化判断：先追踪检索结果、上下文和工具调用，再用证据评估修改效果，让经验能够用于下一次开发。","image":"https://ilongda.com/img/agent-data-in-the-loop-observability-evaluation/01.jpg","wordCount":2355,"datePublished":"2026-10-19T00:46:28.000Z","dateModified":"2026-10-19T00:46:28.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/"},"url":"https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/","inLanguage":"zh-CN","keywords":["LangChain","Agent","可观测性","Data In The Loop","评测"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"我们想和你一起，让 Agent 的优化有据可循","item":"https://ilongda.com/2026/2026-10-19-agent-data-in-the-loop-observability-evaluation/"}]}</script>
+<p>观测与评测小队 <em>2026年10月19日 07:30</em></p>
+<blockquote>
+<p>Before you disturb the system in any way, watch how it behaves.</p>
+<p>观其行，究其理，而后改之。</p>
+<p>——多内拉·梅多斯，《Dancing With Systems（与系统共舞）》[1]</p>
+</blockquote>
+<h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>今天，我们会在“老纪的技术唠嗑局”里，开设一个新的系列专题，名字叫做 <strong>Data In The Loop</strong>。</p>
+<p>这个系列专题，来自一个很实际的愿望：<strong>当你花时间调试一个 Agent，应该能够看清楚自己究竟改好了什么，也能够把这一次的经验带到下一次开发和优化里。</strong></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/01.jpg" alt="Data In The Loop 观测评测系列开篇" decoding="async"></p>
+<span id="more"></span>
+
+<p>看到 Agent 自己查资料、调用工具、完成任务，很容易让人兴奋。但等它开始处理真实工作，我们又会多一份顾虑：这次的答案可靠吗？换个问法能让它做得更好吗？出了问题，有没有办法查清楚？</p>
+<p>调试要花时间，运行要消耗资源，我们做这个系列，是想和大家把这些问题聊清楚：哪些记录值得看，怎样判断一次修改有没有帮助。希望你读完后能带走一种分析方法，然后回到手头的任务里去试上一试。</p>
+<p>这个系列，会从观测和评测谈起，沿着开发、测试、部署和实际使用，讨论运行数据怎样帮助团队判断下一步应该进行哪些优化。同时，我们也在把这些想法做成工具，希望能够和大家一起使用。</p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/02.png" alt="Agent 开发与运行数据反馈流程" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号“老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="先从-Agent-的一个错误的回答聊起"><a href="#先从-Agent-的一个错误的回答聊起" class="headerlink" title="先从 Agent 的一个错误的回答聊起"></a>先从 Agent 的一个错误的回答聊起</h2><p>假设你在老板的指示下，折腾了几天，终于开发出了一个企业知识助手 Agent。</p>
+<p>用户问它：“最新版本的产品里，某个功能应该怎么配置？”</p>
+<p>Agent 很快给出了步骤，还附上了资料链接。然后用户照着操作时，却发现配置不生效：因为引用的文档对应的是旧版本的产品。</p>
+<p>你可以再加一句提示词，提醒它注意版本。可在动手提醒之前，你大概也想知道：Agent 究竟是压根没拿到新资料，还是拿到了却没选对？以及用户指定的版本，有没有真的保留在上下文里？</p>
+<p>因为，不同的情况，会引导你对 Agent 做出不同的修改和优化。</p>
+<p>观测的价值，在这个时刻就变得具体了。</p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/03.png" alt="旧版文档引用错误的观测排查" loading="lazy" decoding="async"></p>
+<p><strong>你能沿着一次任务，查看工具原始返回了什么、模型实际收到了什么、哪些要求在传递过程中丢失了。</strong> 如果检索只返回旧资料，就应该先检查检索条件；如果新旧资料都在，就应该继续看上下文怎么组织。</p>
+<p>开发者由此就会有一个可以验证的修改方向。业务同事也能参与：指出资料适用哪个版本，说明什么样的回答才可以交给用户。</p>
+<p>开发者特别在意这种变化。<strong>面对 Agent 的一次失败，大家应该坐下来读同一份记录，先把问题说清楚，然后再决定下一步该怎么改。</strong></p>
+<p>在思考怎样理解和改进 Agent 时，我们参考了很多 LangChain[2] 团队的讨论。</p>
+<p>LangChain 提供 Agent 开发框架与观测评测工具，它的联合创始人 Harrison Chase 也写过一个名为 In the Loop 的专栏。在其中一篇讨论代码与运行轨迹关系的文章[3]中，他提出了：<strong>代码帮助我们理解应用如何设计，轨迹则记录 Agent 在具体条件下做了什么。</strong></p>
+<p>这和刚才的排查思路是相通的：读过上下文的处理逻辑之后，我们还要沿着运行记录，检查资料是如何一步一步地被检索出和传到模型面前的。</p>
+<h2 id="为何把-“Data”-放在专题的名字里？"><a href="#为何把-“Data”-放在专题的名字里？" class="headerlink" title="为何把 “Data” 放在专题的名字里？"></a>为何把 “Data” 放在专题的名字里？</h2><blockquote>
+<p>下次改提示词、换模型时，能不能直接复用这次排查留下的线索？</p>
+</blockquote>
+<p>你刚刚排查完那个错误，知道了正确配置，也终于知道了问题可能出在哪一步。</p>
+<p>如果这些信息只留在聊天记录和几张截图里，下次遇到相近的问题，仍然可能需要再次从头开始排查。</p>
+<p>要留住这份经验，可以<strong>把问题对应的运行、当时使用的资料、业务同事的判断、具体改动和验证结果，放在同一个任务下面。</strong></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/04.png" alt="关联任务运行与验证结果的记录方式" loading="lazy" decoding="async"></p>
+<p>下一次改提示词时，你就有一个案例可以用于测试；换模型时，可以来测试旧问题有没有重现；新同事接手时，也能读到当初为什么需要这么改。</p>
+<p>这就是我们想讨论的 Data In The Loop：<strong>让运行记录、评测结果和人的反馈，继续参与下一轮开发。</strong></p>
+<p>Agent 执行任务时，可能多次调用模型和工具。我们这里说的 Loop，关注的是团队怎样在一轮轮工作中改进它：<strong>从运行中找出问题，提出修改，用样本验证，再从真实使用中接收反馈。</strong></p>
+<p>这就需要把记录存下来、查得到，再把它与资料版本、反馈和验证结果关联起来。数据库的存储、查询和关联能力，可以帮助我们把调试经验带到后面的测试和协作里，让曾经花在排查上的时间，在以后继续派上用场。</p>
+<h2 id="让这一轮的经验，融入下一轮开发"><a href="#让这一轮的经验，融入下一轮开发" class="headerlink" title="让这一轮的经验，融入下一轮开发"></a>让这一轮的经验，融入下一轮开发</h2><p>要让运行中的经验持续帮助开发，我们还需要看清这些工作在整个流程中的位置。</p>
+<p>LangChain 在讨论 Agent 的工程实践时，用 ADLC（Agent Development Lifecycle，智能体开发生命周期）来组织这个流程。在相关介绍[4]中，它将流程概括为 Build、Test、Deploy、Monitor：构建、测试、部署和持续监测。<strong>测试从发布前就开始，实际使用带来的反馈再进入后续开发。</strong></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/05.png" alt="ADLC 智能体开发生命周期流程" loading="lazy" decoding="async"></p>
+<p>沿着这几个阶段，观测和评测就可以成为日常工作的一部分。</p>
+<p>开发知识助手时，你可以先写清楚它要完成什么。例如，依据用户指定版本提供配置方法，资料不足时说明缺失条件。再沿着运行记录检查，这些要求有没有进入实际执行，用测试案例判断结果是否满足要求。</p>
+<p>修复旧资料问题之后，可以把这次失败留下来，再补上旧版本提问、版本不明确等相近场景。下次修改时一起检查，这次排查就能继续帮助后面的验证。</p>
+<p>部署之后，用户可能还会带来各种没有提前预料到的问法。这些反馈可以关联回具体运行，挑出值得复查的案例，再补充到测试中。业务同事也能参与：一起说清楚，在这个任务里，什么样的结果才能算是“答对了”。</p>
+<p>当你准备把更多任务交给 Agent，或者让更多同事开始使用它，这些记录也能帮助团队作出判断。哪些任务测过，哪些问题还没解决，耗时和消耗有没有变化，都可以拿出来一起讨论，再决定下一步投入。</p>
+<p>一次修改改善了什么、还有哪些限制，也能解释得更清楚。</p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/06.jpg" alt="运行反馈进入下一轮开发评测" loading="lazy" decoding="async"></p>
+<p>ADLC 四阶段的工程解读</p>
+<h2 id="尾声：我们想把这些问题拿出来，和大家一起做"><a href="#尾声：我们想把这些问题拿出来，和大家一起做" class="headerlink" title="尾声：我们想把这些问题拿出来，和大家一起做"></a>尾声：我们想把这些问题拿出来，和大家一起做</h2><p>写这个系列，我们希望与大家讨论能落到工作中的方法。</p>
+<p>怎样读一次运行，怎样从失败里挑出测试样本，怎样检查上下文和记忆，怎样判断多花的时间与模型调用有没有带来帮助，这些都会成为后续的话题。</p>
+<p>工具也要接受同样的检验。一个页面能不能让使用者读懂任务，一次诊断能不能给出有依据的建议，一个评测结果能不能帮助团队决定是否发布，我们都希望能够和大家一起，把这些事情做扎实。</p>
+<p>如果你愿意参与，可以从一个具体问题开始：<strong>哪次 Agent 失败让你查了很久，最后仍解释不清？或者，你做过哪次有效的修改，却还没有找到合适的方法证明它？</strong></p>
+<p>欢迎把这些问题，以及你已经摸索出来的办法，带进这个系列。愿意动手的朋友，也欢迎一起参与后续的实验，以及工具的使用和改进。</p>
+<p>我们希望下一篇文章、下一轮实践，就能回应你手上正在做的工作。</p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/07.png" alt="Data In The Loop 社区共建邀请" loading="lazy" decoding="async"></p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>《Dancing With Systems（与系统共舞）》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://donellameadows.org/archives/dancing-with-systems/"><em>https:&#x2F;&#x2F;donellameadows.org&#x2F;archives&#x2F;dancing-with-systems&#x2F;</em></a></p>
+<p>[2] </p>
+<p>LangChain: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.langchain.com/about"><em>https:&#x2F;&#x2F;www.langchain.com&#x2F;about</em></a></p>
+<p>[3] </p>
+<p>讨论代码与运行轨迹关系的文章: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.langchain.com/blog/in-software-the-code-documents-the-app-in-ai-the-traces-do"><em>https:&#x2F;&#x2F;www.langchain.com&#x2F;blog&#x2F;in-software-the-code-documents-the-app-in-ai-the-traces-do</em></a></p>
+<p>[4] </p>
+<p>相关介绍: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.langchain.com/blog/the-agent-development-lifecycle"><em>https:&#x2F;&#x2F;www.langchain.com&#x2F;blog&#x2F;the-agent-development-lifecycle</em></a></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/08.gif" alt="agent 社区推荐与关注引导图1" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/09.png" alt="agent 社区推荐与关注引导图2" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/agent-data-in-the-loop-observability-evaluation/10.png" alt="agent 社区推荐与关注引导图3" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/11.png" alt="agent 社区推荐与关注引导图4" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/12.png" alt="agent 社区推荐与关注引导图5" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/13.png" alt="agent 社区推荐与关注引导图6" loading="lazy" decoding="async"></p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/14.png" alt="agent 社区推荐与关注引导图7" loading="lazy" decoding="async"></p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">
+</a></p>
+<p>了解更多</p>
+<p><img src="/img/agent-data-in-the-loop-observability-evaluation/15.png" alt="agent 社区推荐与关注引导图8" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/LangChain/" rel="tag"># LangChain</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" rel="tag"># 可观测性</a>
+              <a href="/tags/Data-In-The-Loop/" rel="tag"># Data In The Loop</a>
+              <a href="/tags/%E8%AF%84%E6%B5%8B/" rel="tag"># 评测</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-15-minimax-code-powercontext-project-context/" rel="prev" title="构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext">
+                  <i class="fa fa-angle-left"></i> 构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase obdumper 如何分片并发导出数据？本文通过观察导出任务实际发出的 SQL，研究元数据查询、数据分片与文件生成机制，并整理生产导出中的性能问题、排查方法和处理经验。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase obdumper 原理研究和问题处理经验">
+<meta property="og:url" content="https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase obdumper 如何分片并发导出数据？本文通过观察导出任务实际发出的 SQL，研究元数据查询、数据分片与文件生成机制，并整理生产导出中的性能问题、排查方法和处理经验。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/01.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/02.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/03.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/04.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/05.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/06.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/07.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/08.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/09.jpg">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/10.gif">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/11.png">
+<meta property="og:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/12.png">
+<meta property="article:published_time" content="2026-10-14T00:48:49.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:48:49.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="obdumper">
+<meta property="article:tag" content="obloader">
+<meta property="article:tag" content="数据导出">
+<meta property="article:tag" content="逻辑备份">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/01.jpg">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/","path":"2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/","title":"OceanBase obdumper 原理研究和问题处理经验"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase obdumper 原理研究和问题处理经验 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-obdumper-obloader%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">什么是 obdumper &#x2F; obloader？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#obdumper-%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E6%8E%A2%E7%A9%B6"><span class="nav-number">2.</span> <span class="nav-text">obdumper 工作原理探究</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%86%E6%B6%9B%E5%A4%A7%E4%BD%AC%E5%B9%B2%E8%B4%A7%E6%8E%A8%E8%8D%90"><span class="nav-number">3.</span> <span class="nav-text">庆涛大佬干货推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2025/2025-10-11-ai-gaibian-shujuku-chanpin/" rel="bookmark">
+        <time class="popular-posts-time">2025-10-13</time>
+        <br>
+      AI改变数据库产品实践探索 - obloader agent与OceanBase Agent
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-10-obcp-v4-development-optimization/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-10</time>
+        <br>
+      OBCP V4 实验模拟题详解 —— 数据库开发设计与优化
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-29-glm-52-powermem-typescript-sdk/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-29</time>
+        <br>
+      GLM-5.2 长程任务实测：把 PowerMem SDK 从 Python 对齐到 TypeScript
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-01-vector-database-best-practices/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-01</time>
+        <br>
+      OceanBase 花三年时间整理出的向量数据库最佳实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-09-vector-database-selection-principles/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-09</time>
+        <br>
+      别再盲目跟风，七家企业真实场景的向量数据库选型，揭秘核心原则
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase obdumper 原理研究和问题处理经验 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase obdumper 如何分片并发导出数据？本文通过观察导出任务实际发出的 SQL，研究元数据查询、数据分片与文件生成机制，并整理生产导出中的性能问题、排查方法和处理经验。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase obdumper 原理研究和问题处理经验
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-14 08:48:49" itemprop="dateCreated datePublished" datetime="2026-10-14T08:48:49+08:00">2026-10-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">庆涛</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%AE%9E%E6%88%98%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">实战分享</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>17 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase obdumper 如何分片并发导出数据？本文通过观察导出任务实际发出的 SQL，研究元数据查询、数据分片与文件生成机制，并整理生产导出中的性能问题、排查方法和处理经验。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase obdumper 原理研究和问题处理经验","description":"OceanBase obdumper 如何分片并发导出数据？本文通过观察导出任务实际发出的 SQL，研究元数据查询、数据分片与文件生成机制，并整理生产导出中的性能问题、排查方法和处理经验。","image":"https://ilongda.com/img/oceanbase-obdumper-internals-troubleshooting/01.jpg","wordCount":5024,"datePublished":"2026-10-14T00:48:49.000Z","dateModified":"2026-10-19T00:48:49.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/"},"url":"https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/","inLanguage":"zh-CN","keywords":["OceanBase","obloader","obdumper","逻辑备份","数据导出"],"articleSection":["实战分享"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"实战分享","item":"https://ilongda.com/categories/实战分享/"},{"@type":"ListItem","position":3,"name":"OceanBase obdumper 原理研究和问题处理经验","item":"https://ilongda.com/2026/2026-10-14-oceanbase-obdumper-internals-troubleshooting/"}]}</script>
+<p>庆涛 <em>2026年10月14日 07:30</em></p>
+<blockquote>
+<p>这篇 obdumper 原理与排障实践的文章中，庆涛大佬通过 obdumper 实际发出的 SQL，梳理了数据分片、并发取数和文件生成的过程，也记录了生产中遇到的导出问题。</p>
+</blockquote>
+<blockquote>
+<p>为大家提供了一种研究 obdumper 功能原理的思路，用于排查 obdumper 导出性能等问题。</p>
+</blockquote>
+<h2 id="什么是-obdumper-obloader？"><a href="#什么是-obdumper-obloader？" class="headerlink" title="什么是 obdumper &#x2F; obloader？"></a>什么是 obdumper &#x2F; obloader？</h2><p>obdumper（OceanBase Dumper，即 OceanBase 导出工具）是一款使用 Java 语言开发的客户端工具，目前该工具仅适用于 OceanBase 数据库。用户可以使用该工具将 OceanBase 数据库中定义的对象和表数据以指定的文件格式导出到存储介质中。如果用户希望借助于 obdumper 进行逻辑备份，可以直接将该工具集成到数据库运维系统中。</p>
+<span id="more"></span>
+
+<p>obloader（OceanBase Loader，即 OceanBase 导入工具）也是一款使用 Java 语言开发的客户端工具，目前该工具仅适用于 OceanBase 数据库。用户可以将存储介质中的数据库对象的定义文件和表数据文件导入到 OceanBase 数据库中。</p>
+<p>通常推荐 obloader 与 obdumper 搭配使用。如果用户希望借助于 obloader 完成数据迁移工作，它也兼容 mysqldump，Mydumper 等客户端工具导出的 CSV 格式的文件。</p>
+<h2 id="obdumper-工作原理探究"><a href="#obdumper-工作原理探究" class="headerlink" title="obdumper 工作原理探究"></a>obdumper 工作原理探究</h2><p>obdumper在 OB 的数据导出和备份场景重要性非常高，问题也千奇百怪。本文提供一种根本的研究 <code>obdumper</code> 功能原理的思路，用于排查 <code>obdumper</code> 导出性能问题。</p>
+<p>首先官网针对 <code>obdumper</code> 导出原理有个简单的说明。<code>obdumper</code> 在导出表数据时会执行以下几个步骤：</p>
+<ul>
+<li>查询源表的元数据，包含表名、列、主键（唯一键）、分区等信息。</li>
+<li>根据分区、主键等信息将表数据切分为多个分片。</li>
+<li>并发导出数据并生成文件。</li>
+</ul>
+<p>我们就研究这三个步骤的原理，采取的方法是观察 <code>obdumper</code> 任务发出的 SQL 。</p>
+<hr>
+<p><code>obdumper</code> 导出命令先采取最简单的，只导出一个普通表。表结构如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t_clob_demo (</span><br><span class="line">    id          NUMBER(<span class="number">10</span>) GENERATED <span class="keyword">BY</span> <span class="keyword">DEFAULT</span> <span class="keyword">AS</span> <span class="keyword">IDENTITY</span> <span class="keyword">PRIMARY</span> KEY,</span><br><span class="line">    user_name   VARCHAR2(<span class="number">50</span>),</span><br><span class="line">    age         NUMBER(<span class="number">3</span>),</span><br><span class="line">    salary      NUMBER(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    status      <span class="type">CHAR</span>(<span class="number">1</span>),</span><br><span class="line">    create_time <span class="type">DATE</span>,</span><br><span class="line">    update_time <span class="type">TIMESTAMP</span>,</span><br><span class="line">    is_vip      NUMBER(<span class="number">1</span>),</span><br><span class="line">    description <span class="type">CLOB</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t_clob_demo <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> uk_t_clob_demo_user <span class="keyword">UNIQUE</span> (user_name);</span><br></pre></td></tr></table></figure>
+
+<p>导出命令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p /tmp/ob_oracle_export &amp;&amp; /bin/rm -rf /tmp/ob_oracle_export</span><br><span class="line">bin/obdumper \</span><br><span class="line">  -h 192.0.2.61 \</span><br><span class="line">  -P 2883 \</span><br><span class="line">  -u tpcc@oboracle<span class="comment">#ob425 \</span></span><br><span class="line">  -p <span class="string">&#x27;&lt;YOUR_PASSWORD&gt;&#x27;</span> \</span><br><span class="line">  -D TPCC \</span><br><span class="line">  -t oboracle \</span><br><span class="line">  --csv  \</span><br><span class="line">  --table <span class="string">&#x27;t_clob_demo&#x27;</span> \</span><br><span class="line">  -f /tmp/ob_oracle_export \</span><br><span class="line">  --weak-read \</span><br><span class="line">  --skip-check-dir</span><br></pre></td></tr></table></figure>
+
+<p><code>obdumper</code> 任务执行日志目录里会有个 <code>sql-monitor.log</code> 记录发出的 SQL，但是这个不包含正在执行和执行失败的 SQL。租户视图 <code>gv$ob_processlist</code> 观察 <code>obdumper</code> 正在执行的 SQL，视图<code>gv$ob_sql_audit</code> 观察执行过的 SQL。一般分析性能问题就看这两个视图。</p>
+<p>查看任务导出日志目录的 <code>sql-monitor.log</code></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">2026-09-12 10:29:36 [INFO] ==&gt; Executing Query SQL: SELECT USERNAME FROM ALL_USERS</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:37 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT O.OBJECT_NAME AS TABLE_NAME,C.COLUMN_NAME AS COLUMN_NAME,C.DATA_TYPE AS DATA_TYPE,C.DATA_SCALE AS DATETIME_PRECISION,C.VIRTUAL_COLUMN AS VIRTUAL_COLUMN,C.NULLABLE AS NULLABLE,C.COLUMN_ID-16 AS COLUMN_POSITION FROM ALL_OBJECTS O JOIN ALL_TAB_COLS C ON O.OWNER=C.OWNER AND O.OBJECT_NAME=C.TABLE_NAME WHERE O.OWNER=&#x27;TPCC&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;mlog$_%&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;__mv_container_%&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;__ctas_%_%&#x27; AND O.OBJECT_TYPE=&#x27;TABLE&#x27; AND C.TABLE_NAME IN (&#x27;T_CLOB_DEMO&#x27;) AND O.TEMPORARY=&#x27;N&#x27; AND (C.HIDDEN_COLUMN IS NULL OR C.HIDDEN_COLUMN!=&#x27;YES&#x27;) AND C.USER_GENERATED=&#x27;YES&#x27; ORDER BY C.TABLE_NAME,C.COLUMN_ID ASC</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:37 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ select 1 from &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; where rownum=1</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:37 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT C.TABLE_NAME AS TABLE_NAME, COLUMN_NAME, POSITION -1 FROM ALL_CONS_COLUMNS D,ALL_CONSTRAINTS C WHERE D.OWNER=? AND (C.TABLE_NAME IN (&#x27;T_CLOB_DEMO&#x27;)) AND C.CONSTRAINT_TYPE=&#x27;P&#x27; AND D.CONSTRAINT_NAME=C.CONSTRAINT_NAME AND D.OWNER=C.OWNER AND D.TABLE_NAME=C.TABL</span><br><span class="line">E_NAME ORDER BY POSITION</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:37 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SHOW CREATE TABLE &quot;T_CLOB_DEMO&quot;</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:39 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:39 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; WHERE  (&quot;ID&quot;)&gt;( ?) ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br><span class="line"></span><br><span class="line">2026-09-12 10:29:40 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; WHERE  (&quot;ID&quot;)&gt;( ?) ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br><span class="line"></span><br><span class="line">2026-09-12 10:31:14 [INFO] ==&gt; Executing Query SQL: SELECT USERNAME FROM ALL_USERS</span><br><span class="line"></span><br><span class="line">2026-09-12 10:31:15 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ SELECT O.OBJECT_NAME AS TABLE_NAME,C.COLUMN_NAME AS COLUMN_NAME,C.DATA_TYPE AS DATA_TYPE,C.DATA_SCALE AS DATETIME_PRECISION,C.VIRTUAL_COLUMN AS VIRTUAL_COLUMN,C.NULLABLE AS NULLABLE,C.COLUMN_ID-16 AS COLUMN_POSITION FROM ALL_OBJECTS O JOIN ALL_TAB_COLS C ON O.OWNER</span><br><span class="line">=C.OWNER AND O.OBJECT_NAME=C.TABLE_NAME WHERE O.OWNER=&#x27;TPCC&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;mlog$_%&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;__mv_container_%&#x27; AND O.OBJECT_NAME NOT LIKE &#x27;__ctas_%_%&#x27; AND O.OBJECT_TYPE=&#x27;TABLE&#x27; AND C.TABLE_NAME IN (&#x27;T_CLOB_DEMO&#x27;) AND O.TEMPORARY=&#x27;N&#x27; AND (C.HIDDEN_COLUMN IS NULL OR C.HIDDEN_COLUMN!=&#x27;YES&#x27;) AND C.USER_GENERATED=&#x27;YES&#x27; ORDER BY C.TABLE_NAME,C.COLUMN_ID ASC</span><br><span class="line"></span><br><span class="line">2026-09-12 10:31:15 [INFO] ==&gt; Executing Query SQL: /* obld: Version: 4.3.6 */ select 1 from &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; where rownum=1</span><br></pre></td></tr></table></figure>
+
+<p>这是执行完整的日志。前面一部分是取元数据信息，略过不提。就看后面三个 有 <code>FETCH</code> 字眼的 SQL。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT&quot;ID&quot;, ROWNUM RN FROM&quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot;ORDERBY&quot;ID&quot;OFFSET999999ROWSFETCHNEXT</span><br><span class="line">1ROWSONLY;</span><br><span class="line"></span><br><span class="line">SELECT&quot;ID&quot;, ROWNUM RN FROM&quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot;WHERE  (&quot;ID&quot;)&gt;( ?) ORDERBY&quot;ID&quot;OFFSET9999</span><br><span class="line">99ROWSFETCHNEXT1ROWSONLY;</span><br><span class="line"></span><br><span class="line">SELECT&quot;ID&quot;, ROWNUM RN FROM&quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot;WHERE  (&quot;ID&quot;)&gt;( ?) ORDERBY&quot;ID&quot;OFFSET9999</span><br><span class="line">99ROWSFETCHNEXT1ROWSONLY;</span><br></pre></td></tr></table></figure>
+
+<p>这个 SQL 作用是根据主键排序，把表数据量按固定大小（1000000 笔）切片，找到每个片段的边界值（主键值）。<code>obdumper</code> 没有统计表的总的记录数，而是采取这种按固定大小往前推断主键值的方法，直到最后一个 SQL 没有返回。</p>
+<p>但是这个日志 SQL 里的参数是 <code>?</code> 看不到具体的值。因此可以通过数据库视图去看。两个视图查看 SQL：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id, host, command, state, <span class="type">time</span>, total_time, info, trace_id </span><br><span class="line"><span class="keyword">from</span> oceanbase.gv$ob_processlist</span><br><span class="line"><span class="keyword">where</span> tenant <span class="operator">=</span> <span class="string">&#x27;oboracle&#x27;</span> <span class="keyword">and</span> <span class="keyword">user</span> <span class="keyword">in</span> (<span class="string">&#x27;u_dump&#x27;</span>) <span class="keyword">and</span> user_client_ip <span class="operator">=</span> <span class="string">&#x27;192.0.2.64&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="comment">/*+ read_consistency(weak) query_timeout(1000000000) */</span></span><br><span class="line">usec_to_time(request_time) req_time, sid, tx_id, plan_id, query_sql, PARAMS_VALUE, return_rows, elapsed_time,  execute_time , plan_type, request_type ,PS_CLIENT_STMT_ID,PS_INNER_STMT_ID</span><br><span class="line"><span class="keyword">FROM</span> gv$ob_sql_audit</span><br><span class="line"><span class="keyword">WHERE</span> tenant_id <span class="operator">=</span> <span class="number">1004</span><span class="comment">-- and sql_id &gt; 0</span></span><br><span class="line"><span class="comment">-- AND request_type IN (2)</span></span><br><span class="line"><span class="keyword">and</span> plan_type <span class="operator">&gt;</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">AND</span> user_name <span class="keyword">IN</span> (<span class="string">&#x27;U_DUMP&#x27;</span>) <span class="keyword">and</span> query_sql <span class="keyword">not</span> <span class="keyword">like</span> <span class="string">&#x27;set%&#x27;</span> <span class="keyword">and</span> query_sql <span class="keyword">like</span> <span class="string">&#x27;%obld%&#x27;</span> <span class="keyword">and</span> query_sql <span class="keyword">not</span> <span class="keyword">like</span> <span class="string">&#x27;%SHOW%&#x27;</span> <span class="keyword">and</span> query_sql <span class="keyword">not</span> <span class="keyword">like</span> <span class="string">&#x27;%dual%&#x27;</span> <span class="keyword">and</span> query_sql <span class="keyword">not</span> <span class="keyword">like</span> <span class="string">&#x27;%ALL_%&#x27;</span></span><br><span class="line"><span class="comment">-- and sid in (530628, 619294)</span></span><br><span class="line"><span class="keyword">and</span> user_client_ip <span class="keyword">in</span> (<span class="string">&#x27;192.0.2.64&#x27;</span>)</span><br><span class="line"><span class="keyword">and</span> request_time <span class="operator">&gt;</span> TIME_TO_usec(<span class="string">&#x27;2026-09-12 10:25:00&#x27;</span>)</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> request_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
+
+<p>第一个会话视图返回结果如下：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>command</th>
+<th>state</th>
+<th>time</th>
+<th>info</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>596678</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.38272</td>
+<td></td>
+</tr>
+<tr>
+<td>596677</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.548216</td>
+<td></td>
+</tr>
+<tr>
+<td>596679</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.170379</td>
+<td></td>
+</tr>
+<tr>
+<td>616434</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.125277</td>
+<td></td>
+</tr>
+<tr>
+<td>536137</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.462618</td>
+<td></td>
+</tr>
+<tr>
+<td>536142</td>
+<td>Execute</td>
+<td>ACTIVE</td>
+<td>3.901001</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&gt;(?) AND (“ID”)&lt;&#x3D;(?)</td>
+</tr>
+<tr>
+<td>612559</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.518485</td>
+<td></td>
+</tr>
+<tr>
+<td>582905</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.184429</td>
+<td></td>
+</tr>
+<tr>
+<td>547584</td>
+<td>Execute</td>
+<td>ACTIVE</td>
+<td>3.901047</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&lt;&#x3D;(?)</td>
+</tr>
+<tr>
+<td>565676</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.440317</td>
+<td></td>
+</tr>
+<tr>
+<td>574279</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.529194</td>
+<td></td>
+</tr>
+<tr>
+<td>547583</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.267326</td>
+<td></td>
+</tr>
+<tr>
+<td>565677</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.215636</td>
+<td></td>
+</tr>
+<tr>
+<td>574280</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.425218</td>
+<td></td>
+</tr>
+<tr>
+<td>582903</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.563592</td>
+<td></td>
+</tr>
+<tr>
+<td>529675</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>3.950409</td>
+<td></td>
+</tr>
+<tr>
+<td>552768</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.249188</td>
+<td></td>
+</tr>
+<tr>
+<td>616433</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.320143</td>
+<td></td>
+</tr>
+<tr>
+<td>529674</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.300793</td>
+<td></td>
+</tr>
+<tr>
+<td>599419</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.363618</td>
+<td></td>
+</tr>
+<tr>
+<td>536138</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.283821</td>
+<td></td>
+</tr>
+<tr>
+<td>616431</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.628285</td>
+<td></td>
+</tr>
+<tr>
+<td>552769</td>
+<td>Execute</td>
+<td>ACTIVE</td>
+<td>3.9015</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&gt;(?)</td>
+</tr>
+<tr>
+<td>562380</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.613243</td>
+<td></td>
+</tr>
+<tr>
+<td>565675</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.598333</td>
+<td></td>
+</tr>
+<tr>
+<td>599420</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.155977</td>
+<td></td>
+</tr>
+<tr>
+<td>599418</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.534993</td>
+<td></td>
+</tr>
+<tr>
+<td>562381</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.437631</td>
+<td></td>
+</tr>
+<tr>
+<td>612560</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.339967</td>
+<td></td>
+</tr>
+<tr>
+<td>574281</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.200008</td>
+<td></td>
+</tr>
+<tr>
+<td>582904</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.390022</td>
+<td></td>
+</tr>
+<tr>
+<td>529672</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.486814</td>
+<td></td>
+</tr>
+<tr>
+<td>612561</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.141114</td>
+<td></td>
+</tr>
+<tr>
+<td>616432</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.502935</td>
+<td></td>
+</tr>
+<tr>
+<td>562382</td>
+<td>Sleep</td>
+<td>SLEEP</td>
+<td>6.232554</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>从会话视图可以看出 <code>obdumper</code> 发出了 35 个连接，活跃的连接数有 3 个。其原理是 <code>obdumper</code> 是 JAVA 程序，连接数据库也是使用连接池技术。内部连接池应该是有个初始化大小，可能是固定的也可能是动态计算的。</p>
+<p>通过会话状态可以过滤出正在执行的 SQL 是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;USER_NAME&quot;,&quot;AGE&quot;,&quot;SALARY&quot;,&quot;STATUS&quot;,&quot;CREATE_TIME&quot;,&quot;UPDATE_TIME&quot;,&quot;IS_VIP&quot;,&quot;DESCRIPTION&quot;,&quot;ID&quot; FROM &quot;T_CLOB_DEMO&quot; WHERE (&quot;ID&quot;) &gt; (?) AND (&quot;ID&quot;) &lt;= (?)</span><br><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;USER_NAME&quot;,&quot;AGE&quot;,&quot;SALARY&quot;,&quot;STATUS&quot;,&quot;CREATE_TIME&quot;,&quot;UPDATE_TIME&quot;,&quot;IS_VIP&quot;,&quot;DESCRIPTION&quot;,&quot;ID&quot; FROM &quot;T_CLOB_DEMO&quot; WHERE (&quot;ID&quot;)&lt;=(?)</span><br><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;USER_NAME&quot;,&quot;AGE&quot;,&quot;SALARY&quot;,&quot;STATUS&quot;,&quot;CREATE_TIME&quot;,&quot;UPDATE_TIME&quot;,&quot;IS_VIP&quot;,&quot;DESCRIPTION&quot;,&quot;ID&quot; FROM &quot;T_CLOB_DEMO&quot; WHERE (&quot;ID&quot;)&gt;(?)</span><br></pre></td></tr></table></figure>
+
+<p>这个 SQL 已经不是之前说的切片 SQL，而是后面取数的 SQL。可见切片 SQL 跑的很快就过去了。实际生产上有一种导出性能问题就是切片 SQL 跑的很慢，则会被这个会话视图捕捉到。</p>
+<p>严谨的分析方法还是看第二个视图的查询结果。</p>
+<table>
+<thead>
+<tr>
+<th>req_time</th>
+<th>sid</th>
+<th>query_sql</th>
+<th>PARAMS_VALUE</th>
+<th>return_rows</th>
+<th>elapsed_time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2026-09-12 10:34:21.101</td>
+<td>547584</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&lt;&#x3D;(?)</td>
+<td>‘1000000’</td>
+<td>1000000</td>
+<td>60252955</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:21.101</td>
+<td>536142</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&gt;(?) AND (“ID”)&lt;&#x3D;(?)</td>
+<td>‘1000000’,’2000020’</td>
+<td>1000000</td>
+<td>65063452</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:21.101</td>
+<td>552769</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO” WHERE (“ID”)&gt;(?)</td>
+<td>‘2000020’</td>
+<td>663000</td>
+<td>46795804</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:20.770</td>
+<td>529675</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO” WHERE (“ID”)&gt;( ?) ORDER BY “ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td>‘2000020’</td>
+<td>0</td>
+<td>280809</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:20.541</td>
+<td>529675</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO” WHERE (“ID”)&gt;( ?) ORDER BY “ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td>‘1000000’</td>
+<td>1</td>
+<td>226656</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:20.316</td>
+<td>529675</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO” ORDER BY “ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td></td>
+<td>1</td>
+<td>220919</td>
+</tr>
+<tr>
+<td>2026-09-12 10:34:18.539</td>
+<td>536137</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; select 1 from “TPCC”.”T_CLOB_DEMO” where rownum&#x3D;1</td>
+<td></td>
+<td>1</td>
+<td>1091</td>
+</tr>
+</tbody></table>
+<p>这个表的实际记录数是 2663000 条，按每个片段大小 1000000 条计算的话，分为 3 个段，最后一段只有 663000 条记录。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>RN</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1000000</td>
+<td>1000000</td>
+</tr>
+</tbody></table>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; WHERE  (&quot;ID&quot;)&gt;(1000000) ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>RN</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2000020</td>
+<td>1000000</td>
+</tr>
+</tbody></table>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO&quot; WHERE  (&quot;ID&quot;)&gt;(2000000) ORDER BY &quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br></pre></td></tr></table></figure>
+
+<p>无结果输出。</p>
+<p>这个切片 SQL 看起来很好理解，没有什么特别的。实际生产使用情形会复杂的多。</p>
+<p>如表没有主键，只有唯一索引。此时 <code>obdumper</code> 导出发出的 SQL 又会有变化。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> t_clob_demo2 <span class="keyword">as</span> <span class="keyword">select</span> <span class="comment">/*+ parallel(8) */</span> <span class="operator">*</span> <span class="keyword">from</span> t_clob_demo;</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t_clob_demo2 <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> uk_t_clob_demo2_user <span class="keyword">UNIQUE</span> (user_name);</span><br></pre></td></tr></table></figure>
+
+<p>导出命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p /tmp/ob_oracle_export &amp;&amp; /bin/rm -rf /tmp/ob_oracle_export</span><br><span class="line">bin/obdumper \</span><br><span class="line">  -h 192.0.2.61 \</span><br><span class="line">  -P 2883 \</span><br><span class="line">  -u u_dump@oboracle<span class="comment">#ob425 \</span></span><br><span class="line">  -p <span class="string">&#x27;&lt;YOUR_PASSWORD&gt;&#x27;</span> \</span><br><span class="line">  -D TPCC \</span><br><span class="line">  -t oboracle \</span><br><span class="line">  --csv  \</span><br><span class="line">  --table <span class="string">&#x27;t_clob_demo2&#x27;</span> \</span><br><span class="line">  -f /tmp/ob_oracle_export \</span><br><span class="line">  --weak-read \</span><br><span class="line">  --skip-check-dir </span><br></pre></td></tr></table></figure>
+
+<p>此时命令发出的 SQL 审计如下：</p>
+<table>
+<thead>
+<tr>
+<th>req_time</th>
+<th>sid</th>
+<th>query_sql</th>
+<th>PARAMS_VALUE</th>
+<th>return_rows</th>
+<th>elapsed_time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2026-09-12 11:04:16.319</td>
+<td>547787</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO2”</td>
+<td></td>
+<td>2663000</td>
+<td>171319603</td>
+</tr>
+<tr>
+<td>2026-09-12 11:04:13.713</td>
+<td>599518</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; select 1 from “TPCC”.”T_CLOB_DEMO2” where rownum&#x3D;1</td>
+<td></td>
+<td>1</td>
+<td>12450</td>
+</tr>
+</tbody></table>
+<p>可以看出表 <code>t_clob_demo</code> 没有主键，有唯一索引，但是 <code>obdumper</code> 导出的时候并没有基于唯一索引列对表数据做切片并分片并行导出。</p>
+<p>另外一种生产常见情形就是表的主键是多列组合。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t_clob_demo2 <span class="keyword">DROP</span> <span class="keyword">CONSTRAINT</span> uk_t_clob_demo2_user ;</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t_clob_demo2 <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> t_clob_demo2_user_pk <span class="keyword">PRIMARY</span> KEY (user_name, id);</span><br></pre></td></tr></table></figure>
+
+<p>此时表数据按主键切为3个分片，并3个并发同时导出。</p>
+<table>
+<thead>
+<tr>
+<th>req_time</th>
+<th>sid</th>
+<th>query_sql</th>
+<th>PARAMS_VALUE</th>
+<th>return_rows</th>
+<th>elapsed_time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2026-09-12 11:20:06.761</td>
+<td>547855</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO2” WHERE (“USER_NAME”,”ID”)&lt;&#x3D;(?,?)</td>
+<td>‘pqxpqa43mdx6509185’,’1125233’</td>
+<td>1000000</td>
+<td>69036578</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:06.761</td>
+<td>536508</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO2” WHERE (“USER_NAME”,”ID”)&gt;(?,?)</td>
+<td>‘user_708550’,’708550’</td>
+<td>663000</td>
+<td>44434284</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:06.761</td>
+<td>536507</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”AGE”,”SALARY”,”STATUS”,”CREATE_TIME”,”UPDATE_TIME”,”IS_VIP”,”DESCRIPTION”,”ID” FROM “T_CLOB_DEMO2” WHERE (“USER_NAME”,”ID”)&gt;(?,?) AND (“USER_NAME”,”ID”)&lt;&#x3D;(?,?)</td>
+<td>‘pqxpqa43mdx6509185’,’1125233’,’user_708550’,’708550’</td>
+<td>1000000</td>
+<td>64900159</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:06.438</td>
+<td>530959</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO2” WHERE (“USER_NAME”,”ID”)&gt;( ?,?) ORDER BY “USER_NAME”,”ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td>‘user_708550’,’708550’</td>
+<td>0</td>
+<td>275876</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:06.015</td>
+<td>530959</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO2” WHERE (“USER_NAME”,”ID”)&gt;( ?,?) ORDER BY “USER_NAME”,”ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td>‘pqxpqa43mdx6509185’,’1125233’</td>
+<td>1</td>
+<td>421016</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:05.552</td>
+<td>530959</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; SELECT “USER_NAME”,”ID”, ROWNUM RN FROM “TPCC”.”T_CLOB_DEMO2” ORDER BY “USER_NAME”,”ID” OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</td>
+<td></td>
+<td>1</td>
+<td>456729</td>
+</tr>
+<tr>
+<td>2026-09-12 11:20:03.861</td>
+<td>562812</td>
+<td>&#x2F;* obld: Version: 4.3.6 *&#x2F; select 1 from “TPCC”.”T_CLOB_DEMO2” where rownum&#x3D;1</td>
+<td></td>
+<td>1</td>
+<td>7637</td>
+</tr>
+</tbody></table>
+<p>这里取中间的切片 SQL，研究其执行计划</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;USER_NAME&quot;,&quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO2&quot; WHERE  (&quot;USER_NAME&quot;,&quot;ID&quot;)&gt;( &#x27;pqxpqa43mdx6509185&#x27;,1125233) ORDER BY &quot;USER_NAME&quot;,&quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY</span><br></pre></td></tr></table></figure>
+
+<p>这个 SQL 特殊的地方是条件：<code>(&quot;USER_NAME&quot;,&quot;ID&quot;)&gt;( &#39;pqxpqa43mdx6509185&#39;,1125233)</code>, 它等价于：<code>&quot;USER_NAME&quot; &gt; &#39;pqxpqa43mdx6509185&#39; OR ( &quot;USER_NAME&quot; = &#39;pqxpqa43mdx6509185&#39; and  &quot;ID&quot; &gt; 1125233)</code></p>
+<p>这个 SQL 执行计划是否能走主键？</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/01.jpg" alt="obdumper 分片查询主键执行计划" decoding="async"></p>
+<p>从执行计划看虽然走了主键，实际上也是扫描了 1000177 行数据，然后取了最后一行返回。在 OB 4.2.5 里，主键本身就是表，对着主键走范围扫描，跟全表扫描差不多。所以这个 SQL 从审计视图里看，执行性能也不怎么好，大概要 421 ms 左右。生产环境如果碰到过亿的大表并且主键还是组合列，这个导出性能会很差，首先就慢在切片 SQL 这里（表越大，切片数就越多，这个 SQL 执行次数就越多）。切片逻辑是串行的。</p>
+<p>生产还有一类表是分区表。下面将表改为分区表（16个分区），看看导出逻辑是否发生变化。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_clob_demo2 modify <span class="keyword">partition</span> <span class="keyword">by</span> hash(user_name) partitions <span class="number">16</span>;</span><br></pre></td></tr></table></figure>
+
+<p>首先导出开始就观察到，活跃会话变为 16个，每个会话在导出一个分区。 通过 SQL 审计视图看得更全。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/02.jpg" alt="十六分区并发导出的 SQL 审计记录" loading="lazy" decoding="async"></p>
+<p>每个分区都在做切片，由于分区数据量不足 1000000，所以只有一个片段。然后每个分区直接导出所有数据。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/* obld: Version: 4.3.6 */ SELECT &quot;USER_NAME&quot;,&quot;ID&quot;, ROWNUM RN FROM &quot;TPCC&quot;.&quot;T_CLOB_DEMO2&quot; PARTITION(&quot;P3&quot;)  ORDER BY &quot;USER_NAME&quot;,&quot;ID&quot; OFFSET 999999 ROWS FETCH NEXT 1 ROWS ONLY;</span><br><span class="line"></span><br><span class="line">/* obld: Version: 4.3.6 */SELECT &quot;USER_NAME&quot;,&quot;AGE&quot;,&quot;SALARY&quot;,&quot;STATUS&quot;,&quot;CREATE_TIME&quot;,&quot;UPDATE_TIME&quot;,&quot;IS_VIP&quot;,&quot;DESCRIPTION&quot;,&quot;ID&quot; FROM &quot;T_CLOB_DEMO2&quot; partition(&quot;P0&quot;);</span><br></pre></td></tr></table></figure>
+
+<p>不得不说，分区表导出的性能是最快的，因为这里有 16个并发。这个 16 是 <code>obdumper</code> 基于多项信息综合计算出来的。生产环境导出为了规避对数据库性能影响过大，除了指定弱一致性读外，还可以手动指定并发，参数 <code>--thread=4</code> 。这个手动指定的并发不宜过大，超出了 <code>obdumper</code> 内部连接池也没有意义。关于这个并发的逻辑本文就不探索了。</p>
+<p>按照官网文档的介绍，<code>obdumper</code> 在并发导出任务后，对生成文件的数量还有一套独立的逻辑。<code>obdumper</code> 还可以开启并行生成文件（参数：<code>enable.parallel.write</code> ）。不开启的时候，当文件大小超出指定大小（参数 <code>--block-size</code>）也是会滚动生成多个文件。如果想进一步提升大表导出的性能，还可以研究一下这个文件生成的优化。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/03.jpg" alt="obdumper 并行写文件参数说明" loading="lazy" decoding="async"></p>
+<p>上面最后一次导出分区表，虽然有 16 个分区，实际生成文件的数量是 6个。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/04.jpg" alt="分区导出实际生成文件数量" loading="lazy" decoding="async"></p>
+<p>以上测试中，切片的大小固定都是 100万，这个是程序的默认值。这个切片大小没有办法具体指定。虽然有参数 <code>--page-size 100000</code> 可以指定一个取数的范围大小，从实际运行结果看，设置为小于 100万到时候，这个参数只是会影响 <code>obdumper</code>对切片大小的计算，但不一定会直接采纳。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/05.jpg" alt="page-size 设置与实际切片大小" loading="lazy" decoding="async"></p>
+<p>上面可以看出实际切片大小变为 30万了。如果指定 <code>--page-size 1500000</code> 时，实际切片大小就变为 150万。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/06.jpg" alt="较大 page-size 对切片范围的影响" loading="lazy" decoding="async"></p>
+<p>从上面截图对比可以看出，切片太大，并发的任务数可能变小，性能反而更差。到底多少合适，这个取决于很多因素，也不好统一定。切片数跟并发数参数 <code>--thread</code> 可能也有一定关系，但不是单方面的关系，而是跟总记录数和并发数一起有关系。具体逻辑官网文档描述的也不是很具体。</p>
+<hr>
+<p><code>obdumper</code> 的参数有三个地方可以调整。通常是 <code>conf</code> 目录下的两个配置文件（<code>session.config.json</code> 和 <code>session.properties</code>）。</p>
+<p>参数文件 <code>session.properties</code> 内容如下：</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/07.jpg" alt="session.properties 导出参数配置" loading="lazy" decoding="async"></p>
+<p>参数文件 <code>session.config.json</code> 内容如下：</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/08.jpg" alt="session.config.json 会话配置内容" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/09.jpg" alt="obdumper 会话参数补充配置截图" loading="lazy" decoding="async"></p>
+<p>这两个参数文件内容一看就会用。<code>obdumper</code> 本质就是一个 JAVA 程序，JDBC URL 的选项就是在这两个参数文件中设置，这个会给用户一定困扰。以后使用更推荐用后面这个参数文件，毕竟参数名就是公开的租户变量或 JDBC URL 参数等，容易理解和记忆。</p>
+<p>实际生产碰到一个问题就是 <code>obdumper</code> 4.3.5 版本再导出包含多个 CLOB 列的小表记录，出现卡住。表记录数只有 2w 条左右，大小也不过 1GB ，分片 SQL 也就一条，最后就是取数据的 SQL 卡住不出结果。经确认是驱动的 LOB 读取 BUG，解决方法只要在 session.config.json 的 JDBC URL 里增加：<code>&quot;UseLobLocatorV2&quot;: false</code> 。</p>
+<hr>
+<p>最后总结一下，<code>obdumper</code>和 <code>obloader</code> 目前已经成为客户生产环境非常重要的工具，有很多业务依赖 <code>obdumper</code>和 <code>obloader</code> 做业务数据的导出（备份）和导入（恢复）等。所以 <code>obdumper</code> 和 <code>obloader</code> 版本前后兼容性非常重要，其次就是性能。 <code>obdumper</code> 新版本可能会引入一些新功能特性，这个有可能导致以前跑的很稳定的程序出现报错或性能问题。所以，生产环境替换版本一定要做充分测试。</p>
+<p><code>obdumper</code> 本质上也是一个 JAVA 程序，逻辑简单说就是读数据库表写文件，理解其使用逻辑分为两部分；第一部分是理解数据导出的自身逻辑。主要针对 OB 的表数据导出，包括如何导出最好最快的逻辑。这些跟 OB SQL 有关。如为了导出影响最小，设置弱一致性读；为了导出最快，设置服务器端的并行（参数 <code>--parallel</code>）；为了并行导出，如何对大表数据切片（找到边界值）等。这部分逻辑跟 <code>obdumpe</code> 产品自身没有关系，跟 OB 有关系。</p>
+<p>第二部分是理解跟 <code>obdumper</code> JAVA 程序有关的逻辑。它是个 JAVA 程序，连接 OB 使用连接池技术，程序目的主要是导出数据写为文件，如何根据 OB 的逻辑如设置并发读取数据，以及如何将读回来的数据并发写到文件（涉及到文件重组）；多个并发线程的工作量和导出的文件大小如何保持均衡等，这些是一个 JAVA 程序开发的基本功。</p>
+<p>所以当 <code>obdumper</code> 使用有问题，事后反向排查的时候，就要根据报错现象、报错日志再结合数据库的 SQL 日志（OBProxy 里以及审计视图里）综合判断是哪个环节出了问题。不同客户的生产场景都不完全一样，所以<code>obdumper</code>面临的问题和挑战也不完全一样（也难怪 <code>obdumper</code> 参数选项非常多，参数文件都有两个）。</p>
+<p>欢迎大家在评论区留言，交流您感兴趣问题。</p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/10.gif" alt="oceanbase 社区推荐与关注引导图1" loading="lazy" decoding="async"></p>
+<p><img src="/img/oceanbase-obdumper-internals-troubleshooting/11.png" alt="oceanbase 社区推荐与关注引导图2" loading="lazy" decoding="async"></p>
+<h2 id="庆涛大佬干货推荐"><a href="#庆涛大佬干货推荐" class="headerlink" title="庆涛大佬干货推荐"></a>庆涛大佬干货推荐</h2><ul>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247486539&idx=1&sn=1cce16754b2d7809b1de182740498e77&scene=21#wechat_redirect">OBCP V4 官网模拟题分析（含答案）</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247492220&idx=1&sn=6664a82fa34de997a49dd9bddee463d0&scene=21#wechat_redirect">超级干货分享：中小企业使用 OceanBase 实践经验汇总</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247485570&idx=1&sn=8c4cec59ec3658ce1b47482d67861a3b&scene=21#wechat_redirect">OceanBase POC 经验总结</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247487263&idx=1&sn=37f2f0b0b77d66c16e298c9f0d38acc3&scene=21#wechat_redirect">经验分享 —— 在 Ubuntu 虚拟机中部署 OceanBase 数据库</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247487457&idx=1&sn=e78d237ab71140f430e0af8f635c0662&scene=21#wechat_redirect">数据库自动化运维产品 OCP 实践及思考</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247489117&idx=1&sn=d6b6db6663215edd3f33dd91b24bc59c&scene=21#wechat_redirect">深入解析 OceanBase 生态工具链 —— OAT &#x2F; obd &#x2F; OCP &#x2F; obshell</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247484433&idx=1&sn=1eb28dec653f3fb55c9de25768372337&scene=21#wechat_redirect">世事洞明皆学问 —— 如何理解 OB 4.x 版本中的日志流？</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491466&idx=1&sn=c99b53008dcd6b72aa2c9ed0c497c0e9&scene=21#wechat_redirect">OceanBase 奇案分享：是谁拉起了 observer 进程？</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491500&idx=1&sn=5539f981b2849f6552060d3f54cd3d72&scene=21#wechat_redirect">OceanBase 奇案分享：是谁清理了我的备份数据？</a></p>
+</li>
+<li><p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247492711&idx=1&sn=0e36482e05e1b59ec336f8638cd8b94d&scene=21#wechat_redirect">OBCP V4 实验模拟题详解 —— 数据库开发设计与优化</a></p>
+</li>
+<li><p>了解更多</p>
+</li>
+<li><p><img src="/img/oceanbase-obdumper-internals-troubleshooting/12.png" alt="oceanbase 社区推荐与关注引导图3" loading="lazy" decoding="async">添加社区小助手，加入微信交流群~</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/obloader/" rel="tag"># obloader</a>
+              <a href="/tags/obdumper/" rel="tag"># obdumper</a>
+              <a href="/tags/%E9%80%BB%E8%BE%91%E5%A4%87%E4%BB%BD/" rel="tag"># 逻辑备份</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%AF%BC%E5%87%BA/" rel="tag"># 数据导出</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="prev" title="Agent 养成记：从经验中长出技能">
+                  <i class="fa fa-angle-left"></i> Agent 养成记：从经验中长出技能
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-10-15-minimax-code-powercontext-project-context/" rel="next" title="构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext">
+                  构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

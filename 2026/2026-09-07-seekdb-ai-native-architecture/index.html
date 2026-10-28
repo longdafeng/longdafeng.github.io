@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度拆解 seekdb：AI Native Database 的技术架构与核心能力">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/01.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/02.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/03.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/04.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/05.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/06.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/07.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/08.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/09.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/10.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/11.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/12.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/13.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/14.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/15.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/16.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/17.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/18.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/19.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/20.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/21.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/22.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/23.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/24.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/25.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/26.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/27.svg">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/28.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/29.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/30.gif">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/31.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/32.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/33.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/34.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/35.png">
+<meta property="og:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/36.png">
+<meta property="article:published_time" content="2026-09-06T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:55:22.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="AI Native">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="数据库架构">
+<meta property="article:tag" content="混合检索">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/seekdb-ai-native-architecture/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/","path":"2026/2026-09-07-seekdb-ai-native-architecture/","title":"深度拆解 seekdb：AI Native Database 的技术架构与核心能力"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>深度拆解 seekdb：AI Native Database 的技术架构与核心能力 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-seekdb-%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">1. seekdb 概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%95%B4%E4%BD%93%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">2. 整体技术架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%88%86%E5%B1%82%E6%9E%B6%E6%9E%84"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 分层架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-LSM-Tree-%E5%AD%98%E5%82%A8%E6%9E%B6%E6%9E%84"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 LSM-Tree 存储架构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9F%BA%E7%A1%80%E8%83%BD%E5%8A%9B"><span class="nav-number">3.</span> <span class="nav-text">3. 数据库基础能力</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-SQL%E3%80%81%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%B8%8E%E7%B4%A2%E5%BC%95"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 SQL、数据类型与索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-ACID-%E4%B8%8E-MVCC"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 ACID 与 MVCC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-MySQL-%E9%AB%98%E5%BA%A6%E5%85%BC%E5%AE%B9"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 MySQL 高度兼容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E6%9D%83%E9%99%90%E4%B8%8E%E8%BF%9E%E6%8E%A5%E5%AE%89%E5%85%A8"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 权限与连接安全</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E4%B8%BB%E5%A4%87%E5%8F%AF%E7%94%A8%E6%80%A7"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 主备可用性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%B8%80%E4%BD%93%E5%8C%96%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E4%B8%8E%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">4. 一体化数据管理与混合检索</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E4%B8%80%E4%B8%AA%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%A4%9A%E7%B1%BB%E6%95%B0%E6%8D%AE"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 一个数据库管理多类数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 向量检索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%85%A8%E6%96%87%E6%A3%80%E7%B4%A2"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 全文检索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E9%93%BE%E8%B7%AF"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 混合检索链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-%E5%BC%82%E6%AD%A5%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E4%B8%8E%E5%86%99%E6%9F%A5%E5%B9%B3%E8%A1%A1"><span class="nav-number">4.5.</span> <span class="nav-text">4.5 异步向量索引与写查平衡</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%86%85-AI"><span class="nav-number">5.</span> <span class="nav-text">5. 数据库内 AI</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%A4%96%E9%83%A8%E6%A8%A1%E5%9E%8B%E6%8E%A5%E5%85%A5%E4%B8%8E%E7%AE%A1%E7%90%86"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 外部模型接入与管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-AI-SQL-%E5%87%BD%E6%95%B0"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 AI SQL 函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E4%BB%8E%E6%A3%80%E7%B4%A2%E5%88%B0%E7%94%9F%E6%88%90%E7%9A%84%E9%97%AD%E7%8E%AF"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 从检索到生成的闭环</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%9D%A2%E5%90%91-Agent-%E7%9A%84-Fork-Diff-Merge"><span class="nav-number">6.</span> <span class="nav-text">6. 面向 Agent 的 Fork&#x2F;Diff&#x2F;Merge</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-Fork%EF%BC%9A%E5%88%9B%E5%BB%BA%E5%8F%AF%E5%86%99%E9%9A%94%E7%A6%BB%E7%A9%BA%E9%97%B4"><span class="nav-number">6.1.</span> <span class="nav-text">6.1 Fork：创建可写隔离空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-Diff%EF%BC%9A%E6%A3%80%E6%9F%A5%E7%BB%93%E6%9E%9C%E4%B8%8E%E5%86%B2%E7%AA%81"><span class="nav-number">6.2.</span> <span class="nav-text">6.2 Diff：检查结果与冲突</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-Merge%EF%BC%9A%E6%8C%89%E7%AD%96%E7%95%A5%E9%87%87%E7%BA%B3%E7%BB%93%E6%9E%9C"><span class="nav-number">6.3.</span> <span class="nav-text">6.3 Merge：按策略采纳结果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-Agent-%E5%9C%BA%E6%99%AF%E4%B8%AD%E7%9A%84%E6%8E%A7%E5%88%B6%E7%82%B9"><span class="nav-number">6.4.</span> <span class="nav-text">6.4 Agent 场景中的控制点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%BD%BB%E9%87%8F%E3%80%81%E5%A4%9A%E5%BD%A2%E6%80%81%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0"><span class="nav-number">7.</span> <span class="nav-text">7. 轻量、多形态与跨平台</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E8%BD%BB%E9%87%8F%E5%8C%96%E8%AE%BE%E8%AE%A1"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 轻量化设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E5%A4%9A%E5%BD%A2%E6%80%81%E8%BF%90%E8%A1%8C"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 多形态运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E4%B8%8E%E5%A4%9A%E8%8A%AF%E7%89%87%E6%94%AF%E6%8C%81"><span class="nav-number">7.3.</span> <span class="nav-text">7.3 跨平台与多芯片支持</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%80%A7%E8%83%BD%E4%B8%8E%E6%95%88%E7%8E%87"><span class="nav-number">8.</span> <span class="nav-text">8. 性能与效率</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-%E6%8C%81%E7%BB%AD%E5%86%99%E5%85%A5%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2%E5%8F%82%E8%80%83%E5%AE%9E%E6%B5%8B%E5%80%BC"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 持续写入向量检索参考实测值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-2-%E5%90%8C%E5%B7%A5%E4%BD%9C%E8%B4%9F%E8%BD%BD%E5%AF%B9%E6%AF%94"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 同工作负载对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%85%B8%E5%9E%8B%E6%8A%80%E6%9C%AF%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F"><span class="nav-number">9.</span> <span class="nav-text">9. 典型技术使用方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#9-1-Agent-%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86%E4%B8%8E%E7%9F%A5%E8%AF%86%E6%A3%80%E7%B4%A2"><span class="nav-number">9.1.</span> <span class="nav-text">9.1 Agent 长期记忆与知识检索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-2-RAG-%E4%B8%8E%E4%BC%81%E4%B8%9A%E7%9F%A5%E8%AF%86%E5%BA%93"><span class="nav-number">9.2.</span> <span class="nav-text">9.2 RAG 与企业知识库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-3-%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%99%BA%E8%83%BD%E5%BA%94%E7%94%A8"><span class="nav-number">9.3.</span> <span class="nav-text">9.3 嵌入式智能应用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-4-%E9%9A%94%E7%A6%BB%E8%AF%95%E9%AA%8C%E4%B8%8E%E7%BB%93%E6%9E%9C%E9%87%87%E7%BA%B3"><span class="nav-number">9.4.</span> <span class="nav-text">9.4 隔离试验与结果采纳</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">10.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-28-llm-wiki-knowledge-self-organization/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-28</time>
+        <br>
+      深度解析 LLM Wiki / Obsidian-Wiki / GBrain：Agent 时代知识的“自组织”与“自进化”
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-22-seekdb-world-cup-prediction/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-22</time>
+        <br>
+      用 seekdb 预测 2026 世界杯冠军：从数据建模到概率模拟
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-09-seekdb-1-3-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-09</time>
+        <br>
+      OceanBase seekdb 1.3.0 发布：性能提升 22 倍，P99 无抖动
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-03-shanghai-meetup-recap/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-03</time>
+        <br>
+      上海 Meetup 干货全集：信也降本、算秩未来混合检索，AgentSeek 智能体工程一站通关
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-04-15-bubseek-agent-insights/" rel="bookmark">
+        <time class="popular-posts-time">2026-04-15</time>
+        <br>
+      bubseek —— 让 Agent 的足迹，变成团队的洞察
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="深度拆解 seekdb：AI Native Database 的技术架构与核心能力 | Longda's Interesting World">
+      <meta itemprop="description" content="seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深度拆解 seekdb：AI Native Database 的技术架构与核心能力
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-07 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-07T07:30:00+08:00">2026-09-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">嘉格</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">技术详解</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>22 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"深度拆解 seekdb：AI Native Database 的技术架构与核心能力","description":"seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。","image":"https://ilongda.com/img/seekdb-ai-native-architecture/01.png","wordCount":5715,"datePublished":"2026-09-06T23:30:00.000Z","dateModified":"2026-09-17T18:55:22.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/"},"url":"https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/","inLanguage":"zh-CN","keywords":["OceanBase","混合检索","数据库架构","Agent","seekdb","AI Native"],"articleSection":["技术详解"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"技术详解","item":"https://ilongda.com/categories/技术详解/"},{"@type":"ListItem","position":3,"name":"深度拆解 seekdb：AI Native Database 的技术架构与核心能力","item":"https://ilongda.com/2026/2026-09-07-seekdb-ai-native-architecture/"}]}</script>
+<p>seekdb 将SQL、事务、向量检索、全文检索与Agent数据工作流整合到统一内核，本文拆解其嵌入式与服务器形态、技术架构，以及Fork、Diff、Merge等核心能力。</p>
+<blockquote>
+<p>“Future users of large data banks must be protected from having to know how the data is organized in the machine.”</p>
+<p>“宜使后来之人，得其用，而不必知其藏。”</p>
+<p>—— E. F. Codd，《A Relational Model of Data for Large Shared Data Banks》[1]，1970</p>
+</blockquote>
+<span id="more"></span>
+
+<p>AI 时代，正在把数据库从“持久化结果”的基础设施，推向“参与检索、推理与试验过程”的数据底座。</p>
+<p>应用既要保存结构化业务状态，也要管理向量、文本、JSON 与空间数据；既要精确查询，也要完成语义召回、关键词召回、过滤、融合和重排；Agent 还需要安全地试写、比较和选择性采纳结果。</p>
+<p>如果让这些能力分散在多个系统中，应用通常需要承担数据同步、事务一致性、权限管理、故障处理与运维编排的额外复杂度，而 AI Native DataBase —— seekdb 的到来，就是为了解决这道难题。</p>
+<p><img src="/img/seekdb-ai-native-architecture/01.png" alt="OceanBase社区AI与数据内容介绍" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="1-seekdb-概述"><a href="#1-seekdb-概述" class="headerlink" title="1. seekdb 概述"></a>1. seekdb 概述</h2><blockquote>
+<p>seekdb[2] 是一款 MySQL 高度兼容、AI 原生且轻量的跨平台数据库，支持嵌入式与服务器两种运行形态。</p>
+<p>它以 Agent 为核心设计场景，同时适用于 RAG、企业知识检索、智能应用后端与本地数据处理等场景。</p>
+</blockquote>
+<p><img src="/img/seekdb-ai-native-architecture/02.png" alt="seekdb数据库能力与应用场景" loading="lazy" decoding="async"></p>
+<p>seekdb 将关系数据管理、向量检索、全文检索、半结构化与空间数据处理、数据库内 AI 调用，以及面向 Agent 的 Fork&#x2F;Diff&#x2F;Merge 数据工作流放入同一个数据库内核。应用既可以采用服务器模式，通过 MySQL 协议和 SQL 接入，也可以采用嵌入式，将 seekdb 随应用部署（相关实现与版本信息可在 seekdb GitHub[3] 开源仓库中查看，其他产品信息详见：seekdb V1.4.0 产品概览[4]）。</p>
+<p><img src="/img/seekdb-ai-native-architecture/03.svg" alt="seekdb技术内涵与应用价值" loading="lazy" decoding="async"></p>
+<h2 id="2-整体技术架构"><a href="#2-整体技术架构" class="headerlink" title="2. 整体技术架构"></a>2. 整体技术架构</h2><p>seekdb 采用统一数据库内核，将 SQL 处理、AI 与检索、数据与索引、事务、日志和持久化存储组织在同一体系中。</p>
+<p><img src="/img/seekdb-ai-native-architecture/04.png" alt="seekdb统一内核架构概览" loading="lazy" decoding="async"></p>
+<p>关系、向量、文本、JSON 与 GIS 数据共享事务和查询执行框架，上层可通过 SQL、MySQL 协议或多语言 SDK 使用这些能力。</p>
+<h3 id="2-1-分层架构"><a href="#2-1-分层架构" class="headerlink" title="2.1 分层架构"></a>2.1 分层架构</h3><p><img src="/img/seekdb-ai-native-architecture/05.png" alt="seekdb六层技术架构" loading="lazy" decoding="async"></p>
+<p>架构自上而下分为六个层次：</p>
+<ol>
+<li><strong>应用与工具层</strong>：承载 Agent、RAG、智能业务应用、运维工具及既有 MySQL 应用。</li>
+<li><strong>统一接入层</strong>：提供 MySQL 协议、SQL、常见语言驱动，以及面向 Python、JavaScript 等语言的 SDK。</li>
+<li><strong>查询与 AI 层</strong>：完成 SQL 解析、优化与执行，组织标量查询、向量查询、全文查询、混合检索及 AI 函数调用，并提供 Fork&#x2F;Diff&#x2F;Merge 数据工作流。</li>
+<li><strong>数据与索引层</strong>：统一管理关系、向量、文本、JSON、GIS 数据，以及 B-Tree、全文和向量等索引结构。</li>
+<li><strong>事务与日志层</strong>：提供 ACID 事务、MVCC 并发控制、Redo Log 与故障恢复，为一致性读写和数据分支提供事务基础。</li>
+<li><strong>LSM-Tree 存储层</strong>：管理 MemTable、SSTable、冻结、转储、后台 Compaction、缓存和持久化空间，并为 COW 数据分支提供存储基础。</li>
+</ol>
+<h3 id="2-2-LSM-Tree-存储架构"><a href="#2-2-LSM-Tree-存储架构" class="headerlink" title="2.2 LSM-Tree 存储架构"></a>2.2 LSM-Tree 存储架构</h3><p>seekdb 的持久化存储采用 LSM-Tree 架构，将数据组织为内存中的可读写增量层 MemTable 和磁盘上的不可变 SSTable。INSERT、UPDATE 和 DELETE 在 MemTable 中形成增量版本，事务变更通过 Redo Log 获得持久化保障；因此，已提交数据在尚未转储为 SSTable 时仍可通过日志恢复。</p>
+<p><img src="/img/seekdb-ai-native-architecture/06.png" alt="LSM存储层与数据组织" loading="lazy" decoding="async"></p>
+<p>数据从事务写入、日志持久化到后台 Compaction，以及快照读取的关系如下：</p>
+<p><img src="/img/seekdb-ai-native-architecture/07.svg" alt="事务写入与合并快照读取流程" loading="lazy" decoding="async"></p>
+<p>MemTable 冻结后，Mini Compaction 将其转储为 SSTable；Minor Compaction 进一步归并多个增量 SSTable；Medium&#x2F;Major Compaction 将增量数据与既有基线整合为新的基线 SSTable。</p>
+<p>查询根据事务快照同时读取相关的 MemTable 与 SSTable，由 MVCC 和多路归并选择当前事务可见的版本，对 SQL 层呈现一张统一的逻辑表。这种“前台事务写入、后台数据整理”的方式避免在写入关键路径中原地改写磁盘数据页；后台 Compaction 则持续控制 SSTable 数量、读取放大和空间占用。</p>
+<h2 id="3-数据库基础能力"><a href="#3-数据库基础能力" class="headerlink" title="3. 数据库基础能力"></a>3. 数据库基础能力</h2><p>AI 与检索能力建立在通用数据库基础之上。seekdb 不是把若干检索组件简单包装成 API，而是以 SQL、事务、索引、权限和恢复能力管理应用数据。</p>
+<p><img src="/img/seekdb-ai-native-architecture/08.png" alt="seekdb通用数据库能力" loading="lazy" decoding="async"></p>
+<h3 id="3-1-SQL、数据类型与索引"><a href="#3-1-SQL、数据类型与索引" class="headerlink" title="3.1 SQL、数据类型与索引"></a>3.1 SQL、数据类型与索引</h3><p>seekdb 支持常见的 DDL、DML、DCL 与事务控制语句，提供数值、字符、日期时间、二进制、JSON、空间、向量等数据类型。除主键和普通二级索引外，还提供全文与向量索引。查询优化器负责选择访问路径、下推条件、组织连接与排序，使检索能力能够与关系查询组合，而不局限于单独的向量 API。</p>
+<h3 id="3-2-ACID-与-MVCC"><a href="#3-2-ACID-与-MVCC" class="headerlink" title="3.2 ACID 与 MVCC"></a>3.2 ACID 与 MVCC</h3><p>事务系统提供原子性、一致性、隔离性与持久性，MVCC 允许读写并发并提供一致性视图。日志记录和恢复机制用于在异常退出后恢复已提交数据并处理未完成事务。对同时修改业务状态、文档和向量字段的应用，统一事务边界可以避免“业务记录已提交但检索数据未写入另一系统”一类跨系统不一致。</p>
+<h3 id="3-3-MySQL-高度兼容"><a href="#3-3-MySQL-高度兼容" class="headerlink" title="3.3 MySQL 高度兼容"></a>3.3 MySQL 高度兼容</h3><p>seekdb 兼容 MySQL 协议以及 MySQL 5.7&#x2F;8.0 的大量常用语法和行为。应用可使用常见 MySQL 驱动、客户端、连接池与数据库工具接入，开发者可以延续熟悉的 SQL 和事务使用方式。</p>
+<p>兼容范围主要包括：</p>
+<ul>
+<li>常用建表、增删改查、连接、子查询、聚合、排序和事务控制语句；</li>
+<li>常用数据类型、表达式、函数、视图、存储过程与触发器；</li>
+<li>MySQL 协议、系统元数据视图及常见驱动接入方式；</li>
+<li>用户与密码、<code>GRANT</code>&#x2F;<code>REVOKE</code>、角色和对象级权限；</li>
+<li>TLS 加密连接，用于保护客户端与服务器之间的数据传输。</li>
+</ul>
+<h3 id="3-4-权限与连接安全"><a href="#3-4-权限与连接安全" class="headerlink" title="3.4 权限与连接安全"></a>3.4 权限与连接安全</h3><p>服务器模式可通过账号、密码、角色和对象权限控制访问，并使用 <code>GRANT</code> 与 <code>REVOKE</code> 管理授权。应用应遵循最小权限原则，为业务读写、模型服务配置、索引管理和数据分支操作分配不同角色。TLS 负责链路加密；凭据轮换、密钥托管、网络边界、审计留痕与数据脱敏仍需结合整体部署方案实施。</p>
+<h3 id="3-5-主备可用性"><a href="#3-5-主备可用性" class="headerlink" title="3.5 主备可用性"></a>3.5 主备可用性</h3><p>对服务连续性和数据冗余有要求时，seekdb 可采用主备部署：主节点承载业务读写，备节点保持数据副本，为节点故障后的恢复与切换提供基础。主备部署可结合故障检测与切换机制，构建面向生产环境的高可用运行体系。</p>
+<h2 id="4-一体化数据管理与混合检索"><a href="#4-一体化数据管理与混合检索" class="headerlink" title="4. 一体化数据管理与混合检索"></a>4. 一体化数据管理与混合检索</h2><p>seekdb 将关系、向量、文本、JSON 与 GIS 数据统一纳入 SQL 与事务体系。在此基础上，混合检索组合向量召回、全文召回和标量过滤，并通过融合与重排形成完整的检索链路。</p>
+<h3 id="4-1-一个数据库管理多类数据"><a href="#4-1-一个数据库管理多类数据" class="headerlink" title="4.1 一个数据库管理多类数据"></a>4.1 一个数据库管理多类数据</h3><p><img src="/img/seekdb-ai-native-architecture/09.png" alt="seekdb多类型数据统一管理" loading="lazy" decoding="async"></p>
+<p>seekdb 在同一数据库中管理以下数据与访问方式：</p>
+<p><img src="/img/seekdb-ai-native-architecture/10.svg" alt="多模数据与访问方式说明" loading="lazy" decoding="async"></p>
+<p>多类数据同表存储时，一条记录可以同时包含业务主键、权限字段、正文、向量、JSON 元数据和空间字段。数据写入由同一事务系统管理，查询在同一 SQL 执行上下文中完成，从而减少跨系统复制、异步同步和应用层结果拼接。对于同步维护的索引，索引随事务提交进入可查询状态；对于异步索引，基表提交与索引可见性之间存在明确的最终一致窗口，应用可按需要主动刷新。</p>
+<h3 id="4-2-向量检索"><a href="#4-2-向量检索" class="headerlink" title="4.2 向量检索"></a>4.2 向量检索</h3><p>seekdb 提供 VECTOR 数据类型、向量距离计算和近似最近邻检索能力，覆盖 HNSW、HNSW_SQ、HNSW_BQ、IVF_FLAT、IVF_PQ 等索引形态。应用可根据数据规模、精度、查询延迟、构建成本和内存预算选择索引类型及参数，而不是把所有负载固定在单一索引策略上。</p>
+<p>典型向量查询同时包含语义距离与业务条件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">SELECT id, title, category,</span><br><span class="line">       l2_distance(embedding, :query_vector) AS distance</span><br><span class="line">FROM knowledge</span><br><span class="line">WHERE tenant_id = :tenant_id</span><br><span class="line">  AND status = &#x27;published&#x27;</span><br><span class="line">ORDER BY distance APPROXIMATE</span><br><span class="line">LIMIT 20;</span><br></pre></td></tr></table></figure>
+
+<p>这种执行方式使租户、权限、时间、类别等标量过滤不必在向量数据库之外二次处理。查询优化器可以结合谓词和索引路径组织执行，应用获得的是符合业务约束的 Top-K 结果。</p>
+<h3 id="4-3-全文检索"><a href="#4-3-全文检索" class="headerlink" title="4.3 全文检索"></a>4.3 全文检索</h3><p>全文检索用于处理词项匹配、专有名词、编号、错误码等向量模型不一定稳定捕获的信号。seekdb 在数据库内提供全文索引、分词和基于 BM25 的相关性排序，可以与普通 SQL 谓词、排序和投影组合。全文数据与业务字段共同维护，避免将文档内容和权限元数据拆成两套事实来源。</p>
+<h3 id="4-4-混合检索链路"><a href="#4-4-混合检索链路" class="headerlink" title="4.4 混合检索链路"></a>4.4 混合检索链路</h3><p>混合检索把候选生成、业务过滤、分数融合和可选重排组织成一条可控制的查询链路。</p>
+<p><img src="/img/seekdb-ai-native-architecture/11.png" alt="混合检索候选与排序链路" loading="lazy" decoding="async"></p>
+<p>一条典型链路包含：</p>
+<ol>
+<li>将用户查询转换为向量，生成语义候选；同时通过全文索引生成关键词候选。</li>
+<li>在候选生成前或执行过程中应用租户、权限、时间、状态、JSON 属性等标量条件。</li>
+<li>使用加权融合或 Reciprocal Rank Fusion（RRF）合并不同召回通道，避免直接比较量纲不同的原始分数。</li>
+<li>对融合后的有限候选集调用 <code>AI_RERANK</code>，由外部重排模型进一步判断相关性。</li>
+<li>返回最终 Top-K 结果及业务所需字段。</li>
+</ol>
+<p><img src="/img/seekdb-ai-native-architecture/12.svg" alt="向量全文过滤融合查询流程" loading="lazy" decoding="async"></p>
+<p>seekdb 提供 <code>HYBRID_SEARCH(...)</code> 查询入口与 <code>DBMS_HYBRID_SEARCH</code> 能力来描述候选、过滤、融合与排序。seekdb 混合检索教程[5]给出了具体参数与示例。调用形式可概括为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">SET @query = &#x27;&#123;</span><br><span class="line">  &quot;query&quot;: &#123; ...向量召回与全文召回... &#125;,</span><br><span class="line">  &quot;filter&quot;: &#123; ...业务条件... &#125;,</span><br><span class="line">  &quot;rank&quot;: &#123; ...加权融合或 RRF... &#125;</span><br><span class="line">&#125;&#x27;;</span><br><span class="line"></span><br><span class="line">SELECT *</span><br><span class="line">FROM HYBRID_SEARCH(&#x27;knowledge&#x27;, @query);</span><br></pre></td></tr></table></figure>
+
+<p>具体 JSON 参数由实际表结构、索引和模型配置决定。召回数、过滤位置、融合策略、重排候选数和最终 Top-K 共同影响相关性、延迟与模型调用成本，需要在查询设计中明确设置。</p>
+<h3 id="4-5-异步向量索引与写查平衡"><a href="#4-5-异步向量索引与写查平衡" class="headerlink" title="4.5 异步向量索引与写查平衡"></a>4.5 异步向量索引与写查平衡</h3><p>持续写入场景中，同步维护复杂向量索引会把索引更新成本放入写事务关键路径。seekdb 因此同时提供同步和异步向量索引模式，相关设计与参数可参考 V1.3.0 Release Notes[6]：</p>
+<ul>
+<li>同步模式强调提交后立即通过索引查询到最新数据，适合写入压力可控且要求强可见性的负载。</li>
+<li>异步模式先提交基表数据，再通过变更流持续更新增量索引；查询同时搜索稳定索引与增量索引并合并 Top-K，以降低持续写入对前台查询的影响。</li>
+<li>异步模式下，新写入数据进入向量索引存在最终一致窗口。应用可通过 <code>DBMS_INDEX_MANAGER.REFRESH()</code> 或 SDK 的 <code>refresh_index()</code> 主动推进索引追平，再执行依赖最新向量结果的操作。</li>
+</ul>
+<p><img src="/img/seekdb-ai-native-architecture/13.png" alt="同步异步索引可见性机制" loading="lazy" decoding="async"></p>
+<p>**这一区分使一致性选择成为显式设计，而不是由应用在多个系统之间隐式承担。**业务状态仍以事务提交后的基表为准，异步性只作用于相应索引的查询可见时点。</p>
+<h2 id="5-数据库内-AI"><a href="#5-数据库内-AI" class="headerlink" title="5. 数据库内 AI"></a>5. 数据库内 AI</h2><p>seekdb 将外部模型的接入与调用纳入 SQL 体系。用户可登记嵌入、重排和生成模型，并通过 <code>AI_EMBED</code>、<code>AI_RERANK</code> 和 <code>AI_COMPLETE</code> 在 SQL 中发起模型调用，具体用法可参考 seekdb AI 函数教程[7]。模型推理由外部服务完成，seekdb 负责模型与端点管理、数据选择、请求发起和结果返回，使检索、模型调用与数据处理能够在同一条 SQL 链路中完成。</p>
+<h3 id="5-1-外部模型接入与管理"><a href="#5-1-外部模型接入与管理" class="headerlink" title="5.1 外部模型接入与管理"></a>5.1 外部模型接入与管理</h3><p>seekdb 通过 <code>DBMS_AI_SERVICE</code> 提供模型定义与访问端点管理能力：</p>
+<p><img src="/img/seekdb-ai-native-architecture/14.svg" alt="数据库模型与服务端点管理" loading="lazy" decoding="async"></p>
+<p>模型定义与具体服务端点相互分离。更换服务地址、模型提供方或访问凭据时，可以更新端点配置，使用该逻辑模型名的 SQL 与索引定义无需随之修改。</p>
+<h3 id="5-2-AI-SQL-函数"><a href="#5-2-AI-SQL-函数" class="headerlink" title="5.2 AI SQL 函数"></a>5.2 AI SQL 函数</h3><p><img src="/img/seekdb-ai-native-architecture/15.svg" alt="AI SQL函数与模型调用" loading="lazy" decoding="async"></p>
+<p>示意调用如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">SELECT AI_EMBED(&#x27;embedding_model&#x27;, content) FROM documents;</span><br><span class="line">SELECT AI_RERANK(&#x27;rerank_model&#x27;, :query, :documents_json);</span><br><span class="line">SELECT AI_COMPLETE(&#x27;chat_model&#x27;, :prompt, :config_json);</span><br></pre></td></tr></table></figure>
+
+<p>AI 函数与普通 SQL 表达式组合后，数据库可以直接选取目标行、构造模型输入并接收结果。实际使用时应避免对无限结果集逐行调用外部模型；更稳妥的方式是先通过索引和谓词缩小候选集，再执行重排或生成，并为调用量、超时与失败行为设置清晰边界。</p>
+<h3 id="5-3-从检索到生成的闭环"><a href="#5-3-从检索到生成的闭环" class="headerlink" title="5.3 从检索到生成的闭环"></a>5.3 从检索到生成的闭环</h3><p>在 RAG 链路中，<code>AI_EMBED</code> 可以生成查询向量，向量与全文索引负责候选召回，标量条件实施业务约束，RRF 或加权融合统一排序，<code>AI_RERANK</code> 精排有限候选，最后由 <code>AI_COMPLETE</code> 基于证据生成答案。关系字段、文档正文、向量、检索分数和生成结果都可留在同一数据上下文中，便于记录引用、追踪输入和复用结果。</p>
+<p><img src="/img/seekdb-ai-native-architecture/16.png" alt="RAG检索与模型调用闭环" loading="lazy" decoding="async"></p>
+<p><strong>这一闭环的核心不是把所有推理都压入 SQL，而是把靠近数据的选择、过滤和编排放在数据库侧</strong>，让应用集中处理交互、业务流程和模型策略。</p>
+<h2 id="6-面向-Agent-的-Fork-Diff-Merge"><a href="#6-面向-Agent-的-Fork-Diff-Merge" class="headerlink" title="6. 面向 Agent 的 Fork&#x2F;Diff&#x2F;Merge"></a>6. 面向 Agent 的 Fork&#x2F;Diff&#x2F;Merge</h2><p>Agent 往往需要在真实上下文上执行多步试验：改写记忆、重组计划、生成结构化数据、调用工具后修正状态。直接修改主数据会增加误写风险；每次由应用复制完整数据又会带来时间、空间和一致性成本。</p>
+<p>seekdb 将 Fork&#x2F;Diff&#x2F;Merge[8] 作为数据库原生数据工作流，为 Agent 提供可写、隔离、可比较、可选择性合并的沙箱。</p>
+<p><img src="/img/seekdb-ai-native-architecture/17.png" alt="Agent隔离数据工作流" loading="lazy" decoding="async"></p>
+<h3 id="6-1-Fork：创建可写隔离空间"><a href="#6-1-Fork：创建可写隔离空间" class="headerlink" title="6.1 Fork：创建可写隔离空间"></a>6.1 Fork：创建可写隔离空间</h3><p><code>FORK DATABASE</code> 用于从现有数据库创建完整的 Agent 沙箱；<code>FORK TABLE</code> 用于只隔离某张表。Fork 基于 Copy-on-Write（COW）共享初始数据页，不要求在创建时完整复制全部数据。Fork 后源与分支可以分别读写，后续变更相互隔离。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FORK DATABASE agent_state TO sandbox_42;</span><br><span class="line"></span><br><span class="line">USE sandbox_42;</span><br><span class="line">UPDATE memory SET content = :new_content WHERE id = :id;</span><br><span class="line">INSERT INTO plan_steps VALUES (...);</span><br></pre></td></tr></table></figure>
+
+<p>整库 Fork 适合包含多张关联表、索引和状态的完整试验；表级 Fork 适合局部数据加工或更细粒度的并行任务。</p>
+<h3 id="6-2-Diff：检查结果与冲突"><a href="#6-2-Diff：检查结果与冲突" class="headerlink" title="6.2 Diff：检查结果与冲突"></a>6.2 Diff：检查结果与冲突</h3><p><code>DIFF TABLE</code> 比较两个表的主键与行内容，识别仅一侧存在的行以及同主键不同内容的冲突。Agent 或上层应用可先检查差异，再决定是否采纳。相比只审查生成文本，数据级 Diff 能明确展示最终将发生的插入、更新或冲突。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DIFF TABLE sandbox_42.memory AGAINST agent_state.memory;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-Merge：按策略采纳结果"><a href="#6-3-Merge：按策略采纳结果" class="headerlink" title="6.3 Merge：按策略采纳结果"></a>6.3 Merge：按策略采纳结果</h3><p><code>MERGE TABLE</code> 将试验表的结果合入目标表，并提供三种冲突策略：</p>
+<p><img src="/img/seekdb-ai-native-architecture/18.svg" alt="数据合并冲突策略说明" loading="lazy" decoding="async"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">MERGE TABLE sandbox_42.memory</span><br><span class="line">INTO agent_state.memory</span><br><span class="line">STRATEGY THEIRS;</span><br></pre></td></tr></table></figure>
+
+<p>未采纳的试验可以直接丢弃沙箱。由此形成“主数据 → Fork → 独立试写 → Diff → 决策 → Merge 或丢弃”的闭环。</p>
+<p><img src="/img/seekdb-ai-native-architecture/19.svg" alt="Fork差异比较与合并机制" loading="lazy" decoding="async"></p>
+<p><strong>该机制借鉴代码工作流中的分支思想，并针对数据库数据定义操作对象、冲突语义和事务边界。</strong></p>
+<h3 id="6-4-Agent-场景中的控制点"><a href="#6-4-Agent-场景中的控制点" class="headerlink" title="6.4 Agent 场景中的控制点"></a>6.4 Agent 场景中的控制点</h3><p><strong>Fork&#x2F;Diff&#x2F;Merge 解决的是数据隔离与采纳机制，并不替代应用权限与业务审批。</strong>  </p>
+<p><img src="/img/seekdb-ai-native-architecture/20.png" alt="Agent沙箱权限与采纳边界" loading="lazy" decoding="async"></p>
+<p>生产方案通常还应增加：限定 Agent 可 Fork 的源库与表；为沙箱设置所有者、生命周期和空间配额；在 Merge 前执行规则校验或人工审批；记录任务、模型、提示词、差异与采纳人；默认使用 <code>FAIL</code>，只在明确规则下选择覆盖策略。</p>
+<h2 id="7-轻量、多形态与跨平台"><a href="#7-轻量、多形态与跨平台" class="headerlink" title="7. 轻量、多形态与跨平台"></a>7. 轻量、多形态与跨平台</h2><p>seekdb 通过紧凑的资源占用、多形态运行和跨平台支持，覆盖从应用内嵌入、本地开发到独立数据服务的不同交付环境。</p>
+<p><img src="/img/seekdb-ai-native-architecture/21.png" alt="seekdb轻量部署与运行方式" loading="lazy" decoding="async"></p>
+<h3 id="7-1-轻量化设计"><a href="#7-1-轻量化设计" class="headerlink" title="7.1 轻量化设计"></a>7.1 轻量化设计</h3><p>seekdb 的轻量化同时体现在交付与运行层面。交付时，核心程序及其依赖保持紧凑，二进制与归档体积较小；运行时，空载 CPU 与内存占用维持在较低水平，并可在较短时间内完成启动、进入可连接状态。这使 seekdb 能够适应本地开发、嵌入式应用和小规格部署环境。</p>
+<p>以下参考实测值展示 seekdb 的二进制体积、空载资源开销与启动速度：</p>
+<p><img src="/img/seekdb-ai-native-architecture/22.svg" alt="seekdb资源开销参考数据" loading="lazy" decoding="async"></p>
+<h3 id="7-2-多形态运行"><a href="#7-2-多形态运行" class="headerlink" title="7.2 多形态运行"></a>7.2 多形态运行</h3><p>seekdb 由同一数据库内核提供嵌入式与服务器两种主要运行形态：</p>
+<p><img src="/img/seekdb-ai-native-architecture/23.svg" alt="嵌入式与服务器运行形态" loading="lazy" decoding="async"></p>
+<p>两种形态共享同一套数据模型、SQL 语义、索引和事务能力，应用可根据部署位置、接入方式与资源管理要求进行选择。在服务器模式基础上还可采用主备部署，为数据冗余和故障恢复提供基础，相关能力见 3.5 节。</p>
+<h3 id="7-3-跨平台与多芯片支持"><a href="#7-3-跨平台与多芯片支持" class="headerlink" title="7.3 跨平台与多芯片支持"></a>7.3 跨平台与多芯片支持</h3><p><img src="/img/seekdb-ai-native-architecture/24.svg" alt="跨平台与多芯片部署支持" loading="lazy" decoding="async"></p>
+<p>开发者可在 macOS 或 Windows 上完成本地数据建模与 AI 流程验证，再将相同的数据模型、SQL 和服务接口部署到 Linux 环境。跨平台与多芯片支持减少了不同开发、交付和生产环境之间的适配工作。</p>
+<h2 id="8-性能与效率"><a href="#8-性能与效率" class="headerlink" title="8. 性能与效率"></a>8. 性能与效率</h2><p>对于持续更新的向量数据，查询性能需要结合吞吐、尾延迟、召回率以及写入期间的稳定性综合评估。本章以公开可复现的流式向量检索工作负载为例，展示 seekdb 在不同数据规模下的参考实测结果。</p>
+<p><img src="/img/seekdb-ai-native-architecture/25.png" alt="流式向量检索评测背景" loading="lazy" decoding="async"></p>
+<h3 id="8-1-持续写入向量检索参考实测值"><a href="#8-1-持续写入向量检索参考实测值" class="headerlink" title="8.1 持续写入向量检索参考实测值"></a>8.1 持续写入向量检索参考实测值</h3><p>以下结果来自 VDB StreamBench 公开可复现的流式向量检索工作负载[9]：Cohere 768 维数据集，HNSW 参数 <code>M=16</code>、<code>ef_construction=256</code>、<code>ef_search=200</code>，持续以 500 行&#x2F;秒写入；分别在数据达到目标规模的 50% 和 80% 时，以 5 和 10 并发查询，查询阶段在写入后继续运行 30 秒。测试环境为 16 vCPU、64 GiB 内存。</p>
+<p><img src="/img/seekdb-ai-native-architecture/26.svg" alt="持续写入与查询延迟实测" loading="lazy" decoding="async"></p>
+<p>该工作负载重点观察异步索引在“持续写入 + 并发查询”条件下的稳定性。1,000 万数据规模下，并发写入前后 P99 从 19.7 ms 变化到 21.7 ms，约为 1.1 倍，说明查询尾延迟在该配置和召回水平下保持相对稳定。</p>
+<h3 id="8-2-同工作负载对比"><a href="#8-2-同工作负载对比" class="headerlink" title="8.2 同工作负载对比"></a>8.2 同工作负载对比</h3><p>在同一公开测试框架、数据集、写入速率和机器规格下，1,000 万数据规模的参考结果如下。竞品 QPS 为按公开倍数换算后的近似值，结果适用于该流式向量工作负载。</p>
+<p><img src="/img/seekdb-ai-native-architecture/27.svg" alt="流式向量检索吞吐对比" loading="lazy" decoding="async"></p>
+<p>在该测试中，seekdb 查询吞吐约为 Elasticsearch 的 3.2 倍、Milvus 的 10.7 倍，同时并发写入引起的 P99 波动更小。该结果需结合数据规模、索引参数、写入速率、并发和 Recall 解读，适用范围限定于上述测试条件。</p>
+<h2 id="9-典型技术使用方式"><a href="#9-典型技术使用方式" class="headerlink" title="9. 典型技术使用方式"></a>9. 典型技术使用方式</h2><p><img src="/img/seekdb-ai-native-architecture/28.png" alt="Agent知识检索应用方式" loading="lazy" decoding="async"></p>
+<h3 id="9-1-Agent-长期记忆与知识检索"><a href="#9-1-Agent-长期记忆与知识检索" class="headerlink" title="9.1 Agent 长期记忆与知识检索"></a>9.1 Agent 长期记忆与知识检索</h3><p>将会话、实体、事实、任务状态和向量表示保存在同一数据库中。关系字段负责时间、来源、权限和状态约束，向量与全文索引负责语义及关键词召回，JSON 保存可变元数据。Agent 可以在 SQL 中完成过滤与检索，避免长期记忆被拆分到多套存储。</p>
+<h3 id="9-2-RAG-与企业知识库"><a href="#9-2-RAG-与企业知识库" class="headerlink" title="9.2 RAG 与企业知识库"></a>9.2 RAG 与企业知识库</h3><p>文档入库时保存正文、分段、结构化元数据和向量；查询时执行向量召回、全文召回、权限过滤、融合与可选重排。AI 函数可承担查询向量生成、重排和答案生成。该方案的重点是一条可审查的数据链路：最终结果能关联到原始文档、检索分数和业务条件。</p>
+<h3 id="9-3-嵌入式智能应用"><a href="#9-3-嵌入式智能应用" class="headerlink" title="9.3 嵌入式智能应用"></a>9.3 嵌入式智能应用</h3><p>Python、JavaScript 等语言可通过相应 SDK 以嵌入式形态使用 seekdb。该形态适合桌面 Agent、个人知识工具、边缘应用、离线数据处理和开发测试，也支持多个应用进程共享数据。当应用需要跨主机访问、独立资源管理或集中化运维时，可采用服务器模式，并继续使用相同的数据模型和查询方式。</p>
+<h3 id="9-4-隔离试验与结果采纳"><a href="#9-4-隔离试验与结果采纳" class="headerlink" title="9.4 隔离试验与结果采纳"></a>9.4 隔离试验与结果采纳</h3><p>对会修改数据的 Agent 任务，先通过 <code>FORK DATABASE</code> 创建完整沙箱；Agent 在分支内多轮写入和验证；任务完成后使用 <code>DIFF TABLE</code> 展示变化，通过规则或人工审批决定是否 <code>MERGE TABLE</code>。对局部表加工可使用 <code>FORK TABLE</code>，减少任务边界并简化审查。</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>《A Relational Model of Data for Large Shared Data Banks》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://doi.org/10.1145/362384.362685">https:&#x2F;&#x2F;doi.org&#x2F;10.1145&#x2F;362384.362685</a></p>
+<p>[2] </p>
+<p>seekdb: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.seekdb.ai/">https:&#x2F;&#x2F;www.seekdb.ai&#x2F;</a></p>
+<p>[3] </p>
+<p>seekdb GitHub: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb</a></p>
+<p>[4] </p>
+<p>seekdb V1.4.0 产品概览: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.seekdb.ai/seekdb/seekdb-overview/">https:&#x2F;&#x2F;docs.seekdb.ai&#x2F;seekdb&#x2F;seekdb-overview&#x2F;</a></p>
+<p>[5] </p>
+<p>seekdb 混合检索教程: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.seekdb.ai/seekdb/experience-hybrid-search/">https:&#x2F;&#x2F;docs.seekdb.ai&#x2F;seekdb&#x2F;experience-hybrid-search&#x2F;</a></p>
+<p>[6] </p>
+<p>V1.3.0 Release Notes: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.3.0">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb&#x2F;releases&#x2F;tag&#x2F;v1.3.0</a></p>
+<p>[7] </p>
+<p>seekdb AI 函数教程: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://docs.seekdb.ai/seekdb/experience-ai-function/">https:&#x2F;&#x2F;docs.seekdb.ai&#x2F;seekdb&#x2F;experience-ai-function&#x2F;</a></p>
+<p>[8] </p>
+<p>Fork&#x2F;Diff&#x2F;Merge: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb/releases/tag/v1.2.0">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb&#x2F;releases&#x2F;tag&#x2F;v1.2.0</a></p>
+<p>[9] </p>
+<p>VDB StreamBench 公开可复现的流式向量检索工作负载: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/vdb-streambench">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;vdb-streambench</a></p>
+<p><img src="/img/seekdb-ai-native-architecture/29.png" alt="OceanBase社区内容推荐" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/30.gif" alt="OceanBase公众号阅读引导" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/31.png" alt="OceanBase社区交流入口" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/seekdb-ai-native-architecture/32.png" alt="OceanBase往期文章推荐一" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/33.png" alt="OceanBase往期文章推荐二" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/34.png" alt="OceanBase往期文章推荐三" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/35.png" alt="OceanBase往期文章推荐四" loading="lazy" decoding="async"></p>
+<p><img src="/img/seekdb-ai-native-architecture/36.png" alt="OceanBase往期文章推荐五" loading="lazy" decoding="async"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2/" rel="tag"># 混合检索</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84/" rel="tag"># 数据库架构</a>
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/AI-Native/" rel="tag"># AI Native</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-02-oceanbase-inclusion-ai-event/" rel="prev" title="码上报名！OceanBase 将携 AI 成果亮相外滩大会，上海见！">
+                  <i class="fa fa-angle-left"></i> 码上报名！OceanBase 将携 AI 成果亮相外滩大会，上海见！
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-09-oceanbase-ai-lakebase-evolution/" rel="next" title="从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考">
+                  从分布式数据库到 AI 湖库：OceanBase 的技术演进与思考 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

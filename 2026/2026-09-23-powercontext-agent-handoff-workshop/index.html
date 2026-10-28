@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="PowerContext Agent 接力实战以亲子旅行规划为例，演示清空聊天、调整预算和更换 Agent 后，如何保存、恢复与更新工作上下文，并通过输入输出验证任务交接。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="PowerContext Agent 接力实战以亲子旅行规划为例，演示清空聊天、调整预算和更换 Agent 后，如何保存、恢复与更新工作上下文，并通过输入输出验证任务交接。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/01.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/02.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/03.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/04.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/05.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/06.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/07.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/08.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/09.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/10.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/11.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/12.gif">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/13.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/14.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/15.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/16.png">
+<meta property="og:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/17.png">
+<meta property="article:published_time" content="2026-09-23T00:46:41.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:46:41.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="上下文工程">
+<meta property="article:tag" content="任务交接">
+<meta property="article:tag" content="魔搭">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/","path":"2026/2026-09-23-powercontext-agent-handoff-workshop/","title":"清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#01-%E5%85%88%E8%B7%91%E8%B5%B7%E6%9D%A5%EF%BC%9A%E5%9C%A8%E9%AD%94%E6%90%AD%E4%BD%93%E9%AA%8C%E4%B8%80%E5%9C%BA-Agent-%E6%8E%A5%E5%8A%9B"><span class="nav-number">1.</span> <span class="nav-text">01 先跑起来：在魔搭体验一场 Agent 接力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-%E4%BB%8E-Memory-%E5%88%B0-Handoff%EF%BC%9A%E4%B8%89%E6%A3%92%E6%8E%A5%E5%8A%9B%EF%BC%8C%E6%A3%80%E6%9F%A5%E4%BB%BB%E5%8A%A1%E6%80%8E%E4%B9%88%E7%BB%A7%E7%BB%AD"><span class="nav-number">2.</span> <span class="nav-text">02 从 Memory 到 Handoff：三棒接力，检查任务怎么继续</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%A3%92%EF%BC%9A%E5%85%88%E4%BF%9D%E5%AD%98%EF%BC%8C%E5%86%8D%E6%95%85%E6%84%8F%E4%B8%8D%E6%81%A2%E5%A4%8D"><span class="nav-number">2.1.</span> <span class="nav-text">第一棒：先保存，再故意不恢复</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%A3%92%EF%BC%9A%E6%81%A2%E5%A4%8D%E8%B5%84%E6%96%99%EF%BC%8C%E5%86%8D%E4%BF%AE%E6%94%B9%E8%A6%81%E6%B1%82"><span class="nav-number">2.2.</span> <span class="nav-text">第二棒：恢复资料，再修改要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%A3%92%EF%BC%9A%E6%8D%A2%E4%B8%80%E4%BD%8D-Agent%EF%BC%8C%E4%BB%8E%E7%A9%BA%E8%81%8A%E5%A4%A9%E6%8E%A5%E6%89%8B"><span class="nav-number">2.3.</span> <span class="nav-text">第三棒：换一位 Agent，从空聊天接手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E5%8A%9B%E8%BF%87%E7%A8%8B%E4%B8%AD%EF%BC%8C%E7%A9%B6%E7%AB%9F%E4%BF%9D%E5%AD%98%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.4.</span> <span class="nav-text">接力过程中，究竟保存了什么？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-%E4%BB%8E-Experience-%E5%88%B0-Skill%EF%BC%9A%E8%AE%A9%E8%BF%99%E6%AC%A1%E7%9A%84%E7%BB%8F%E9%AA%8C%EF%BC%8C%E4%B8%8B%E6%AC%A1%E8%BF%98%E8%83%BD%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">03 从 Experience 到 Skill：让这次的经验，下次还能用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-%E6%8D%A2%E4%B8%80%E4%BD%8D-Agent%EF%BC%8C%E4%B8%8D%E5%BF%85%E6%8A%8A%E6%95%B4%E4%BB%B6%E4%BA%8B%E9%87%8D%E6%96%B0%E4%BA%A4%E4%BB%A3%E4%B8%80%E9%81%8D"><span class="nav-number">4.</span> <span class="nav-text">04 换一位 Agent，不必把整件事重新交代一遍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">5.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-29-pi-powercontext-project-memory/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-29</time>
+        <br>
+      会话散了场，记忆还在场：给 pi 装上项目记忆
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-24-codex-powercontext-practice/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-24</time>
+        <br>
+      会话会结束，上下文不死：Codex × PowerContext 实战手记
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-15-powercontext-1-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-15</time>
+        <br>
+      PowerContext 1.0.0 正式发布：前事有据，后事可续
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-14-gpt-6-astra-codex-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-14</time>
+        <br>
+      GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战 | Longda's Interesting World">
+      <meta itemprop="description" content="PowerContext Agent 接力实战以亲子旅行规划为例，演示清空聊天、调整预算和更换 Agent 后，如何保存、恢复与更新工作上下文，并通过输入输出验证任务交接。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-23 08:46:41" itemprop="dateCreated datePublished" datetime="2026-09-23T08:46:41+08:00">2026-09-23</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">靖顺</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>10 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">PowerContext Agent 接力实战以亲子旅行规划为例，演示清空聊天、调整预算和更换 Agent 后，如何保存、恢复与更新工作上下文，并通过输入输出验证任务交接。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战","description":"PowerContext Agent 接力实战以亲子旅行规划为例，演示清空聊天、调整预算和更换 Agent 后，如何保存、恢复与更新工作上下文，并通过输入输出验证任务交接。","image":"https://ilongda.com/img/9-23-powercontext-agent-handoff-workshop/01.png","wordCount":2508,"datePublished":"2026-09-23T00:46:41.000Z","dateModified":"2026-10-19T00:46:41.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/"},"url":"https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/","inLanguage":"zh-CN","keywords":["Agent","上下文工程","PowerContext","魔搭","任务交接"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战","item":"https://ilongda.com/2026/2026-09-23-powercontext-agent-handoff-workshop/"}]}</script>
+<p>让 Agent 做一份上海亲子游攻略，并不难。</p>
+<p>但麻烦的是：前两天刚排好，预算从 3000 元降到 2600 元，第二天又碰上下雨。你还要清空聊天，把剩下的行程和费用表交给另一个 Agent。</p>
+<p>新来的 Agent 会不会继续按旧预算安排？他又从哪里知道？</p>
+<p>这些信息在多轮对话里一点点积累。换了会话，下一位就需要重新拿到要求、已有成果和待办，才能接着工作。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/01.png" alt="保存任务上下文并交给下一位 Agent" decoding="async"></p>
+<p>OceanBase PowerContext 把这份工作上下文保存在对话之外，由应用在需要时读取，再交给模型。Agent 接力 Workshop[1] 把这个过程做成了一场上海亲子旅行实验：先清空聊天做对照，再恢复资料、修改要求，最后换一位 Agent 接手。</p>
+<span id="more"></span>
+
+<p>你可以顺着每一棒的输入和输出，检查信息到底在哪一步被保存、取回和使用。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/02.png" alt="PowerContext 亲子旅行接力实战封面" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号“老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="01-先跑起来：在魔搭体验一场-Agent-接力"><a href="#01-先跑起来：在魔搭体验一场-Agent-接力" class="headerlink" title="01 先跑起来：在魔搭体验一场 Agent 接力"></a>01 先跑起来：在魔搭体验一场 Agent 接力</h2><p>打开 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.modelscope.cn/gallery/hhhhiiii/powercontext">Agent 接力 Workshop</a>，登录魔搭账号；还没有账号的话，先完成注册。</p>
+<p>接下来，按页面和 Notebook 的说明完成准备：</p>
+<ol>
+<li>复制并运行项目。</li>
+</ol>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/03.png" alt="魔搭 Agent 接力 Workshop 项目页面" loading="lazy" decoding="async"><br>2. 等待环境启动，再按 Notebook 中的说明完成初始化与配置。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/04.png" alt="启动 Workshop 并完成环境初始化" loading="lazy" decoding="async"><br>3. 按顺序执行代码单元，点击代码框左上角的三角形运行按钮。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/05.png" alt="Notebook 代码单元执行入口" loading="lazy" decoding="async"><br>4. 在代码块下方查看输出，再继续下一步。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/06.png" alt="Notebook 旅行计划与费用输出" loading="lazy" decoding="async"></p>
+<p>运行时，除了看行程写得怎么样，还要留意每一棒保存了什么、读取了什么。后面的实验会用这些记录判断，新会话是否真正接上了前面的工作。</p>
+<h2 id="02-从-Memory-到-Handoff：三棒接力，检查任务怎么继续"><a href="#02-从-Memory-到-Handoff：三棒接力，检查任务怎么继续" class="headerlink" title="02 从 Memory 到 Handoff：三棒接力，检查任务怎么继续"></a>02 从 Memory 到 Handoff：三棒接力，检查任务怎么继续</h2><p>这次实验的背景是来上海参加外滩大会，顺便安排一次家庭旅行。初始要求很具体：</p>
+<ul>
+<li>两位成人、一位儿童，三天两晚。</li>
+<li>预算 3000 元，覆盖当地住宿、餐饮、交通和活动，不含往返上海的大交通。</li>
+<li>给旅行起一个自定义代号。</li>
+<li>每天 16:30 前回到酒店。</li>
+</ul>
+<p>旅行代号和回酒店时间，也是很好的检查项。新会话即使能生成一份像样的攻略，也未必拿到了你之前提出的这些要求。</p>
+<h3 id="第一棒：先保存，再故意不恢复"><a href="#第一棒：先保存，再故意不恢复" class="headerlink" title="第一棒：先保存，再故意不恢复"></a>第一棒：先保存，再故意不恢复</h3><p>规划师 Agent A 先安排前两天，留下第三天的行程和完整费用表。</p>
+<p>资料保存后，清空聊天，开启一个不恢复资料的新会话。问问它：这趟旅行叫什么？每天几点前回酒店？还有哪些事情没做完？</p>
+<p>这一棒是对照实验。它让你看到一个容易忽略的区别：<strong>资料已经存下来，不代表新会话已经拿到。</strong></p>
+<p><strong>PowerContext 保存资料之后，仍需要应用执行读取，并把结果放进当前模型输入。</strong> 否则，新会话不能仅凭“系统里存过”就知道之前发生了什么。</p>
+<h3 id="第二棒：恢复资料，再修改要求"><a href="#第二棒：恢复资料，再修改要求" class="headerlink" title="第二棒：恢复资料，再修改要求"></a>第二棒：恢复资料，再修改要求</h3><p>接下来加入恢复步骤，同时给旅行增加两个变化：预算降到 2600 元，第二天全天有雨。</p>
+<p>新的规划师会话需要据此调整方案。这里值得检查的，是几件具体的事：它是否用了新预算？是否调整了受雨天影响的安排？“每天 16:30 前回酒店”有没有被一并保留下来？</p>
+<p>Notebook 在这一步修订同一条 Memory：更新预算和天气，同时保留个人要求。旧版本仍可回看，便于核对这次到底改了什么。</p>
+<p>如果某条记忆已经不再适用，也可以将它停用，移出活跃召回范围。随着任务推进，资料既要能积累，也要能更新和退出使用。</p>
+<h3 id="第三棒：换一位-Agent，从空聊天接手"><a href="#第三棒：换一位-Agent，从空聊天接手" class="headerlink" title="第三棒：换一位 Agent，从空聊天接手"></a>第三棒：换一位 Agent，从空聊天接手</h3><p>最后，把工作交给行程检查员 Agent B。</p>
+<p>B 从空聊天开始，通过精确引用读取交接资料及其关联的方案材料，检查已有安排，并补齐第三天和费用表。</p>
+<p>这一棒要检查的，是它能否说清楚：前两天已经安排到哪里，哪些要求仍然有效，自己接下来要补什么，还有哪些内容需要核实。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/07.png" alt="三棒 Agent 接力与上下文保存流程" loading="lazy" decoding="async"></p>
+<h3 id="接力过程中，究竟保存了什么？"><a href="#接力过程中，究竟保存了什么？" class="headerlink" title="接力过程中，究竟保存了什么？"></a>接力过程中，究竟保存了什么？</h3><p>跑完三棒，再回看记录，几个概念就容易理解了：</p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>在这次旅行里负责什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Memory</td>
+<td>维护预算、天气和个人要求等任务约束</td>
+</tr>
+<tr>
+<td>Source</td>
+<td>保留实际生成的行程方案，作为可追溯材料</td>
+</tr>
+<tr>
+<td>Handoff</td>
+<td>组织目标、进度、待办和未核实项，并引用方案材料</td>
+</tr>
+<tr>
+<td>Scope</td>
+<td>把这趟旅行的要求、成果和进度放在同一个管理范围内</td>
+</tr>
+</tbody></table>
+<p><strong>Memory 让接手者知道有哪些要求，Handoff 则交代“工作做到哪里、接下来做什么”。</strong> 具体方案留在 Source 中，接手者可以沿引用查看依据。</p>
+<p>新会话需要沿用同一个 Scope，读取这趟旅行的资料。另一趟旅行可以创建独立的 Scope，分别管理要求和进度。</p>
+<p>版本也很重要。旧交接对应的预算可能还是 3000 元，当前要求却已经变成了 2600 元。PowerContext 返回版本与证据状态，Notebook 据此检查交接是否过期、材料是否可用，以及要求是否仍然有效。</p>
+<p>因此，读取交接之后还要核对。能找到一份资料，只说明他存在；能否直接接着用，还要看它是否适用于当前任务。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/08.png" alt="预算下调与雨天要求更新" loading="lazy" decoding="async"></p>
+<h2 id="03-从-Experience-到-Skill：让这次的经验，下次还能用"><a href="#03-从-Experience-到-Skill：让这次的经验，下次还能用" class="headerlink" title="03 从 Experience 到 Skill：让这次的经验，下次还能用"></a>03 从 Experience 到 Skill：让这次的经验，下次还能用</h2><p>旅行方案补齐之后，这场实验还有一个可选拓展：把实际观察整理成经验，再把可以复用的做法变成 Skill。</p>
+<p>比如，如果检查费用表时发现住宿费用漏算了一晚，修正表格之后，还可以记录：当时是什么情况、采取了什么做法、观察到了什么结果，以及下次核算时应该注意什么。</p>
+<p>这类有具体依据的记录，就是 Experience。把实际观察到的结果和方案材料一起留下，下一位才能核对这条经验从哪里来。</p>
+<p>Skill 再把可复用的做法展开为步骤和验证项。例如，遇到预算或天气变化时：</p>
+<ol>
+<li>列出变更影响表，明确哪些安排受到影响。</li>
+<li>保留仍然满足要求的行程。</li>
+<li>调整受影响的部分。</li>
+<li>逐项核算住宿、餐饮、交通和活动费用，检查是否满足当前预算。</li>
+</ol>
+<p>这时，Memory 提供的是当前预算、天气和个人要求；Skill 提供的是处理变化的方法。预算再次调整时，新会话可以读取当前要求，再选用这套步骤。</p>
+<p>这里演示的“自进化”，有明确的审核边界。</p>
+<p><strong>Experience 和 Skill 都先作为候选提交，经参与者审核后，才成为正式版本。</strong> 如果候选在审核期间发生了修改，就需要重新查看，不能沿用对旧内容的判断。</p>
+<p>在本实验中，Skill 引用已批准的 Experience 版本，Experience 再关联原始材料。这样，接手者既能看到方法，也能追溯方法来自哪次观察。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/09.png" alt="经验候选审核与版本可追溯流程" loading="lazy" decoding="async"></p>
+<p><strong>新会话还需要明确读取已审核的 Skill，把步骤加入模型输入。</strong> 运行后，可以对照回答检查：它是否列出了变更影响，是否保留了仍有效的安排，费用又是否逐项核算。</p>
+<p>审核让方法有了明确的复用入口，但不会保证它适用于所有任务。换一个旅行条件，仍然要检查这套方法是否合适，以及实际执行结果是否满足要求。</p>
+<h2 id="04-换一位-Agent，不必把整件事重新交代一遍"><a href="#04-换一位-Agent，不必把整件事重新交代一遍" class="headerlink" title="04 换一位 Agent，不必把整件事重新交代一遍"></a>04 换一位 Agent，不必把整件事重新交代一遍</h2><p>这次上海旅行接力，把工作接续拆成了可以观察的几个环节：保存要求和成果，清空聊天后恢复资料，交给另一位 Agent 补齐待办，再将实际观察整理成经过审核的经验和 Skill。</p>
+<p>同样的检查方式，也可以用在你的日常工作里：客户约束有没有保留，已经验证的结果有没有依据，未完成的部分有没有明确交出去，反复使用的方法有没有留下适用条件。</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/10.png" alt="接手 Agent 核对已有成果与剩余工作" loading="lazy" decoding="async"></p>
+<p>可以先从手上一个尚未完成的任务试起。保存资料、换个会话，再让接手者说明已有成果、剩余工作和需要核实的问题。哪里还要靠你重新解释，哪里就值得继续检查。</p>
+<p>回到这趟旅行，下一位 Agent 能否在新预算和雨天条件下，仍然保留“每天 16:30 前回酒店”？第三天和费用表，能否沿着已有方案继续补齐？</p>
+<p><strong>把这些具体要求逐项验收，这场接力才算真正跑通。</strong></p>
+<ul>
+<li>Agent 接力 Workshop 体验入口：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.modelscope.cn/gallery/hhhhiiii/powercontext">https:&#x2F;&#x2F;www.modelscope.cn&#x2F;gallery&#x2F;hhhhiiii&#x2F;powercontext</a></li>
+<li>OceanBase PowerContext 项目地址：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></li>
+</ul>
+<p>如果这次实验对你有启发，欢迎到 GitHub 中的 PowerContext 项目 <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a> 中点一颗 ⭐ Star，关注项目的后续进展。也欢迎通过 Issue 分享使用体验、遇到的问题和期待的能力，或提交 PR 参与改进。</p>
+<p>我们希望听到你在真实任务中的反馈，让 PowerContext 更好地支持每一次工作接续~</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/11.png" alt="PowerContext Agent 接力横版海报" loading="lazy" decoding="async"></p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>Agent 接力 Workshop: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.modelscope.cn/gallery/hhhhiiii/powercontext">https:&#x2F;&#x2F;www.modelscope.cn&#x2F;gallery&#x2F;hhhhiiii&#x2F;powercontext</a></p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/12.gif" alt="OceanBase 社区品牌片尾动效" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/13.png" alt="OceanBase 社区内容分隔装饰" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/9-23-powercontext-agent-handoff-workshop/14.png" alt="PowerContext 人与 Agent 协作文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/15.png" alt="Tibo 谈 Codex 与 Harness 文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/16.png" alt="seekdb 技术架构与核心能力文章" loading="lazy" decoding="async"></p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">
+</a></p>
+<p>了解更多</p>
+<p><img src="/img/9-23-powercontext-agent-handoff-workshop/17.png" alt="OceanBase 社区小助手交流二维码" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/%E9%AD%94%E6%90%AD/" rel="tag"># 魔搭</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E4%BA%A4%E6%8E%A5/" rel="tag"># 任务交接</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-22-seekdb-asynchronous-index/" rel="prev" title="异步索引特性解析：OceanBase 如何提升持续写入场景下的索引检索性能">
+                  <i class="fa fa-angle-left"></i> 异步索引特性解析：OceanBase 如何提升持续写入场景下的索引检索性能
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-24-codex-powercontext-practice/" rel="next" title="会话会结束，上下文不死：Codex × PowerContext 实战手记">
+                  会话会结束，上下文不死：Codex × PowerContext 实战手记 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

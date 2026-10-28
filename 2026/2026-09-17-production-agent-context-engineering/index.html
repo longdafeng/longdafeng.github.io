@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OceanBase 与 MiniMax 联合技术专场围绕生产级 Agent 的上下文工程，分享 PowerContext 演进、多模态数据治理、跨 Harness 协作和端侧数据库实践。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="OceanBase 与 MiniMax 联合技术专场围绕生产级 Agent 的上下文工程，分享 PowerContext 演进、多模态数据治理、跨 Harness 协作和端侧数据库实践。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/01.gif">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/05.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/06.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/02.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/03.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/04.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/07.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/08.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/09.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/10.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/11.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/12.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/13.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/14.jpg">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/15.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/16.gif">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/17.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/18.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/19.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/20.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/21.png">
+<meta property="og:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/22.png">
+<meta property="article:published_time" content="2026-09-17T00:48:55.000Z">
+<meta property="article:modified_time" content="2026-10-19T00:48:55.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MiniMax">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="上下文工程">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/9-17-production-agent-context-engineering/01.gif">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/","path":"2026/2026-09-17-production-agent-context-engineering/","title":"OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E7%BA%A7-Agent-%E4%B8%8A%E4%B8%8B%E6%96%87%E7%9A%84%E4%B8%89%E4%BB%A3%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B"><span class="nav-number">1.</span> <span class="nav-text">生产级 Agent 上下文的三代架构演进</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OceanBase-seekdb-1-4-%E5%86%85%E6%A0%B8%E4%BC%98%E5%8C%96"><span class="nav-number">1.1.</span> <span class="nav-text">OceanBase seekdb 1.4 内核优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E6%89%A9%E5%B1%95"><span class="nav-number">1.2.</span> <span class="nav-text">应用场景扩展</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MiniMax%EF%BC%9A%E5%A4%9A%E6%A8%A1%E6%80%81%E6%95%B0%E6%8D%AE%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87%E6%B2%BB%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">MiniMax：多模态数据的上下文治理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A3%80%E7%B4%A2%E9%98%B6%E6%AE%B5%E7%9A%84%E5%9B%9B%E4%B8%AA%E5%85%B3%E9%94%AE%E8%80%83%E9%87%8F"><span class="nav-number">2.1.</span> <span class="nav-text">检索阶段的四个关键考量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E8%B7%AF%E6%A3%80%E7%B4%A2%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%95%E5%BA%A7"><span class="nav-number">2.2.</span> <span class="nav-text">多路检索与数据底座</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%8B%E7%BC%A9%E7%9A%84%E4%B8%89%E5%A4%A7%E5%8E%9F%E5%88%99"><span class="nav-number">2.3.</span> <span class="nav-text">压缩的三大原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Agent-Team-%E5%AE%9E%E8%B7%B5"><span class="nav-number">2.4.</span> <span class="nav-text">Agent Team 实践</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E7%BB%8F%E9%AA%8C%E5%88%B0%E6%8A%80%E8%83%BD%EF%BC%9APowerContext-Agent-%E5%85%BB%E6%88%90%E8%B7%AF%E5%BE%84"><span class="nav-number">3.</span> <span class="nav-text">从经验到技能：PowerContext Agent 养成路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%86%E6%A1%8C%E5%AF%B9%E8%AF%9D%EF%BC%9A%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B%E7%9A%84%E5%85%AB%E4%B8%AA%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">圆桌对话：上下文工程的八个关键问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E4%B8%80%EF%BC%9A%E6%9C%80%E5%85%B3%E9%94%AE%E7%9A%84%E4%BA%A7%E5%93%81%E7%89%B9%E6%80%A7"><span class="nav-number">4.1.</span> <span class="nav-text">话题一：最关键的产品特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E4%BA%8C%EF%BC%9A%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E8%87%AA%E5%B7%B1%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="nav-number">4.2.</span> <span class="nav-text">话题二：如何管理自己的上下文</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E4%B8%89%EF%BC%9A%E5%A6%82%E4%BD%95%E6%8E%92%E9%99%A4%E5%B9%B2%E6%89%B0%E4%BF%A1%E6%81%AF"><span class="nav-number">4.3.</span> <span class="nav-text">话题三：如何排除干扰信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E5%9B%9B%EF%BC%9A%E8%87%AA%E8%BF%9B%E5%8C%96%E4%B8%8E%E9%AA%8C%E8%AF%81"><span class="nav-number">4.4.</span> <span class="nav-text">话题四：自进化与验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E4%BA%94%EF%BC%9A%E5%A4%B1%E8%B4%A5%E7%BB%8F%E9%AA%8C%E7%9A%84%E4%BB%B7%E5%80%BC%E4%B8%8E%E5%A4%9A-Agent-%E5%8D%8F%E5%90%8C"><span class="nav-number">4.5.</span> <span class="nav-text">话题五：失败经验的价值与多 Agent 协同</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E5%85%AD%EF%BC%9AData-Infra-%E9%80%89%E5%9E%8B%E8%80%83%E9%87%8F"><span class="nav-number">4.6.</span> <span class="nav-text">话题六：Data Infra 选型考量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E4%B8%83%EF%BC%9A%E5%A4%9A-Harness-%E6%97%B6%E4%BB%A3%E7%9A%84%E8%83%BD%E5%8A%9B%E7%95%99%E5%AD%98"><span class="nav-number">4.7.</span> <span class="nav-text">话题七：多 Harness 时代的能力留存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%9D%E9%A2%98%E5%85%AB%EF%BC%9A%E8%B7%A8-Harness-%E7%9A%84%E5%85%B1%E4%BA%AB%E8%AE%B0%E5%BF%86%E6%96%B9%E6%A1%88"><span class="nav-number">4.8.</span> <span class="nav-text">话题八：跨 Harness 的共享记忆方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E7%BB%AD%E6%96%B9%E5%90%91"><span class="nav-number">5.</span> <span class="nav-text">后续方向</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-16-minimax-code-multimodal-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-16</time>
+        <br>
+      OceanBase MiniMax Code 多模数据治理与上下文管理实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-10-oceanbase-database-competition-nanjing/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-10</time>
+        <br>
+      OceanBase 数据库大赛宣导会
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-06-10-oceanbase-community-monthly-agentseek-seekdb/" rel="bookmark">
+        <time class="popular-posts-time">2026-06-10</time>
+        <br>
+      OceanBase 社区月报：AgentSeek 首发，seekdb 1.3.0 流式写入提速 22 倍
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-05-21-oceanbase-community-monthly-2026-05/" rel="bookmark">
+        <time class="popular-posts-time">2026-05-21</time>
+        <br>
+      OceanBase 社区月报：PowerMem、OMS、obdiag 全面更新
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-02-06-community-carnival-2026/" rel="bookmark">
+        <time class="popular-posts-time">2026-02-06</time>
+        <br>
+      社区嘉年华现场直击！开源开放，生态共赢！13岁少年拿下 AI Coding 第二名！
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践 | Longda's Interesting World">
+      <meta itemprop="description" content="OceanBase 与 MiniMax 联合技术专场围绕生产级 Agent 的上下文工程，分享 PowerContext 演进、多模态数据治理、跨 Harness 协作和端侧数据库实践。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-17 08:48:55" itemprop="dateCreated datePublished" datetime="2026-09-17T08:48:55+08:00">2026-09-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">OceanBase</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%9C%80%E6%96%B0%E5%8A%A8%E6%80%81/" itemprop="url" rel="index"><span itemprop="name">最新动态</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>19 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">OceanBase 与 MiniMax 联合技术专场围绕生产级 Agent 的上下文工程，分享 PowerContext 演进、多模态数据治理、跨 Harness 协作和端侧数据库实践。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践","description":"OceanBase 与 MiniMax 联合技术专场围绕生产级 Agent 的上下文工程，分享 PowerContext 演进、多模态数据治理、跨 Harness 协作和端侧数据库实践。","image":"https://ilongda.com/img/9-17-production-agent-context-engineering/01.gif","wordCount":5091,"datePublished":"2026-09-17T00:48:55.000Z","dateModified":"2026-10-19T00:48:55.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/"},"url":"https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/","inLanguage":"zh-CN","keywords":["OceanBase","seekdb","上下文工程","PowerContext","MiniMax"],"articleSection":["最新动态"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"最新动态","item":"https://ilongda.com/categories/最新动态/"},{"@type":"ListItem","position":3,"name":"OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践","item":"https://ilongda.com/2026/2026-09-17-production-agent-context-engineering/"}]}</script>
+<p><img src="/img/9-17-production-agent-context-engineering/01.gif" alt="OceanBase 社区品牌动态标识" decoding="async"></p>
+<p>9 月 12 日，由 OceanBase 和 MiniMax 联合主办的“<strong>面向生产级 Agent seekdb × PowerContext 技术专场</strong>”在上海外滩大会收官。</p>
+<p>专场聚焦 AI 编程、长文本与智能体三条技术主线，汇聚来自 OceanBase、MiniMax、Nowledge Mem、EverMind 的近十位技术专家，围绕上下文工程的四大核心议题展开深度分享，并正式发布 PowerContext 1.0。</p>
+<p>作为一家 AI 数据平台公司与 AI 公司的跨界联合，专场分享内容覆盖<strong>上下文架构演进、多模态数据治理、Agent 工程化实践与跨 Harness</strong> 标准化四大方向，为开发者社区提供可复用的工程方法论。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/05.png" alt="生产级 Agent 上下文工程专场海报" loading="lazy" decoding="async"></p>
+<span id="more"></span>
+
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="生产级-Agent-上下文的三代架构演进"><a href="#生产级-Agent-上下文的三代架构演进" class="headerlink" title="生产级 Agent 上下文的三代架构演进"></a>生产级 Agent 上下文的三代架构演进</h2><p><img src="/img/9-17-production-agent-context-engineering/06.png" alt="生产级 Agent 上下文三代架构演进" loading="lazy" decoding="async"></p>
+<p>作为 OceanBase 开源负责人，封仲淹长期深耕分布式数据库与 AI 基础设施的交叉领域。</p>
+<p>本次分享，他以“生产级 Agent 上下文的本质是数据系统”为核心论点，完整披露 PowerContext 从 Memory 走向 Context Runtime 的三代技术演进路径。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/02.jpg" alt="PowerMem 升级 PowerContext 发布现场" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/03.jpg" alt="外滩大会技术专场观众互动" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/04.jpg" alt="MiniMax Code 技术分享现场" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/07.jpg" alt="封仲淹介绍 PowerContext 架构演进" loading="lazy" decoding="async"></p>
+<p>OceanBase 开源负责人封仲淹</p>
+<p> 封仲淹引用 Gartner 报告指出，未来三年内 AI 将渗透软件行业的 80% 以上，远超报告中所预测的 40%。</p>
+<p>在此背景下，Agent 上下文工程面临三类典型痛点：</p>
+<ul>
+<li><p>上下文孵化：当窗口达到百万级 Token 时，注意力易被分散到无关信息；同时 Token 消耗随对话轮次线性增长，成本急剧上升；上下文冲突频发，需对编排与权重做精准控制。</p>
+</li>
+<li><p>多 Agent 协同：当设计用 Claude Code、编码用 MiniMax、Review 用 Codex 时，三类 Agent 如何实现上下文传递成为关键挑战。</p>
+</li>
+<li><p>上下文丰富性：故障诊断场景需同时纳入日志、代码（sourcing）、工单系统、RAG 历史、设计文档、CI&#x2F;CD、测试系统等多源数据源。</p>
+</li>
+</ul>
+<p>封仲淹将 PowerContext 的演进划分为 Memory、Power Memory 和第三代（上下文协同）三个时代。</p>
+<p>Memory 时代聚焦记忆的存储与查询，本质是基础设施；Power Memory 时代实现记忆的自动化定制，并提供共享与私有两种模式；第三代（上下文协同）：从 Agent Memory 升级为 Agent Context，更关注复杂任务场景下多种上下文的协同管理。</p>
+<p>PowerContext 采用分层架构，自顶向下依次为：</p>
+<ul>
+<li><p>应用层：覆盖 MiniMax Code、Claude Code、LangChain 等 Agent 产品；</p>
+</li>
+<li><p>适配层（Adapter）：通过 SDK 包或 middleware（如 LangChain 用 middleware 接入）插入到各 Agent；</p>
+</li>
+<li><p>PowerContext Server：支持 MCP、Local、Server 三种接入模式；</p>
+</li>
+<li><p>Context Runtime + 数据底座：底层数据可选用 OceanBase、SQL Server、SQLite、PostgreSQL 等。</p>
+</li>
+</ul>
+<p>Source 层覆盖对话、文档、代码、人员经验、知识库、工单系统、第三方博客、设计文档等多元数据。</p>
+<p>其中，制品层提供原子记忆、聚合记忆、主题记忆、个人&#x2F;团队分享记忆等形态。整套框架嵌入 trigger 机制，当代码从 0.2 发布到 1.0 时，trigger 驱动 Source 根据 policy 重新生成制品，经人工与智能化双重复核后形成可导出版本或失败记录。</p>
+<p>目前，PowerContext 支持多版本管理，从默认版本出发，按补充边界生成新版本，最终合并形成更新版本，并支持回滚到老版本。该机制对 Agent 的可观测与可评估至关重要，便于不同策略与 Prompt 的 A&#x2F;B 对比。</p>
+<p>现场，封仲淹公布了 PowerContext 在 SWE Benchmark 上的测试数据：</p>
+<ul>
+<li>GPT 单独解答完成率约 60%</li>
+<li>加上 Codex 后提升至 82%</li>
+<li>叠加 PowerContext 后达到 86%</li>
+</ul>
+<p>PowerContext 在上下文编排与权重分配上的优化（包括解决 Codex 上下文 compact 时丢失 solution 的问题），是任务完成度提升的关键。</p>
+<h3 id="OceanBase-seekdb-1-4-内核优化"><a href="#OceanBase-seekdb-1-4-内核优化" class="headerlink" title="OceanBase seekdb 1.4 内核优化"></a>OceanBase seekdb 1.4 内核优化</h3><ul>
+<li>内存压缩：稳态内存消耗从 600MB 降至 160MB（优化幅度 73%）</li>
+<li>进程升级：数据库内核从独立数组进程升级为共享后台进程，支持多 Agent 通过共享机制相互共享 Context</li>
+<li>Fork Table：提供沙箱与快照能力，可基于同一基线拉出多个分支进行 Prompt 对比测试，保留原始数据的同时让 Agent 安全试错</li>
+</ul>
+<h3 id="应用场景扩展"><a href="#应用场景扩展" class="headerlink" title="应用场景扩展"></a>应用场景扩展</h3><p>内存压缩与进程升级使 OceanBase seekdb 1.4 在嵌入式场景具备落地条件。</p>
+<p>稳态内存由 600MB 降至 160MB，使数据库可直接运行在个人 PC、手机 APP 等资源受限终端；进程模型的演进则使多 Agent 能够在端侧共享同一个 Context Runtime，无须额外启动独立的数据库实例。</p>
+<p>在此基础上，OceanBase seekdb 1.4 可覆盖以下端侧场景：</p>
+<ul>
+<li>具身智能：终端本地运行的 Agent 集群，需共享 Context Runtime 但受限于单设备算力</li>
+<li>机器人本体：机器人本体的状态、感知与决策日志需要持久化与多 Agent 共享，进程隔离不再适用</li>
+<li>个人 PC：本地的 Coding Agent、办公 Agent 需要长时间运行的后台 Context 服务</li>
+<li>手机 APP：受限于内存与电量的端侧 Agent，需极低资源开销的嵌入式数据库</li>
+</ul>
+<p>Fork Table 提供的沙箱与快照能力进一步支撑端侧场景下的安全试错与版本回溯，使 Agent 能够在不污染主数据的前提下进行 Prompt 对比与策略验证。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/08.jpg" alt="技术专场开发者与嘉宾合影" loading="lazy" decoding="async"></p>
+<p> 现场开发者们合影 </p>
+<h2 id="MiniMax：多模态数据的上下文治理"><a href="#MiniMax：多模态数据的上下文治理" class="headerlink" title="MiniMax：多模态数据的上下文治理"></a>MiniMax：多模态数据的上下文治理</h2><p><img src="/img/9-17-production-agent-context-engineering/09.png" alt="MiniMax 多模态上下文治理主题" loading="lazy" decoding="async"></p>
+<p> MiniMax 架构师负责人冯雯在本次演讲中，系统阐述了在多模态数据规模爆炸背景下，如何构建可工程化的上下文数据管线，并介绍了 MiniMax Code 在多模工作台与记忆管理上的最新进展。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/10.jpg" alt="冯雯介绍 MiniMax Code 最新进展" loading="lazy" decoding="async"></p>
+<p><strong>MiniMax 架构师负责人冯雯</strong></p>
+<p>冯雯首先介绍了 MiniMax Code 的近期进展：</p>
+<ul>
+<li><p>多模工作台：新增无限画布，支持用户对截图或视频中需要迭代的部分进行标注，更高效地加载上下文；</p>
+</li>
+<li><p>记忆管理：长期记忆与短期记忆支持可下载与调整，用户可主动管理；</p>
+</li>
+<li><p>长任务可持续性：结合上下文压缩与 PowerContext 等开源工具，灵活调整窗口预算，支持跨对话、跨 Agent 的交付包设计。</p>
+</li>
+</ul>
+<p>冯雯提出，上下文治理需贯穿数据全生命周期：</p>
+<ul>
+<li>入库：保留原件、版本与权限，针对截图、会议记录、代码、日志、检索结果等不同模态设计差异化的检索投影与定位信息</li>
+<li>解析：覆盖 OCR、ASR、视觉理解等不同解析方式，涉及分块与混合检索；需建立原件与解析内容的 Mapping 关系</li>
+<li>治理：处理重复内容、敏感字段、权限边界等问题，关联检索结果与权限判定</li>
+</ul>
+<h3 id="检索阶段的四个关键考量"><a href="#检索阶段的四个关键考量" class="headerlink" title="检索阶段的四个关键考量"></a>检索阶段的四个关键考量</h3><ul>
+<li>身份与授权：识别用户身份后，判断其是否有权限获取对应信息</li>
+<li>版本与演进：单轮 Coding 任务难以一次到位，需在多轮迭代中管理版本与演进</li>
+<li>保留与删除：在跨对话、跨 Agent 的删除场景下保持信息一致性</li>
+<li>解析质量：解析工具的准确率直接影响整体检索质量</li>
+</ul>
+<h3 id="多路检索与数据底座"><a href="#多路检索与数据底座" class="headerlink" title="多路检索与数据底座"></a>多路检索与数据底座</h3><p>冯雯建议在多路检索场景下使用 OceanBase 作为统一入口：OceanBase 既能存储原始数据，也支持文本与向量，并内置解析器。</p>
+<p>在对比 MiniMax Code、Claude Code、Codex、DeepSeek Harness 的多模接入方式后，主流方案仍以文件系统与披露方式为主。</p>
+<p>冯雯将生产级 Agent 的上下文抽象为四个核心组成部分：</p>
+<ul>
+<li>常驻约束：用户的当前有效指令（最高优先级），含目标、权限边界、长期使用习惯</li>
+<li>任务状态：Agent 在持续迭代中的当前任务状态、已解决问题、验证结果、阻塞点、下一步行动</li>
+<li>检索信息：来自多模态数据治理的检索结果，是上下文准确率的核心保障</li>
+<li>长期记忆：用户偏好、过往项目经验、个人 spec 等 skill 类资产</li>
+</ul>
+<p>冯雯给出工程化的上下文预算公式：可用输入预算 &#x3D; 整体窗口容量 - 输出预留 - 安全余量</p>
+<p>当预算不足时，需对上下文做摘要或压缩，区分「仅保留片段」与「必须全文保留」的差异化策略。</p>
+<h3 id="压缩的三大原则"><a href="#压缩的三大原则" class="headerlink" title="压缩的三大原则"></a>压缩的三大原则</h3><ul>
+<li><strong>长输出文件化</strong>：完整日志与输出转为文件存储，仅在检索到相关内容时调用</li>
+<li><strong>工具结果定期清理</strong>：清理重复内容与被历史版本覆盖的过期数据</li>
+<li><strong>结构化摘要</strong>：对最终结果做结构化摘要，便于后续检索</li>
+</ul>
+<h3 id="Agent-Team-实践"><a href="#Agent-Team-实践" class="headerlink" title="Agent Team 实践"></a>Agent Team 实践</h3><p><strong>在 MiniMax 内部的 Agent Team 实践中：Leader 只关注各任务的状态与执行结果是否满足要求；Worker 在自身上下文内独立执行，不感知其他 Worker 的细节；Verify 基于 Worker 的结果进行验证，反馈不合格项。</strong> 各角色的上下文按职责分工隔离。冯雯表示，MiniMax 已接入 PowerContext，推荐开发者在自身任务流程中接入 PowerContext 进行上下文管理。</p>
+<h2 id="从经验到技能：PowerContext-Agent-养成路径"><a href="#从经验到技能：PowerContext-Agent-养成路径" class="headerlink" title="从经验到技能：PowerContext Agent 养成路径"></a>从经验到技能：PowerContext Agent 养成路径</h2><p><img src="/img/9-17-production-agent-context-engineering/11.png" alt="从经验到技能的 Agent 养成路径" loading="lazy" decoding="async"></p>
+<p> PowerContext contributor 秋梵专注于开发者工具链与 Agent 框架的设计与实现。</p>
+<p>本次分享聚焦“如何让 Agent 越用越聪明”这一核心命题，通过一个像素游戏的可视化演示，完整呈现 Source → Experience → Skill 的三段式进化路径。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/12.jpg" alt="秋梵分享 PowerContext 技能演进" loading="lazy" decoding="async"></p>
+<p><strong>PowerContext contributor 秋梵</strong></p>
+<p>秋梵构建了一个像素世界的小游戏：让 Agent 在地图上搭桥过河、连接电线、点亮营地灯。完成第一步后，新开多个地图与新 Agent，验证前序经验与技能是否可被沉淀与复用。</p>
+<p>PowerContext 在此过程中承担 Source 沉淀、Experience 提炼与 Skill 跨场景调用的关键角色。</p>
+<p>Source 保留 Agent 的实际动作、方式与结果，作为可追溯的证据链；Experience 基于 Source 自动整理任务经验，生成「待审核」的经验候选；经验需经人工审批后转为正式可用资产；基于正式经验生成「待审核」的技能候选，经审批后转为正式 Skill 供其他 Agent 调用。</p>
+<p>PowerContext 支持 Skill 修订。当新 Agent 在新场景下使用 Skill 后，会留下使用记录作为新 Source。用户提出修订要求后，PowerContext 根据最新 Source 重新生成修订候选，同样需经审批后方可升级为新版本（如 R1 → R2）。整个修订链路完整可溯源。</p>
+<p>除 Experience 与 Skill 外，PowerContext 还提供 memory、handoff、scope 等能力，通过 scope 进行项目范围的分类管理。秋梵强调，Agent 与 Skill 的所有生成内容均需经过人工审批方可成为可信资产。</p>
+<p>针对开发者入门，秋梵给出三步实操路径：</p>
+<ul>
+<li>第一步：安装 PowerContext CLI</li>
+<li>第二步：启动 PowerContext Server</li>
+<li>第三步：通过 setup 将当前使用的 Agent 与 PowerContext 进行配置</li>
+</ul>
+<p>注：具体操作可参考 PowerContext 官网教程</p>
+<p>秋梵在分享最后宣布 PowerContext 1.0 正式发布，并介绍了官网、GitHub 与他和社区共建的 Apocalypse 101 实践教程网站，欢迎开发者反馈与共建。</p>
+<p>注：PowerContext GitHub：   <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></p>
+<h2 id="圆桌对话：上下文工程的八个关键问题"><a href="#圆桌对话：上下文工程的八个关键问题" class="headerlink" title="圆桌对话：上下文工程的八个关键问题"></a>圆桌对话：上下文工程的八个关键问题</h2><p><img src="/img/9-17-production-agent-context-engineering/13.png" alt="上下文工程八个关键问题圆桌议程" loading="lazy" decoding="async"></p>
+<p> 本场圆桌由 OceanBase PowerContext Maintainer 尚卓燃主持，邀请 Nowledge Mem CTO 王维真珍、盛大 EverMind 开源生态负责人艾略特、OceanBase PowerContext Maintainer 傅榕锋三位嘉宾同台，围绕上下文工程的核心议题展开深度对谈。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/14.jpg" alt="上下文工程圆桌对谈嘉宾现场" loading="lazy" decoding="async"></p>
+<h3 id="话题一：最关键的产品特性"><a href="#话题一：最关键的产品特性" class="headerlink" title="话题一：最关键的产品特性"></a>话题一：最关键的产品特性</h3><p>上下文工程的核心能力可归纳为三个层次 —— 记忆体的自动生成与可审计、跨实体的共享记忆、从 Memory 升级到 Context 的完整 story 视角。</p>
+<p>三类产品分别对应「记忆的生产」「记忆的分发」「上下文的协同」三个工程层级。</p>
+<p>其中，记忆体的自动生成，基于用户 Session 与日常文档自动生成经验、memory 与决策，每个决策关联原始证据形成可审计能力；</p>
+<p>跨实体的共享记忆以自信化、主动性、多模态为支柱，实现跨 Agent、跨 Session、跨 Device、跨 Harness 的同步分发；</p>
+<p>完整 story 视角：从 Power Memory 升级到 PowerContext，更积极地介入 Context 工作，关注 Context 的组成而非仅记忆的工程方式</p>
+<h3 id="话题二：如何管理自己的上下文"><a href="#话题二：如何管理自己的上下文" class="headerlink" title="话题二：如何管理自己的上下文"></a>话题二：如何管理自己的上下文</h3><p>上下文管理的工程化手段可分为三类 —— 工具接入、项目级约定、跨 Harness 共享索引。三者协同覆盖「Engine 集成」「项目规范」「跨 Harness 互通」三个维度：</p>
+<ul>
+<li><p>工具接入：通过插件或中间件将上下文基础设施接入到 Claude Code、Codex 等 Engine；提供 MCP、Local、Server 等多种模式；</p>
+</li>
+<li><p>项目级约定：以 CLAUDE.md 或 agent.md 等文件保存项目与团队约定，作为 Engine 启动时的注入内容（因索引非全文，需在启动时直接加载）；</p>
+</li>
+<li><p>跨 Harness 索引：在 MiniMax 应用商城等渠道上架产品，主动在任务执行前读取相关记忆，建立跨 Harness 的统一索引层</p>
+</li>
+</ul>
+<h3 id="话题三：如何排除干扰信息"><a href="#话题三：如何排除干扰信息" class="headerlink" title="话题三：如何排除干扰信息"></a>话题三：如何排除干扰信息</h3><p>上下文干扰信息的处理需结合内容分层与场景化组装 —— 一方面按维度对内容进行分区存储，另一方面根据场景拼装对应的上下文子集：</p>
+<ul>
+<li><p>内容分区存储：按「项目规范 vs 过程决策 vs 用户偏好」等维度对记忆内容进行分区，例如 working memory（每日高频内容）、情景记忆（时间、地点、事件、关联人）、preference（用户偏好）、agents memory（cases + skills）；</p>
+</li>
+<li><p>多维矩阵索引：在分区之上叠加 project ID、app ID、team ID 等维度，形成矩阵化的索引结构，以覆盖 95% 的常见场景；</p>
+</li>
+<li><p>场景化拼装：不同场景需组装不同的上下文子集 —— 客服场景需要知识库与用户画像；Coding 场景更关注项目规范与设计目标</p>
+</li>
+</ul>
+<h3 id="话题四：自进化与验证"><a href="#话题四：自进化与验证" class="headerlink" title="话题四：自进化与验证"></a>话题四：自进化与验证</h3><p>自进化机制需在三个层面建立闭环 —— 输入源扩展、跨 Engine 验证、主动服务能力。</p>
+<p>当前自进化的泛化性仍是工程难点，Skill 上线普遍依赖人工审批作为安全阀：</p>
+<ul>
+<li><p>输入源扩展：覆盖 Session、会议记录、文档、聊天记录等更多数据源，使 Agent 更全面地了解用户状态；</p>
+</li>
+<li><p>跨 Engine 验证：将 Skill&#x2F;Experience 共享给其他 Engine，根据执行结果收集正反馈与负反馈，无反馈则压制该 Skill；生产阶段进一步加入沙箱回放验证（trace + skill）</p>
+</li>
+<li><p>主动服务能力：基于记忆积累形成预判能力（例如根据简短指令推断用户意图），是 Agent 真正实现主动服务的核心</p>
+</li>
+</ul>
+<h3 id="话题五：失败经验的价值与多-Agent-协同"><a href="#话题五：失败经验的价值与多-Agent-协同" class="headerlink" title="话题五：失败经验的价值与多 Agent 协同"></a>话题五：失败经验的价值与多 Agent 协同</h3><p>失败经验与成功经验同等重要，多 Agent 协同需遵循「最小共享原则」以避免串通：</p>
+<ul>
+<li><p>失败经验的内化：失败经验直接内化为新经验，下次遇到相同问题即可直接规避；同时需警惕污染问题 —— 若失败仅为偶然，可通过其他 Engine 的协同进化或人工在后台订正；</p>
+</li>
+<li><p>失败经验的检索：用户可在感知层主动查询「上次失败学到了什么」，算法层将其融入下一次的主动性策略，也可单独划分分区专门存储失败经验；</p>
+</li>
+<li><p>最小共享原则：多 Agent 共享完整上下文时会出现「合起伙来骗人」现象 —— 即便 1 个开发 + 3 个 Reviewer 的配置也能在 1-2 轮内快速达成错误共识。解决方案是只共享关键部分：设计阶段共享「目标 + 当前提案」；开发与 Review 阶段共享「目标 + 确认的设计方案」，且不让 Review 直接访问 spec 文件。调整后收敛轮次从 1-2 轮延长到 7-8 轮甚至 20+ 轮；</p>
+</li>
+<li><p>Engine 性格互补：不同 Engine 性格迥异 —— Claude Code 偏献媚（常说「you are absolutely right」）、Codex 偏过度认真（长任务耗时长）、Grok 4 偏反驳（常 diss 用户）。可在记忆同步时选择性开关，并结合多 Engine 交叉验证（Cross Verify），在效率与准确率间取得平衡。</p>
+</li>
+</ul>
+<h3 id="话题六：Data-Infra-选型考量"><a href="#话题六：Data-Infra-选型考量" class="headerlink" title="话题六：Data Infra 选型考量"></a>话题六：Data Infra 选型考量</h3><p>Data Infra 选型需兼顾跨平台能力与 AI Native 特性，Memory Layer 已不足以支撑多 Harness 时代：</p>
+<ul>
+<li><p>跨平台能力：嵌入式、Local First、用户友好等部署形态需数据库跨平台支撑；过去 flag 数据库 + 图数据库 + 向量&#x2F;全文 DB 的多库组合方案维护代价过高（资源消耗 + 一致性管理），需收敛到具备跨平台能力的单一底座；</p>
+</li>
+<li><p>AI Native 能力：AI Native DB 的虚拟化、Bench、本地查询云端等能力是面向 Agent 场景的关键演进方向</p>
+</li>
+</ul>
+<p>从 Memory Layer 到 OS 的演进：随着 DeepSeek Harness 等多 Harness 时代到来，Memory Layer 已不足够。EverOS 的演进路径是包容所有数据库并提供自有跑分机制，让开源贡献者可嵌入自己偏好的数据库</p>
+<h3 id="话题七：多-Harness-时代的能力留存"><a href="#话题七：多-Harness-时代的能力留存" class="headerlink" title="话题七：多 Harness 时代的能力留存"></a>话题七：多 Harness 时代的能力留存</h3><p>多 Harness 时代的能力留存需建立集中化的共享层，并保留用户对关键决策的介入权：</p>
+<ul>
+<li><p>集中化共享层：无论使用多少家 Harness，最终都需要一个集中化的共享 Memory 层，从采购与成本角度都能达到最优；</p>
+</li>
+<li><p>用户决策介入：需要人类决策的关键点必须暴露给用户。例如 Agent 读取大量 Session 后发现某事件存在 A 与 B 两种冲突方案，应将冲突直接呈现给用户，由用户决策或补充信息；</p>
+</li>
+<li><p>隐私与信任基础：监管机制与端到端 Encryption 是跨 Harness 共享方案获得用户信任的基础</p>
+</li>
+</ul>
+<h3 id="话题八：跨-Harness-的共享记忆方案"><a href="#话题八：跨-Harness-的共享记忆方案" class="headerlink" title="话题八：跨 Harness 的共享记忆方案"></a>话题八：跨 Harness 的共享记忆方案</h3><p>跨 Harness 的共享记忆应采用「共享机器」架构，避免数据冗余与一致性维护成本：</p>
+<ul>
+<li><p>共享而非双份：共享层定位为「共享机器」而非存储双份 —— Harness 自身管理的 Memory 作为 Source，共享层仅做索引，不干预其生命周期；</p>
+</li>
+<li><p>按需检索：当跨 Engine 场景下需要共享 Memory 时（如 Claude Code 额度用完需切换到 Codex），不复制双份，而是告诉目标 Engine「另一侧有一份记忆，自己翻」，由其自行检索；</p>
+</li>
+<li><p>自动退出维护：一旦 Harness 内部将该 Memory 内化掉，共享层便不再参与维护，避免冗余存储与一致性问题</p>
+</li>
+</ul>
+<p>现场互动环节，开发者围绕 PowerContext 的开源计划、MiniMax Code 的 Skill 共享机制、EverMind 的跨 Harness 同步方案、Nowledge Mem 的 agent.md 索引机制等话题与嘉宾展开深入交流。</p>
+<h2 id="后续方向"><a href="#后续方向" class="headerlink" title="后续方向"></a>后续方向</h2><p>下一步，OceanBase 与合作伙伴将聚焦以下方向：</p>
+<ul>
+<li><p>跨 Harness 标准化：推动 Anthropic MCP、DeepSeek Harness 等协议在上下文工程领域的互认；</p>
+</li>
+<li><p>多模态上下文治理：深化多模态数据的解析、检索与压缩能力，将图片音视频纳入可索引范围；</p>
+</li>
+<li><p>企业级湖库一体化：发布面向 Agent 场景的 OceanBase 湖库版本，支持多模态检索与上下文快照</p>
+</li>
+<li><p>MiniMax 上下文开发者联盟：联合社区力量，推动上下文工程的方法论标准化与工具链开源。</p>
+</li>
+</ul>
+<p>本次专场 OceanBase 与 AI 公司在 Agent 基础设施领域的系统性对话，标志着上下文工程从单点实验走向系统化、工程化、标准化阶段。</p>
+<p><img src="/img/9-17-production-agent-context-engineering/15.png" alt="上下文工程全景实践横版海报" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/16.gif" alt="OceanBase 社区品牌片尾动效" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/17.png" alt="OceanBase 社区内容分隔装饰" loading="lazy" decoding="async"></p>
+<p> 往期内容推荐</p>
+<p><img src="/img/9-17-production-agent-context-engineering/18.png" alt="MiniMax Code 多模态项目上下文文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/19.png" alt="PowerContext 人与 Agent 协作文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/20.png" alt="seekdb 技术架构与核心能力文章" loading="lazy" decoding="async"></p>
+<p><img src="/img/9-17-production-agent-context-engineering/21.png" alt="GPT-6 Astra 与 Codex 上下文文章" loading="lazy" decoding="async"></p>
+<p> 了解更多 </p>
+<p><img src="/img/9-17-production-agent-context-engineering/22.png" alt="OceanBase 社区小助手交流二维码" loading="lazy" decoding="async"></p>
+<p> 添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B/" rel="tag"># 上下文工程</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/MiniMax/" rel="tag"># MiniMax</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-16-minimax-code-multimodal-context/" rel="prev" title="OceanBase MiniMax Code 多模数据治理与上下文管理实践">
+                  <i class="fa fa-angle-left"></i> OceanBase MiniMax Code 多模数据治理与上下文管理实践
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-21-codex-harness-model/" rel="next" title="Tibo 谈 Codex：harness 总比模型快一步">
+                  Tibo 谈 Codex：harness 总比模型快一步 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

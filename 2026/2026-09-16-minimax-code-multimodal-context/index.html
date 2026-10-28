@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OceanBase MiniMax Code 多模数据治理与上下文管理实践">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/01.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/02.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/03.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/04.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/05.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/06.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/07.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/08.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/09.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/10.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/11.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/12.gif">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/13.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/14.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/15.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/16.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/17.png">
+<meta property="og:image" content="https://ilongda.com/img/minimax-code-multimodal-context/18.png">
+<meta property="article:published_time" content="2026-09-15T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:47:22.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="MiniMax Code">
+<meta property="article:tag" content="OceanBase">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="seekdb">
+<meta property="article:tag" content="上下文管理">
+<meta property="article:tag" content="多模态">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/minimax-code-multimodal-context/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/","path":"2026/2026-09-16-minimax-code-multimodal-context/","title":"OceanBase MiniMax Code 多模数据治理与上下文管理实践"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OceanBase MiniMax Code 多模数据治理与上下文管理实践 | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#01-%E5%A4%9A%E6%A8%A1%E6%80%81%E6%B2%BB%E7%90%86%EF%BC%9A%E5%85%88%E6%8A%8A%E6%9D%90%E6%96%99%E5%8F%98%E6%88%90%E8%83%BD%E6%A0%B8%E5%AF%B9%E7%9A%84%E8%AF%81%E6%8D%AE"><span class="nav-number">1.</span> <span class="nav-text">01 多模态治理：先把材料变成能核对的证据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-%E7%94%A8-OceanBase-seekdb%EF%BC%8C%E6%8A%8A%E7%B2%BE%E7%A1%AE%E7%BA%BF%E7%B4%A2%E5%92%8C%E8%AF%AD%E4%B9%89%E7%BA%BF%E7%B4%A2%E6%9F%A5%E5%88%B0%E4%B8%80%E8%B5%B7"><span class="nav-number">2.</span> <span class="nav-text">02 用 OceanBase seekdb，把精确线索和语义线索查到一起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86%EF%BC%9A%E6%8A%8A%E7%AA%97%E5%8F%A3%E7%95%99%E7%BB%99%E5%BD%93%E5%89%8D%E8%BF%99%E4%B8%80%E8%BD%AE"><span class="nav-number">3.</span> <span class="nav-text">03 上下文管理：把窗口留给当前这一轮</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-%E4%BC%9A%E8%AF%9D%E4%B9%8B%E5%A4%96%EF%BC%8C%E8%BF%98%E8%A6%81%E7%95%99%E4%B8%8B%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">04 会话之外，还要留下什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#05-Memory%EF%BC%9A%E7%95%99%E4%B8%8B%E7%BB%93%E8%AE%BA%EF%BC%8C%E4%B9%9F%E7%95%99%E4%B8%8B%E4%B8%BA%E4%BB%80%E4%B9%88"><span class="nav-number">5.</span> <span class="nav-text">05 Memory：留下结论，也留下为什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#06-Handoff%EF%BC%9A%E8%AE%A9%E4%B8%8B%E4%B8%80%E6%AC%A1%E5%B7%A5%E4%BD%9C%E6%9C%89%E4%B8%80%E4%B8%AA%E6%B8%85%E6%A5%9A%E7%9A%84%E8%B5%B7%E7%82%B9"><span class="nav-number">6.</span> <span class="nav-text">06 Handoff：让下一次工作有一个清楚的起点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#07-%E5%9C%A8-MiniMax-Code-%E4%B8%AD%E5%BC%80%E5%A7%8B%E4%BD%BF%E7%94%A8-PowerContext"><span class="nav-number">7.</span> <span class="nav-text">07 在 MiniMax Code 中开始使用 PowerContext</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%80%E6%9C%9F%E5%86%85%E5%AE%B9%E6%8E%A8%E8%8D%90"><span class="nav-number">8.</span> <span class="nav-text">往期内容推荐</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-17-production-agent-context-engineering/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-17</time>
+        <br>
+      OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-01-28-unified-ai-data-stack-part1/" rel="bookmark">
+        <time class="popular-posts-time">2026-01-28</time>
+        <br>
+      告别拼凑：记忆、检索与AI数据引擎的一站式技术栈解析（一）
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-15-minimax-code-powercontext-project-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-15</time>
+        <br>
+      构建跨会话与跨 Agent 的项目上下文底座：MiniMax Code x PowerContext
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-22-seekdb-asynchronous-index/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-22</time>
+        <br>
+      异步索引特性解析：OceanBase 如何提升持续写入场景下的索引检索性能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-15-powercontext-1-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-15</time>
+        <br>
+      PowerContext 1.0.0 正式发布：前事有据，后事可续
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OceanBase MiniMax Code 多模数据治理与上下文管理实践 | Longda's Interesting World">
+      <meta itemprop="description" content="MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OceanBase MiniMax Code 多模数据治理与上下文管理实践
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-16 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-16T07:30:00+08:00">2026-09-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">泉达、OceanBase 爱好者</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BC%81%E4%B8%9A%E6%A1%88%E4%BE%8B/" itemprop="url" rel="index"><span itemprop="name">企业案例</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>15 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OceanBase MiniMax Code 多模数据治理与上下文管理实践","description":"MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。","image":"https://ilongda.com/img/minimax-code-multimodal-context/01.png","wordCount":3874,"datePublished":"2026-09-15T23:30:00.000Z","dateModified":"2026-09-17T18:47:22.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/"},"url":"https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/","inLanguage":"zh-CN","keywords":["OceanBase","多模态","seekdb","上下文管理","PowerContext","MiniMax Code"],"articleSection":["企业案例"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"企业案例","item":"https://ilongda.com/categories/企业案例/"},{"@type":"ListItem","position":3,"name":"OceanBase MiniMax Code 多模数据治理与上下文管理实践","item":"https://ilongda.com/2026/2026-09-16-minimax-code-multimodal-context/"}]}</script>
+<p>MiniMax Code 以开发任务串联多模态材料治理、证据检索与上下文接续，分享OceanBase seekdb和PowerContext如何组织截图、代码、日志，保留来源、验证结果与工作状态。</p>
+<blockquote>
+<p>一张截图里，底部导航挡住了结算按钮；一段日志里，请求还在报错。开发者把截图、日志和代码仓库一起交给 Coding Agent。</p>
+<p>材料虽然齐了，但线索却还没有连起来。Agent 开始排查后，还会读文档、改代码、跑测试，产生更多判断和验证结果。</p>
+<p>任务越往前走，越需要分清：哪些是可靠依据，哪些仍是猜测，下一轮又该从哪里继续。</p>
+</blockquote>
+<p><img src="/img/minimax-code-multimodal-context/01.png" alt="OceanBase MiniMax Code内容讲解图1" decoding="async"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>9 月 12 日，在外滩大会「OceanBase 面向生产级 Agent 专场」上，MiniMax 的冯雯老师带来《MiniMax Code 多模数据治理与上下文管理》分享。她以开发任务为线索，介绍了从材料治理、证据检索，到上下文管理和跨会话接续的探索。</p>
+<p>MiniMax Codex 的这条链路，把 seekdb 和 PowerContext 放到了 Agent 的具体工作中：前者帮助组织、检索不同形式的线索，后者让值得保留的项目知识和未完成的工作状态能够延续。</p>
+</blockquote>
+<p><img src="/img/minimax-code-multimodal-context/02.png" alt="OceanBase MiniMax Code内容讲解图2" loading="lazy" decoding="async"></p>
+<p>图 1｜从截图、日志和代码出发，一次开发任务需要经历执行、验证与多轮修正。</p>
+<h2 id="01-多模态治理：先把材料变成能核对的证据"><a href="#01-多模态治理：先把材料变成能核对的证据" class="headerlink" title="01 多模态治理：先把材料变成能核对的证据"></a>01 多模态治理：先把材料变成能核对的证据</h2><p>分享从移动端结算页面的问题展开。对开发者来说，截图、仓库和日志属于同一项任务；对 Agent 来说，它们之间的对应关系仍需要被建立。</p>
+<p>截图中出问题的区域，要能对应到页面和组件；代码片段要能定位到仓库、路径和提交；日志则需要说明发生时间、触发条件，以及相关的工具调用。</p>
+<p><strong>多模态数据治理的关键，是让检索命中的内容能够回到具体现场。</strong></p>
+<p>一个重要做法，是把原始材料和用于检索的解析结果分开管理：</p>
+<ul>
+<li>截图可以生成文字识别结果、布局描述和图像向量，同时保留原图与问题区域坐标。</li>
+<li>代码可以按片段参与检索，同时保留仓库、文件路径和具体提交。</li>
+<li>日志可以提取错误码和关键信息，同时保留原始记录、时间与调用关联。</li>
+</ul>
+<p><strong>原件保存现场，解析结果帮助查找</strong>。以后解析器升级，可以重新生成摘要或向量，并记录新的解析版本，不必让一次解析结果成为唯一依据。</p>
+<p><img src="/img/minimax-code-multimodal-context/03.png" alt="多模态治理：先把材料变成能核对的证据讲解图3" loading="lazy" decoding="async"></p>
+<p>图 2｜从采集、解析到治理与索引，各阶段保留关联，才能从检索结果回到原始证据。</p>
+<p>版本变化也要沿着这条链路处理。新截图出现后，需要明确它与旧版本的关系；材料被删除或失效时，相关全文、向量和缓存也应按相应规则更新，避免后续检索继续使用已经失效的内容。</p>
+<p>团队场景还要加上一道边界：先确定当前用户能够访问哪些资源，再在授权范围内检索。引用解决的是“去哪里核对”，材料是否正确、是否适用于当前任务，仍要继续判断。</p>
+<h2 id="02-用-OceanBase-seekdb，把精确线索和语义线索查到一起"><a href="#02-用-OceanBase-seekdb，把精确线索和语义线索查到一起" class="headerlink" title="02 用 OceanBase seekdb，把精确线索和语义线索查到一起"></a>02 用 OceanBase seekdb，把精确线索和语义线索查到一起</h2><p>材料有了来源，下一步是让 Agent 找得到。</p>
+<p>在结算页面的例子里，错误码、接口名、函数名适合按关键词查找；“按钮被底部导航遮挡”这样的描述，则更适合用语义检索寻找相关页面、组件和历史问题。</p>
+<p>这两类检索还需要共同满足项目、版本和访问权限等条件。只找到“看起来相关”的内容，可能把 Agent 带到另一个项目，或者一段已经失效的实现上。</p>
+<p>分享将 OceanBase seekdb 作为这类本地多模态治理方案的统一检索候选底座。seekdb 支持关系、JSON、全文和向量等数据，可以在同一数据库中组织结构化条件与混合检索。详见：seekdb 官方文档[1]。</p>
+<p>具体到这次排查，可以按三个层次组织查询：</p>
+<ol>
+<li><strong>限定范围</strong>：只在当前项目、允许访问且符合版本条件的材料中查找。</li>
+<li><strong>组合线索</strong>：用全文检索查错误码和接口说明，用向量检索找语义相关的页面与组件。</li>
+<li><strong>返回依据</strong>：结果附带原图区域、日志位置、代码路径和版本，便于继续核对。</li>
+</ol>
+<p><img src="/img/minimax-code-multimodal-context/04.png" alt="OceanBase MiniMax Code内容讲解图4" loading="lazy" decoding="async"></p>
+<p>图 3｜结构化条件限定候选范围，全文与向量检索分别承接精确线索和语义线索。</p>
+<p>这里要区分数据库与解析服务的职责。在这类方案中，图片、音视频的解析和向量生成由相应模型或服务完成，seekdb 承接解析结果的存储与检索；材料之间的关联、版本和访问规则，也需要在应用中明确建模。</p>
+<p>检索效果最终要回到任务上验证：错误码能否找到对应接口？页面描述能否找到相关组件？返回的证据是否属于当前可用版本？</p>
+<p>命中之后，Agent 才能进一步判断：哪些材料足以支持修改，哪里还需要补充取证。</p>
+<h2 id="03-上下文管理：把窗口留给当前这一轮"><a href="#03-上下文管理：把窗口留给当前这一轮" class="headerlink" title="03 上下文管理：把窗口留给当前这一轮"></a>03 上下文管理：把窗口留给当前这一轮</h2><p>能查到材料，不代表每一轮都要把它们全部带上。</p>
+<p>一份完整日志可能很长，但当前只需要其中的错误片段；一条历史决策可能有参考价值，却不能覆盖今天的新要求。上下文管理需要决定，什么此刻应该出现，什么应该保留在外部、按需回读。</p>
+<p>分享将上下文信息分为四类：</p>
+<p><img src="/img/minimax-code-multimodal-context/05.png" alt="上下文管理：把窗口留给当前这一轮讲解图5" loading="lazy" decoding="async"></p>
+<p>图 4｜四类信息各有不同的更新和退出规则，共同服务于当前任务。</p>
+<p><strong>这个划分的重点是生命周期</strong>。任务前进，进度和阻塞就要更新；证据进入上下文，要带着版本和引用；稳定约定可以长期保留，但过期后也要能够修订或退出。</p>
+<p>这些原则也体现在分享介绍的 MiniMax Code 产品控制中：桌面端提供会话记忆使用与生成的管理，以及不同内容的窗口占用反馈；CLI 通过动态输出预算、工具结果裁剪和压缩恢复，为长任务留出空间。</p>
+<p>具体做法并不难理解：长日志和完整报告留在文件里，上下文保留必要摘要与回读路径；重复或过时的输出及时清理；阶段性摘要则留下目标、决定、已验证进展、阻塞和下一步。</p>
+<p><strong>压缩释放了窗口，还得保住下一步行动的依据。</strong></p>
+<p>比如已经定位按钮遮挡，却还没查明请求错误，摘要就应该分别记录这两种状态。两个症状同时出现，不足以说明它们来自同一个原因；恢复时，也需要重新核对代码、日志和工具现场。</p>
+<p>多 Agent 协作同样如此。分享中的 Agent Team 由 Leader 管理目标和进度，Worker 在各自上下文中执行，Verifier 独立检查交付结果。通过文件、摘要和路径传递成果，协调者按需展开细节，避免每个角色都背负整段调试历史。</p>
+<p><strong>工作有没有完成，最后仍要看验证结果，不能只看执行者的总结。</strong></p>
+<h2 id="04-会话之外，还要留下什么？"><a href="#04-会话之外，还要留下什么？" class="headerlink" title="04 会话之外，还要留下什么？"></a>04 会话之外，还要留下什么？</h2><p>检索、裁剪和压缩，帮助 Agent 在当前会话中推进任务。但开发工作经常会停下来：今天只查到一半，明天换个会话继续；一个 Agent 完成实现，另一位开发者接着验证。</p>
+<p>此时，下一位需要两类信息。</p>
+<p>一类是后续仍然有效的项目知识，例如技术决策、兼容性要求和团队约定。另一类是这项工作当前停在哪里：做过哪些修改、验证到了哪一步、还剩什么疑点。</p>
+<p>分享也介绍了利用 PowerContext 保持工作连续性的思路：把可追溯的项目知识与交接状态留在 Harness 和会话之外，为后续工作提供可核对的起点。</p>
+<p><img src="/img/minimax-code-multimodal-context/06.png" alt="会话之外，还要留下什么？讲解图6" loading="lazy" decoding="async"></p>
+<p>图 5｜分享中的 PowerContext 方案，围绕证据、项目记忆与交接状态支持工作接续。</p>
+<p>PowerContext 的 MiniMax Code 插件将这两类需求落实为两个入口：<strong>Memory 保存值得复用的项目知识，Handoff 组织尚未完成的工作。</strong></p>
+<p>这个插件由 Skill 和原生 MCP 配置组成：Skill 提供使用指引，MCP 连接 PowerContext Server 执行操作。它按请求保存内容，不会自动采集每一段对话。详见：MiniMax Code 插件说明[2]。</p>
+<h2 id="05-Memory：留下结论，也留下为什么"><a href="#05-Memory：留下结论，也留下为什么" class="headerlink" title="05 Memory：留下结论，也留下为什么"></a>05 Memory：留下结论，也留下为什么</h2><p>开发者理解一段实现时，往往还需要知道它背后的原因。为什么采用这个方案？当时有哪些限制？相关约束现在是否仍然有效？</p>
+<p>接入 PowerContext 后，可以直接在 MiniMax Code 中提出请求：</p>
+<blockquote>
+<p>查找我们之前关于数据库迁移的决策，并列出来源。</p>
+</blockquote>
+<p>检索结果中的来源引用，可以帮助开发者核对决策背景，再结合当前代码作出判断。</p>
+<p>当一条新的项目约束得到确认，也可以明确要求保存：</p>
+<blockquote>
+<p>记住：这个项目需要兼容 Python 3.11，后续实现都要考虑这一点。</p>
+</blockquote>
+<p>保存什么，由用户选择。适合留下的内容包括已确认的决策、稳定的约束，以及经过验证、值得复用的经验。项目发生变化时，也可以要求修正记忆，或将不再适用的信息退役。</p>
+<p>这样，后续任务就有了可查询的项目背景，而这些背景仍然需要与当前工作区和有效指令一起使用。</p>
+<h2 id="06-Handoff：让下一次工作有一个清楚的起点"><a href="#06-Handoff：让下一次工作有一个清楚的起点" class="headerlink" title="06 Handoff：让下一次工作有一个清楚的起点"></a>06 Handoff：让下一次工作有一个清楚的起点</h2><p>继续沿用结算页面的例子。假设这一轮已经确认按钮遮挡与布局有关，完成了部分修改，但不同屏幕尺寸下的表现还没验证，请求错误也仍待定位。</p>
+<p>此时只留一句“结算页问题已处理”，会把下一位带偏。交接至少要分清四件事：</p>
+<ul>
+<li><strong>已确认</strong>：按钮遮挡的表现，以及对应截图和代码位置。</li>
+<li><strong>已完成</strong>：实际修改了什么，执行过哪些检查，结果如何。</li>
+<li><strong>未解决</strong>：哪些屏幕尺寸尚未验证，请求错误还有什么线索。</li>
+<li><strong>下一步</strong>：先核对当前代码，再完成布局验证并继续排查请求错误。</li>
+</ul>
+<p><img src="/img/minimax-code-multimodal-context/07.png" alt="Handoff：让下一次工作有一个清楚的起点讲解图7" loading="lazy" decoding="async"></p>
+<p>图 6｜交接保留目标、进展、风险与证据；接手后结合当前工作区重新核对，再继续执行。</p>
+<p>可以先让 MiniMax Code 整理临时交接：</p>
+<blockquote>
+<p>使用 PowerContext 准备当前工作的交接，包含进展、关键证据、待完成的检查和下一步。先给我查看，暂不提交。</p>
+</blockquote>
+<p>准备好的内容可以检查和补充。确认需要供后续会话恢复时，再明确提交：</p>
+<blockquote>
+<p>将这份交接提交为持久检查点，并返回对应版本。</p>
+</blockquote>
+<p>下一次进入项目，就可以提出：</p>
+<blockquote>
+<p>恢复这个项目最近一次已提交的交接，先核对当前工作区，再继续剩余事项。</p>
+</blockquote>
+<p><strong>准备交接与持久保存是两个步骤</strong>。插件说明明确区分了临时交接和已提交检查点；需要在后续会话中取回，就要确认提交成功。详见：Handoff 使用说明[3]。</p>
+<p>接手者拿到的是可检查的工作状态：已有结论附带依据，待验证的问题仍然开放，下一步也有方向。任务完成后，其中适合长期复用的结论，还可以由用户明确要求保存为 Memory。</p>
+<h2 id="07-在-MiniMax-Code-中开始使用-PowerContext"><a href="#07-在-MiniMax-Code-中开始使用-PowerContext" class="headerlink" title="07 在 MiniMax Code 中开始使用 PowerContext"></a>07 在 MiniMax Code 中开始使用 PowerContext</h2><p>MiniMax Code 的多模态任务实践、seekdb 的证据检索，以及 PowerContext 的项目记忆与工作交接，分别处理这条链路上的不同问题：材料怎样查，窗口怎样用，工作怎样继续。</p>
+<p>在分享的最后，冯雯老师给了一些务实的落地建议：先选择一个同时具有多模态输入和跨会话需求的真实任务，观察证据是否准确、任务是否完成、恢复时是否减少了重复调查，再据此调整方案。最终，数据治理和上下文管理的价值，都要体现在工作能否更可靠地持续推进。</p>
+<p><img src="/img/minimax-code-multimodal-context/08.png" alt="OceanBase MiniMax Code内容讲解图8" loading="lazy" decoding="async"></p>
+<p>图 7｜多模态数据治理和上下文工程的收益，需要在真实任务中检验。</p>
+<p>PowerContext 现已支持原生的 MiniMax Code 插件并上架官方市场，通过 Skill 与 MCP 配置接入。Skill 提供项目记忆和工作交接的使用指引，MCP 连接 PowerContext 服务，执行相关操作。</p>
+<blockquote>
+<p>注：需要先安装并运行 PowerContext 服务，安装和配置说明见 PowerContext - 安装和运行文档[4]。</p>
+</blockquote>
+<p><img src="/img/minimax-code-multimodal-context/09.png" alt="OceanBase MiniMax Code内容讲解图9" loading="lazy" decoding="async"></p>
+<p>图 8｜目前 PowerContext 插件已经上架 MiniMax 插件市场</p>
+<p>我们推荐在日常工作中采用下面的工作流：</p>
+<ol>
+<li><strong>开工前查找</strong>：取回与当前任务有关的项目决策和约束，核对来源。</li>
+<li><strong>确认后保存</strong>：留下值得长期复用的结论，检查写入是否成功。</li>
+<li><strong>暂停前交接</strong>：整理进展与证据，显式提交需要保留的检查点。</li>
+<li><strong>恢复时核对</strong>：结合当前工作区确认状态，再继续未完成的事项。</li>
+</ol>
+<p><img src="/img/minimax-code-multimodal-context/10.png" alt="OceanBase MiniMax Code内容讲解图10" loading="lazy" decoding="async"></p>
+<p>图 9｜使用 @ 选中 PowerContext 之后，即可使用</p>
+<p>显式保存、读取 Memory 和整理 Handoff，不要求额外配置 PowerContext 的生成模型；向量搜索和模型生成内容则依赖 Server 中配置的模型服务。MiniMax Code 自身的账号或模型配置与这些服务分开管理。</p>
+<p>回到开头的结算页面，下一次恢复任务时，Agent 应该知道：布局改到了哪里，哪些尺寸还没测，请求错误还缺什么证据。</p>
+<p>他仍要读代码、跑测试、核对现场，但不用再把已经确认的事情调查一遍。让每一轮工作留下一个可靠的下一步，才是这些机制共同要解决的问题。</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>seekdb 官方文档: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/seekdb-doc">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;seekdb-doc</a></p>
+<p>[2] </p>
+<p>MiniMax Code 插件说明: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/tree/master/integrations/minimax/plugins/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;tree&#x2F;master&#x2F;integrations&#x2F;minimax&#x2F;plugins&#x2F;powercontext</a></p>
+<p>[3] </p>
+<p>Handoff 使用说明: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;master&#x2F;integrations&#x2F;minimax&#x2F;plugins&#x2F;powercontext&#x2F;README.md[#pick\-up-where-the-work-left-off](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/master/integrations/minimax/plugins/powercontext/README.md#pick\-up-where-the-work-left-off">https://github.com/oceanbase/powercontext/blob/master/integrations/minimax/plugins/powercontext/README.md#pick\-up-where-the-work-left-off</a>)</p>
+<p>[4] </p>
+<p>PowerContext - 安装和运行文档: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://powercontext.oceanbase.io/zh/docs/get-started/install-and-run/">https:&#x2F;&#x2F;powercontext.oceanbase.io&#x2F;zh&#x2F;docs&#x2F;get-started&#x2F;install-and-run&#x2F;</a></p>
+<p><img src="/img/minimax-code-multimodal-context/11.png" alt="OceanBase MiniMax Code内容讲解图11" loading="lazy" decoding="async"></p>
+<p>最后，欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<p><img src="/img/minimax-code-multimodal-context/12.gif" alt="OceanBase MiniMax Code内容讲解图12" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-multimodal-context/13.png" alt="OceanBase MiniMax Code内容讲解图13" loading="lazy" decoding="async"></p>
+<h2 id="往期内容推荐"><a href="#往期内容推荐" class="headerlink" title="往期内容推荐"></a>往期内容推荐</h2><p><img src="/img/minimax-code-multimodal-context/14.png" alt="往期内容推荐讲解图14" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-multimodal-context/15.png" alt="往期内容推荐讲解图15" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-multimodal-context/16.png" alt="往期内容推荐讲解图16" loading="lazy" decoding="async"></p>
+<p><img src="/img/minimax-code-multimodal-context/17.png" alt="往期内容推荐讲解图17" loading="lazy" decoding="async"></p>
+<p><a target="_blank" rel="external nofollow noopener noreferrer" href="https://mp.weixin.qq.com/s?__biz=Mzk3NTE2NzU5NQ==&mid=2247491299&idx=1&sn=a4f802cf7933d1a928578269b2a5404e&scene=21#wechat_redirect">
+</a></p>
+<p>了解更多</p>
+<p><img src="/img/minimax-code-multimodal-context/18.png" alt="往期内容推荐讲解图18" loading="lazy" decoding="async"></p>
+<p>添加社区小助手，加入微信交流群~</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/OceanBase/" rel="tag"># OceanBase</a>
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81/" rel="tag"># 多模态</a>
+              <a href="/tags/seekdb/" rel="tag"># seekdb</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/" rel="tag"># 上下文管理</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+              <a href="/tags/MiniMax-Code/" rel="tag"># MiniMax Code</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-15-powercontext-1-0-release/" rel="prev" title="PowerContext 1.0.0 正式发布：前事有据，后事可续">
+                  <i class="fa fa-angle-left"></i> PowerContext 1.0.0 正式发布：前事有据，后事可续
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-17-production-agent-context-engineering/" rel="next" title="OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践">
+                  OceanBase × MiniMax × 行业伙伴：面向生产级 Agent 的上下文工程全景实践 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>

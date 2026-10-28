@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="tESWZeJGAbrEJ5FMhd3UT_9J0uXdV9MP1jNSv3dRGi4">
+  <meta name="baidu-site-verification" content="codeva-th7QLFSoGN">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="/lib/@fortawesome/fontawesome-free/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ilongda.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.27.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"giscus","storage":true,"lazyload":true,"nav":null,"activeClass":"giscus"},"stickytabs":false,"motion":{"enable":false,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？">
+<meta property="og:url" content="https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/">
+<meta property="og:site_name" content="Longda&#39;s Interesting World">
+<meta property="og:description" content="GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/01.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/02.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/03.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/04.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/05.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/06.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/07.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/08.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/09.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/10.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/11.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/12.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/13.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/14.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/15.gif">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/16.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/17.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/18.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/19.png">
+<meta property="og:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/20.png">
+<meta property="article:published_time" content="2026-09-13T23:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-17T18:45:00.000Z">
+<meta property="article:author" content="Longda Feng">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Codex">
+<meta property="article:tag" content="GPT-6 Astra">
+<meta property="article:tag" content="PowerContext">
+<meta property="article:tag" content="上下文管理">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ilongda.com/img/gpt-6-astra-codex-context/01.png">
+
+
+<link rel="canonical" href="https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/","path":"2026/2026-09-14-gpt-6-astra-codex-context/","title":"GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？ | Longda's Interesting World</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js" defer></script>
+  <script async src="https://hm.baidu.com/hm.js?c455e54be1a88d1bcdb8c57d2739bca0"></script>
+
+
+
+
+
+
+
+  
+  <script src="/lib/animejs/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="/lib/@next-theme/pjax/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="/lib/medium-zoom/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="/lib/hexo-generator-searchdb/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"/lib/pdfobject/pdfobject.min.js","integrity":"sha256-jI72I8ZLVflVOisZIOaLvRew3tyvzeu6aZXFm7P7dEo="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js" defer></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":"forest","js":{"url":"/lib/mermaid/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+  <script src="/js/third-party/addtoany.js" defer></script>
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"/lib/mathjax/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="/lib/quicklink/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":false,"delay":true,"timeout":3000,"priority":true,"ignores":null,"url":"https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Longda's Interesting World" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Longda's Interesting World</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">分布式数据库与 AI Agent 工程实践</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-知识库"><a href="/knowledge/" rel="section"><i class="fa fa-book fa-fw"></i>知识库</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80" placeholder="搜索..." spellcheck="false" type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A5%94%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">楔子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%96%E5%AD%90%E4%B8%AD%E7%9A%84%E8%BF%BD%E9%97%AE"><span class="nav-number">2.</span> <span class="nav-text">帖子中的追问</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Codex-%E7%9A%84%E8%BF%9B%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">Codex 的进化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%8B%9B%EF%BC%9A%E5%9C%A8%E9%A2%84%E7%AE%97%E8%80%97%E5%B0%BD%E5%89%8D%EF%BC%8C%E4%BF%9D%E5%AD%98%E5%B8%A6%E7%B4%A2%E5%BC%95%E7%9A%84%E6%A3%80%E6%9F%A5%E7%82%B9"><span class="nav-number">3.1.</span> <span class="nav-text">第一招：在预算耗尽前，保存带索引的检查点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%8B%9B%EF%BC%9A%E6%8D%A2%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%8C%E4%BF%9D%E7%95%99%E5%B7%A5%E4%BD%9C%E7%8E%AF%E5%A2%83"><span class="nav-number">3.2.</span> <span class="nav-text">第二招：换上下文，保留工作环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%8B%9B%EF%BC%9A%E7%AC%94%E8%AE%B0%E4%B8%8E%E5%8E%86%E5%8F%B2%E5%88%86%E5%BC%80%EF%BC%8C%E9%81%97%E6%BC%8F%E5%8F%AF%E4%BB%A5%E5%9B%9E%E6%9F%A5"><span class="nav-number">3.3.</span> <span class="nav-text">第三招：笔记与历史分开，遗漏可以回查</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PowerContext-%E7%99%BB%E5%9C%BA"><span class="nav-number">4.</span> <span class="nav-text">PowerContext 登场</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%A4%E6%8E%A5%EF%BC%9A%E4%BB%8E%E5%85%B1%E4%BA%AB%E7%AC%94%E8%AE%B0%E5%88%B0%E7%89%88%E6%9C%AC%E5%8D%8F%E8%AE%AE"><span class="nav-number">4.1.</span> <span class="nav-text">交接：从共享笔记到版本协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%84%E4%BC%B0%EF%BC%9A%E5%8F%AC%E5%9B%9E%E8%BF%87%E7%A8%8B%E4%B8%8E%E4%BB%BB%E5%8A%A1%E7%BB%93%E6%9E%9C%E9%83%BD%E8%83%BD%E8%BF%BD%E6%9F%A5"><span class="nav-number">4.2.</span> <span class="nav-text">评估：召回过程与任务结果都能追查</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E7%AE%97%EF%BC%9A%E6%A3%80%E7%B4%A2%E3%80%81%E7%AD%9B%E9%80%89%E3%80%81%E6%B3%A8%E5%85%A5%E5%88%86%E5%88%AB%E5%8F%97%E6%8E%A7"><span class="nav-number">4.3.</span> <span class="nav-text">预算：检索、筛选、注入分别受控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%88%E6%9C%AC%EF%BC%9A%E6%97%A7%E7%9F%A5%E8%AF%86%E9%80%80%E5%87%BA%E6%A3%80%E7%B4%A2%EF%BC%8C%E5%8E%86%E5%8F%B2%E4%BB%8D%E5%8F%AF%E5%AE%9A%E4%BD%8D"><span class="nav-number">4.4.</span> <span class="nav-text">版本：旧知识退出检索，历史仍可定位</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%95%99%E7%BB%99%E5%90%8E%E6%9D%A5%E8%80%85"><span class="nav-number">5.</span> <span class="nav-text">留给后来者</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Longda Feng" src="/img/my.jpg">
+  <p class="site-author-name" itemprop="name">Longda Feng</p>
+  <div class="site-description" itemprop="description">Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">302</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">507</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/longdafeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustjackie@gmail.com" title="E-Mail → mailto:hustjackie@gmail.com" rel="external nofollow noopener noreferrer" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://x.com/longdafeng" title="Twitter → https:&#x2F;&#x2F;x.com&#x2F;longdafeng" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.linkedin.com/in/longda-feng/" title="LinkedIn → https:&#x2F;&#x2F;www.linkedin.com&#x2F;in&#x2F;longda-feng&#x2F;" rel="external nofollow noopener noreferrer" target="_blank"><i class="fab fa-linkedin fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/atom.xml" title="RSS → &#x2F;atom.xml" rel="noopener me"><i class="fa fa-rss fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://en.oceanbase.com/" title="https:&#x2F;&#x2F;en.oceanbase.com" rel="noopener" target="_blank">OceanBase</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+        <div class="pjax">
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-15-powercontext-1-0-release/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-15</time>
+        <br>
+      PowerContext 1.0.0 正式发布：前事有据，后事可续
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-10-13-agent-experience-to-skill-powercontext/" rel="bookmark">
+        <time class="popular-posts-time">2026-10-13</time>
+        <br>
+      Agent 养成记：从经验中长出技能
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-24-codex-powercontext-practice/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-24</time>
+        <br>
+      会话会结束，上下文不死：Codex × PowerContext 实战手记
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-23-powercontext-agent-handoff-workshop/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-23</time>
+        <br>
+      清空聊天、换个 Agent，任务还能接着做吗？PowerContext 接力实战
+      </a>
+    </li>
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/2026/2026-09-16-minimax-code-multimodal-context/" rel="bookmark">
+        <time class="popular-posts-time">2026-09-16</time>
+        <br>
+      OceanBase MiniMax Code 多模数据治理与上下文管理实践
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/img/my.jpg">
+      <meta itemprop="name" content="Longda Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longda's Interesting World">
+      <meta itemprop="description" content="Longda Feng 的技术博客：聚焦分布式数据库、OceanBase / seekdb、向量检索与 AI Agent 工程实践，分享数据库内核源码分析与一线实战经验。">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？ | Longda's Interesting World">
+      <meta itemprop="description" content="GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-14 07:30:00" itemprop="dateCreated datePublished" datetime="2026-09-14T07:30:00+08:00">2026-09-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-user"></i>
+      </span>
+      <span class="post-meta-item-text">原作者：</span>
+      <span itemprop="name">兹拉坦的 AI Agent</span>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/AI-%E5%BA%94%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">AI & 应用</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>14 分钟</span>
+    </span>
+</div>
+
+            <div class="post-description">GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？","description":"GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。","image":"https://ilongda.com/img/gpt-6-astra-codex-context/01.png","wordCount":3810,"datePublished":"2026-09-13T23:30:00.000Z","dateModified":"2026-09-17T18:45:00.000Z","isAccessibleForFree":true,"author":{"@type":"Person","name":"Longda Feng","url":"https://ilongda.com"},"publisher":{"@type":"Organization","name":"Longda's Interesting World","logo":{"@type":"ImageObject","url":"https://ilongda.com/img/my.jpg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/"},"url":"https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/","inLanguage":"zh-CN","keywords":["Agent","上下文管理","GPT-6 Astra","Codex","PowerContext"],"articleSection":["AI & 应用"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ilongda.com/"},{"@type":"ListItem","position":2,"name":"AI & 应用","item":"https://ilongda.com/categories/AI-应用/"},{"@type":"ListItem","position":3,"name":"GPT-6 Astra 发布，Codex 支持”近乎”无限上下文了？","item":"https://ilongda.com/2026/2026-09-14-gpt-6-astra-codex-context/"}]}</script>
+<p>GPT-6 Astra 的Codex实验配置引发近乎无限上下文的讨论，本文区分历史保存与推理窗口，分析Notes、历史证据检索及跨Agent交接，并讨论上下文管理的边界。</p>
+<blockquote>
+<p>“…it must be stored, and above all it must be consulted.”</p>
+<p>“录而存之，尤须考而用之。”</p>
+<p>Vannevar Bush，《As We May Think》[1]，1945。</p>
+</blockquote>
+<h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>GPT-6 Astra 发布后，小编在 LINUX DO 论坛里，看到了一个引发很多网友讨论的帖子《不用担心爆上下文了，Astra 新技术，“几乎”无限上下文》[2]，帖子里贴出了 Codex 的一项实验配置，并引发了很多网友的讨论 —— 打开 codex 里的这个配置，上下文是不是就能“几乎无限”了？</p>
+<p><img src="/img/gpt-6-astra-codex-context/01.png" alt="楔子讲解图1" decoding="async"></p>
+<span id="more"></span>
+
+<p>按照Codex 的官方说明[3]，Astra 支持通过这个实验配置，跨窗口保留 Notes，还能搜索旧消息与工具输出。即使某次测试的细节没写进 Notes，也有机会重新找到原始记录。</p>
+<p><img src="/img/gpt-6-astra-codex-context/02.png" alt="楔子讲解图2" loading="lazy" decoding="async"></p>
+<p>欢迎大家关注 OceanBase 社区公众号 “老纪的技术唠嗑局”。在这里，我们会持续为大家更新与 #AI 和 #Data 相关的技术内容~</p>
+<h2 id="帖子中的追问"><a href="#帖子中的追问" class="headerlink" title="帖子中的追问"></a>帖子中的追问</h2><blockquote>
+<p>它有无限上下文，你有无限 Token 吗？</p>
+</blockquote>
+<p><img src="/img/gpt-6-astra-codex-context/03.png" alt="帖子中的追问讲解图3" loading="lazy" decoding="async"></p>
+<p>帖子下网友的反问，点出了一个容易混淆的前提：历史可以长期保存，模型仍在有限的窗口中推理。每次读回的材料，都要占用这一轮的输入预算。</p>
+<p>旧消息全部重放，输入量会随历史增长；只留下摘要，失败的条件、未完成的检查又可能被压掉。何况历史里还会同时存在已撤回的要求和已经过期的结论。保存得越完整，越需要知道这一轮应当取用什么。</p>
+<p>由此，网友的讨论终于落到了两个具体问题上：Codex 如何找回遗漏的证据，组织下一轮的上下文？如果任务交给另一个 Agent，当前状态、判断依据和未完成的工作，又该怎样交出去？</p>
+<p><img src="/img/gpt-6-astra-codex-context/04.png" alt="帖子中的追问讲解图4" loading="lazy" decoding="async"></p>
+<h2 id="Codex-的进化"><a href="#Codex-的进化" class="headerlink" title="Codex 的进化"></a>Codex 的进化</h2><p>窗口快满时，任务往往还没做完，模型却必须给后续推理腾出空间。Astra 的新流程会提醒模型先留下任务状态和回查线索，再换一个窗口继续。</p>
+<p>ChatGPT 官方文档[4]给出的启用方式，是在支持该实验的客户端中修改 <code>config.toml</code>，然后新建任务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[features.context_management]</span><br><span class="line">experimental_mode = true</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>说明：实验特性默认关闭，目前官方列出的首发范围是 ChatGPT Plus、Pro 登录用户；启用还依赖模型能力、客户端和后端支持。</p>
+</blockquote>
+<p>整体来看，codex 新版本在处理上下文方面，主要有以下三招：</p>
+<blockquote>
+<p>参考自：<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/openai/codex">https:&#x2F;&#x2F;github.com&#x2F;openai&#x2F;codex</a></p>
+</blockquote>
+<h3 id="第一招：在预算耗尽前，保存带索引的检查点"><a href="#第一招：在预算耗尽前，保存带索引的检查点" class="headerlink" title="第一招：在预算耗尽前，保存带索引的检查点"></a>第一招：在预算耗尽前，保存带索引的检查点</h3><p><img src="/img/gpt-6-astra-codex-context/05.png" alt="第一招：在预算耗尽前，保存带索引的检查点讲解图5" loading="lazy" decoding="async"></p>
+<p>Astra 的配置，会将提醒阈值设为 <strong>6,144 Token</strong>。剩余窗口预算低于或等于阈值时，Codex 提醒模型记录目标、决策、进度、经验和下一步，并保存未解决请求、关键工具操作的 <strong>window ID &#x2F; item ID</strong>。预算归零时另有兜底提醒，要求先保存检查点，再调用 <code>new_context</code>。</p>
+<p>也就是说：只记一句“测试通过”，下一轮可能不知道通过的是哪次改动、哪些检查。检查点保留“结论 + 原始记录位置”，就能把模型带回那份输出，省去在笔记里重抄日志。</p>
+<p>至于该记什么，仍由模型按指令整理，客户端并不保证每项事实都已记全。</p>
+<h3 id="第二招：换上下文，保留工作环境"><a href="#第二招：换上下文，保留工作环境" class="headerlink" title="第二招：换上下文，保留工作环境"></a>第二招：换上下文，保留工作环境</h3><p><img src="/img/gpt-6-astra-codex-context/06.png" alt="第二招：换上下文，保留工作环境讲解图6" loading="lazy" decoding="async"></p>
+<p>codex 通过 <code>new_context</code> 推进窗口编号、重置窗口计数，并用重新构建的初始上下文替换活动历史。当前指令、工具、环境和协作信息会重新进入窗口；普通旧对话不会整段重放。</p>
+<p>也就是说：文件修改、进程等实际环境状态，不会因换窗被重置。</p>
+<p>新窗口还要知道从哪里继续。扩展为此向后端请求 <code>thread_hint</code>，只在返回文本有效且不超过 <strong>4,000 UTF-8 字节</strong>时注入。它提供恢复入口，模型再读取笔记、定位历史；这 4,000 字节并不包括后续回读的全部材料。</p>
+<h3 id="第三招：笔记与历史分开，遗漏可以回查"><a href="#第三招：笔记与历史分开，遗漏可以回查" class="headerlink" title="第三招：笔记与历史分开，遗漏可以回查"></a>第三招：笔记与历史分开，遗漏可以回查</h3><p><img src="/img/gpt-6-astra-codex-context/07.png" alt="第三招：笔记与历史分开，遗漏可以回查讲解图7" loading="lazy" decoding="async"></p>
+<p>在 codex 的实现中，<code>notes</code> 是可读写的后端笔记，支持按路径、行范围读取，以及追加、覆盖和搜索；<code>history</code> 是只读历史，支持按窗口、角色、工具筛选，再按条目 ID 读取消息或工具输出。两者公开的内容搜索接口均采用区分大小写的字面子串匹配。</p>
+<p>比如，笔记里只剩一句“索引方案无效”，接手者却需要知道当时的数据量和过滤条件。有历史可查，就还能把这个结论放回原来的测试环境里理解。</p>
+<p>相对传统 compact，关键变化在这里：<strong>旧信息可以通过历史接口重新取回，不必全部依靠压缩摘要传递。</strong> 源码中的 TokenBudget 分支明确跳过模型或服务端摘要，改为安装新窗口；原有压缩分支仍保留。</p>
+<p>这套机制也支持同一根任务内跨 Agent 读取：子 Agent 继承根任务的 <code>session_id</code>，请求另带 <code>current_agent_name</code>。公开实现覆盖的是这一任务体系内的连续工作。</p>
+<h2 id="PowerContext-登场"><a href="#PowerContext-登场" class="headerlink" title="PowerContext 登场"></a>PowerContext 登场</h2><p>一次会话结束了，项目往往还没结束。</p>
+<p>开发之后还要审查，审查之后可能又要换个 Agent 继续做一些特定的新需求。</p>
+<p>每位接手者都需要知道，此前为什么这样改。</p>
+<p>PowerContext[5] 将上下文保存在独立服务中。客户端通过 Hook、MCP 接入，资料按 Scope 组织。它与 Codex 同样采用外置存储、按需读取，但进一步处理跨会话共享、交接版本、结果证据和召回预算。</p>
+<h3 id="交接：从共享笔记到版本协议"><a href="#交接：从共享笔记到版本协议" class="headerlink" title="交接：从共享笔记到版本协议"></a>交接：从共享笔记到版本协议</h3><p><strong>PowerContext 的跨会话复用由 Scope 绑定实现。</strong> 服务保存 <code>(integration, kind, external_id) → scope_id</code> 的映射。Codex 插件按显式 Scope、Session 绑定、workspace 绑定、默认 Scope 的顺序解析；不同宿主接入同一服务并绑定相同 Scope 后，可以复用资料。</p>
+<p><img src="/img/gpt-6-astra-codex-context/08.png" alt="交接：从共享笔记到版本协议讲解图8" loading="lazy" decoding="async"></p>
+<p>自动准备上下文时，Runtime 只从当前 Scope 及其显式 <code>context_references</code> 召回资料，不沿父子层级递归扩展。</p>
+<p>交接时的一句“收到”，未必意味着对方拿到了最新内容，更不意味着它有条件继续执行。版本和回执，就是为了把这些事情明确记录下来。</p>
+<p>当前任务通过 Handoff 交接，其实现有三项约束：</p>
+<ol>
+<li><strong>状态有来源。</strong><code>handoff_current_work</code> 先将提交的工作状态保存为 Source，再生成带引用的交接内容；状态和列出的下一步均需 citation。</li>
+<li><strong>提交有版本。</strong> 准备阶段记录基础版本 <code>base</code>，提交不同内容时要求它与当前版本一致，否则抛出 <code>RevisionConflictError</code>。A、B 同从第 3 版准备，A 先提交第 4 版，B 就不能直接覆盖 A 的结果。</li>
+<li><strong>接收有回执。</strong><code>accepted</code> 要求接收方确认现场状态、执行能力和授权，且引用证据可读取。回执绑定精确 Revision 或 Prepared 内容，不能只写一个会变化的 <code>latest</code>。</li>
+</ol>
+<p><img src="/img/gpt-6-astra-codex-context/09.png" alt="交接：从共享笔记到版本协议讲解图9" loading="lazy" decoding="async"></p>
+<p>引用保证来源可追溯，现场事实仍由接收方核验。详见：交接版本校验代码[6]、交接接收条件与回执定义代码[7]。</p>
+<p>Codex 提供任务内跨 Agent 的记录读取；PowerContext 进一步明确了<strong>跨会话资料归属、并发提交检查，以及接收者接受的具体版本</strong>。</p>
+<h3 id="评估：召回过程与任务结果都能追查"><a href="#评估：召回过程与任务结果都能追查" class="headerlink" title="评估：召回过程与任务结果都能追查"></a>评估：召回过程与任务结果都能追查</h3><p>Agent 回答偏了，相关记忆究竟有没有被找到，又有没有进入最终上下文？只看最后一段回复，很难定位问题出在哪一步。</p>
+<p>PowerContext 已提供 OpenTelemetry 接入。启用 tracing 并安装导出依赖后，可以把内部操作发送到 Phoenix 等平台。</p>
+<p>与上下文直接相关的 Span 包括：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Span</td>
+<td>可以观察什么</td>
+</tr>
+<tr>
+<td><code>memory.search</code></td>
+<td>Memory 查询，以及其下的 Embedding 调用</td>
+</tr>
+<tr>
+<td><code>memory.rerank</code></td>
+<td>实际发生的重排及其模型调用</td>
+</tr>
+<tr>
+<td><code>context.build</code></td>
+<td>候选数量、最终入选数量、输出字节数和状态</td>
+</tr>
+<tr>
+<td><code>chat &lt;model&gt;</code></td>
+<td>PowerContext 内部模型调用的 Token 用量、耗时与错误</td>
+</tr>
+</tbody></table>
+<p>这些记录可以区分召回耗时、重排耗时和上下文装配结果。具体配置、Span 层级和记录属性，详见：Phoenix Trace 接入文档[8]、上下文装配追踪代码[9]。</p>
+<p>Codex 自身也支持 OpenTelemetry 和 Trace 导出，详见：Trace 导出代码[10]。PowerContext 在这里提供的是上下文服务内部的召回、重排与装配记录，用来追查注入材料的生成过程。</p>
+<p>查清调用过程以后，还得回到任务本身。一次构建成功，并不能替代需求里尚未执行的回归测试；“运行正常”和“完成要求”需要分别核对。</p>
+<p><img src="/img/gpt-6-astra-codex-context/10.png" alt="评估：召回过程与任务结果都能追查讲解图10" loading="lazy" decoding="async"></p>
+<p>任务评估另有一条记录链：<code>Work Contract → Handoff → Acknowledgement → Task Outcome</code>。Contract 保存完成标准；Outcome 区分任务状态、检查结果和剩余工作。检查若声明 <code>basis=&quot;verified&quot;</code>，必须附精确证据；结果若关联交接，只能引用 <strong>已接受、指向精确已提交版本</strong>的回执。</p>
+<p>这些记录由调用方提交，为“任务要求是否落实、哪次交接仍没有结果”提供查询依据；它们不会自动给 Agent 的工作质量打分。</p>
+<h3 id="预算：检索、筛选、注入分别受控"><a href="#预算：检索、筛选、注入分别受控" class="headerlink" title="预算：检索、筛选、注入分别受控"></a>预算：检索、筛选、注入分别受控</h3><p>查一个超时问题，错误码和日志原句能帮助精确定位；换了种描述，相同故障又可能需要语义检索。资料找到后，还要决定哪些值得带进这一轮。</p>
+<p>Codex 的公开历史搜索提供字面匹配；PowerContext 的 Memory 提供全文、向量、混合检索。<code>auto</code> 模式在后端、Embedding 配置和索引完整性满足条件时选择混合检索，否则使用可用的全文检索。</p>
+<p>在 Codex 接入中，<code>UserPromptSubmit</code> Hook 每轮请求一次 <code>POST /v1/context/prepare</code>。Runtime 召回 Memory 和配置后参与召回的 Experience，再生成最终的 <code>PreparedContext</code>。v0.2.0 的限制直接写在代码里：</p>
+<ul>
+<li><strong>总预算默认 8,000 UTF-8 字节</strong>，包含正文、引用和包装文字；请求范围为 512 至 32,768 字节。</li>
+<li><strong>最终最多 8 条</strong>，其中 Experience 最多 2 条；单条正文最多 2,000 字节。</li>
+<li>按精确引用去重，超预算时截断或舍弃，渲染后再次校验实际字节数。</li>
+</ul>
+<p><img src="/img/gpt-6-astra-codex-context/11.png" alt="预算：检索、筛选、注入分别受控讲解图11" loading="lazy" decoding="async"></p>
+<p>请求模型与装配算法共同执行预算，详见：上下文请求与字节预算定义代码[11]、上下文筛选与预算控制代码[12]。Hook 校验返回格式后原样注入；Handoff 走独立流程，不自动混入日常召回。</p>
+<p>这里减少的是本轮携带的正文，原始 Memory 不会因此被删掉。被截断的条目仍保留引用，需要细节时可以按版本回查。</p>
+<p>这让使用者可以在服务端控制检索方式和单轮历史注入量。字节预算约束的是这份上下文包，不代表整轮模型调用的 Token 总量。</p>
+<h3 id="版本：旧知识退出检索，历史仍可定位"><a href="#版本：旧知识退出检索，历史仍可定位" class="headerlink" title="版本：旧知识退出检索，历史仍可定位"></a>版本：旧知识退出检索，历史仍可定位</h3><p>需求已经变了，旧约束却还在被反复召回，Agent 就可能认真执行一条过时的规则。长期记忆要能纠错，也要能撤下不再适用的内容。</p>
+<p><img src="/img/gpt-6-astra-codex-context/12.png" alt="版本：旧知识退出检索，历史仍可定位讲解图12" loading="lazy" decoding="async"></p>
+<p>Memory 用 <code>entry_id</code> 标识条目，用 <code>entry_version_id</code> 标识内容版本。更新产生新版本；停用将条目标记为 <code>inactive</code>，保留历史内容。查询面向当前版本，搜索索引只包含启用条目，过期规则因此可以退出日常召回。</p>
+<p>历史交接里的引用仍指向当时的精确版本。回读时，服务检查条目身份、版本和内容哈希，防止旧引用被替换成新内容；重建索引时还会复用未变条目的向量，仅对需要更新的部分计算 Embedding。</p>
+<p>相比可覆盖的笔记接口，这套条目、版本和状态机制更适合长期项目：当前召回使用有效知识，历史复盘保留当时依据。</p>
+<h2 id="留给后来者"><a href="#留给后来者" class="headerlink" title="留给后来者"></a>留给后来者</h2><p>在《As We May Think》[13]中，Bush 谈到过一种知识传承：前人留给后来者的，除了已有成果，还有通向成果的关联路径。</p>
+<p>模型会不断更新。一次排查为何中止、一个方案为何被放弃、某条规则何时失效，这些判断却是具体项目一点点积累出来的。</p>
+<p>它们需要能被接手、核验和修订，才能在下一次工作里继续发挥作用。</p>
+<p><img src="/img/gpt-6-astra-codex-context/13.png" alt="留给后来者讲解图13" loading="lazy" decoding="async"></p>
+<p>更换 Agent 时，除了比较模型能力，我们可能也需要清点一下：这个项目积累的经验，究竟有多少能够随我们一同迁移。</p>
+<p>参考资料</p>
+<p>[1] </p>
+<p>《As We May Think》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.theatlantic.com/magazine/archive/1945/07/as-we-may-think/303881/">https:&#x2F;&#x2F;www.theatlantic.com&#x2F;magazine&#x2F;archive&#x2F;1945&#x2F;07&#x2F;as-we-may-think&#x2F;303881&#x2F;</a></p>
+<p>[2] </p>
+<p>《不用担心爆上下文了，Astra 新技术，“几乎”无限上下文》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://linux.do/t/topic/2852199">https:&#x2F;&#x2F;linux.do&#x2F;t&#x2F;topic&#x2F;2852199</a></p>
+<p>[3] </p>
+<p>Codex 的官方说明: https:&#x2F;&#x2F;learn.chatgpt.com&#x2F;docs&#x2F;models[#experimental\-context-management](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://learn.chatgpt.com/docs/models#experimental\-context-management">https://learn.chatgpt.com/docs/models#experimental\-context-management</a>)</p>
+<p>[4] </p>
+<p>ChatGPT 官方文档: https:&#x2F;&#x2F;learn.chatgpt.com&#x2F;docs&#x2F;models[#experimental\-context-management](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://learn.chatgpt.com/docs/models#experimental\-context-management">https://learn.chatgpt.com/docs/models#experimental\-context-management</a>)</p>
+<p>[5] </p>
+<p>PowerContext: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext</a></p>
+<p>[6] </p>
+<p>交接版本校验代码: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;src&#x2F;powercontext&#x2F;builtin&#x2F;artifacts&#x2F;handoff&#x2F;service.py[#L95](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/artifacts/handoff/service.py#L95">https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/artifacts/handoff/service.py#L95</a>)</p>
+<p>[7] </p>
+<p>交接接收条件与回执定义代码: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;src&#x2F;powercontext&#x2F;builtin&#x2F;work&#x2F;models.py[#L246](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/work/models.py#L246">https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/work/models.py#L246</a>)</p>
+<p>[8] </p>
+<p>Phoenix Trace 接入文档: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/docs/zh/docs/how-to/trace-with-phoenix.md">https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;docs&#x2F;zh&#x2F;docs&#x2F;how-to&#x2F;trace-with-phoenix.md</a></p>
+<p>[9] </p>
+<p>上下文装配追踪代码: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;src&#x2F;powercontext&#x2F;builtin&#x2F;runtime&#x2F;application.py[#L602](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/application.py#L602">https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/application.py#L602</a>)</p>
+<p>[10] </p>
+<p>Trace 导出代码: https:&#x2F;&#x2F;github.com&#x2F;openai&#x2F;codex&#x2F;blob&#x2F;d6489472f3c15e87d2d7763a5fde033545c530f8&#x2F;codex-rs&#x2F;otel&#x2F;src&#x2F;provider.rs[#L194](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/openai/codex/blob/d6489472f3c15e87d2d7763a5fde033545c530f8/codex-rs/otel/src/provider.rs#L194">https://github.com/openai/codex/blob/d6489472f3c15e87d2d7763a5fde033545c530f8/codex-rs/otel/src/provider.rs#L194</a>)</p>
+<p>[11] </p>
+<p>上下文请求与字节预算定义代码: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;src&#x2F;powercontext&#x2F;builtin&#x2F;runtime&#x2F;models.py[#L167](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/models.py#L167">https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/models.py#L167</a>)</p>
+<p>[12] </p>
+<p>上下文筛选与预算控制代码: https:&#x2F;&#x2F;github.com&#x2F;oceanbase&#x2F;powercontext&#x2F;blob&#x2F;powercontext-v0.2.0&#x2F;src&#x2F;powercontext&#x2F;builtin&#x2F;runtime&#x2F;prepared\_context.py[#L86](<a target="_blank" rel="external nofollow noopener noreferrer" href="https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/prepared/_context.py#L86">https://github.com/oceanbase/powercontext/blob/powercontext-v0.2.0/src/powercontext/builtin/runtime/prepared\_context.py#L86</a>)</p>
+<p>[13] </p>
+<p>《As We May Think》: <a target="_blank" rel="external nofollow noopener noreferrer" href="https://www.theatlantic.com/magazine/archive/1945/07/as-we-may-think/303881/">https:&#x2F;&#x2F;www.theatlantic.com&#x2F;magazine&#x2F;archive&#x2F;1945&#x2F;07&#x2F;as-we-may-think&#x2F;303881&#x2F;</a></p>
+<p><img src="/img/gpt-6-astra-codex-context/14.png" alt="留给后来者讲解图14" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-astra-codex-context/15.gif" alt="留给后来者讲解图15" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-astra-codex-context/16.png" alt="留给后来者讲解图16" loading="lazy" decoding="async"></p>
+<p>往期内容推荐</p>
+<p><img src="/img/gpt-6-astra-codex-context/17.png" alt="留给后来者讲解图17" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-astra-codex-context/18.png" alt="留给后来者讲解图18" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-astra-codex-context/19.png" alt="留给后来者讲解图19" loading="lazy" decoding="async"></p>
+<p><img src="/img/gpt-6-astra-codex-context/20.png" alt="留给后来者讲解图20" loading="lazy" decoding="async"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="followme">
+  <span>欢迎关注我的其它发布渠道</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Agent/" rel="tag"># Agent</a>
+              <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/" rel="tag"># 上下文管理</a>
+              <a href="/tags/GPT-6-Astra/" rel="tag"># GPT-6 Astra</a>
+              <a href="/tags/Codex/" rel="tag"># Codex</a>
+              <a href="/tags/PowerContext/" rel="tag"># PowerContext</a>
+          </div>
+
+        
+  <div class="social-like a2a_kit a2a_kit_size_32 a2a_default_style">
+    <a class="a2a_dd" target="_blank" rel="external nofollow noopener noreferrer" href="https://www.addtoany.com/share"></a>
+      <a class="a2a_button_wechat"></a>
+      <a class="a2a_button_twitter"></a>
+  </div>
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-10-obcp-v4-development-optimization/" rel="prev" title="OBCP V4 实验模拟题详解 —— 数据库开发设计与优化">
+                  <i class="fa fa-angle-left"></i> OBCP V4 实验模拟题详解 —— 数据库开发设计与优化
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/2026-09-15-powercontext-1-0-release/" rel="next" title="PowerContext 1.0.0 正式发布：前事有据，后事可续">
+                  PowerContext 1.0.0 正式发布：前事有据，后事可续 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments giscus-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="external nofollow noopener noreferrer" target="_blank">浙ICP备20005107号-2 </a>
+      <img src="https://beian.miit.gov.cn" alt>
+  </div>
+  <div class="copyright">
+    &copy; 2014 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Powered by Longda Feng</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">837k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">50:42</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="giscus" type="application/json">{"enable":true,"repo":"longdafeng/blog_comment","repo_id":"MDEwOlJlcG9zaXRvcnkyMzMzMjk3ODI=","category":"General","category_id":"DIC_kwDODehUds4C-0LP","mapping":"pathname","strict":0,"reactions_enabled":1,"emit_metadata":0,"input_position":"top","theme":"preferred_color_scheme","lang":"zh-CN","loading":"lazy","crossorigin":"anonymous"}</script>
+<script src="/js/third-party/comments/giscus.js" defer></script>
+<script data-cfasync="false" src="/js/agent-webmcp.js"></script>
+
+</body>
+</html>
